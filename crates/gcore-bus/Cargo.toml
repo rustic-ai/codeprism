@@ -1,0 +1,24 @@
+[package]
+name = "gcore-bus"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Kafka message bus integration for gcore"
+
+[dependencies]
+rdkafka.workspace = true
+prost.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tracing.workspace = true
+tokio.workspace = true
+anyhow.workspace = true
+
+[build-dependencies]
+prost-build.workspace = true
+
+[dev-dependencies]
+insta.workspace = true 

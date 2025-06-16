@@ -1,0 +1,547 @@
+# Getting Started with GCore - MCP Integration Guide
+
+This guide walks you through setting up gcore with the three major MCP clients: Claude Desktop, Cursor, and VS Code. By the end, you'll have a powerful AI assistant with graph-first code intelligence for your repositories.
+
+## 🎯 What You'll Achieve
+
+- **AI assistants** that understand your code structure, not just text
+- **Real-time analysis** of your repositories with automatic updates
+- **Cross-language intelligence** for JavaScript, TypeScript, and Python projects
+- **Graph-based insights** about dependencies, function calls, and relationships
+
+## 📋 Prerequisites
+
+### Required Software
+- **Node.js 18+** (for building gcore)
+- **Rust 1.82+** (for building gcore from source)
+- **Git** (for cloning repositories)
+
+### MCP Clients (Choose one or more)
+- **Claude Desktop** (macOS/Windows) - Download from [Claude.ai](https://claude.ai/download)
+- **Cursor** - Download from [Cursor.sh](https://cursor.sh/)
+- **VS Code** (1.86+) - Download from [code.visualstudio.com](https://code.visualstudio.com/)
+
+### Verify Prerequisites
+```bash
+# Check Node.js version
+node --version  # Should be 18.0.0 or higher
+
+# Check Rust version  
+rustc --version  # Should be 1.82.0 or higher
+
+# Check Git
+git --version
+```
+
+## 🚀 Step 1: Install GCore
+
+### Option A: Build from Source (Recommended)
+```bash
+# Clone the repository
+git clone https://github.com/dragonscale/gcore
+cd gcore
+
+# Build the release binary
+cargo build --release
+
+# The binary will be at: ./target/release/gcore-mcp
+```
+
+### Option B: Using Pre-built Binary (Coming Soon)
+```bash
+# Download from GitHub releases (when available)
+# Extract and place in your PATH
+```
+
+### Verify Installation
+```bash
+# Test the binary
+./target/release/gcore-mcp --help
+
+# Should show usage information and available options
+```
+
+## 🔧 Step 2: Configure MCP Clients
+
+## Claude Desktop Setup
+
+### 1. Locate Configuration File
+
+**macOS:**
+```bash
+# Configuration file location
+~/Library/Application Support/Claude/claude_desktop_config.json
+```
+
+**Windows:**
+```bash
+# Configuration file location
+%APPDATA%\Claude\claude_desktop_config.json
+```
+
+### 2. Create/Update Configuration
+
+Open the configuration file in your preferred editor and add:
+
+```json
+{
+  "mcpServers": {
+    "gcore": {
+      "command": "/path/to/gcore/target/release/gcore-mcp",
+      "args": ["/path/to/your/repository"],
+      "env": {
+        "RUST_LOG": "info"
+      }
+    }
+  }
+}
+```
+
+**Replace the paths:**
+- `/path/to/gcore/target/release/gcore-mcp` → Your actual gcore binary path
+- `/path/to/your/repository` → Your project directory
+
+### 3. Complete Setup Example
+
+```json
+{
+  "mcpServers": {
+    "gcore-main-project": {
+      "command": "/Users/username/code/gcore/target/release/gcore-mcp",
+      "args": ["/Users/username/code/my-project"],
+      "env": {
+        "RUST_LOG": "info"
+      }
+    },
+    "gcore-client-app": {
+      "command": "/Users/username/code/gcore/target/release/gcore-mcp", 
+      "args": ["/Users/username/code/client-app"],
+      "env": {
+        "RUST_LOG": "warn"
+      }
+    }
+  }
+}
+```
+
+### 4. Restart Claude Desktop
+
+1. Quit Claude Desktop completely
+2. Reopen Claude Desktop
+3. Look for the 🔨 (hammer) icon in the chat input area
+4. Click it to see available MCP tools
+
+---
+
+## Cursor Setup
+
+### 1. Choose Configuration Location
+
+**Project-specific (recommended):**
+```bash
+# Create in your project root
+.cursor/mcp.json
+```
+
+**Global (all projects):**
+```bash
+# macOS/Linux
+~/.cursor/mcp.json
+
+# Windows
+%USERPROFILE%\.cursor\mcp.json
+```
+
+### 2. Create Configuration File
+
+```json
+{
+  "mcpServers": {
+    "gcore": {
+      "command": "/path/to/gcore/target/release/gcore-mcp",
+      "args": ["."],
+      "env": {
+        "RUST_LOG": "info"
+      }
+    }
+  }
+}
+```
+
+### 3. Advanced Configuration Example
+
+```json
+{
+  "mcpServers": {
+    "gcore-current": {
+      "command": "/Users/username/code/gcore/target/release/gcore-mcp",
+      "args": ["."],
+      "description": "Analyze current repository with gcore",
+      "env": {
+        "RUST_LOG": "info"
+      }
+    },
+    "gcore-parent": {
+      "command": "/Users/username/code/gcore/target/release/gcore-mcp",
+      "args": [".."],
+      "description": "Analyze parent directory",
+      "env": {
+        "RUST_LOG": "warn"
+      }
+    }
+  }
+}
+```
+
+### 4. Enable MCP in Cursor
+
+1. Open Cursor Settings (`Cmd/Ctrl + ,`)
+2. Search for "MCP"
+3. Enable "Model Context Protocol"
+4. Restart Cursor
+
+### 5. Verify Setup
+
+1. Open the Command Palette (`Cmd/Ctrl + Shift + P`)
+2. Run "MCP: List Servers"
+3. You should see your gcore server listed
+4. In chat, you should see MCP tools available
+
+---
+
+## VS Code Setup
+
+### 1. Enable MCP Support
+
+1. Open VS Code Settings (`Cmd/Ctrl + ,`)
+2. Search for "mcp"
+3. Enable `chat.mcp.enabled`
+4. Optionally enable `chat.mcp.discovery.enabled` for auto-discovery
+
+### 2. Add MCP Server (Method 1: GUI)
+
+1. Open Command Palette (`Cmd/Ctrl + Shift + P`)
+2. Run "MCP: Add Server"
+3. Choose "CLI Server - Node.js" 
+4. Fill in the details:
+   - **Server Name:** `gcore`
+   - **Command:** Full path to your gcore-mcp binary
+   - **Args:** `["/path/to/your/repository"]`
+
+### 3. Add MCP Server (Method 2: Configuration File)
+
+Create `.vscode/mcp.json` in your workspace:
+
+```json
+{
+  "servers": {
+    "gcore": {
+      "type": "stdio",
+      "command": "/path/to/gcore/target/release/gcore-mcp",
+      "args": ["."],
+      "env": {
+        "RUST_LOG": "info"
+      }
+    }
+  }
+}
+```
+
+### 4. Add to User Settings (Global)
+
+In your VS Code `settings.json`:
+
+```json
+{
+  "mcp": {
+    "servers": {
+      "gcore-global": {
+        "type": "stdio", 
+        "command": "/Users/username/code/gcore/target/release/gcore-mcp",
+        "args": ["."],
+        "env": {
+          "RUST_LOG": "info"
+        }
+      }
+    }
+  }
+}
+```
+
+### 5. Use in Agent Mode
+
+1. Open GitHub Copilot Chat (`Ctrl/Cmd + Alt + I`)
+2. Select "Agent" mode from the dropdown
+3. Click the "Tools" button to see available MCP tools
+4. Enable the gcore tools you want to use
+
+---
+
+## 🧪 Step 3: Test Your Setup
+
+### Basic Functionality Test
+
+Once you've configured your MCP client, try these prompts:
+
+**Claude Desktop:**
+```
+What files are in this repository? Can you analyze the overall structure?
+```
+
+**Cursor:**
+```
+@gcore Analyze the dependencies in this JavaScript project
+```
+
+**VS Code (Agent Mode):**
+```
+Use the repository analysis tools to give me an overview of this codebase
+```
+
+### Advanced Usage Examples
+
+**Dependency Analysis:**
+```
+Can you trace the function calls from the main entry point and show me the dependency graph?
+```
+
+**Code Quality Assessment:**
+```
+Analyze this repository for potential code quality issues and suggest improvements
+```
+
+**Architecture Overview:**
+```
+Generate a summary of the main modules and how they interact with each other
+```
+
+**Cross-Language Analysis:**
+```
+This repository has both Python and JavaScript. How do they interact?
+```
+
+## 🔧 Configuration Tips
+
+### Performance Optimization
+
+**For Large Repositories:**
+```json
+{
+  "mcpServers": {
+    "gcore": {
+      "command": "/path/to/gcore-mcp",
+      "args": ["/path/to/repo"],
+      "env": {
+        "RUST_LOG": "warn",
+        "GCORE_MAX_FILES": "10000"
+      }
+    }
+  }
+}
+```
+
+**For Development:**
+```json
+{
+  "mcpServers": {
+    "gcore-dev": {
+      "command": "/path/to/gcore-mcp",
+      "args": ["/path/to/repo", "--verbose"],
+      "env": {
+        "RUST_LOG": "debug"
+      }
+    }
+  }
+}
+```
+
+### Multiple Repositories
+
+**Different Projects:**
+```json
+{
+  "mcpServers": {
+    "gcore-frontend": {
+      "command": "/path/to/gcore-mcp",
+      "args": ["/path/to/frontend-app"]
+    },
+    "gcore-backend": {
+      "command": "/path/to/gcore-mcp", 
+      "args": ["/path/to/backend-api"]
+    },
+    "gcore-mobile": {
+      "command": "/path/to/gcore-mcp",
+      "args": ["/path/to/mobile-app"]
+    }
+  }
+}
+```
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+**1. "Command not found" or "Binary not executable"**
+
+```bash
+# Make sure the binary is executable
+chmod +x /path/to/gcore/target/release/gcore-mcp
+
+# Test the binary directly
+/path/to/gcore/target/release/gcore-mcp --help
+```
+
+**2. "Repository not found" or "Permission denied"**
+
+```bash
+# Check the repository path exists
+ls -la /path/to/your/repository
+
+# Ensure read permissions
+chmod -R +r /path/to/your/repository
+```
+
+**3. Server not appearing in MCP client**
+
+**Claude Desktop:**
+- Check the JSON syntax is valid
+- Restart Claude Desktop completely
+- Look for error messages in the chat
+
+**Cursor:**
+- Verify MCP is enabled in settings
+- Check if `.cursor/mcp.json` exists and is valid
+- Restart Cursor
+
+**VS Code:**
+- Ensure `chat.mcp.enabled` is true
+- Run "MCP: List Servers" to see status
+- Check "Output" panel for MCP errors
+
+### Debug Mode
+
+Enable detailed logging:
+
+```json
+{
+  "mcpServers": {
+    "gcore-debug": {
+      "command": "/path/to/gcore-mcp",
+      "args": ["/path/to/repo", "--verbose"],
+      "env": {
+        "RUST_LOG": "debug",
+        "GCORE_DEBUG": "1"
+      }
+    }
+  }
+}
+```
+
+### Log Files
+
+**Claude Desktop Logs:**
+- **macOS:** `~/Library/Logs/Claude/mcp.log`
+- **Windows:** `%APPDATA%\Claude\logs\mcp.log`
+
+**VS Code:**
+- Open "Output" panel
+- Select "MCP" from the dropdown
+
+**Cursor:**
+- View > Output > "Cursor MCP"
+
+### Getting Help
+
+**Check logs first:**
+```bash
+# Claude Desktop (macOS)
+tail -f ~/Library/Logs/Claude/mcp*.log
+
+# VS Code: View > Output > MCP
+```
+
+**Test gcore directly:**
+```bash
+# Test with minimal arguments
+./target/release/gcore-mcp /path/to/small/test/repo
+
+# Check for error messages
+```
+
+**Common Solutions:**
+1. **Rebuild gcore:** `cargo build --release`
+2. **Check permissions:** `chmod +x gcore-mcp`
+3. **Verify paths:** Use absolute paths in configuration
+4. **Restart client:** Completely quit and restart MCP client
+
+## 🎉 What's Next?
+
+### Explore Advanced Features
+
+Once your setup is working:
+
+1. **Try Multiple Languages:** Test with repositories containing JavaScript, TypeScript, and Python
+2. **Analyze Dependencies:** Ask about function call graphs and module relationships  
+3. **Code Quality:** Request refactoring suggestions and code quality analysis
+4. **Architecture Insights:** Get high-level overviews of complex codebases
+
+### Upcoming Features
+
+- **Rust Parser:** Soon you'll be able to analyze Rust code (including gcore itself!)
+- **Java Support:** Enterprise language support coming
+- **Enhanced CLI:** Additional commands for repository analysis
+- **Performance Improvements:** Better handling of large repositories
+
+### Community
+
+- **GitHub Issues:** Report bugs and request features
+- **Discussions:** Share your use cases and tips
+- **Contributing:** Help improve gcore for everyone
+
+---
+
+## 📚 Quick Reference
+
+### Configuration File Locations
+
+| Client | Location |
+|--------|----------|
+| Claude Desktop (macOS) | `~/Library/Application Support/Claude/claude_desktop_config.json` |
+| Claude Desktop (Windows) | `%APPDATA%\Claude\claude_desktop_config.json` |
+| Cursor (Project) | `.cursor/mcp.json` |
+| Cursor (Global) | `~/.cursor/mcp.json` |
+| VS Code (Project) | `.vscode/mcp.json` |
+| VS Code (User) | VS Code settings.json |
+
+### Essential Commands
+
+```bash
+# Build gcore
+cargo build --release
+
+# Test gcore binary
+./target/release/gcore-mcp --help
+
+# Run with debug logging
+RUST_LOG=debug ./target/release/gcore-mcp /path/to/repo
+```
+
+### Example Prompts
+
+```
+# Basic analysis
+"What's the overall structure of this repository?"
+
+# Dependency tracing  
+"Show me how the authentication module connects to the rest of the system"
+
+# Code quality
+"Are there any potential issues or improvements you'd suggest for this codebase?"
+
+# Cross-language
+"How do the Python backend and JavaScript frontend communicate?"
+```
+
+---
+
+**Ready to supercharge your AI development workflow?** Follow this guide and start experiencing graph-first code intelligence today! 

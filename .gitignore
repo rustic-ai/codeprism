@@ -1,0 +1,33 @@
+# Rust
+target/
+Cargo.lock
+**/*.rs.bk
+*.pdb
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+
+# Test artifacts
+*.profraw
+*.profdata
+tarpaulin-report.html
+cobertura.xml
+
+# Benchmarks
+criterion/
+
+# Generated files
+*.pb.rs
+generated/ 

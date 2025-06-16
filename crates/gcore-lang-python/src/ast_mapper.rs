@@ -317,16 +317,106 @@ impl AstMapper {
     /// Extract the target of a call (function name)
     fn extract_call_target(&self, node: &tree_sitter::Node) -> String {
         match node.kind() {
-            "identifier" => self.get_node_text(node),
+            "identifier" => {
+                self.get_node_text(node)
+            }
             "attribute" => {
                 // Handle method calls like obj.method()
                 if let Some(attr_node) = node.child_by_field_name("attribute") {
                     self.get_node_text(&attr_node)
                 } else {
-                    self.get_node_text(node)
+                    // Fallback: extract from full text but validate
+                    self.extract_safe_function_name(node)
                 }
             }
-            _ => self.get_node_text(node),
+            "subscript" => {
+                // Handle subscript calls like func[key]()
+                if let Some(value_node) = node.child_by_field_name("value") {
+                    self.extract_call_target(&value_node)
+                } else {
+                    self.extract_safe_function_name(node)
+                }
+            }
+            "call" => {
+                // Nested call like func()()
+                if let Some(function_node) = node.child_by_field_name("function") {
+                    self.extract_call_target(&function_node)
+                } else {
+                    self.extract_safe_function_name(node)
+                }
+            }
+            _ => {
+                // For any other complex expressions, try to extract safely
+                self.extract_safe_function_name(node)
+            }
+        }
+    }
+
+    /// Safely extract a function name from a node, avoiding malformed names
+    fn extract_safe_function_name(&self, node: &tree_sitter::Node) -> String {
+        let raw_text = self.get_node_text(node);
+        
+        // Check for obviously invalid names
+        if raw_text.is_empty() || 
+           raw_text == ")" || 
+           raw_text == "(" || 
+           raw_text.trim().is_empty() ||
+           raw_text.chars().all(|c| !c.is_alphanumeric() && c != '_' && c != '.') {
+            return "anonymous_call".to_string();
+        }
+        
+        // Try to extract a meaningful name from complex expressions
+        if let Some(extracted) = self.extract_function_name_from_text(&raw_text) {
+            extracted
+        } else {
+            // Fallback: use truncated text or anonymous
+            if raw_text.len() > 50 {
+                "complex_call".to_string()
+            } else {
+                raw_text
+            }
+        }
+    }
+
+    /// Extract function name from raw text using pattern matching
+    fn extract_function_name_from_text(&self, text: &str) -> Option<String> {
+        let text = text.trim();
+        
+        // Handle simple identifier
+        if text.chars().all(|c| c.is_alphanumeric() || c == '_') {
+            return Some(text.to_string());
+        }
+        
+        // Handle attribute access: obj.method
+        if let Some(dot_pos) = text.rfind('.') {
+            let after_dot = &text[dot_pos + 1..];
+            if after_dot.chars().all(|c| c.is_alphanumeric() || c == '_') {
+                return Some(after_dot.to_string());
+            }
+        }
+        
+        // Handle complex expressions by finding the last valid identifier
+        let mut last_identifier = String::new();
+        let mut current_identifier = String::new();
+        
+        for ch in text.chars() {
+            if ch.is_alphanumeric() || ch == '_' {
+                current_identifier.push(ch);
+            } else {
+                if !current_identifier.is_empty() {
+                    last_identifier = current_identifier.clone();
+                    current_identifier.clear();
+                }
+            }
+        }
+        
+        // Use the last identifier found
+        if !current_identifier.is_empty() {
+            Some(current_identifier)
+        } else if !last_identifier.is_empty() {
+            Some(last_identifier)
+        } else {
+            None
         }
     }
 
@@ -568,7 +658,7 @@ impl AstMapper {
     fn extract_base_classes(&mut self, node: &tree_sitter::Node, class_id: crate::types::NodeId) -> Result<()> {
         // Look for argument_list node which contains base classes
         if let Some(arg_list) = node.child_by_field_name("superclasses") {
-            self.parse_base_class_list(&arg_list, class_id)?;
+            self.parse_base_class_list(&arg_list, class_id, node)?;
         } else {
             // Fallback: search for argument_list in children
             let mut cursor = node.walk();
@@ -576,7 +666,7 @@ impl AstMapper {
                 loop {
                     let child = cursor.node();
                     if child.kind() == "argument_list" {
-                        self.parse_base_class_list(&child, class_id)?;
+                        self.parse_base_class_list(&child, class_id, node)?;
                         break;
                     }
                     if !cursor.goto_next_sibling() {
@@ -589,7 +679,7 @@ impl AstMapper {
     }
 
     /// Parse base class list and create inheritance nodes
-    fn parse_base_class_list(&mut self, arg_list: &tree_sitter::Node, class_id: crate::types::NodeId) -> Result<()> {
+    fn parse_base_class_list(&mut self, arg_list: &tree_sitter::Node, class_id: crate::types::NodeId, class_node: &tree_sitter::Node) -> Result<()> {
         let mut cursor = arg_list.walk();
         if cursor.goto_first_child() {
             loop {
@@ -598,27 +688,40 @@ impl AstMapper {
                     "identifier" => {
                         // Simple base class: class Child(Parent):
                         let base_class = self.get_node_text(&child);
-                        self.create_inheritance_edge(class_id, base_class)?;
+                        if !base_class.trim().is_empty() {
+                            self.create_inheritance_edge(class_id, base_class, &child)?;
+                        }
                     }
                     "attribute" => {
                         // Qualified base class: class Child(module.Parent):
-                        let base_class = self.get_node_text(&child);
-                        self.create_inheritance_edge(class_id, base_class)?;
+                        // Extract just the class name from qualified name
+                        if let Some(attr_node) = child.child_by_field_name("attribute") {
+                            let base_class = self.get_node_text(&attr_node);
+                            if !base_class.trim().is_empty() {
+                                self.create_inheritance_edge(class_id, base_class, &child)?;
+                            }
+                        } else {
+                            let base_class = self.get_node_text(&child);
+                            if !base_class.trim().is_empty() {
+                                self.create_inheritance_edge(class_id, base_class, &child)?;
+                            }
+                        }
                     }
                     "subscript" => {
                         // Generic base class: class Child(Generic[T]):
                         // Extract the base part before the subscript
                         if let Some(value_node) = child.child_by_field_name("value") {
-                            let base_class = self.get_node_text(&value_node);
-                            self.create_inheritance_edge(class_id, base_class)?;
+                            let base_class = self.extract_call_target(&value_node);
+                            if !base_class.trim().is_empty() && 
+                               base_class != "anonymous_call" && 
+                               base_class != "complex_call" {
+                                self.create_inheritance_edge(class_id, base_class, &child)?;
+                            }
                         }
                     }
                     _ => {
-                        // Other types - try to extract as text
-                        let base_class = self.get_node_text(&child);
-                        if !base_class.trim().is_empty() && !base_class.contains(',') {
-                            self.create_inheritance_edge(class_id, base_class)?;
-                        }
+                        // Skip other types (like parentheses, commas, etc.)
+                        // Don't try to create inheritance edges for these
                     }
                 }
                 if !cursor.goto_next_sibling() {
@@ -630,15 +733,9 @@ impl AstMapper {
     }
 
     /// Create an inheritance edge (child extends parent)
-    fn create_inheritance_edge(&mut self, child_class_id: crate::types::NodeId, parent_class_name: String) -> Result<()> {
-        let span = Span {
-            start_line: 0,
-            end_line: 0,
-            start_column: 0,
-            end_column: 0,
-            start_byte: 0,
-            end_byte: 0,
-        };
+    fn create_inheritance_edge(&mut self, child_class_id: crate::types::NodeId, parent_class_name: String, base_class_node: &tree_sitter::Node) -> Result<()> {
+        // Use the actual span of the base class node to ensure unique IDs
+        let span = Span::from_node(base_class_node);
 
         // Create a virtual node representing the inheritance relationship
         let inheritance_node = Node::new(

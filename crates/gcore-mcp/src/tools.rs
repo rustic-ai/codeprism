@@ -381,8 +381,14 @@ impl ToolManager {
 
             if include_dependencies {
                 let dependencies = server.graph_query().find_dependencies(&symbol_id, gcore::graph::DependencyType::Direct)?;
+                
+                // Filter out invalid Call nodes with malformed names
+                let valid_dependencies: Vec<_> = dependencies.iter()
+                    .filter(|dep| self.is_valid_dependency_node(&dep.target_node))
+                    .collect();
+                
                 result["dependencies"] = serde_json::json!(
-                    dependencies.iter().map(|dep| {
+                    valid_dependencies.iter().map(|dep| {
                         serde_json::json!({
                             "name": dep.target_node.name,
                             "kind": format!("{:?}", dep.target_node.kind),
@@ -421,6 +427,24 @@ impl ToolManager {
                 is_error: Some(true),
             })
         }
+    }
+
+    /// Validate that a dependency node has a valid name
+    fn is_valid_dependency_node(&self, node: &gcore::Node) -> bool {
+        // Filter out Call nodes with invalid names
+        if matches!(node.kind, gcore::NodeKind::Call) {
+            // Check for common invalid patterns
+            if node.name.is_empty() || 
+               node.name == ")" || 
+               node.name == "(" || 
+               node.name.trim().is_empty() ||
+               node.name.chars().all(|c| !c.is_alphanumeric() && c != '_') {
+                return false;
+            }
+        }
+        
+        // All other nodes are considered valid
+        true
     }
 
     /// Find dependencies of a symbol
@@ -464,10 +488,15 @@ impl ToolManager {
             all_deps
         };
 
+        // Filter out invalid Call nodes with malformed names
+        let valid_dependencies: Vec<_> = dependencies.iter()
+            .filter(|dep| self.is_valid_dependency_node(&dep.target_node))
+            .collect();
+
         let result = serde_json::json!({
             "target": target,
             "dependency_type": dependency_type_str,
-            "dependencies": dependencies.iter().map(|dep| {
+            "dependencies": valid_dependencies.iter().map(|dep| {
                 serde_json::json!({
                     "id": dep.target_node.id.to_hex(),
                     "name": dep.target_node.name,

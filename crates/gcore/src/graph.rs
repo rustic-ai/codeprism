@@ -6,6 +6,7 @@
 use crate::ast::{Edge, EdgeKind, Node, NodeId, NodeKind};
 use crate::error::{Error, Result};
 use dashmap::DashMap;
+use regex;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::PathBuf;
@@ -376,9 +377,23 @@ impl GraphQuery {
         let limit = limit.unwrap_or(50);
         let mut results = Vec::new();
         
-        // Simple substring search for now (can be enhanced with regex later)
+        // Try to compile as regex first, fall back to substring search if invalid
+        let regex_result = regex::Regex::new(pattern);
+        let use_regex = regex_result.is_ok();
+        let regex = regex_result.ok();
+        
         for entry in self.graph.symbol_index.iter() {
-            if entry.key().to_lowercase().contains(&pattern.to_lowercase()) {
+            let symbol_name = entry.key();
+            
+            let matches = if use_regex {
+                // Use regex matching
+                regex.as_ref().unwrap().is_match(symbol_name)
+            } else {
+                // Fall back to case-insensitive substring search
+                symbol_name.to_lowercase().contains(&pattern.to_lowercase())
+            };
+            
+            if matches {
                 for node_id in entry.value() {
                     if let Some(node) = self.graph.get_node(node_id) {
                         // Filter by symbol types if specified
@@ -577,5 +592,43 @@ mod tests {
         
         let results = query.search_symbols("test", Some(vec![NodeKind::Function]), None).unwrap();
         assert_eq!(results.len(), 1); // only test_function
+    }
+
+    #[test]
+    fn test_symbol_search_regex() {
+        let graph = Arc::new(GraphStore::new());
+        let query = GraphQuery::new(graph.clone());
+        
+        let agent_node = create_test_node("Agent", NodeKind::Class, "agent.py");
+        let user_agent_node = create_test_node("UserAgent", NodeKind::Class, "user_agent.py");
+        let guild_manager_agent_node = create_test_node("GuildManagerAgent", NodeKind::Class, "guild_manager_agent.py");
+        let other_node = create_test_node("ProcessAgent", NodeKind::Function, "process.py");
+        
+        graph.add_node(agent_node.clone());
+        graph.add_node(user_agent_node.clone());
+        graph.add_node(guild_manager_agent_node.clone());
+        graph.add_node(other_node.clone());
+        
+        // Test exact match using regex
+        let results = query.search_symbols("^Agent$", None, None).unwrap();
+        assert_eq!(results.len(), 1); // only exact "Agent"
+        assert_eq!(results[0].node.name, "Agent");
+        
+        // Test suffix match
+        let results = query.search_symbols("Agent$", None, None).unwrap();
+        assert_eq!(results.len(), 4); // Agent, UserAgent, GuildManagerAgent, ProcessAgent
+        
+        // Test case-sensitive prefix match
+        let results = query.search_symbols("^Guild", None, None).unwrap();
+        assert_eq!(results.len(), 1); // only GuildManagerAgent
+        assert_eq!(results[0].node.name, "GuildManagerAgent");
+        
+        // Test fallback to substring search with invalid regex
+        let results = query.search_symbols("[invalid", None, None).unwrap();
+        assert_eq!(results.len(), 0); // no matches for invalid pattern (falls back to substring)
+        
+        // Test normal substring search still works
+        let results = query.search_symbols("Agent", None, None).unwrap();
+        assert_eq!(results.len(), 4); // All nodes containing "Agent"
     }
 } 

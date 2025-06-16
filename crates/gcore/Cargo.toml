@@ -29,6 +29,7 @@ hex.workspace = true
 dashmap.workspace = true
 once_cell.workspace = true
 rayon.workspace = true
+regex.workspace = true
 
 # File watching
 notify.workspace = true

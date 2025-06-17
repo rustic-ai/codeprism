@@ -30,7 +30,10 @@ pub use pipeline::{LoggingEventHandler, MonitoringPipeline, NoOpEventHandler, Pi
 pub use repository::{HealthStatus, RepositoryConfig, RepositoryInfo, RepositoryManager};
 pub use scanner::{DiscoveredFile, NoOpProgressReporter, ProgressReporter, RepositoryScanner, ScanResult, DependencyMode};
 pub use watcher::{ChangeEvent, ChangeKind, FileWatcher};
-pub use graph::{GraphStore, GraphQuery, PathResult, SymbolInfo};
+pub use graph::{
+    GraphStore, GraphQuery, PathResult, SymbolInfo, InheritanceInfo, 
+    InheritanceRelation, InheritanceFilter, DynamicAttribute
+};
 pub use content::{
     ContentChunk, ContentNode, ContentStats, ContentType, 
     SearchQuery, SearchResult, DocumentFormat, ConfigFormat, CommentContext
@@ -51,7 +54,10 @@ pub mod prelude {
     pub use crate::repository::{HealthStatus, RepositoryConfig, RepositoryInfo, RepositoryManager};
     pub use crate::scanner::{DiscoveredFile, NoOpProgressReporter, ProgressReporter, RepositoryScanner, ScanResult, DependencyMode};
     pub use crate::watcher::{ChangeEvent, ChangeKind, FileWatcher};
-    pub use crate::graph::{GraphStore, GraphQuery, PathResult, SymbolInfo};
+    pub use crate::graph::{
+        GraphStore, GraphQuery, PathResult, SymbolInfo, InheritanceInfo, 
+        InheritanceRelation, InheritanceFilter, DynamicAttribute
+    };
     pub use crate::content::{
         ContentChunk, ContentNode, ContentStats, ContentType, 
         SearchQuery, SearchResult, DocumentFormat, ConfigFormat, CommentContext

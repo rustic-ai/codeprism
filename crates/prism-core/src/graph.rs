@@ -423,6 +423,313 @@ impl GraphQuery {
         
         Ok(results)
     }
+
+    /// Search symbols by name pattern with inheritance filters
+    pub fn search_symbols_with_inheritance(&self, pattern: &str, symbol_types: Option<Vec<NodeKind>>, inheritance_filters: Option<Vec<InheritanceFilter>>, limit: Option<usize>) -> Result<Vec<SymbolInfo>> {
+        let mut results = self.search_symbols(pattern, symbol_types, limit)?;
+        
+        if let Some(filters) = inheritance_filters {
+            results.retain(|symbol_info| {
+                filters.iter().any(|filter| self.matches_inheritance_filter(&symbol_info.node, filter))
+            });
+        }
+        
+        Ok(results)
+    }
+
+    /// Check if a node matches an inheritance filter
+    fn matches_inheritance_filter(&self, node: &Node, filter: &InheritanceFilter) -> bool {
+        match filter {
+            InheritanceFilter::InheritsFrom(base_class) => {
+                self.inherits_from(&node.id, base_class).unwrap_or(false)
+            }
+            InheritanceFilter::HasMetaclass(metaclass) => {
+                self.has_metaclass(&node.id, metaclass).unwrap_or(false)
+            }
+            InheritanceFilter::UsesMixin(mixin) => {
+                self.uses_mixin(&node.id, mixin).unwrap_or(false)
+            }
+        }
+    }
+
+    /// Get comprehensive inheritance information for a class
+    pub fn get_inheritance_info(&self, node_id: &NodeId) -> Result<InheritanceInfo> {
+        let node = self.graph.get_node(node_id)
+            .ok_or_else(|| crate::error::Error::NodeNotFound(node_id.to_hex()))?;
+
+        if !matches!(node.kind, NodeKind::Class) {
+            return Ok(InheritanceInfo::default());
+        }
+
+        let base_classes = self.get_base_classes(node_id)?;
+        let subclasses = self.get_subclasses(node_id)?;
+        let metaclass = self.get_metaclass(node_id)?;
+        let mixins = self.get_mixins(node_id)?;
+        let mro = self.calculate_method_resolution_order(node_id)?;
+        let dynamic_attributes = self.get_dynamic_attributes(node_id)?;
+
+        Ok(InheritanceInfo {
+            class_name: node.name.clone(),
+            base_classes,
+            subclasses,
+            metaclass,
+            mixins,
+            method_resolution_order: mro,
+            dynamic_attributes,
+            is_metaclass: self.is_metaclass(node_id)?,
+            inheritance_chain: self.get_full_inheritance_chain(node_id)?,
+        })
+    }
+
+    /// Get direct base classes of a class
+    pub fn get_base_classes(&self, node_id: &NodeId) -> Result<Vec<InheritanceRelation>> {
+        let mut base_classes = Vec::new();
+        
+        for edge in self.graph.get_outgoing_edges(node_id) {
+            if matches!(edge.kind, EdgeKind::Extends) {
+                if let Some(parent_node) = self.graph.get_node(&edge.target) {
+                    let is_metaclass = parent_node.metadata
+                        .get("is_metaclass")
+                        .and_then(|v| v.as_bool())
+                        .unwrap_or(false);
+                    
+                    base_classes.push(InheritanceRelation {
+                        class_name: parent_node.name.clone(),
+                        node_id: parent_node.id,
+                        relationship_type: if is_metaclass { "metaclass".to_string() } else { "extends".to_string() },
+                        file: parent_node.file.clone(),
+                        span: parent_node.span.clone(),
+                    });
+                }
+            }
+        }
+        
+        Ok(base_classes)
+    }
+
+    /// Get direct subclasses of a class
+    pub fn get_subclasses(&self, node_id: &NodeId) -> Result<Vec<InheritanceRelation>> {
+        let mut subclasses = Vec::new();
+        
+        for edge in self.graph.get_incoming_edges(node_id) {
+            if matches!(edge.kind, EdgeKind::Extends) {
+                if let Some(child_node) = self.graph.get_node(&edge.source) {
+                    subclasses.push(InheritanceRelation {
+                        class_name: child_node.name.clone(),
+                        node_id: child_node.id,
+                        relationship_type: "extends".to_string(),
+                        file: child_node.file.clone(),
+                        span: child_node.span.clone(),
+                    });
+                }
+            }
+        }
+        
+        Ok(subclasses)
+    }
+
+    /// Get the metaclass of a class (if any)
+    pub fn get_metaclass(&self, node_id: &NodeId) -> Result<Option<InheritanceRelation>> {
+        for edge in self.graph.get_outgoing_edges(node_id) {
+            if matches!(edge.kind, EdgeKind::Extends) {
+                if let Some(parent_node) = self.graph.get_node(&edge.target) {
+                    let is_metaclass = parent_node.metadata
+                        .get("is_metaclass")
+                        .and_then(|v| v.as_bool())
+                        .unwrap_or(false);
+                    
+                    if is_metaclass {
+                        return Ok(Some(InheritanceRelation {
+                            class_name: parent_node.name.clone(),
+                            node_id: parent_node.id,
+                            relationship_type: "metaclass".to_string(),
+                            file: parent_node.file.clone(),
+                            span: parent_node.span.clone(),
+                        }));
+                    }
+                }
+            }
+        }
+        
+        Ok(None)
+    }
+
+    /// Get mixins used by a class
+    pub fn get_mixins(&self, node_id: &NodeId) -> Result<Vec<InheritanceRelation>> {
+        let mut mixins = Vec::new();
+        
+        for edge in self.graph.get_outgoing_edges(node_id) {
+            if matches!(edge.kind, EdgeKind::Extends) {
+                if let Some(parent_node) = self.graph.get_node(&edge.target) {
+                    // Heuristic: classes ending with "Mixin" or containing "mixin" are considered mixins
+                    if parent_node.name.ends_with("Mixin") || 
+                       parent_node.name.to_lowercase().contains("mixin") {
+                        mixins.push(InheritanceRelation {
+                            class_name: parent_node.name.clone(),
+                            node_id: parent_node.id,
+                            relationship_type: "mixin".to_string(),
+                            file: parent_node.file.clone(),
+                            span: parent_node.span.clone(),
+                        });
+                    }
+                }
+            }
+        }
+        
+        Ok(mixins)
+    }
+
+    /// Calculate method resolution order (simplified)
+    pub fn calculate_method_resolution_order(&self, node_id: &NodeId) -> Result<Vec<String>> {
+        let mut mro = Vec::new();
+        let mut visited = HashSet::new();
+        
+        self.collect_mro_recursive(node_id, &mut mro, &mut visited)?;
+        
+        Ok(mro)
+    }
+
+    /// Recursively collect method resolution order
+    fn collect_mro_recursive(&self, node_id: &NodeId, mro: &mut Vec<String>, visited: &mut HashSet<NodeId>) -> Result<()> {
+        if visited.contains(node_id) {
+            return Ok(());
+        }
+        
+        visited.insert(*node_id);
+        
+        if let Some(node) = self.graph.get_node(node_id) {
+            mro.push(node.name.clone());
+            
+            // Add parent classes to MRO
+            for edge in self.graph.get_outgoing_edges(node_id) {
+                if matches!(edge.kind, EdgeKind::Extends) {
+                    self.collect_mro_recursive(&edge.target, mro, visited)?;
+                }
+            }
+        }
+        
+        Ok(())
+    }
+
+    /// Get dynamic attributes potentially created by metaclasses or decorators
+    pub fn get_dynamic_attributes(&self, node_id: &NodeId) -> Result<Vec<DynamicAttribute>> {
+        let mut attributes = Vec::new();
+        
+        // Look for common patterns that create dynamic attributes
+        if let Some(metaclass) = self.get_metaclass(node_id)? {
+            // Common metaclass-created attributes
+            let common_metaclass_attrs = vec![
+                "_registry", "_instances", "_subclasses", "_handlers", "_processors",
+                "_mixins", "_plugins", "_decorators", "_metadata"
+            ];
+            
+            for attr_name in common_metaclass_attrs {
+                attributes.push(DynamicAttribute {
+                    name: attr_name.to_string(),
+                    created_by: format!("metaclass:{}", metaclass.class_name),
+                    attribute_type: "dynamic".to_string(),
+                });
+            }
+        }
+        
+        Ok(attributes)
+    }
+
+    /// Check if a class is a metaclass
+    pub fn is_metaclass(&self, node_id: &NodeId) -> Result<bool> {
+        if let Some(node) = self.graph.get_node(node_id) {
+            // Check metadata first
+            if let Some(is_meta) = node.metadata.get("is_metaclass").and_then(|v| v.as_bool()) {
+                return Ok(is_meta);
+            }
+            
+            // Heuristic: inherits from 'type' or name contains 'Meta'
+            let inherits_from_type = self.inherits_from(node_id, "type")?;
+            let name_suggests_metaclass = node.name.contains("Meta") || node.name.ends_with("Metaclass");
+            
+            Ok(inherits_from_type || name_suggests_metaclass)
+        } else {
+            Ok(false)
+        }
+    }
+
+    /// Get the full inheritance chain up to the root
+    pub fn get_full_inheritance_chain(&self, node_id: &NodeId) -> Result<Vec<String>> {
+        let mut chain = Vec::new();
+        let mut visited = HashSet::new();
+        
+        self.collect_inheritance_chain_recursive(node_id, &mut chain, &mut visited)?;
+        
+        Ok(chain)
+    }
+
+    /// Recursively collect inheritance chain
+    fn collect_inheritance_chain_recursive(&self, node_id: &NodeId, chain: &mut Vec<String>, visited: &mut HashSet<NodeId>) -> Result<()> {
+        if visited.contains(node_id) {
+            return Ok(());
+        }
+        
+        visited.insert(*node_id);
+        
+        if let Some(node) = self.graph.get_node(node_id) {
+            chain.push(node.name.clone());
+            
+            // Follow parent classes
+            for edge in self.graph.get_outgoing_edges(node_id) {
+                if matches!(edge.kind, EdgeKind::Extends) {
+                    self.collect_inheritance_chain_recursive(&edge.target, chain, visited)?;
+                }
+            }
+        }
+        
+        Ok(())
+    }
+
+    /// Check if a class inherits from a specific base class
+    pub fn inherits_from(&self, node_id: &NodeId, base_class_name: &str) -> Result<bool> {
+        let mut visited = HashSet::new();
+        self.inherits_from_recursive(node_id, base_class_name, &mut visited)
+    }
+
+    /// Recursively check inheritance
+    fn inherits_from_recursive(&self, node_id: &NodeId, base_class_name: &str, visited: &mut HashSet<NodeId>) -> Result<bool> {
+        if visited.contains(node_id) {
+            return Ok(false);
+        }
+        
+        visited.insert(*node_id);
+        
+        for edge in self.graph.get_outgoing_edges(node_id) {
+            if matches!(edge.kind, EdgeKind::Extends) {
+                if let Some(parent_node) = self.graph.get_node(&edge.target) {
+                    if parent_node.name == base_class_name {
+                        return Ok(true);
+                    }
+                    
+                    if self.inherits_from_recursive(&edge.target, base_class_name, visited)? {
+                        return Ok(true);
+                    }
+                }
+            }
+        }
+        
+        Ok(false)
+    }
+
+    /// Check if a class has a specific metaclass
+    pub fn has_metaclass(&self, node_id: &NodeId, metaclass_name: &str) -> Result<bool> {
+        if let Some(metaclass) = self.get_metaclass(node_id)? {
+            Ok(metaclass.class_name == metaclass_name)
+        } else {
+            Ok(false)
+        }
+    }
+
+    /// Check if a class uses a specific mixin
+    pub fn uses_mixin(&self, node_id: &NodeId, mixin_name: &str) -> Result<bool> {
+        let mixins = self.get_mixins(node_id)?;
+        Ok(mixins.iter().any(|m| m.class_name == mixin_name))
+    }
 }
 
 /// Result of a path finding operation
@@ -495,6 +802,82 @@ pub enum DependencyType {
     Reads,
     /// Only writes
     Writes,
+}
+
+/// Inheritance filter types for advanced symbol search
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum InheritanceFilter {
+    /// Filter by classes that inherit from a specific base class
+    InheritsFrom(String),
+    /// Filter by classes that have a specific metaclass
+    HasMetaclass(String),
+    /// Filter by classes that use a specific mixin
+    UsesMixin(String),
+}
+
+/// Comprehensive inheritance information for a class
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InheritanceInfo {
+    /// The class name
+    pub class_name: String,
+    /// Direct base classes
+    pub base_classes: Vec<InheritanceRelation>,
+    /// Direct subclasses
+    pub subclasses: Vec<InheritanceRelation>,
+    /// Metaclass (if any)
+    pub metaclass: Option<InheritanceRelation>,
+    /// Mixins used by this class
+    pub mixins: Vec<InheritanceRelation>,
+    /// Method resolution order
+    pub method_resolution_order: Vec<String>,
+    /// Dynamic attributes created by metaclasses/decorators
+    pub dynamic_attributes: Vec<DynamicAttribute>,
+    /// Whether this class is a metaclass
+    pub is_metaclass: bool,
+    /// Full inheritance chain
+    pub inheritance_chain: Vec<String>,
+}
+
+impl Default for InheritanceInfo {
+    fn default() -> Self {
+        Self {
+            class_name: String::new(),
+            base_classes: Vec::new(),
+            subclasses: Vec::new(),
+            metaclass: None,
+            mixins: Vec::new(),
+            method_resolution_order: Vec::new(),
+            dynamic_attributes: Vec::new(),
+            is_metaclass: false,
+            inheritance_chain: Vec::new(),
+        }
+    }
+}
+
+/// Represents an inheritance relationship
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InheritanceRelation {
+    /// Name of the related class
+    pub class_name: String,
+    /// Node ID of the related class
+    pub node_id: NodeId,
+    /// Type of relationship (extends, metaclass, mixin)
+    pub relationship_type: String,
+    /// File where the class is defined
+    pub file: PathBuf,
+    /// Location in the file
+    pub span: crate::ast::Span,
+}
+
+/// Represents a dynamic attribute created by metaclasses or decorators
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DynamicAttribute {
+    /// Name of the attribute
+    pub name: String,
+    /// What created this attribute (metaclass, decorator, etc.)
+    pub created_by: String,
+    /// Type of attribute (dynamic, static, etc.)
+    pub attribute_type: String,
 }
 
 #[cfg(test)]

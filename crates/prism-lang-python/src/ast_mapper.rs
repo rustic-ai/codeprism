@@ -5,6 +5,7 @@ use crate::types::{Edge, EdgeKind, Language, Node, NodeKind, Span};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use tree_sitter::{Tree, TreeCursor};
+use serde_json;
 
 /// AST mapper for Python
 pub struct AstMapper {
@@ -737,20 +738,34 @@ impl AstMapper {
         // Use the actual span of the base class node to ensure unique IDs
         let span = Span::from_node(base_class_node);
 
-        // Create a virtual node representing the inheritance relationship
-        let inheritance_node = Node::new(
+        // Create a virtual node representing the parent class being inherited from
+        let parent_class_node = Node::new(
             &self.repo_id,
-            NodeKind::Call, // Use Call kind to represent inheritance usage
-            parent_class_name,
+            NodeKind::Class, // Use Class kind to represent the parent class
+            parent_class_name.clone(),
             self.language,
             self.file_path.clone(),
             span,
         );
 
-        // Create edge from child class to parent class reference
-        self.edges.push(Edge::new(child_class_id, inheritance_node.id, EdgeKind::Calls));
+        // Create inheritance edge from child class to parent class
+        self.edges.push(Edge::new(child_class_id, parent_class_node.id, EdgeKind::Extends));
 
-        self.nodes.push(inheritance_node);
+        // Add metadata to track if this might be a metaclass
+        let mut metadata = serde_json::Map::new();
+        if parent_class_name.to_lowercase().contains("meta") || 
+           parent_class_name == "type" ||
+           parent_class_name.ends_with("Metaclass") {
+            metadata.insert("is_metaclass".to_string(), serde_json::Value::Bool(true));
+        }
+        metadata.insert("inheritance_type".to_string(), serde_json::Value::String("extends".to_string()));
+        
+        let parent_with_metadata = Node {
+            metadata: serde_json::Value::Object(metadata),
+            ..parent_class_node
+        };
+
+        self.nodes.push(parent_with_metadata);
         Ok(())
     }
 } 

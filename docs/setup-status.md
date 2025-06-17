@@ -4,13 +4,13 @@
 
 ### 1. Monorepo Structure ✅
 - Created Rust workspace with 9 crates:
-  - `gcore` - Core library with Universal AST types
-  - `gcore-lang-js` - JavaScript/TypeScript language support
-  - `gcore-lang-python` - Python language support  
-  - `gcore-lang-java` - Java language support
-  - `gcore-bus` - Kafka integration
-  - `gcore-storage` - Neo4j storage layer
-  - `gcore-mcp` - MCP server
+  - `prism` - Core library with Universal AST types
+  - `prism-lang-js` - JavaScript/TypeScript language support
+  - `prism-lang-python` - Python language support  
+  - `prism-lang-java` - Java language support
+  - `prism-bus` - Kafka integration
+  - `prism-storage` - Neo4j storage layer
+  - `prism-mcp` - MCP server
   - (CLI and daemon components have been removed to focus on MCP server)
 
 ### 2. Core Infrastructure ✅

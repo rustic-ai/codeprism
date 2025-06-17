@@ -22,7 +22,7 @@ Following the comprehensive review of the Prism MCP Server description document 
 
 ### 2.5.1 Create Repository Scanner Module
 
-**File**: `crates/gcore/src/scanner/mod.rs`
+**File**: `crates/prism/src/scanner/mod.rs`
 
 ```rust
 //! Repository scanner for bulk directory processing
@@ -84,7 +84,7 @@ impl RepositoryScanner {
 
 ### 2.5.2 Create Bulk Indexing Engine
 
-**File**: `crates/gcore/src/indexer/mod.rs`
+**File**: `crates/prism/src/indexer/mod.rs`
 
 ```rust
 //! Bulk indexing engine for repository processing
@@ -140,7 +140,7 @@ impl BulkIndexer {
 
 ### 2.5.3 Create Repository Manager
 
-**File**: `crates/gcore/src/repository/mod.rs`
+**File**: `crates/prism/src/repository/mod.rs`
 
 ```rust
 //! Repository management and configuration
@@ -202,7 +202,7 @@ impl RepositoryManager {
 
 ### 3.1 Implement JSON-RPC 2.0 for MCP
 
-**File**: `crates/gcore-mcp/src/protocol/mod.rs`
+**File**: `crates/prism-mcp/src/protocol/mod.rs`
 
 ```rust
 //! MCP protocol implementation
@@ -267,7 +267,7 @@ pub struct JsonRpcError {
 
 ### 3.2 Implement MCP Resources
 
-**File**: `crates/gcore-mcp/src/resources/mod.rs`
+**File**: `crates/prism-mcp/src/resources/mod.rs`
 
 ```rust
 //! MCP Resources implementation
@@ -312,7 +312,7 @@ impl ResourceHandler {
 
 ### 3.3 Implement MCP Tools
 
-**File**: `crates/gcore-mcp/src/tools/mod.rs`
+**File**: `crates/prism-mcp/src/tools/mod.rs`
 
 ```rust
 //! MCP Tools implementation
@@ -371,7 +371,7 @@ impl ToolHandler {
 
 ### 3.4 Implement MCP Prompts
 
-**File**: `crates/gcore-mcp/src/prompts/mod.rs`
+**File**: `crates/prism-mcp/src/prompts/mod.rs`
 
 ```rust
 //! MCP Prompts implementation
@@ -441,7 +441,7 @@ impl PromptHandler {
 
 ### 2.6.1 Create Parsing Pipeline
 
-**File**: `crates/gcore/src/pipeline/mod.rs`
+**File**: `crates/prism/src/pipeline/mod.rs`
 
 ```rust
 //! File monitoring and parsing pipeline
@@ -497,7 +497,7 @@ impl ParsingPipeline {
 
 ### 4.1 Repository-Aware CLI
 
-**File**: `crates/gcore-cli/src/commands/mod.rs`
+**File**: `crates/prism-cli/src/commands/mod.rs`
 
 ```rust
 //! CLI commands for repository operations
@@ -506,7 +506,7 @@ use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
 #[derive(Parser)]
-#[command(name = "gcore")]
+#[command(name = "prism")]
 #[command(about = "Prism graph-first code intelligence")]
 pub struct Cli {
     #[command(subcommand)]
@@ -557,7 +557,7 @@ pub async fn execute_command(cli: Cli) -> Result<()>;
 
 ### 4.2 Repository-Aware Daemon
 
-**File**: `crates/gcore-daemon/src/service/mod.rs`
+**File**: `crates/prism-daemon/src/service/mod.rs`
 
 ```rust
 //! Prism daemon service
@@ -641,8 +641,8 @@ pub enum HealthStatus {
 ## Success Criteria
 
 ### Functional Requirements (MUST ACHIEVE)
-- ✅ `gcore index /path/to/repository` - Scan and index any repository
-- ✅ `gcore serve /path/to/repository` - Start MCP server with repository
+- ✅ `prism index /path/to/repository` - Scan and index any repository
+- ✅ `prism serve /path/to/repository` - Start MCP server with repository
 - ✅ MCP client compatibility (Claude Desktop, Cursor, etc.)
 - ✅ Real-time file monitoring and graph updates
 - ✅ All MCP tools and resources working correctly

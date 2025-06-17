@@ -1,12 +1,12 @@
-//! Error types for gcore
+//! Error types for prism
 
 use std::path::PathBuf;
 use thiserror::Error;
 
-/// Result type alias for gcore operations
+/// Result type alias for prism operations
 pub type Result<T> = std::result::Result<T, Error>;
 
-/// Main error type for gcore
+/// Main error type for prism
 #[derive(Debug, Error)]
 pub enum Error {
     /// IO error

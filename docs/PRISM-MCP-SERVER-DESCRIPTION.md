@@ -23,7 +23,7 @@ Prism's MCP server implements the complete MCP specification with support for:
 ### Server Configuration
 ```json
 {
-  "name": "gcore-mcp-server",
+  "name": "prism-mcp-server",
   "version": "0.1.0",
   "capabilities": {
     "resources": {
@@ -1174,7 +1174,7 @@ Prism is designed to work seamlessly with major MCP clients:
 ```json
 {
   "mcpServers": {
-    "gcore": {
+    "prism": {
       "command": "prism-mcp",
       "args": ["/path/to/repository"],
       "env": {
@@ -1191,7 +1191,7 @@ Prism is designed to work seamlessly with major MCP clients:
   "mcp": {
     "servers": [
       {
-        "name": "gcore",
+        "name": "prism",
         "command": ["prism-mcp", "."],
         "capabilities": ["tools", "resources", "prompts"]
       }

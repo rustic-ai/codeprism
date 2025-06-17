@@ -29,25 +29,25 @@ Language parsers in Prism convert language-specific syntax trees (CST) from Tree
 
 | Language | Status | Crate | Tree-Sitter Grammar |
 |----------|--------|-------|-------------------|
-| JavaScript/TypeScript | ✅ Complete | `gcore-lang-js` | `tree-sitter-javascript`, `tree-sitter-typescript` |
-| Python | ✅ Complete | `gcore-lang-python` | `tree-sitter-python` |
-| Rust | 🚧 Next Priority | `gcore-lang-rust` | `tree-sitter-rust` |
-| Java | 🚧 Planned | `gcore-lang-java` | `tree-sitter-java` |
-| Go | 📋 Future | `gcore-lang-go` | `tree-sitter-go` |
+| JavaScript/TypeScript | ✅ Complete | `prism-lang-js` | `tree-sitter-javascript`, `tree-sitter-typescript` |
+| Python | ✅ Complete | `prism-lang-python` | `tree-sitter-python` |
+| Rust | 🚧 Next Priority | `prism-lang-rust` | `tree-sitter-rust` |
+| Java | 🚧 Planned | `prism-lang-java` | `tree-sitter-java` |
+| Go | 📋 Future | `prism-lang-go` | `tree-sitter-go` |
 
 ## Parser Architecture
 
 ### Crate Structure
 
 ```
-gcore-lang-{language}/
+prism-lang-{language}/
 ├── Cargo.toml              # Dependencies and metadata
 ├── build.rs                # Build script for grammar compilation
 ├── src/
 │   ├── lib.rs             # Public API and exports
 │   ├── parser.rs          # Main parser implementation
 │   ├── ast_mapper.rs      # CST to U-AST conversion
-│   ├── adapter.rs         # Integration with gcore
+│   ├── adapter.rs         # Integration with prism
 │   ├── types.rs           # Language-specific types
 │   └── error.rs           # Error handling
 ├── tests/
@@ -116,20 +116,20 @@ impl LanguageParser for LanguageParserAdapter {
 
 ```bash
 # Create new crate
-mkdir crates/gcore-lang-{language}
-cd crates/gcore-lang-{language}
+mkdir crates/prism-lang-{language}
+cd crates/prism-lang-{language}
 
 # Initialize Cargo.toml
 cat > Cargo.toml << 'EOF'
 [package]
-name = "gcore-lang-{language}"
+name = "prism-lang-{language}"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
-description = "{Language} language support for gcore"
+description = "{Language} language support for prism"
 
 [dependencies]
 # Core dependencies
@@ -143,7 +143,7 @@ serde_json.workspace = true
 tree-sitter.workspace = true
 tree-sitter-{language} = "x.y.z"  # Check latest version
 
-# Import gcore types without circular dependency
+# Import prism types without circular dependency
 blake3.workspace = true
 hex.workspace = true
 
@@ -227,7 +227,7 @@ use blake3::Hasher;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
-// Mirror gcore types to avoid circular dependencies
+// Mirror prism types to avoid circular dependencies
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct NodeId([u8; 16]);
 
@@ -259,7 +259,7 @@ pub enum Language {
 }
 
 // Re-export common types
-pub use gcore::ast::{NodeKind, EdgeKind, Span, Node, Edge};
+pub use prism::ast::{NodeKind, EdgeKind, Span, Node, Edge};
 ```
 
 ### Step 4: Implement Main Parser
@@ -509,7 +509,7 @@ pub fn create_parser() -> LanguageParserAdapter {
 
 ```rust
 // src/lib.rs
-//! {Language} language support for gcore
+//! {Language} language support for prism
 
 mod adapter;
 mod ast_mapper;
@@ -760,7 +760,7 @@ match node.kind() {
 
 ```rust
 // tests/integration_test.rs
-use gcore_lang_{language}::{LanguageParser, ParseContext};
+use prism_lang_{language}::{LanguageParser, ParseContext};
 use std::fs;
 use std::path::PathBuf;
 
@@ -902,7 +902,7 @@ let mut node_map = HashMap::with_capacity(estimated_node_count);
 ```rust
 // benches/parse_benchmark.rs
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use gcore_lang_{language}::{LanguageParser, ParseContext};
+use prism_lang_{language}::{LanguageParser, ParseContext};
 
 fn bench_parse_large_file(c: &mut Criterion) {
     let content = include_str!("../tests/fixtures/large.{ext}");
@@ -1000,7 +1000,7 @@ pub fn parse(&mut self, context: &ParseContext) -> Result<ParseResult> {
 /// # Examples
 ///
 /// ```rust
-/// use gcore_lang_{language}::{LanguageParser, ParseContext};
+/// use prism_lang_{language}::{LanguageParser, ParseContext};
 /// 
 /// let mut parser = LanguageParser::new();
 /// let context = ParseContext {

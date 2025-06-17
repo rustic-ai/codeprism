@@ -1,6 +1,6 @@
 # Getting Started with Prism - MCP Integration Guide
 
-This guide walks you through setting up gcore with the three major MCP clients: Claude Desktop, Cursor, and VS Code. By the end, you'll have a powerful AI assistant with graph-first code intelligence for your repositories.
+This guide walks you through setting up prism with the three major MCP clients: Claude Desktop, Cursor, and VS Code. By the end, you'll have a powerful AI assistant with graph-first code intelligence for your repositories.
 
 ## 🎯 What You'll Achieve
 
@@ -12,8 +12,8 @@ This guide walks you through setting up gcore with the three major MCP clients: 
 ## 📋 Prerequisites
 
 ### Required Software
-- **Node.js 18+** (for building gcore)
-- **Rust 1.82+** (for building gcore from source)
+- **Node.js 18+** (for building prism)
+- **Rust 1.82+** (for building prism from source)
 - **Git** (for cloning repositories)
 
 ### MCP Clients (Choose one or more)
@@ -38,8 +38,8 @@ git --version
 ### Option A: Build from Source (Recommended)
 ```bash
 # Clone the repository
-git clone https://github.com/dragonscale/gcore
-cd gcore
+git clone https://github.com/dragonscale/prism
+cd prism
 
 # Build the release binary
 cargo build --release
@@ -86,8 +86,8 @@ Open the configuration file in your preferred editor and add:
 ```json
 {
   "mcpServers": {
-    "gcore": {
-      "command": "/path/to/gcore/target/release/gcore-mcp",
+    "prism": {
+      "command": "/path/to/prism/target/release/prism-mcp",
       "args": ["/path/to/your/repository"],
       "env": {
         "RUST_LOG": "info"
@@ -98,7 +98,7 @@ Open the configuration file in your preferred editor and add:
 ```
 
 **Replace the paths:**
-- `/path/to/gcore/target/release/gcore-mcp` → Your actual gcore binary path
+- `/path/to/prism/target/release/prism-mcp` → Your actual prism binary path
 - `/path/to/your/repository` → Your project directory
 
 ### 3. Complete Setup Example
@@ -106,15 +106,15 @@ Open the configuration file in your preferred editor and add:
 ```json
 {
   "mcpServers": {
-    "gcore-main-project": {
-      "command": "/Users/username/code/gcore/target/release/gcore-mcp",
+    "prism-main-project": {
+      "command": "/Users/username/code/prism/target/release/prism-mcp",
       "args": ["/Users/username/code/my-project"],
       "env": {
         "RUST_LOG": "info"
       }
     },
-    "gcore-client-app": {
-      "command": "/Users/username/code/gcore/target/release/gcore-mcp", 
+    "prism-client-app": {
+      "command": "/Users/username/code/prism/target/release/prism-mcp", 
       "args": ["/Users/username/code/client-app"],
       "env": {
         "RUST_LOG": "warn"
@@ -157,8 +157,8 @@ Open the configuration file in your preferred editor and add:
 ```json
 {
   "mcpServers": {
-    "gcore": {
-      "command": "/path/to/gcore/target/release/gcore-mcp",
+    "prism": {
+      "command": "/path/to/prism/target/release/prism-mcp",
       "args": ["."],
       "env": {
         "RUST_LOG": "info"
@@ -173,16 +173,16 @@ Open the configuration file in your preferred editor and add:
 ```json
 {
   "mcpServers": {
-    "gcore-current": {
-      "command": "/Users/username/code/gcore/target/release/gcore-mcp",
+    "prism-current": {
+      "command": "/Users/username/code/prism/target/release/prism-mcp",
       "args": ["."],
-      "description": "Analyze current repository with gcore",
+      "description": "Analyze current repository with prism",
       "env": {
         "RUST_LOG": "info"
       }
     },
-    "gcore-parent": {
-      "command": "/Users/username/code/gcore/target/release/gcore-mcp",
+    "prism-parent": {
+      "command": "/Users/username/code/prism/target/release/prism-mcp",
       "args": [".."],
       "description": "Analyze parent directory",
       "env": {
@@ -204,7 +204,7 @@ Open the configuration file in your preferred editor and add:
 
 1. Open the Command Palette (`Cmd/Ctrl + Shift + P`)
 2. Run "MCP: List Servers"
-3. You should see your gcore server listed
+3. You should see your prism server listed
 4. In chat, you should see MCP tools available
 
 ---
@@ -224,8 +224,8 @@ Open the configuration file in your preferred editor and add:
 2. Run "MCP: Add Server"
 3. Choose "CLI Server - Node.js" 
 4. Fill in the details:
-   - **Server Name:** `gcore`
-   - **Command:** Full path to your gcore-mcp binary
+   - **Server Name:** `prism`
+   - **Command:** Full path to your prism-mcp binary
    - **Args:** `["/path/to/your/repository"]`
 
 ### 3. Add MCP Server (Method 2: Configuration File)
@@ -235,9 +235,9 @@ Create `.vscode/mcp.json` in your workspace:
 ```json
 {
   "servers": {
-    "gcore": {
+    "prism": {
       "type": "stdio",
-      "command": "/path/to/gcore/target/release/gcore-mcp",
+      "command": "/path/to/prism/target/release/prism-mcp",
       "args": ["."],
       "env": {
         "RUST_LOG": "info"
@@ -255,9 +255,9 @@ In your VS Code `settings.json`:
 {
   "mcp": {
     "servers": {
-      "gcore-global": {
+      "prism-global": {
         "type": "stdio", 
-        "command": "/Users/username/code/gcore/target/release/gcore-mcp",
+        "command": "/Users/username/code/prism/target/release/prism-mcp",
         "args": ["."],
         "env": {
           "RUST_LOG": "info"
@@ -273,7 +273,7 @@ In your VS Code `settings.json`:
 1. Open GitHub Copilot Chat (`Ctrl/Cmd + Alt + I`)
 2. Select "Agent" mode from the dropdown
 3. Click the "Tools" button to see available MCP tools
-4. Enable the gcore tools you want to use
+4. Enable the prism tools you want to use
 
 ---
 
@@ -290,7 +290,7 @@ What files are in this repository? Can you analyze the overall structure?
 
 **Cursor:**
 ```
-@gcore Analyze the dependencies in this JavaScript project
+@prism Analyze the dependencies in this JavaScript project
 ```
 
 **VS Code (Agent Mode):**
@@ -328,8 +328,8 @@ This repository has both Python and JavaScript. How do they interact?
 ```json
 {
   "mcpServers": {
-    "gcore": {
-      "command": "/path/to/gcore-mcp",
+    "prism": {
+      "command": "/path/to/prism-mcp",
       "args": ["/path/to/repo"],
       "env": {
         "RUST_LOG": "warn",
@@ -344,8 +344,8 @@ This repository has both Python and JavaScript. How do they interact?
 ```json
 {
   "mcpServers": {
-    "gcore-dev": {
-      "command": "/path/to/gcore-mcp",
+    "prism-dev": {
+      "command": "/path/to/prism-mcp",
       "args": ["/path/to/repo", "--verbose"],
       "env": {
         "RUST_LOG": "debug"
@@ -361,16 +361,16 @@ This repository has both Python and JavaScript. How do they interact?
 ```json
 {
   "mcpServers": {
-    "gcore-frontend": {
-      "command": "/path/to/gcore-mcp",
+    "prism-frontend": {
+      "command": "/path/to/prism-mcp",
       "args": ["/path/to/frontend-app"]
     },
-    "gcore-backend": {
-      "command": "/path/to/gcore-mcp", 
+    "prism-backend": {
+      "command": "/path/to/prism-mcp", 
       "args": ["/path/to/backend-api"]
     },
-    "gcore-mobile": {
-      "command": "/path/to/gcore-mcp",
+    "prism-mobile": {
+      "command": "/path/to/prism-mcp",
       "args": ["/path/to/mobile-app"]
     }
   }
@@ -385,10 +385,10 @@ This repository has both Python and JavaScript. How do they interact?
 
 ```bash
 # Make sure the binary is executable
-chmod +x /path/to/gcore/target/release/gcore-mcp
+chmod +x /path/to/prism/target/release/prism-mcp
 
 # Test the binary directly
-/path/to/gcore/target/release/gcore-mcp --help
+/path/to/prism/target/release/prism-mcp --help
 ```
 
 **2. "Repository not found" or "Permission denied"**
@@ -425,8 +425,8 @@ Enable detailed logging:
 ```json
 {
   "mcpServers": {
-    "gcore-debug": {
-      "command": "/path/to/gcore-mcp",
+    "prism-debug": {
+      "command": "/path/to/prism-mcp",
       "args": ["/path/to/repo", "--verbose"],
       "env": {
         "RUST_LOG": "debug",
@@ -460,7 +460,7 @@ tail -f ~/Library/Logs/Claude/mcp*.log
 # VS Code: View > Output > MCP
 ```
 
-**Test gcore directly:**
+**Test prism directly:**
 ```bash
 # Test with minimal arguments
 ./target/release/prism-mcp /path/to/small/test/repo
@@ -469,8 +469,8 @@ tail -f ~/Library/Logs/Claude/mcp*.log
 ```
 
 **Common Solutions:**
-1. **Rebuild gcore:** `cargo build --release`
-2. **Check permissions:** `chmod +x gcore-mcp`
+1. **Rebuild prism:** `cargo build --release`
+2. **Check permissions:** `chmod +x prism-mcp`
 3. **Verify paths:** Use absolute paths in configuration
 4. **Restart client:** Completely quit and restart MCP client
 
@@ -487,7 +487,7 @@ Once your setup is working:
 
 ### Upcoming Features
 
-- **Rust Parser:** Soon you'll be able to analyze Rust code (including gcore itself!)
+- **Rust Parser:** Soon you'll be able to analyze Rust code (including prism itself!)
 - **Java Support:** Enterprise language support coming
 - **Enhanced CLI:** Additional commands for repository analysis
 - **Performance Improvements:** Better handling of large repositories
@@ -496,7 +496,7 @@ Once your setup is working:
 
 - **GitHub Issues:** Report bugs and request features
 - **Discussions:** Share your use cases and tips
-- **Contributing:** Help improve gcore for everyone
+- **Contributing:** Help improve prism for everyone
 
 ---
 
@@ -516,10 +516,10 @@ Once your setup is working:
 ### Essential Commands
 
 ```bash
-# Build gcore
+# Build prism
 cargo build --release
 
-# Test gcore binary
+# Test prism binary
 ./target/release/prism-mcp --help
 
 # Run with debug logging

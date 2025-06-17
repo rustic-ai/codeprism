@@ -27,8 +27,8 @@ This guide covers the development workflow, architecture, and best practices for
 
 ```bash
 # Clone the repository
-git clone https://github.com/dragonscale/gcore
-cd gcore
+git clone https://github.com/dragonscale/prism
+cd prism
 
 # Install Rust toolchain components
 rustup component add rustfmt clippy
@@ -77,9 +77,9 @@ make dev-logs  # View service logs
 ## Project Structure
 
 ```
-gcore/
+prism/
 ├── crates/                    # Rust workspace crates
-│   ├── gcore/                # Core library
+│   ├── prism/                # Core library
 │   │   ├── src/
 │   │   │   ├── lib.rs        # Public API exports
 │   │   │   ├── ast/          # Universal AST types
@@ -90,7 +90,7 @@ gcore/
 │   │   ├── tests/            # Integration tests
 │   │   └── Cargo.toml
 │   │
-│   ├── gcore-lang-js/        # JavaScript/TypeScript parser
+│   ├── prism-lang-js/        # JavaScript/TypeScript parser
 │   │   ├── src/
 │   │   │   ├── lib.rs        # Public API
 │   │   │   ├── parser.rs     # Main parser logic
@@ -104,11 +104,11 @@ gcore/
 │   │   ├── build.rs          # Build script
 │   │   └── Cargo.toml
 │   │
-│   ├── gcore-lang-python/    # Python parser (planned)
-│   ├── gcore-lang-java/      # Java parser (planned)
-│   ├── gcore-storage/        # Neo4j integration (planned)
-│   ├── gcore-bus/            # Kafka integration (planned)
-│   ├── gcore-mcp/            # MCP server (planned)
+│   ├── prism-lang-python/    # Python parser (planned)
+│   ├── prism-lang-java/      # Java parser (planned)
+│   ├── prism-storage/        # Neo4j integration (planned)
+│   ├── prism-bus/            # Kafka integration (planned)
+│   ├── prism-mcp/            # MCP server (planned)
 # (CLI and daemon components have been removed)
 │
 ├── docs/                     # Documentation
@@ -143,7 +143,7 @@ Each crate follows Rust conventions:
 cargo watch -x "test --all"
 
 # Run specific crate tests
-cargo test -p gcore-lang-js
+cargo test -p prism-lang-js
 
 # Check code formatting and linting
 make check
@@ -171,7 +171,7 @@ cargo bench
 3. **Implement the feature**:
    ```bash
    # Use cargo-expand to debug macros
-   cargo expand --package gcore-lang-js
+   cargo expand --package prism-lang-js
    ```
 
 4. **Verify quality**:
@@ -359,7 +359,7 @@ pub type Result<T> = std::result::Result<T, ParseError>;
 /// # Examples
 ///
 /// ```rust
-/// use gcore_lang_js::{JavaScriptParser, ParseContext};
+/// use prism_lang_js::{JavaScriptParser, ParseContext};
 /// 
 /// let mut parser = JavaScriptParser::new();
 /// let context = ParseContext {
@@ -381,22 +381,22 @@ pub fn parse(&mut self, context: &ParseContext) -> Result<ParseResult> {
 
 ### Core Components
 
-1. **Universal AST** (`gcore::ast`):
+1. **Universal AST** (`prism::ast`):
    - Language-agnostic representation
    - Stable NodeId generation with Blake3
    - Serializable types
 
-2. **Parser Engine** (`gcore::parser`):
+2. **Parser Engine** (`prism::parser`):
    - Language registry for parser plugins
    - Incremental parsing support
    - Thread-safe operation
 
-3. **File Watcher** (`gcore::watcher`):
+3. **File Watcher** (`prism::watcher`):
    - Real-time file system monitoring
    - Debouncing for performance
    - Async event streams
 
-4. **Graph Patches** (`gcore::patch`):
+4. **Graph Patches** (`prism::patch`):
    - Incremental graph updates
    - Serializable patch format
    - Batch operations
@@ -421,13 +421,13 @@ All components are designed for concurrent access:
 
 ```bash
 # Create crate structure
-mkdir crates/gcore-lang-python
-cd crates/gcore-lang-python
+mkdir crates/prism-lang-python
+cd crates/prism-lang-python
 
 # Initialize Cargo.toml
 cat > Cargo.toml << EOF
 [package]
-name = "gcore-lang-python"
+name = "prism-lang-python"
 version.workspace = true
 edition.workspace = true
 

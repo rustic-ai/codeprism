@@ -1,4 +1,4 @@
-//! JavaScript/TypeScript language support for gcore
+//! JavaScript/TypeScript language support for prism
 
 mod adapter;
 mod ast_mapper;

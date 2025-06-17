@@ -1,9 +1,9 @@
-//! Adapter to integrate JavaScript/TypeScript parser with gcore
+//! Adapter to integrate JavaScript/TypeScript parser with prism
 
 use crate::parser::{JavaScriptParser, ParseContext as JsParseContext};
 use crate::types as js_types;
 
-/// Adapter that implements gcore's LanguageParser trait
+/// Adapter that implements prism's LanguageParser trait
 pub struct JavaScriptLanguageParser {
     parser: std::sync::Mutex<JavaScriptParser>,
 }
@@ -23,7 +23,7 @@ impl Default for JavaScriptLanguageParser {
     }
 }
 
-// Since we can't import gcore types directly, we'll need to define a conversion
+// Since we can't import prism types directly, we'll need to define a conversion
 // trait that the caller can implement
 pub trait ParseResultConverter {
     type Node;

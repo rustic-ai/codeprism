@@ -21,7 +21,7 @@ tree-sitter.workspace = true
 tree-sitter-javascript.workspace = true
 tree-sitter-typescript.workspace = true
 
-# Import gcore types without circular dependency
+# Import prism types without circular dependency
 blake3.workspace = true
 hex.workspace = true
 

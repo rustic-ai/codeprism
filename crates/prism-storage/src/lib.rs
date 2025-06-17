@@ -1,4 +1,4 @@
-//! gcore-storage component
+//! prism-storage component
 
 pub fn init() {
     // TODO: Implement

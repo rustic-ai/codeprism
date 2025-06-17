@@ -35,10 +35,10 @@ The parser successfully extracts:
 ### 4. Architecture
 
 ```
-gcore-lang-js/
+prism-lang-js/
 ├── src/
 │   ├── lib.rs          # Public API
-│   ├── types.rs        # AST types (mirror of gcore types)
+│   ├── types.rs        # AST types (mirror of prism types)
 │   ├── parser.rs       # Main parser implementation
 │   ├── ast_mapper.rs   # CST to U-AST conversion
 │   ├── adapter.rs      # Integration adapter
@@ -84,10 +84,10 @@ gcore-lang-js/
 The parser provides an adapter pattern for integration:
 ```rust
 // Create parser
-let parser = gcore_lang_js::create_parser();
+let parser = prism_lang_js::create_parser();
 
 // Parse file
-let (tree, nodes, edges) = gcore_lang_js::parse_file(
+let (tree, nodes, edges) = prism_lang_js::parse_file(
     &parser,
     repo_id,
     file_path,

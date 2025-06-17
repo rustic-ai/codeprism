@@ -43,7 +43,7 @@ pub struct McpServer {
     /// Client information (set during initialization)
     client_info: Option<ClientInfo>,
     /// Core Prism server instance
-    gcore_server: Arc<RwLock<PrismMcpServer>>,
+    prism_server: Arc<RwLock<PrismMcpServer>>,
     /// Resource manager
     resource_manager: ResourceManager,
     /// Tool manager
@@ -55,21 +55,21 @@ pub struct McpServer {
 impl McpServer {
     /// Create a new MCP server
     pub fn new() -> Result<Self> {
-        let gcore_server = Arc::new(RwLock::new(PrismMcpServer::new()?));
+        let prism_server = Arc::new(RwLock::new(PrismMcpServer::new()?));
         
-        let resource_manager = ResourceManager::new(gcore_server.clone());
-        let tool_manager = ToolManager::new(gcore_server.clone());
-        let prompt_manager = PromptManager::new(gcore_server.clone());
+        let resource_manager = ResourceManager::new(prism_server.clone());
+        let tool_manager = ToolManager::new(prism_server.clone());
+        let prompt_manager = PromptManager::new(prism_server.clone());
 
         Ok(Self {
             state: ServerState::Uninitialized,
             protocol_version: "2024-11-05".to_string(),
             server_info: ServerInfo {
-                name: "gcore-mcp".to_string(),
+                name: "prism-mcp".to_string(),
                 version: "0.1.0".to_string(),
             },
             client_info: None,
-            gcore_server,
+            prism_server,
             resource_manager,
             tool_manager,
             prompt_manager,
@@ -86,7 +86,7 @@ impl McpServer {
         include_extensions: Option<Vec<String>>,
         dependency_mode: Option<String>,
     ) -> Result<Self> {
-        let gcore_server = Arc::new(RwLock::new(PrismMcpServer::new_with_config(
+        let prism_server = Arc::new(RwLock::new(PrismMcpServer::new_with_config(
             memory_limit_mb,
             batch_size,
             max_file_size_mb,
@@ -96,19 +96,19 @@ impl McpServer {
             dependency_mode,
         )?));
         
-        let resource_manager = ResourceManager::new(gcore_server.clone());
-        let tool_manager = ToolManager::new(gcore_server.clone());
-        let prompt_manager = PromptManager::new(gcore_server.clone());
+        let resource_manager = ResourceManager::new(prism_server.clone());
+        let tool_manager = ToolManager::new(prism_server.clone());
+        let prompt_manager = PromptManager::new(prism_server.clone());
 
         Ok(Self {
             state: ServerState::Uninitialized,
             protocol_version: "2024-11-05".to_string(),
             server_info: ServerInfo {
-                name: "gcore-mcp".to_string(),
+                name: "prism-mcp".to_string(),
                 version: "0.1.0".to_string(),
             },
             client_info: None,
-            gcore_server,
+            prism_server,
             resource_manager,
             tool_manager,
             prompt_manager,
@@ -117,7 +117,7 @@ impl McpServer {
 
     /// Initialize with repository path
     pub async fn initialize_with_repository<P: AsRef<std::path::Path>>(&self, path: P) -> Result<()> {
-        let mut server = self.gcore_server.write().await;
+        let mut server = self.prism_server.write().await;
         server.initialize_with_repository(path).await
     }
 
@@ -234,7 +234,7 @@ impl McpServer {
         }
 
         // Create initialize result
-        let server = self.gcore_server.read().await;
+        let server = self.prism_server.read().await;
         let result = InitializeResult {
             protocol_version: self.protocol_version.clone(),
             capabilities: server.capabilities().clone(),
@@ -377,7 +377,7 @@ mod tests {
     async fn test_mcp_server_creation() {
         let server = McpServer::new().expect("Failed to create MCP server");
         assert_eq!(server.state(), ServerState::Uninitialized);
-        assert_eq!(server.server_info().name, "gcore-mcp");
+        assert_eq!(server.server_info().name, "prism-mcp");
         assert_eq!(server.server_info().version, "0.1.0");
     }
 
@@ -616,8 +616,8 @@ def parse_config_value(value: str) -> Union[str, int, bool]:
         assert_eq!(server.state(), ServerState::Uninitialized);
         
         // Should have repository configured
-        let gcore_server = server.gcore_server.read().await;
-        assert!(gcore_server.repository_path().is_some());
+        let prism_server = server.prism_server.read().await;
+        assert!(prism_server.repository_path().is_some());
     }
 
     #[tokio::test]
@@ -791,8 +791,8 @@ def parse_config_value(value: str) -> Union[str, int, bool]:
     #[tokio::test]
     async fn test_server_capabilities_validation() {
         let server = create_test_server_with_repository().await;
-        let gcore_server = server.gcore_server.read().await;
-        let capabilities = gcore_server.capabilities();
+        let prism_server = server.prism_server.read().await;
+        let capabilities = prism_server.capabilities();
         
         // Verify all required capabilities are present
         assert!(capabilities.resources.is_some());

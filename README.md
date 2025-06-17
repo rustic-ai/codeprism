@@ -6,14 +6,14 @@ A production-ready, high-performance code intelligence server implementing the M
 
 **✅ Phase 3 Complete - MCP Protocol Implementation**
 - **105/105 tests passing** (100% success rate)
-- **Production-ready `gcore-mcp` binary** with full MCP compliance
+- **Production-ready `prism-mcp` binary** with full MCP compliance
 - **Real-time repository monitoring** and incremental updates
 - **Multi-language support**: JavaScript/TypeScript + Python
 - **MCP client integration**: Claude Desktop, Cursor, VS Code compatible
 
 **🎯 Next Phase: Self-Analysis Capability**
-- **Rust parser implementation** to analyze gcore's own codebase
-- **Ultimate dogfooding**: gcore analyzing itself for architecture insights
+- **Rust parser implementation** to analyze prism's own codebase
+- **Ultimate dogfooding**: prism analyzing itself for architecture insights
 - **Advanced code intelligence** with Rust's complex type system
 
 ## 🌟 Key Features
@@ -47,7 +47,7 @@ A production-ready, high-performance code intelligence server implementing the M
 
 ```
 ┌─────────────────┐    MCP Protocol     ┌──────────────────┐
-│   AI Assistant  │◄──────────────────►│   gcore-mcp      │
+│   AI Assistant  │◄──────────────────►│   prism-mcp      │
 │  (Claude/Cursor)│   JSON-RPC 2.0     │     Server       │
 └─────────────────┘                     └──────────────────┘
                                                  │
@@ -87,8 +87,8 @@ A production-ready, high-performance code intelligence server implementing the M
 
 ```bash
 # Clone and build
-git clone https://github.com/dragonscale/gcore
-cd gcore
+git clone https://github.com/dragonscale/prism
+cd prism
 cargo build --release
 
 # Test the binary
@@ -102,8 +102,8 @@ cargo build --release
 // claude_desktop_config.json
 {
   "mcpServers": {
-    "gcore": {
-      "command": "/path/to/gcore/target/release/gcore-mcp",
+    "prism": {
+      "command": "/path/to/prism/target/release/prism-mcp",
       "args": ["/path/to/your/repository"]
     }
   }
@@ -115,8 +115,8 @@ cargo build --release
 // .cursor/mcp.json
 {
   "mcpServers": {
-    "gcore": {
-      "command": "/path/to/gcore/target/release/gcore-mcp",
+    "prism": {
+      "command": "/path/to/prism/target/release/prism-mcp",
       "args": ["."]
     }
   }
@@ -128,9 +128,9 @@ cargo build --release
 // .vscode/mcp.json  
 {
   "servers": {
-    "gcore": {
+    "prism": {
       "type": "stdio",
-      "command": "/path/to/gcore/target/release/gcore-mcp",
+      "command": "/path/to/prism/target/release/prism-mcp",
       "args": ["."]
     }
   }
@@ -159,16 +159,16 @@ cargo build --release
 ### Project Structure
 
 ```
-gcore/
+prism/
 ├── crates/
-│   ├── gcore/              # Core engine (✅ Complete)
-│   ├── gcore-mcp/          # MCP server (✅ Production-ready)
-│   ├── gcore-lang-js/      # JavaScript/TypeScript (✅ Complete)
-│   ├── gcore-lang-python/  # Python support (✅ Complete)
-│   ├── gcore-lang-rust/    # Rust parser (🚧 Next priority)
-│   ├── gcore-lang-java/    # Java support (⏳ Future)
-│   ├── gcore-cli/          # CLI tools (🚧 Enhanced commands planned)
-│   └── gcore-daemon/       # Background service (🚧 Additional features)
+│   ├── prism/              # Core engine (✅ Complete)
+│   ├── prism-mcp/          # MCP server (✅ Production-ready)
+│   ├── prism-lang-js/      # JavaScript/TypeScript (✅ Complete)
+│   ├── prism-lang-python/  # Python support (✅ Complete)
+│   ├── prism-lang-rust/    # Rust parser (🚧 Next priority)
+│   ├── prism-lang-java/    # Java support (⏳ Future)
+│   ├── prism-cli/          # CLI tools (🚧 Enhanced commands planned)
+│   └── prism-daemon/       # Background service (🚧 Additional features)
 ├── docs/                   # Comprehensive documentation
 └── tests/                  # Integration test suites
 ```
@@ -183,13 +183,13 @@ cargo test --all
 cargo build --release
 
 # Development with logging
-RUST_LOG=debug cargo run --bin gcore-mcp -- /path/to/repo
+RUST_LOG=debug cargo run --bin prism-mcp -- /path/to/repo
 
 # Test MCP protocol compliance
-cargo test -p gcore-mcp
+cargo test -p prism-mcp
 
 # Test specific language parser
-cargo test -p gcore-lang-python
+cargo test -p prism-lang-python
 ```
 
 ## 🎯 Roadmap
@@ -202,13 +202,13 @@ cargo test -p gcore-lang-python
 - **Production Deployment**: CLI binary, error handling, logging
 
 ### 🚧 **Current Phase: Self-Analysis (Phase 4)**
-- **Rust Parser**: Enable gcore to analyze its own ~50k line codebase
+- **Rust Parser**: Enable prism to analyze its own ~50k line codebase
 - **Advanced Features**: Traits, generics, macros, pattern matching
 - **Self-Analysis Tools**: Architecture insights, code quality metrics
 - **Performance Optimization**: Large repository handling
 
 ### 🔮 **Future Phases**
-- **Enhanced CLI**: Additional commands (`gcore stats`, `gcore watch`)
+- **Enhanced CLI**: Additional commands (`prism stats`, `prism watch`)
 - **Java Parser**: Enterprise language support
 - **Advanced Analysis**: Ownership tracking, performance insights
 - **IDE Integration**: Real-time analysis in development environments
@@ -219,7 +219,7 @@ cargo test -p gcore-lang-python
 ```
 👩‍💻 Developer: "Analyze the authentication flow in this codebase"
 
-🤖 AI Assistant: *Uses gcore MCP server to:*
+🤖 AI Assistant: *Uses prism MCP server to:*
    1. Identify auth-related functions across languages
    2. Trace call paths and data flow
    3. Find security patterns and potential issues
@@ -230,7 +230,7 @@ cargo test -p gcore-lang-python
 ```
 👨‍💻 Developer: "What are the main architectural patterns here?"
 
-🤖 AI Assistant: *Leverages gcore's graph analysis to:*
+🤖 AI Assistant: *Leverages prism's graph analysis to:*
    1. Extract module dependencies and relationships  
    2. Identify design patterns and conventions
    3. Suggest refactoring opportunities
@@ -239,7 +239,7 @@ cargo test -p gcore-lang-python
 
 ### **Self-Analysis (Next Phase)**
 ```
-🔍 gcore analyzing itself:
+🔍 prism analyzing itself:
    1. Parse all Rust source files (crates/*)
    2. Generate dependency graphs and module relationships
    3. Identify potential improvements and refactoring opportunities
@@ -269,8 +269,8 @@ We welcome contributions, especially for:
 
 ```bash
 # 1. Fork and clone the repository
-git clone https://github.com/yourusername/gcore
-cd gcore
+git clone https://github.com/yourusername/prism
+cd prism
 
 # 2. Create a feature branch
 git checkout -b feature/rust-parser
@@ -297,7 +297,7 @@ Dual-licensed under **MIT** and **Apache 2.0**. See [LICENSE-MIT](LICENSE-MIT) a
 - **Instant Setup**: Point at any repository and start analyzing
 - **Zero Configuration**: Automatic language detection and parsing
 - **Production Ready**: Battle-tested with comprehensive test suite
-- **Self-Validating**: Next phase will analyze gcore's own complex codebase
+- **Self-Validating**: Next phase will analyze prism's own complex codebase
 
 ### **For Organizations**
 - **Enhanced AI Workflows**: Better code understanding for AI assistants
@@ -307,6 +307,6 @@ Dual-licensed under **MIT** and **Apache 2.0**. See [LICENSE-MIT](LICENSE-MIT) a
 
 ---
 
-**Ready to enhance your AI-powered development workflow?** Start with `gcore-mcp /path/to/your/repository` and experience graph-first code intelligence today.
+**Ready to enhance your AI-powered development workflow?** Start with `prism-mcp /path/to/your/repository` and experience graph-first code intelligence today.
 
-**Next milestone**: Watch gcore analyze its own sophisticated Rust codebase, demonstrating the ultimate validation of its code intelligence capabilities. 
+**Next milestone**: Watch prism analyze its own sophisticated Rust codebase, demonstrating the ultimate validation of its code intelligence capabilities. 

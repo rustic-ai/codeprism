@@ -45,7 +45,7 @@ impl LanguageParser for PythonParserAdapter {
     }
 
     fn parse(&self, context: &ParseContext) -> prism_core::error::Result<ParseResult> {
-        // Use the Python parser from gcore-lang-python
+        // Use the Python parser from prism-lang-python
         let python_parser = prism_lang_python::PythonLanguageParser::new();
         
         match prism_lang_python::parse_file(
@@ -56,10 +56,10 @@ impl LanguageParser for PythonParserAdapter {
             context.old_tree.clone(),
         ) {
             Ok((tree, py_nodes, py_edges)) => {
-                // Convert Python parser types to gcore types
+                // Convert Python parser types to prism types
                 let nodes: Vec<Node> = py_nodes.into_iter().map(|py_node| {
                     // Convert NodeKind
-                    let gcore_kind = match py_node.kind {
+                    let prism_kind = match py_node.kind {
                         prism_lang_python::NodeKind::Function => prism_core::ast::NodeKind::Function,
                         prism_lang_python::NodeKind::Class => prism_core::ast::NodeKind::Class,
                         prism_lang_python::NodeKind::Variable => prism_core::ast::NodeKind::Variable,
@@ -76,7 +76,7 @@ impl LanguageParser for PythonParserAdapter {
                     };
                     
                     // Convert Span
-                    let gcore_span = prism_core::ast::Span::new(
+                    let prism_span = prism_core::ast::Span::new(
                         py_node.span.start_byte,
                         py_node.span.end_byte,
                         py_node.span.start_line,
@@ -87,17 +87,17 @@ impl LanguageParser for PythonParserAdapter {
                     
                     Node::new(
                         &context.repo_id,
-                        gcore_kind,
+                        prism_kind,
                         py_node.name,
                         Language::Python,
                         context.file_path.clone(),
-                        gcore_span,
+                        prism_span,
                     )
                 }).collect();
 
                 let edges: Vec<Edge> = py_edges.into_iter().map(|py_edge| {
                     // Convert EdgeKind
-                    let gcore_edge_kind = match py_edge.kind {
+                    let prism_edge_kind = match py_edge.kind {
                         prism_lang_python::EdgeKind::Calls => prism_core::ast::EdgeKind::Calls,
                         prism_lang_python::EdgeKind::Reads => prism_core::ast::EdgeKind::Reads,
                         prism_lang_python::EdgeKind::Writes => prism_core::ast::EdgeKind::Writes,
@@ -110,10 +110,10 @@ impl LanguageParser for PythonParserAdapter {
                     };
                     
                     // Convert NodeIds by using hex representation
-                    let gcore_source = prism_core::ast::NodeId::from_hex(&py_edge.source.to_hex()).unwrap();
-                    let gcore_target = prism_core::ast::NodeId::from_hex(&py_edge.target.to_hex()).unwrap();
+                    let prism_source = prism_core::ast::NodeId::from_hex(&py_edge.source.to_hex()).unwrap();
+                    let prism_target = prism_core::ast::NodeId::from_hex(&py_edge.target.to_hex()).unwrap();
                     
-                    Edge::new(gcore_source, gcore_target, gcore_edge_kind)
+                    Edge::new(prism_source, prism_target, prism_edge_kind)
                 }).collect();
 
                 Ok(ParseResult { tree, nodes, edges })
@@ -132,7 +132,7 @@ impl LanguageParser for JavaScriptParserAdapter {
     }
 
     fn parse(&self, context: &ParseContext) -> prism_core::error::Result<ParseResult> {
-        // Use the JavaScript parser from gcore-lang-js
+        // Use the JavaScript parser from prism-lang-js
         let js_parser = prism_lang_js::JavaScriptLanguageParser::new();
         
         match prism_lang_js::parse_file(
@@ -143,10 +143,10 @@ impl LanguageParser for JavaScriptParserAdapter {
             context.old_tree.clone(),
         ) {
             Ok((tree, js_nodes, js_edges)) => {
-                // Convert JavaScript parser types to gcore types
+                // Convert JavaScript parser types to prism types
                 let nodes: Vec<Node> = js_nodes.into_iter().map(|js_node| {
                     // Convert NodeKind
-                    let gcore_kind = match js_node.kind {
+                    let prism_kind = match js_node.kind {
                         prism_lang_js::NodeKind::Function => prism_core::ast::NodeKind::Function,
                         prism_lang_js::NodeKind::Class => prism_core::ast::NodeKind::Class,
                         prism_lang_js::NodeKind::Variable => prism_core::ast::NodeKind::Variable,
@@ -163,7 +163,7 @@ impl LanguageParser for JavaScriptParserAdapter {
                     };
                     
                     // Convert Span
-                    let gcore_span = prism_core::ast::Span::new(
+                    let prism_span = prism_core::ast::Span::new(
                         js_node.span.start_byte,
                         js_node.span.end_byte,
                         js_node.span.start_line,
@@ -174,17 +174,17 @@ impl LanguageParser for JavaScriptParserAdapter {
                     
                     Node::new(
                         &context.repo_id,
-                        gcore_kind,
+                        prism_kind,
                         js_node.name,
                         Language::JavaScript,
                         context.file_path.clone(),
-                        gcore_span,
+                        prism_span,
                     )
                 }).collect();
 
                 let edges: Vec<Edge> = js_edges.into_iter().map(|js_edge| {
                     // Convert EdgeKind
-                    let gcore_edge_kind = match js_edge.kind {
+                    let prism_edge_kind = match js_edge.kind {
                         prism_lang_js::EdgeKind::Calls => prism_core::ast::EdgeKind::Calls,
                         prism_lang_js::EdgeKind::Reads => prism_core::ast::EdgeKind::Reads,
                         prism_lang_js::EdgeKind::Writes => prism_core::ast::EdgeKind::Writes,
@@ -197,10 +197,10 @@ impl LanguageParser for JavaScriptParserAdapter {
                     };
                     
                     // Convert NodeIds by using hex representation
-                    let gcore_source = prism_core::ast::NodeId::from_hex(&js_edge.source.to_hex()).unwrap();
-                    let gcore_target = prism_core::ast::NodeId::from_hex(&js_edge.target.to_hex()).unwrap();
+                    let prism_source = prism_core::ast::NodeId::from_hex(&js_edge.source.to_hex()).unwrap();
+                    let prism_target = prism_core::ast::NodeId::from_hex(&js_edge.target.to_hex()).unwrap();
                     
-                    Edge::new(gcore_source, gcore_target, gcore_edge_kind)
+                    Edge::new(prism_source, prism_target, prism_edge_kind)
                 }).collect();
 
                 Ok(ParseResult { tree, nodes, edges })

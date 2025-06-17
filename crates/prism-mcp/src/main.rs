@@ -22,7 +22,7 @@ async fn main() -> Result<()> {
         .with_writer(std::io::stderr)
         .init();
 
-    let matches = Command::new("gcore-mcp")
+    let matches = Command::new("prism-mcp")
         .version("0.1.0")
         .author("DragonScale Team")
         .about("Prism Model Context Protocol Server")
@@ -270,7 +270,7 @@ async fn main() -> Result<()> {
             })?;
     } else {
         info!("No repository specified - server will start without repository context");
-        info!("Repository can be specified as: gcore-mcp <path>");
+        info!("Repository can be specified as: prism-mcp <path>");
     }
 
     // Run the server with stdio transport

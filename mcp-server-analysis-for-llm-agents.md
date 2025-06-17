@@ -492,9 +492,9 @@ The Prism MCP server has evolved from a solid foundation for code intelligence i
   - ✅ Added comprehensive test coverage (7 new tests)
   - ✅ All 119 tests passing
 - **Files Modified**:
-  - `crates/gcore-mcp/src/tools.rs` - Added context extraction and enhanced all tools
-  - `crates/gcore-mcp/src/resources.rs` - Added context to symbol resources
-  - `crates/gcore-mcp/src/server.rs` - Updated test count expectations
+  - `crates/prism-mcp/src/tools.rs` - Added context extraction and enhanced all tools
+  - `crates/prism-mcp/src/resources.rs` - Added context to symbol resources
+  - `crates/prism-mcp/src/server.rs` - Updated test count expectations
 
 #### **Content Search and Discovery Enhancement (December 2024)**
 - **Status**: ✅ **COMPLETED**

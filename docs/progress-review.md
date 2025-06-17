@@ -131,14 +131,14 @@ pub struct LanguageRegistry {
 
 ### ⚠️ Phase 5: CLI/Daemon Missing Core Features (MEDIUM PRIORITY)
 **Impact**: Cannot be used as described in documentation
-- ❌ Missing repository-aware commands (`gcore serve <path>`)
+- ❌ Missing repository-aware commands (`prism serve <path>`)
 - ❌ Missing background service functionality
 - ❌ Missing integration between components
 
 ## Next Steps (Immediate)
 
 ### Phase 2.5: Repository Scanner Implementation (CRITICAL)
-1. **Create Repository Scanner** (`crates/gcore/src/scanner/mod.rs`)
+1. **Create Repository Scanner** (`crates/prism/src/scanner/mod.rs`)
    ```rust
    pub struct RepositoryScanner {
        parser_engine: Arc<ParserEngine>,
@@ -148,7 +148,7 @@ pub struct LanguageRegistry {
    }
    ```
 
-2. **Create Bulk Indexing Engine** (`crates/gcore/src/indexer/mod.rs`)
+2. **Create Bulk Indexing Engine** (`crates/prism/src/indexer/mod.rs`)
    ```rust
    pub struct BulkIndexer {
        scanner: RepositoryScanner,
@@ -156,7 +156,7 @@ pub struct LanguageRegistry {
    }
    ```
 
-3. **Create Repository Manager** (`crates/gcore/src/repository/mod.rs`)
+3. **Create Repository Manager** (`crates/prism/src/repository/mod.rs`)
    ```rust
    pub struct RepositoryManager {
        config: RepositoryConfig,
@@ -181,7 +181,7 @@ pub struct LanguageRegistry {
    ```
 
 ### Phase 2.6: File Monitoring Integration (MEDIUM PRIORITY)
-1. **Create Parsing Pipeline** (`crates/gcore/src/pipeline/mod.rs`)
+1. **Create Parsing Pipeline** (`crates/prism/src/pipeline/mod.rs`)
    ```rust
    pub struct ParsingPipeline {
        watcher: FileWatcher,

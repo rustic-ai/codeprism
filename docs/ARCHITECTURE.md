@@ -534,8 +534,8 @@ impl SecurityManager {
 # ~/.config/claude-desktop/claude-desktop.json
 {
   "mcpServers": {
-    "gcore": {
-      "command": "gcore",
+    "prism": {
+      "command": "prism",
       "args": ["serve", "/path/to/repository"],
       "env": {
         "PRISM_LOG_LEVEL": "info",
@@ -550,8 +550,8 @@ impl SecurityManager {
 {
   "mcp.servers": [
     {
-      "name": "gcore",
-      "command": ["gcore", "serve", "."],
+      "name": "prism",
+      "command": ["prism", "serve", "."],
       "capabilities": ["resources", "tools", "prompts"]
     }
   ]
@@ -564,14 +564,14 @@ impl SecurityManager {
 # docker-compose.yml (Optional - for development)
 version: '3.8'
 services:
-  gcore-dev:
+  prism-dev:
     build: .
     environment:
       RUST_LOG: debug
       PRISM_REPOSITORY_PATH: /workspace
     volumes:
       - ./:/workspace
-    command: ["gcore", "serve", "/workspace", "--http", "--port", "8080"]
+    command: ["prism", "serve", "/workspace", "--http", "--port", "8080"]
     ports:
       - "8080:8080"
 ```
@@ -580,14 +580,14 @@ services:
 
 ```bash
 # Single Binary Deployment
-curl -L https://github.com/org/gcore/releases/latest/download/gcore-linux-x64 -o gcore
-chmod +x gcore
+curl -L https://github.com/org/prism/releases/latest/download/prism-linux-x64 -o prism
+chmod +x prism
 
 # Configure MCP Client
-gcore configure --client claude-desktop --repository /path/to/repo
+prism configure --client claude-desktop --repository /path/to/repo
 
 # Start as daemon (optional)
-gcore daemon /path/to/repo --log-level info
+prism daemon /path/to/repo --log-level info
 ```
 
 ### **Monitoring (Simplified)**

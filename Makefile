@@ -58,7 +58,7 @@ test-js: ## Run JavaScript parser tests only
 
 test-core: ## Run core library tests only
 	@echo "$(GREEN)Running core library tests...$(RESET)"
-	cargo test -p gcore
+	cargo test -p prism
 
 test-integration: ## Run integration tests
 	@echo "$(GREEN)Running integration tests...$(RESET)"
@@ -158,7 +158,7 @@ watch-check: ## Watch for changes and run checks
 
 expand: ## Expand macros for debugging
 	@echo "$(GREEN)Expanding macros...$(RESET)"
-	cargo expand --package gcore
+	cargo expand --package prism
 
 expand-js: ## Expand macros for JavaScript parser
 	@echo "$(GREEN)Expanding macros (JavaScript parser)...$(RESET)"
@@ -188,7 +188,7 @@ db-reset: ## Reset Neo4j database
 	@echo "$(GREEN)Resetting Neo4j database...$(RESET)"
 	$(DOCKER_COMPOSE) stop neo4j
 	$(DOCKER_COMPOSE) rm -f neo4j
-	docker volume rm gcore_neo4j_data 2>/dev/null || true
+	docker volume rm prism_neo4j_data 2>/dev/null || true
 	$(DOCKER_COMPOSE) up -d neo4j
 	@echo "$(GREEN)Neo4j database reset complete$(RESET)"
 
@@ -227,7 +227,7 @@ docker-build: ## Build Docker image
 docker-run: ## Run Docker container
 	@echo "$(GREEN)Running Docker container...$(RESET)"
 	docker run --rm -it \
-		--network gcore_default \
+		--network prism_default \
 		-e NEO4J_URI=bolt://neo4j:7687 \
 		-e KAFKA_BROKERS=kafka:9092 \
 		-e REDIS_URL=redis://redis:6379 \

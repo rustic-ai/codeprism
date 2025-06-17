@@ -4,13 +4,13 @@ This document provides detailed API documentation for all Prism components.
 
 ## Table of Contents
 
-- [Core Library (`gcore`)](#core-library-gcore)
-- [JavaScript/TypeScript Parser (`gcore-lang-js`)](#javascripttypescript-parser-gcore-lang-js)
+- [Core Library (`prism`)](#core-library-prism)
+- [JavaScript/TypeScript Parser (`prism-lang-js`)](#javascripttypescript-parser-prism-lang-js)
 - [MCP Server (`prism-mcp`)](#mcp-server-prism-mcp)
 - [Error Handling](#error-handling)
 - [Examples](#examples)
 
-## Core Library (`gcore`)
+## Core Library (`prism`)
 
 The core library provides the fundamental types and engine for code analysis.
 
@@ -39,7 +39,7 @@ impl NodeId {
 
 **Example:**
 ```rust
-use gcore::ast::{NodeId, NodeKind, Span};
+use prism::ast::{NodeId, NodeKind, Span};
 use std::path::Path;
 
 let span = Span::new(0, 10, 1, 1, 1, 11);
@@ -380,7 +380,7 @@ impl AstPatch {
 }
 ```
 
-## JavaScript/TypeScript Parser (`gcore-lang-js`)
+## JavaScript/TypeScript Parser (`prism-lang-js`)
 
 Language-specific parser for JavaScript and TypeScript files.
 
@@ -610,7 +610,7 @@ pub enum Error {
 ### Basic Parsing
 
 ```rust
-use gcore_lang_js::{JavaScriptParser, ParseContext};
+use prism_lang_js::{JavaScriptParser, ParseContext};
 use std::path::PathBuf;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -648,7 +648,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### File Watching
 
 ```rust
-use gcore::{FileWatcher, ChangeKind};
+use prism::{FileWatcher, ChangeKind};
 use std::path::Path;
 
 #[tokio::main]
@@ -688,8 +688,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### Parser Engine Usage
 
 ```rust
-use gcore::{LanguageRegistry, ParserEngine, ParseContext};
-use gcore_lang_js::JavaScriptLanguageParser;
+use prism::{LanguageRegistry, ParserEngine, ParseContext};
+use prism_lang_js::JavaScriptLanguageParser;
 use std::sync::Arc;
 
 #[tokio::main]
@@ -723,7 +723,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### Creating Graph Patches
 
 ```rust
-use gcore::{AstPatch, Node, NodeKind, Language, Span};
+use prism::{AstPatch, Node, NodeKind, Language, Span};
 use std::path::PathBuf;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {

@@ -1,4 +1,4 @@
-//! gcore-lang-java component
+//! prism-lang-java component
 
 pub fn init() {
     // TODO: Implement

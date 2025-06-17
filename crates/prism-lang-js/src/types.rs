@@ -2,7 +2,7 @@
 //!
 //! These types mirror the ones in prism_core::ast but are defined here to avoid
 //! circular dependencies. The parser returns these types which are then
-//! converted to gcore types by the caller.
+//! converted to prism types by the caller.
 
 use blake3::Hasher;
 use serde::{Deserialize, Serialize};

@@ -8,40 +8,40 @@ Phase 3 delivered a working MCP server, but **advanced resources, tools and prom
 1. **Repository Operations**: ✅ 100% Complete - Full scanning, indexing, and file monitoring
 2. **MCP Compliance**: ✅ 100% Complete - Proper JSON-RPC 2.0 protocol implementation
 3. **File Monitoring Integration**: ✅ Complete - Real-time pipeline operational
-4. **CLI/Daemon Functionality**: ✅ MCP server ready with `gcore-mcp` binary
+4. **CLI/Daemon Functionality**: ✅ MCP server ready with `prism-mcp` binary
 
 ### Current Status: Phase 3 Complete (105 tests passing)
 
 ## Phase 1: Core Infrastructure ✅ COMPLETE
 
 ### Completed Components
-1. **Universal AST Types** (`crates/gcore/src/ast/mod.rs`)
-2. **Parser Engine Framework** (`crates/gcore/src/parser/mod.rs`)
-3. **File Watcher** (`crates/gcore/src/watcher/mod.rs`)
-4. **Graph Patch System** (`crates/gcore/src/patch/mod.rs`)
-5. **Error Handling** (`crates/gcore/src/error.rs`)
+1. **Universal AST Types** (`crates/prism/src/ast/mod.rs`)
+2. **Parser Engine Framework** (`crates/prism/src/parser/mod.rs`)
+3. **File Watcher** (`crates/prism/src/watcher/mod.rs`)
+4. **Graph Patch System** (`crates/prism/src/patch/mod.rs`)
+5. **Error Handling** (`crates/prism/src/error.rs`)
 
 ## Phase 2: Language Support ✅ COMPLETE
 
 ### Completed Components
-1. **JavaScript/TypeScript Parser** (`crates/gcore-lang-js/`)
+1. **JavaScript/TypeScript Parser** (`crates/prism-lang-js/`)
    - Full ES6+ support
    - TypeScript parsing
    - 77.78% test coverage
 
-2. **Python Parser** (`crates/gcore-lang-python/`)
+2. **Python Parser** (`crates/prism-lang-python/`)
    - Python 3.x support
    - 100% test coverage
    - Comprehensive AST mapping
 
 ### Planned Components
-1. **Rust Parser** (`crates/gcore-lang-rust/`)
+1. **Rust Parser** (`crates/prism-lang-rust/`)
    - **Priority**: Next implementation phase
-   - **Use Case**: Self-analysis of gcore codebase
+   - **Use Case**: Self-analysis of prism codebase
    - **Features**: Full Rust 2021 support, macro analysis, trait resolution
-   - **Benefits**: Enable gcore to analyze its own source code
+   - **Benefits**: Enable prism to analyze its own source code
 
-2. **Java Parser** (`crates/gcore-lang-java/`)
+2. **Java Parser** (`crates/prism-lang-java/`)
    - Implementation deferred to future iterations
    - Will be added after Rust parser completion
 
@@ -53,7 +53,7 @@ Phase 3 delivered a working MCP server, but **advanced resources, tools and prom
 ### ✅ Completed Critical Components:
 
 #### 2.5.1 Repository Scanner ✅
-**File**: `crates/gcore/src/scanner/mod.rs`
+**File**: `crates/prism/src/scanner/mod.rs`
 
 **Implemented Functionality:**
 - ✅ Directory traversal with ignore patterns (.gitignore support)
@@ -78,7 +78,7 @@ impl RepositoryScanner {
 ```
 
 #### 2.5.2 Bulk Indexing Engine ✅
-**File**: `crates/gcore/src/indexer/mod.rs`
+**File**: `crates/prism/src/indexer/mod.rs`
 
 **Implemented Functionality:**
 - ✅ Batch processing of parse results
@@ -88,7 +88,7 @@ impl RepositoryScanner {
 - ✅ Performance optimization for large repositories
 
 #### 2.5.3 Repository Manager ✅
-**File**: `crates/gcore/src/repository/mod.rs`
+**File**: `crates/prism/src/repository/mod.rs`
 
 **Implemented Functionality:**
 - ✅ Repository configuration management
@@ -98,7 +98,7 @@ impl RepositoryScanner {
 - ✅ Integration with file monitoring
 
 #### 2.5.4 File Monitoring Pipeline ✅
-**File**: `crates/gcore/src/pipeline/mod.rs`
+**File**: `crates/prism/src/pipeline/mod.rs`
 
 **Implemented Functionality:**
 - ✅ FileWatcher → ParserEngine integration
@@ -111,12 +111,12 @@ impl RepositoryScanner {
 
 **Status**: ✅ 100% Complete - **FULLY MCP COMPLIANT**
 **Test Coverage**: 105 tests passing (83 previous + 21 MCP + 1 binary)
-**Crate**: `crates/gcore-mcp/`
+**Crate**: `crates/prism-mcp/`
 
 ### ✅ Complete MCP Compliance Achieved:
 
 #### 3.1 JSON-RPC 2.0 Implementation ✅
-**File**: `crates/gcore-mcp/src/protocol.rs`
+**File**: `crates/prism-mcp/src/protocol.rs`
 
 **Fully Implemented for MCP Compliance:**
 ```rust
@@ -138,7 +138,7 @@ impl McpServer {
 ```
 
 #### 3.2 MCP Resources Implementation ✅
-**File**: `crates/gcore-mcp/src/resources.rs`
+**File**: `crates/prism-mcp/src/resources.rs`
 
 **Fully Implemented Resources:**
 - ✅ `resources/list` - Repository files and graph data
@@ -148,7 +148,7 @@ impl McpServer {
 - ✅ Repository statistics and configuration
 
 #### 3.3 MCP Tools Implementation ✅
-**File**: `crates/gcore-mcp/src/tools.rs`
+**File**: `crates/prism-mcp/src/tools.rs`
 
 **Fully Implemented Tools:**
 - ✅ `repo_stats` - Repository statistics with JSON schema validation
@@ -157,7 +157,7 @@ impl McpServer {
 - ✅ MCP-compliant tool response format
 
 #### 3.4 MCP Prompts Implementation ✅
-**File**: `crates/gcore-mcp/src/prompts.rs`
+**File**: `crates/prism-mcp/src/prompts.rs`
 
 **Fully Implemented Prompts:**
 - ✅ `repo_overview` - Repository analysis with parameterization
@@ -166,7 +166,7 @@ impl McpServer {
 - ✅ `refactor_guidance` - Refactoring suggestions
 
 #### 3.5 Transport Layer ✅
-**File**: `crates/gcore-mcp/src/transport.rs`
+**File**: `crates/prism-mcp/src/transport.rs`
 
 **Fully Implemented Transport:**
 - ✅ Stdio transport with newline-delimited JSON
@@ -175,10 +175,10 @@ impl McpServer {
 - ✅ Error handling and protocol compliance
 
 #### 3.6 MCP Server Binary ✅
-**File**: `crates/gcore-mcp/src/main.rs`
+**File**: `crates/prism-mcp/src/main.rs`
 
 **Production-Ready CLI:**
-- ✅ `gcore-mcp <repository_path>` command
+- ✅ `prism-mcp <repository_path>` command
 - ✅ Verbose logging and error handling
 - ✅ Repository path validation
 - ✅ Full integration with Phase 2.5 components
@@ -190,10 +190,10 @@ impl McpServer {
 ### 4.1 Repository-Aware CLI (Enhanced)
 **Critical Commands - Now Ready for Implementation:**
 ```bash
-gcore-mcp <path>          # ✅ IMPLEMENTED - Start MCP server with repository  
-gcore index <path>        # Ready to implement with existing components
-gcore watch <path>        # Ready to implement with existing pipeline
-gcore stats <path>        # Ready to implement with existing scanner
+prism-mcp <path>          # ✅ IMPLEMENTED - Start MCP server with repository  
+prism index <path>        # Ready to implement with existing components
+prism watch <path>        # Ready to implement with existing pipeline
+prism stats <path>        # Ready to implement with existing scanner
 ```
 
 ### 4.2 Repository-Aware Daemon (Ready)
@@ -219,10 +219,10 @@ gcore stats <path>        # Ready to implement with existing scanner
 - ✅ All MCP resources, tools, and prompts implemented
 - ✅ JSON-RPC 2.0 request/response handling working
 - ✅ MCP capability negotiation fully functional
-- ✅ Production-ready `gcore-mcp` binary available
+- ✅ Production-ready `prism-mcp` binary available
 
 ### Phase 4 Completion Criteria (Ready)
-- 🔄 Ready: `gcore-mcp <path>` starts MCP server with repository
+- 🔄 Ready: `prism-mcp <path>` starts MCP server with repository
 - 🔄 Ready: Repository scanning and indexing components available
 - ✅ Real-time file monitoring integrated
 - 🔄 Ready: Background daemon service components available
@@ -256,7 +256,7 @@ gcore stats <path>        # Ready to implement with existing scanner
 
 ### 🔄 Phase 4: Enhanced CLI Integration (READY)
 - 🔄 Ready to implement repository-aware CLI commands
-- ✅ `gcore-mcp <path>` implemented and working
+- ✅ `prism-mcp <path>` implemented and working
 - 🔄 Ready to add progress indicators and output formatting
 - 🔄 Ready to create comprehensive CLI tests
 
@@ -293,17 +293,17 @@ gcore stats <path>        # Ready to implement with existing scanner
 1. **✅ Repository Operations Complete**: Can scan, index, and monitor any repository
 2. **✅ MCP Compliance Achieved**: Full JSON-RPC 2.0 protocol implementation
 3. **✅ Real-time Integration Working**: File monitoring pipeline operational
-4. **✅ Production-Ready Binary**: `gcore-mcp` ready for client integration
+4. **✅ Production-Ready Binary**: `prism-mcp` ready for client integration
 
 ### Current Capabilities:
-- **✅ Point to Any Repository**: `gcore-mcp /path/to/repo` works
+- **✅ Point to Any Repository**: `prism-mcp /path/to/repo` works
 - **✅ MCP Client Integration**: Compatible with Claude Desktop, Cursor, etc.
 - **✅ Real-time Updates**: File changes automatically update the index
 - **✅ Graph-based Queries**: Fast code intelligence through graph analysis
 - **✅ Multi-language Support**: JavaScript/TypeScript and Python parsers ready
 
 ### Next Steps (Optional Enhancements):
-1. **Enhanced CLI Commands**: Add `gcore index`, `gcore watch`, `gcore stats`
+1. **Enhanced CLI Commands**: Add `prism index`, `prism watch`, `prism stats`
 2. **Additional Languages**: Java, C++, Go parser implementations
 3. **Advanced Analysis**: More sophisticated code intelligence tools
 4. **Performance Scaling**: Optimization for repositories > 1M LOC

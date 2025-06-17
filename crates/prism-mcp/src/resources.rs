@@ -180,7 +180,7 @@ impl ResourceManager {
                 uri: format!("prism://repository/"),
                 name: Some("Repository Root".to_string()),
                 description: Some("Root directory of the indexed repository".to_string()),
-                mime_type: Some("application/vnd.gcore.directory".to_string()),
+                mime_type: Some("application/vnd.prism.directory".to_string()),
             });
 
             // Repository stats resource

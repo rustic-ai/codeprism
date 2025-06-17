@@ -20,7 +20,7 @@ serde_json.workspace = true
 tree-sitter.workspace = true
 tree-sitter-python.workspace = true
 
-# Import gcore types without circular dependency
+# Import prism types without circular dependency
 blake3.workspace = true
 hex.workspace = true
 

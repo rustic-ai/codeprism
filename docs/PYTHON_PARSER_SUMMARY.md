@@ -8,7 +8,7 @@ Successfully implemented **Phase 2.2: Python Parser** for the Prism code intelli
 
 ### 📁 Project Structure
 ```
-crates/gcore-lang-python/
+crates/prism-lang-python/
 ├── src/
 │   ├── lib.rs              # Module exports and public API
 │   ├── types.rs            # Type definitions (Node, Edge, Span, etc.)
@@ -59,7 +59,7 @@ crates/gcore-lang-python/
 
 #### 4. **Integration Layer** (`adapter.rs`)
 - **Thread Safety**: Mutex-protected parser for concurrent access
-- **External API**: Clean interface for integration with gcore
+- **External API**: Clean interface for integration with prism
 - **Type Conversion**: Utilities for converting between internal and external types
 
 ### 🧪 Test Coverage

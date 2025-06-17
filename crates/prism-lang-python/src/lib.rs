@@ -1,4 +1,4 @@
-//! Python language support for gcore
+//! Python language support for prism
 
 mod adapter;
 mod ast_mapper;

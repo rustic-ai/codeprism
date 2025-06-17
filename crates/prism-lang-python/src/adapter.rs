@@ -1,9 +1,9 @@
-//! Adapter to integrate Python parser with gcore
+//! Adapter to integrate Python parser with prism
 
 use crate::parser::{PythonParser, ParseContext as PyParseContext};
 use crate::types as py_types;
 
-/// Adapter that implements gcore's LanguageParser trait
+/// Adapter that implements prism's LanguageParser trait
 pub struct PythonLanguageParser {
     parser: std::sync::Mutex<PythonParser>,
 }
@@ -23,7 +23,7 @@ impl Default for PythonLanguageParser {
     }
 }
 
-// Since we can't import gcore types directly, we'll need to define a conversion
+// Since we can't import prism types directly, we'll need to define a conversion
 // trait that the caller can implement
 pub trait ParseResultConverter {
     type Node;

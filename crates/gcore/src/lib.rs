@@ -8,6 +8,7 @@
 #![warn(clippy::all)]
 
 pub mod ast;
+pub mod content;
 pub mod error;
 pub mod indexer;
 pub mod linkers;
@@ -30,6 +31,11 @@ pub use repository::{HealthStatus, RepositoryConfig, RepositoryInfo, RepositoryM
 pub use scanner::{DiscoveredFile, NoOpProgressReporter, ProgressReporter, RepositoryScanner, ScanResult, DependencyMode};
 pub use watcher::{ChangeEvent, ChangeKind, FileWatcher};
 pub use graph::{GraphStore, GraphQuery, PathResult, SymbolInfo};
+pub use content::{
+    ContentChunk, ContentNode, ContentStats, ContentType, 
+    SearchQuery, SearchResult, DocumentFormat, ConfigFormat, CommentContext
+};
+pub use content::search::{ContentSearchManager, SearchQueryBuilder};
 
 /// Re-export commonly used types
 pub mod prelude {
@@ -46,4 +52,9 @@ pub mod prelude {
     pub use crate::scanner::{DiscoveredFile, NoOpProgressReporter, ProgressReporter, RepositoryScanner, ScanResult, DependencyMode};
     pub use crate::watcher::{ChangeEvent, ChangeKind, FileWatcher};
     pub use crate::graph::{GraphStore, GraphQuery, PathResult, SymbolInfo};
+    pub use crate::content::{
+        ContentChunk, ContentNode, ContentStats, ContentType, 
+        SearchQuery, SearchResult, DocumentFormat, ConfigFormat, CommentContext
+    };
+    pub use crate::content::search::{ContentSearchManager, SearchQueryBuilder};
 }

@@ -225,6 +225,8 @@ pub struct GCoreMcpServer {
     graph_store: Arc<GraphStore>,
     /// Graph query engine
     graph_query: GraphQuery,
+    /// Content search manager for full-text search
+    content_search: Arc<gcore::ContentSearchManager>,
     /// Server capabilities
     capabilities: ServerCapabilities,
     /// Current repository path
@@ -250,6 +252,7 @@ impl GCoreMcpServer {
 
         let graph_store = Arc::new(GraphStore::new());
         let graph_query = GraphQuery::new(graph_store.clone());
+        let content_search = Arc::new(gcore::ContentSearchManager::with_graph_store(graph_store.clone()));
 
         let capabilities = ServerCapabilities {
             resources: Some(resources::ResourceCapabilities {
@@ -272,6 +275,7 @@ impl GCoreMcpServer {
             parser_engine,
             graph_store,
             graph_query,
+            content_search,
             capabilities,
             repository_path: None,
         })
@@ -337,6 +341,7 @@ impl GCoreMcpServer {
 
         let graph_store = Arc::new(GraphStore::new());
         let graph_query = GraphQuery::new(graph_store.clone());
+        let content_search = Arc::new(gcore::ContentSearchManager::with_graph_store(graph_store.clone()));
 
         let capabilities = ServerCapabilities {
             resources: Some(resources::ResourceCapabilities {
@@ -369,6 +374,7 @@ impl GCoreMcpServer {
             parser_engine,
             graph_store,
             graph_query,
+            content_search,
             capabilities,
             repository_path: None,
         })
@@ -392,7 +398,7 @@ impl GCoreMcpServer {
         // Register repository
         self.repository_manager.register_repository(repo_config)?;
         
-        // Perform initial scan and indexing
+        // Perform initial scan and indexing for code symbols
         let indexing_result = self.repository_manager
             .index_repository(&repo_id, None)
             .await?;
@@ -407,11 +413,76 @@ impl GCoreMcpServer {
             }
         }
         
+        // Index content for documentation, configuration files, and comments
+        self.index_repository_content(&path).await?;
+        
         self.repository_path = Some(path);
         tracing::info!("MCP server initialized with repository: {:?}", self.repository_path);
         
         Ok(())
     }
+
+    /// Index repository content including documentation, configuration, and comments
+    async fn index_repository_content(&self, repo_path: &Path) -> Result<()> {
+        tracing::info!("Starting content indexing for repository: {:?}", repo_path);
+        
+        // Discover all files in the repository
+        let files = self.scanner.discover_files(repo_path)?;
+        let mut indexed_count = 0;
+        let mut error_count = 0;
+        
+        for file_path in files {
+            if let Err(e) = self.index_file_content(&file_path).await {
+                tracing::warn!("Failed to index content for {}: {}", file_path.display(), e);
+                error_count += 1;
+            } else {
+                indexed_count += 1;
+            }
+        }
+        
+        tracing::info!("Content indexing completed: {} files indexed, {} errors", indexed_count, error_count);
+        Ok(())
+    }
+    
+    /// Index content for a single file
+    async fn index_file_content(&self, file_path: &Path) -> Result<()> {
+        // Read file content
+        let content = match std::fs::read_to_string(file_path) {
+            Ok(content) => content,
+            Err(_) => {
+                // Skip binary files or files that can't be read as text
+                return Ok(());
+            }
+        };
+        
+        // Skip empty files
+        if content.trim().is_empty() {
+            return Ok(());
+        }
+        
+        let language = self.detect_language(file_path);
+        
+        // Handle different file types appropriately
+        // For now, use simple file indexing for all content types
+        // TODO: In the future, we can enhance this with tree-sitter integration
+        // to extract comments and provide better source code content indexing
+        self.content_search.index_file(file_path, &content)?;
+        
+        Ok(())
+    }
+    
+    /// Detect programming language from file extension
+    fn detect_language(&self, file_path: &Path) -> Option<gcore::ast::Language> {
+        let extension = file_path.extension()?.to_str()?;
+        let lang = gcore::ast::Language::from_extension(extension);
+        if matches!(lang, gcore::ast::Language::Unknown) {
+            None
+        } else {
+            Some(lang)
+        }
+    }
+    
+
 
     /// Get server capabilities
     pub fn capabilities(&self) -> &ServerCapabilities {
@@ -446,6 +517,11 @@ impl GCoreMcpServer {
     /// Get graph query engine
     pub fn graph_query(&self) -> &GraphQuery {
         &self.graph_query
+    }
+
+    /// Get content search manager
+    pub fn content_search(&self) -> &Arc<gcore::ContentSearchManager> {
+        &self.content_search
     }
 
     /// Get current repository path

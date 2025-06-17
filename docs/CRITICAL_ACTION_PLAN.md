@@ -1,8 +1,8 @@
-# GCore Critical Action Plan - Addressing Implementation Gaps
+# Prism Critical Action Plan - Addressing Implementation Gaps
 
 ## Executive Summary
 
-Following the comprehensive review of the GCore MCP Server description document against current implementation, **critical gaps have been identified** that prevent the system from delivering its promised functionality. This document outlines the specific actions required to bridge these gaps and achieve compliance with the specification.
+Following the comprehensive review of the Prism MCP Server description document against current implementation, **critical gaps have been identified** that prevent the system from delivering its promised functionality. This document outlines the specific actions required to bridge these gaps and achieve compliance with the specification.
 
 ## Critical Status Assessment
 
@@ -507,7 +507,7 @@ use std::path::PathBuf;
 
 #[derive(Parser)]
 #[command(name = "gcore")]
-#[command(about = "GCore graph-first code intelligence")]
+#[command(about = "Prism graph-first code intelligence")]
 pub struct Cli {
     #[command(subcommand)]
     pub command: Commands,
@@ -560,21 +560,21 @@ pub async fn execute_command(cli: Cli) -> Result<()>;
 **File**: `crates/gcore-daemon/src/service/mod.rs`
 
 ```rust
-//! GCore daemon service
+//! Prism daemon service
 
 use crate::config::DaemonConfig;
 use crate::repository::RepositoryManager;
 use crate::mcp::McpServer;
 use std::sync::Arc;
 
-pub struct GCoreDaemon {
+pub struct PrismDaemon {
     config: DaemonConfig,
     repository_manager: Arc<RepositoryManager>,
     mcp_server: McpServer,
     shutdown_tx: Option<tokio::sync::oneshot::Sender<()>>,
 }
 
-impl GCoreDaemon {
+impl PrismDaemon {
     pub fn new(config: DaemonConfig) -> Result<Self>;
     
     pub async fn start(&mut self) -> Result<()>;
@@ -675,7 +675,7 @@ pub enum HealthStatus {
 
 ## Conclusion
 
-This action plan addresses the critical gaps identified in the implementation review. By following this phase-based approach and maintaining focus on the core functionality described in the specification document, GCore can achieve full compliance and deliver its promised capabilities.
+This action plan addresses the critical gaps identified in the implementation review. By following this phase-based approach and maintaining focus on the core functionality described in the specification document, Prism can achieve full compliance and deliver its promised capabilities.
 
 **Key Success Factors:**
 1. **Prioritize Repository Operations** - Enable "point-to-folder" functionality first

@@ -119,7 +119,7 @@ serde_json.workspace = true
 tree-sitter.workspace = true
 tree-sitter-rust.workspace = true
 
-# GCore types
+# Prism types
 blake3.workspace = true
 hex.workspace = true
 

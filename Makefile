@@ -1,4 +1,4 @@
-# GCore Development Makefile
+# Prism Development Makefile
 # 
 # This Makefile provides convenient commands for development, testing, and deployment.
 # Run 'make help' to see all available commands.
@@ -16,12 +16,12 @@ RED := \033[31m
 RESET := \033[0m
 
 # Project configuration
-PROJECT_NAME := gcore
+PROJECT_NAME := prism
 RUST_VERSION := 1.82
 DOCKER_COMPOSE := docker-compose
 
 help: ## Show this help message
-	@echo "$(CYAN)GCore Development Commands$(RESET)"
+	@echo "$(CYAN)Prism Development Commands$(RESET)"
 	@echo ""
 	@echo "$(GREEN)Development:$(RESET)"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -54,7 +54,7 @@ test: ## Run all tests
 
 test-js: ## Run JavaScript parser tests only
 	@echo "$(GREEN)Running JavaScript parser tests...$(RESET)"
-	cargo test -p gcore-lang-js
+	cargo test -p prism-lang-js
 
 test-core: ## Run core library tests only
 	@echo "$(GREEN)Running core library tests...$(RESET)"
@@ -144,7 +144,7 @@ bench: ## Run performance benchmarks
 
 bench-js: ## Run JavaScript parser benchmarks
 	@echo "$(GREEN)Running JavaScript parser benchmarks...$(RESET)"
-	cargo bench -p gcore-lang-js
+	cargo bench -p prism-lang-js
 
 # Development Tools
 
@@ -162,7 +162,7 @@ expand: ## Expand macros for debugging
 
 expand-js: ## Expand macros for JavaScript parser
 	@echo "$(GREEN)Expanding macros (JavaScript parser)...$(RESET)"
-	cargo expand --package gcore-lang-js
+	cargo expand --package prism-lang-js
 
 # Installation and Setup
 
@@ -280,7 +280,7 @@ perf: ## Run performance tests
 
 flamegraph: ## Generate flamegraph for profiling
 	@echo "$(GREEN)Generating flamegraph...$(RESET)"
-	cargo flamegraph --bin gcore-daemon
+	cargo flamegraph --bin prism-mcp
 
 # Maintenance
 

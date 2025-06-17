@@ -2,7 +2,7 @@
 
 ## Overview
 
-The JavaScript/TypeScript parser for GCore has been successfully implemented, providing comprehensive support for parsing JavaScript and TypeScript files into the Universal AST format.
+The JavaScript/TypeScript parser for Prism has been successfully implemented, providing comprehensive support for parsing JavaScript and TypeScript files into the Universal AST format.
 
 ## Key Features Implemented
 
@@ -79,7 +79,7 @@ gcore-lang-js/
 5. Enhance JSX/TSX support with prop extraction
 6. Add more comprehensive test fixtures
 
-## Integration with GCore
+## Integration with Prism
 
 The parser provides an adapter pattern for integration:
 ```rust
@@ -104,4 +104,4 @@ let (tree, nodes, edges) = gcore_lang_js::parse_file(
 
 ## Conclusion
 
-Phase 2.1 is successfully complete with a robust JavaScript/TypeScript parser that meets most requirements. The parser provides accurate AST extraction, good performance, and a clean API for integration with the GCore system. While there are areas for improvement (particularly around TypeScript type extraction and advanced ES6+ features), the current implementation provides a solid foundation for code intelligence operations. 
+Phase 2.1 is successfully complete with a robust JavaScript/TypeScript parser that meets most requirements. The parser provides accurate AST extraction, good performance, and a clean API for integration with the Prism system. While there are areas for improvement (particularly around TypeScript type extraction and advanced ES6+ features), the current implementation provides a solid foundation for code intelligence operations. 

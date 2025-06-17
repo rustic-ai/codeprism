@@ -1,7 +1,7 @@
 {
   "name": "js-dependency-test-project",
   "version": "1.0.0",
-  "description": "JavaScript dependency test project for GCore MCP dependency scanning",
+  "description": "JavaScript dependency test project for Prism MCP dependency scanning",
   "main": "src/index.js",
   "type": "module",
   "scripts": {
@@ -40,9 +40,9 @@
     "react",
     "javascript",
     "dependency-testing",
-    "gcore-mcp"
+    "prism-mcp"
   ],
-  "author": "GCore Test Suite",
+  "author": "Prism Test Suite",
   "license": "MIT",
   "engines": {
     "node": ">=16.0.0",

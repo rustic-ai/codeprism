@@ -1,8 +1,8 @@
-# GCore Implementation Plan – MCP Feature Parity Focus 🚧
+# Prism Implementation Plan – MCP Feature Parity Focus 🚧
 
 ## Executive Summary – June 2025
 
-Phase 3 delivered a working MCP server, but **advanced resources, tools and prompts remain unimplemented** compared with `docs/GCORE-MCP-SERVER-DESCRIPTION.md`.  All engineering effort is now re-aligned to "Phase 3-B: MCP Feature Parity".  Completion of the checklist (see `IMPLEMENTATION_STATUS.md` → Outstanding MCP Capabilities Checklist) is the exit criterion for this phase.
+Phase 3 delivered a working MCP server, but **advanced resources, tools and prompts remain unimplemented** compared with `docs/PRISM-MCP-SERVER-DESCRIPTION.md`.  All engineering effort is now re-aligned to "Phase 3-B: MCP Feature Parity".  Completion of the checklist (see `IMPLEMENTATION_STATUS.md` → Outstanding MCP Capabilities Checklist) is the exit criterion for this phase.
 
 ### Key Achievements:
 1. **Repository Operations**: ✅ 100% Complete - Full scanning, indexing, and file monitoring
@@ -308,4 +308,4 @@ gcore stats <path>        # Ready to implement with existing scanner
 3. **Advanced Analysis**: More sophisticated code intelligence tools
 4. **Performance Scaling**: Optimization for repositories > 1M LOC
 
-**Phase 3 completion represents a major milestone - GCore is now a production-ready, MCP-compliant code intelligence server that integrates seamlessly with the rapidly growing MCP ecosystem.** 
+**Phase 3 completion represents a major milestone - Prism is now a production-ready, MCP-compliant code intelligence server that integrates seamlessly with the rapidly growing MCP ecosystem.** 

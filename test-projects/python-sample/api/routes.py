@@ -110,7 +110,7 @@ class APIController:
             "status": "success",
             "message": "API is healthy",
             "data": {
-                "service": "gcore-api",
+                "service": "prism-api",
                 "version": "1.0.0"
             }
         }

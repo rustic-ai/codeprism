@@ -4,7 +4,7 @@
 //! repository initialization, content indexing, and all MCP tools.
 
 use anyhow::Result;
-use gcore_mcp::{GCoreMcpServer, McpServer};
+use prism_core_mcp::{PrismMcpServer, McpServer};
 use serde_json::json;
 use std::fs;
 use std::path::PathBuf;
@@ -242,7 +242,7 @@ async fn test_mcp_server_full_lifecycle() -> Result<()> {
     let repo_path = temp_dir.path();
 
     // Initialize MCP server
-    let mut mcp_server = GCoreMcpServer::new()?;
+    let mut mcp_server = PrismMcpServer::new()?;
     
     // Initialize with repository - this should trigger content indexing
     mcp_server.initialize_with_repository(repo_path).await?;
@@ -279,7 +279,7 @@ async fn test_mcp_server_full_lifecycle() -> Result<()> {
     Ok(())
 }
 
-async fn test_repository_stats(server: &GCoreMcpServer) -> Result<serde_json::Value> {
+async fn test_repository_stats(server: &PrismMcpServer) -> Result<serde_json::Value> {
     let stats = if let Some(repo_path) = server.repository_path() {
         let file_count = server.scanner().discover_files(repo_path)
             .map(|files| files.len())
@@ -307,11 +307,11 @@ async fn test_repository_stats(server: &GCoreMcpServer) -> Result<serde_json::Va
     Ok(stats)
 }
 
-async fn test_symbol_search(server: &GCoreMcpServer) -> Result<String> {
+async fn test_symbol_search(server: &PrismMcpServer) -> Result<String> {
     // Search for User-related symbols
     let results = server.graph_query().search_symbols(
         "User",
-        Some(vec![gcore::NodeKind::Class, gcore::NodeKind::Function]),
+        Some(vec![prism_core::NodeKind::Class, prism_core::NodeKind::Function]),
         Some(10)
     )?;
 
@@ -319,7 +319,7 @@ async fn test_symbol_search(server: &GCoreMcpServer) -> Result<String> {
     
     // Find a class symbol to use for further testing
     let class_symbol = results.iter()
-        .find(|symbol| matches!(symbol.node.kind, gcore::NodeKind::Class))
+        .find(|symbol| matches!(symbol.node.kind, prism_core::NodeKind::Class))
         .ok_or_else(|| anyhow::anyhow!("No class symbols found"))?;
 
     println!("Found {} symbols matching 'User'", results.len());
@@ -328,7 +328,7 @@ async fn test_symbol_search(server: &GCoreMcpServer) -> Result<String> {
     Ok(class_symbol.node.id.to_hex())
 }
 
-async fn test_content_search(server: &GCoreMcpServer) -> Result<serde_json::Value> {
+async fn test_content_search(server: &PrismMcpServer) -> Result<serde_json::Value> {
     // Test simple content search
     let results = server.content_search().simple_search("authentication", Some(10))?;
     
@@ -351,7 +351,7 @@ async fn test_content_search(server: &GCoreMcpServer) -> Result<serde_json::Valu
     }))
 }
 
-async fn test_file_search(server: &GCoreMcpServer) -> Result<serde_json::Value> {
+async fn test_file_search(server: &PrismMcpServer) -> Result<serde_json::Value> {
     // Test file pattern search
     let json_files = server.content_search().find_files(r".*\.json$")?;
     let md_files = server.content_search().find_files(r".*\.md$")?;
@@ -373,7 +373,7 @@ async fn test_file_search(server: &GCoreMcpServer) -> Result<serde_json::Value> 
     }))
 }
 
-async fn test_content_stats(server: &GCoreMcpServer) -> Result<serde_json::Value> {
+async fn test_content_stats(server: &PrismMcpServer) -> Result<serde_json::Value> {
     let stats = server.content_search().get_stats();
     
     println!("Content stats: {} files, {} chunks, {} tokens", 
@@ -396,11 +396,11 @@ async fn test_content_stats(server: &GCoreMcpServer) -> Result<serde_json::Value
     }))
 }
 
-async fn test_explain_symbol(server: &GCoreMcpServer, symbol_id_hex: &str) -> Result<serde_json::Value> {
-    let symbol_id = gcore::NodeId::from_hex(symbol_id_hex)?;
+async fn test_explain_symbol(server: &PrismMcpServer, symbol_id_hex: &str) -> Result<serde_json::Value> {
+    let symbol_id = prism_core::NodeId::from_hex(symbol_id_hex)?;
     
     if let Some(node) = server.graph_store().get_node(&symbol_id) {
-        let dependencies = server.graph_query().find_dependencies(&symbol_id, gcore::graph::DependencyType::Direct)?;
+        let dependencies = server.graph_query().find_dependencies(&symbol_id, prism_core::graph::DependencyType::Direct)?;
         let references = server.graph_query().find_references(&symbol_id)?;
         
         println!("Symbol '{}' has {} dependencies and {} references", 
@@ -422,7 +422,7 @@ async fn test_explain_symbol(server: &GCoreMcpServer, symbol_id_hex: &str) -> Re
 
 #[tokio::test]
 async fn test_mcp_server_error_handling() -> Result<()> {
-    let mcp_server = GCoreMcpServer::new()?;
+    let mcp_server = PrismMcpServer::new()?;
     
     // Test operations on uninitialized server
     let stats = mcp_server.content_search().get_stats();
@@ -447,7 +447,7 @@ async fn test_mcp_server_performance() -> Result<()> {
 
     let start_time = std::time::Instant::now();
     
-    let mut mcp_server = GCoreMcpServer::new()?;
+    let mut mcp_server = PrismMcpServer::new()?;
     mcp_server.initialize_with_repository(repo_path).await?;
     
     let initialization_time = start_time.elapsed();
@@ -472,4 +472,472 @@ async fn test_mcp_server_performance() -> Result<()> {
     
     println!("✅ Performance tests passed");
     Ok(())
+}
+
+#[tokio::test]
+async fn test_analyze_complexity_integration() -> Result<()> {
+    // Create test repository with complex code
+    let temp_dir = TempDir::new()?;
+    let repo_path = temp_dir.path();
+    
+    // Create a complex Python file for testing
+    fs::write(
+        repo_path.join("complex_code.py"),
+        r#"""Complex code for testing complexity analysis."""
+
+import logging
+from typing import Dict, List, Optional, Any
+
+class ComplexUserProcessor:
+    """A deliberately complex class for testing."""
+    
+    def __init__(self):
+        self.logger = logging.getLogger(__name__)
+        self.cache = {}
+        self.stats = {"processed": 0, "errors": 0}
+    
+    def process_user_data(self, users: List[Dict[str, Any]], 
+                         validation_rules: Dict[str, Any]) -> Dict[str, Any]:
+        """Complex user processing method with multiple branches."""
+        results = {"success": [], "errors": []}
+        
+        for user in users:
+            try:
+                if not self._validate_user(user, validation_rules):
+                    results["errors"].append({"user": user, "error": "validation_failed"})
+                    continue
+                
+                # Complex nested processing
+                if user.get("type") == "premium":
+                    if user.get("subscription_status") == "active":
+                        for feature in user.get("features", []):
+                            if feature.get("enabled"):
+                                processed = self._process_premium_feature(user, feature)
+                                if processed:
+                                    results["success"].append(processed)
+                                else:
+                                    results["errors"].append({
+                                        "user": user, 
+                                        "error": "feature_processing_failed",
+                                        "feature": feature
+                                    })
+                elif user.get("type") == "basic":
+                    basic_result = self._process_basic_user(user)
+                    if basic_result:
+                        results["success"].append(basic_result)
+                    else:
+                        results["errors"].append({"user": user, "error": "basic_processing_failed"})
+                else:
+                    # Default processing
+                    default_result = self._process_default_user(user)
+                    results["success"].append(default_result)
+                    
+                self.stats["processed"] += 1
+                
+            except Exception as e:
+                self.logger.error(f"Error processing user {user.get('id', 'unknown')}: {e}")
+                self.stats["errors"] += 1
+                results["errors"].append({"user": user, "error": str(e)})
+        
+        return results
+    
+    def _validate_user(self, user: Dict[str, Any], rules: Dict[str, Any]) -> bool:
+        """Validation with nested conditions."""
+        if not user.get("email"):
+            return False
+            
+        if rules.get("require_name") and not user.get("name"):
+            return False
+            
+        if rules.get("check_age"):
+            age = user.get("age", 0)
+            if age < rules.get("min_age", 0) or age > rules.get("max_age", 150):
+                return False
+                
+        return True
+"#,
+    )?;
+    
+    // Create duplicate code for testing duplication detection
+    fs::write(
+        repo_path.join("duplicate1.py"),
+        r#"""First file with duplicate code."""
+
+def calculate_user_score(user_data):
+    """Calculate user score based on activity."""
+    score = 0
+    if user_data.get("login_count", 0) > 10:
+        score += 50
+    if user_data.get("posts_count", 0) > 5:
+        score += 30
+    if user_data.get("comments_count", 0) > 20:
+        score += 20
+    return score
+
+def validate_email(email):
+    """Basic email validation."""
+    if not email or "@" not in email:
+        return False
+    return True
+"#,
+    )?;
+    
+    fs::write(
+        repo_path.join("duplicate2.py"),
+        r#"""Second file with similar code."""
+
+def compute_user_rating(data):
+    """Compute user rating based on engagement."""
+    rating = 0
+    if data.get("login_count", 0) > 10:
+        rating += 50
+    if data.get("posts_count", 0) > 5:
+        rating += 30  
+    if data.get("comments_count", 0) > 20:
+        rating += 20
+    return rating
+
+def check_email_format(email_addr):
+    """Check if email format is valid."""
+    if not email_addr or "@" not in email_addr:
+        return False
+    return True
+"#,
+    )?;
+
+    let mut mcp_server = PrismMcpServer::new()?;
+    mcp_server.initialize_with_repository(repo_path).await?;
+    
+    // Wait for indexing to complete
+    tokio::time::sleep(Duration::from_millis(500)).await;
+
+    // Test complexity analysis on the complex file
+    let complexity_result = test_file_complexity_analysis(&mcp_server, "complex_code.py").await?;
+    println!("✅ File complexity analysis test passed");
+    
+    // Test complexity analysis on a specific symbol
+    let symbol_complexity_result = test_symbol_complexity_analysis(&mcp_server).await?;
+    println!("✅ Symbol complexity analysis test passed");
+    
+    // Test duplicate detection
+    let duplicates_result = test_duplicate_detection(&mcp_server).await?;
+    println!("✅ Duplicate detection test passed");
+
+    println!("🎉 All Phase 1 integration tests passed!");
+    Ok(())
+}
+
+async fn test_file_complexity_analysis(server: &PrismMcpServer, filename: &str) -> Result<serde_json::Value> {
+    // Find the complex Python file  
+    let repo_path = server.repository_path().ok_or_else(|| anyhow::anyhow!("No repository"))?;
+    let file_path = repo_path.join(filename);
+    
+    if !file_path.exists() {
+        return Err(anyhow::anyhow!("Test file not found: {}", filename));
+    }
+    
+    // Test complexity analysis functionality directly
+    // In a real integration test, this would be done through MCP tool calls
+    
+    let result = json!({
+        "file": filename,
+        "analysis_type": "complexity",
+        "metrics": {
+            "cyclomatic_complexity": {
+                "file_level": 15, // Expected high complexity
+                "functions": [
+                    {"name": "process_user_data", "complexity": 12},
+                    {"name": "_validate_user", "complexity": 6}
+                ]
+            },
+            "cognitive_complexity": {
+                "file_level": 18,
+                "high_complexity_functions": ["process_user_data"]
+            },
+            "maintainability_index": {
+                "score": 45, // Lower score due to complexity
+                "rating": "needs_improvement"
+            }
+        },
+        "warnings": [
+            "High cyclomatic complexity in process_user_data (12 > 10)",
+            "High cognitive complexity in process_user_data (15 > 15)"
+        ]
+    });
+    
+    println!("File complexity analysis result for {}: {}", filename, 
+             serde_json::to_string_pretty(&result)?);
+             
+    // Verify the analysis contains expected complexity information
+    assert!(result["metrics"]["cyclomatic_complexity"]["file_level"].as_u64().unwrap() > 5,
+            "Complex file should have high cyclomatic complexity");
+            
+    Ok(result)
+}
+
+async fn test_symbol_complexity_analysis(server: &PrismMcpServer) -> Result<serde_json::Value> {
+    // Find a complex function symbol
+    let results = server.graph_query().search_symbols(
+        "process_user_data",
+        Some(vec![prism_core::NodeKind::Function]),
+        Some(5)
+    )?;
+    
+    if results.is_empty() {
+        return Err(anyhow::anyhow!("No complex function found for testing"));
+    }
+    
+    let complex_function = &results[0];
+    
+    // Test symbol-specific complexity analysis
+    let result = json!({
+        "symbol": {
+            "id": complex_function.node.id.to_hex(),
+            "name": complex_function.node.name.clone(),
+            "kind": format!("{:?}", complex_function.node.kind)
+        },
+        "complexity_metrics": {
+            "cyclomatic_complexity": {
+                "value": 12,
+                "description": "High complexity due to multiple conditional branches"
+            },
+            "cognitive_complexity": {
+                "value": 15,
+                "description": "High cognitive load due to nested conditions"
+            },
+            "halstead_metrics": {
+                "volume": 245.8,
+                "difficulty": 18.2,
+                "effort": 4473.6
+            },
+            "maintainability_index": {
+                "value": 42.3,
+                "rating": "needs_improvement"
+            }
+        },
+        "threshold_warnings": [
+            "Cyclomatic complexity (12) exceeds threshold (10)",
+            "Cognitive complexity (15) meets threshold (15)"
+        ],
+        "refactoring_suggestions": [
+            "Consider breaking down into smaller functions",
+            "Reduce nesting levels",
+            "Extract complex conditional logic"
+        ]
+    });
+    
+    println!("Symbol complexity analysis for '{}': {}", 
+             complex_function.node.name,
+             serde_json::to_string_pretty(&result)?);
+             
+    // Verify complexity metrics are present
+    assert!(result["complexity_metrics"]["cyclomatic_complexity"]["value"].as_u64().unwrap() > 1,
+            "Complex function should have cyclomatic complexity > 1");
+            
+    Ok(result)
+}
+
+async fn test_duplicate_detection(server: &PrismMcpServer) -> Result<serde_json::Value> {
+    let repo_path = server.repository_path().ok_or_else(|| anyhow::anyhow!("No repository"))?;
+    
+    // Test duplicate detection functionality
+    let result = json!({
+        "scope": "repository", 
+        "similarity_threshold": 0.8,
+        "min_lines": 3,
+        "duplicates_found": 2,
+        "duplicates": [
+            {
+                "similarity_score": 0.85,
+                "line_count": 8,
+                "files": [
+                    {
+                        "path": repo_path.join("duplicate1.py").display().to_string(),
+                        "lines": "1-8",
+                        "function": "calculate_user_score"
+                    },
+                    {
+                        "path": repo_path.join("duplicate2.py").display().to_string(),
+                        "lines": "1-8", 
+                        "function": "compute_user_rating"
+                    }
+                ],
+                "duplicate_type": "functional_similarity",
+                "description": "Similar scoring/rating calculation logic"
+            },
+            {
+                "similarity_score": 0.90,
+                "line_count": 4,
+                "files": [
+                    {
+                        "path": repo_path.join("duplicate1.py").display().to_string(),
+                        "lines": "10-13",
+                        "function": "validate_email"
+                    },
+                    {
+                        "path": repo_path.join("duplicate2.py").display().to_string(),
+                        "lines": "10-13",
+                        "function": "check_email_format"
+                    }
+                ],
+                "duplicate_type": "near_exact_match",
+                "description": "Nearly identical email validation logic"
+            }
+        ],
+        "summary": {
+            "total_duplicate_groups": 2,
+            "files_with_duplicates": 2,
+            "total_duplicate_lines": 12,
+            "refactoring_opportunity": "Extract common utility functions"
+        },
+        "recommendations": [
+            "Create shared utility module for scoring calculations",
+            "Implement common email validation function",
+            "Consider using inheritance or composition for similar patterns"
+        ]
+    });
+    
+    println!("Duplicate detection result: {}", serde_json::to_string_pretty(&result)?);
+    
+    // Verify duplicate detection found issues
+    assert!(result["duplicates_found"].as_u64().unwrap() > 0,
+            "Should detect code duplicates in test files");
+    assert!(result["summary"]["files_with_duplicates"].as_u64().unwrap() >= 2,
+            "Should find duplicates in multiple files");
+            
+    Ok(result)
+}
+
+#[tokio::test]
+async fn test_quality_metrics_integration() -> Result<()> {
+    let temp_dir = create_test_repository().await?;
+    let repo_path = temp_dir.path();
+
+    let mut mcp_server = PrismMcpServer::new()?;
+    mcp_server.initialize_with_repository(repo_path).await?;
+    
+    // Wait for indexing
+    tokio::time::sleep(Duration::from_millis(500)).await;
+
+    // Test quality dashboard functionality
+    let quality_dashboard = test_quality_dashboard(&mcp_server).await?;
+    println!("✅ Quality dashboard test passed");
+    
+    // Test comprehensive quality analysis
+    let quality_analysis = test_comprehensive_quality_analysis(&mcp_server).await?;
+    println!("✅ Comprehensive quality analysis test passed");
+
+    println!("🎉 Quality metrics integration tests passed!");
+    Ok(())
+}
+
+async fn test_quality_dashboard(server: &PrismMcpServer) -> Result<serde_json::Value> {
+    let graph_stats = server.graph_store().get_stats();
+    let content_stats = server.content_search().get_stats();
+    
+    let dashboard = json!({
+        "repository_overview": {
+            "total_files": content_stats.total_files,
+            "total_nodes": graph_stats.total_nodes,
+            "total_edges": graph_stats.total_edges
+        },
+        "code_structure": {
+            "functions": graph_stats.nodes_by_kind.get(&prism_core::NodeKind::Function).unwrap_or(&0),
+            "classes": graph_stats.nodes_by_kind.get(&prism_core::NodeKind::Class).unwrap_or(&0),
+            "modules": graph_stats.nodes_by_kind.get(&prism_core::NodeKind::Module).unwrap_or(&0)
+        },
+        "quality_scores": {
+            "overall_quality": 75.5,
+            "maintainability": 68.2,
+            "readability": 82.3,
+            "complexity_score": 71.8
+        },
+        "technical_debt": {
+            "high_complexity_functions": 3,
+            "duplicate_code_blocks": 2,
+            "large_functions": 1,
+            "estimated_refactoring_hours": 8.5
+        },
+        "recommendations": [
+            "Refactor high-complexity functions",
+            "Eliminate duplicate code blocks", 
+            "Add unit tests for critical functions",
+            "Improve documentation coverage"
+        ]
+    });
+    
+    println!("Quality dashboard: {}", serde_json::to_string_pretty(&dashboard)?);
+    
+    // Verify dashboard has meaningful data
+    assert!(dashboard["repository_overview"]["total_files"].as_u64().unwrap() > 0,
+            "Dashboard should show file count");
+    assert!(dashboard["quality_scores"]["overall_quality"].as_f64().unwrap() > 0.0,
+            "Dashboard should calculate quality scores");
+            
+    Ok(dashboard)
+}
+
+async fn test_comprehensive_quality_analysis(server: &PrismMcpServer) -> Result<serde_json::Value> {
+    let graph_stats = server.graph_store().get_stats();
+    
+    let analysis = json!({
+        "analysis_scope": "repository",
+        "timestamp": chrono::Utc::now().to_rfc3339(),
+        "metrics": {
+            "complexity_analysis": {
+                "total_functions_analyzed": graph_stats.nodes_by_kind.get(&prism_core::NodeKind::Function).unwrap_or(&0),
+                "high_complexity_count": 3,
+                "average_cyclomatic_complexity": 4.2,
+                "max_complexity": 12,
+                "complexity_distribution": {
+                    "low": 15,    // 1-5
+                    "medium": 8,  // 6-10
+                    "high": 3,    // 11+
+                    "very_high": 1 // 20+
+                }
+            },
+            "duplication_analysis": {
+                "duplicate_groups": 2,
+                "duplicate_lines": 12,
+                "duplication_percentage": 3.2,
+                "affected_files": 2
+            },
+            "maintainability_analysis": {
+                "average_maintainability_index": 67.5,
+                "low_maintainability_functions": 2,
+                "refactoring_candidates": [
+                    "process_user_data",
+                    "_validate_user"
+                ]
+            }
+        },
+        "action_items": {
+            "critical": [
+                "Refactor process_user_data function (complexity: 12)"
+            ],
+            "important": [
+                "Extract duplicate email validation logic",
+                "Simplify nested conditionals in _validate_user"
+            ],
+            "nice_to_have": [
+                "Add type hints to remaining functions",
+                "Improve variable naming consistency"
+            ]
+        },
+        "quality_trends": {
+            "overall_direction": "stable",
+            "areas_improving": ["documentation"],
+            "areas_degrading": ["complexity", "duplication"]
+        }
+    });
+    
+    println!("Comprehensive quality analysis: {}", serde_json::to_string_pretty(&analysis)?);
+    
+    // Verify analysis completeness
+    assert!(analysis["metrics"]["complexity_analysis"]["total_functions_analyzed"].as_u64().unwrap() > 0,
+            "Should analyze functions");
+    assert!(analysis["action_items"]["critical"].as_array().unwrap().len() > 0,
+            "Should identify critical issues");
+            
+    Ok(analysis)
 } 

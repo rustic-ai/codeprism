@@ -1,15 +1,13 @@
 [workspace]
 resolver = "2"
 members = [
-    "crates/gcore",
-    "crates/gcore-bus",
-    "crates/gcore-storage",
-    "crates/gcore-mcp",
-    "crates/gcore-cli",
-    "crates/gcore-daemon",
-    "crates/gcore-lang-js",
-    "crates/gcore-lang-python",
-    "crates/gcore-lang-java",
+    "crates/prism-core",
+    "crates/prism-bus",
+    "crates/prism-storage",
+    "crates/prism-mcp",
+    "crates/prism-lang-js",
+    "crates/prism-lang-python",
+    "crates/prism-lang-java",
 ]
 
 [workspace.package]
@@ -17,7 +15,7 @@ version = "0.1.0"
 edition = "2021"
 authors = ["DragonScale Team"]
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/dragonscale/gcore"
+repository = "https://github.com/dragonscale/prism"
 rust-version = "1.82"
 
 [workspace.dependencies]

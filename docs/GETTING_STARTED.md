@@ -1,4 +1,4 @@
-# Getting Started with GCore - MCP Integration Guide
+# Getting Started with Prism - MCP Integration Guide
 
 This guide walks you through setting up gcore with the three major MCP clients: Claude Desktop, Cursor, and VS Code. By the end, you'll have a powerful AI assistant with graph-first code intelligence for your repositories.
 
@@ -33,7 +33,7 @@ rustc --version  # Should be 1.82.0 or higher
 git --version
 ```
 
-## 🚀 Step 1: Install GCore
+## 🚀 Step 1: Install Prism
 
 ### Option A: Build from Source (Recommended)
 ```bash
@@ -44,7 +44,7 @@ cd gcore
 # Build the release binary
 cargo build --release
 
-# The binary will be at: ./target/release/gcore-mcp
+# The binary will be at: ./target/release/prism-mcp
 ```
 
 ### Option B: Using Pre-built Binary (Coming Soon)
@@ -56,7 +56,7 @@ cargo build --release
 ### Verify Installation
 ```bash
 # Test the binary
-./target/release/gcore-mcp --help
+./target/release/prism-mcp --help
 
 # Should show usage information and available options
 ```
@@ -333,7 +333,7 @@ This repository has both Python and JavaScript. How do they interact?
       "args": ["/path/to/repo"],
       "env": {
         "RUST_LOG": "warn",
-        "GCORE_MAX_FILES": "10000"
+        "PRISM_MAX_FILES": "10000"
       }
     }
   }
@@ -430,7 +430,7 @@ Enable detailed logging:
       "args": ["/path/to/repo", "--verbose"],
       "env": {
         "RUST_LOG": "debug",
-        "GCORE_DEBUG": "1"
+        "PRISM_DEBUG": "1"
       }
     }
   }
@@ -463,7 +463,7 @@ tail -f ~/Library/Logs/Claude/mcp*.log
 **Test gcore directly:**
 ```bash
 # Test with minimal arguments
-./target/release/gcore-mcp /path/to/small/test/repo
+./target/release/prism-mcp /path/to/small/test/repo
 
 # Check for error messages
 ```
@@ -520,10 +520,10 @@ Once your setup is working:
 cargo build --release
 
 # Test gcore binary
-./target/release/gcore-mcp --help
+./target/release/prism-mcp --help
 
 # Run with debug logging
-RUST_LOG=debug ./target/release/gcore-mcp /path/to/repo
+RUST_LOG=debug ./target/release/prism-mcp /path/to/repo
 ```
 
 ### Example Prompts

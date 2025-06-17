@@ -1,6 +1,6 @@
 # Language Parser Implementation Guide
 
-This guide explains how to implement language parsers for GCore, using the JavaScript/TypeScript parser as a reference implementation.
+This guide explains how to implement language parsers for Prism, using the JavaScript/TypeScript parser as a reference implementation.
 
 ## Table of Contents
 
@@ -15,7 +15,7 @@ This guide explains how to implement language parsers for GCore, using the JavaS
 
 ## Overview
 
-Language parsers in GCore convert language-specific syntax trees (CST) from Tree-Sitter into the Universal AST representation. Each parser is implemented as a separate crate following a consistent pattern.
+Language parsers in Prism convert language-specific syntax trees (CST) from Tree-Sitter into the Universal AST representation. Each parser is implemented as a separate crate following a consistent pattern.
 
 ### Key Responsibilities
 
@@ -1031,4 +1031,4 @@ pub fn parse(&mut self, context: &ParseContext) -> Result<ParseResult> {
 2. **Language Versions**: Support multiple language versions
 3. **Backward Compatibility**: Maintain API stability
 
-This guide provides a comprehensive foundation for implementing language parsers in GCore. Each parser should follow these patterns while adapting to the specific characteristics of the target language. 
+This guide provides a comprehensive foundation for implementing language parsers in Prism. Each parser should follow these patterns while adapting to the specific characteristics of the target language. 

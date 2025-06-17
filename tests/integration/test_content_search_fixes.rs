@@ -4,7 +4,7 @@
 //! provides working content search, file search, and content stats functionality.
 
 use anyhow::Result;
-use gcore_mcp::GCoreMcpServer;
+use prism_core_mcp::PrismMcpServer;
 use std::fs;
 use tempfile::TempDir;
 use tokio::time::Duration;
@@ -102,7 +102,7 @@ async fn test_content_search_integration_fixed() -> Result<()> {
     let repo_path = temp_dir.path();
 
     // Initialize MCP server
-    let mut mcp_server = GCoreMcpServer::new()?;
+    let mut mcp_server = PrismMcpServer::new()?;
     mcp_server.initialize_with_repository(repo_path).await?;
 
     // Wait for content indexing to complete
@@ -160,7 +160,7 @@ async fn test_content_search_integration_fixed() -> Result<()> {
     // Test 6: Symbol search still works (regression test)
     let symbol_results = mcp_server.graph_query().search_symbols(
         "User",
-        Some(vec![gcore::NodeKind::Class]),
+        Some(vec![prism_core::NodeKind::Class]),
         Some(10)
     )?;
     assert!(!symbol_results.is_empty(), "Should find User class symbols");
@@ -177,7 +177,7 @@ async fn test_content_search_empty_repository() -> Result<()> {
     let temp_dir = TempDir::new()?;
     let repo_path = temp_dir.path();
 
-    let mut mcp_server = GCoreMcpServer::new()?;
+    let mut mcp_server = PrismMcpServer::new()?;
     mcp_server.initialize_with_repository(repo_path).await?;
 
     // Wait briefly
@@ -206,7 +206,7 @@ async fn test_content_search_performance() -> Result<()> {
     let start_time = std::time::Instant::now();
     
     // Initialize and index repository
-    let mut mcp_server = GCoreMcpServer::new()?;
+    let mut mcp_server = PrismMcpServer::new()?;
     mcp_server.initialize_with_repository(repo_path).await?;
     
     let init_time = start_time.elapsed();

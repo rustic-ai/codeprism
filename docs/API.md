@@ -1,13 +1,12 @@
 # API Documentation
 
-This document provides detailed API documentation for all GCore components.
+This document provides detailed API documentation for all Prism components.
 
 ## Table of Contents
 
 - [Core Library (`gcore`)](#core-library-gcore)
 - [JavaScript/TypeScript Parser (`gcore-lang-js`)](#javascripttypescript-parser-gcore-lang-js)
-- [CLI Tools (`gcore-cli`)](#cli-tools-gcore-cli)
-- [Daemon Service (`gcore-daemon`)](#daemon-service-gcore-daemon)
+- [MCP Server (`prism-mcp`)](#mcp-server-prism-mcp)
 - [Error Handling](#error-handling)
 - [Examples](#examples)
 
@@ -467,115 +466,95 @@ The JavaScript/TypeScript parser supports:
 - **Calls**: Function calls, method calls
 - **TypeScript**: Basic type annotations, interfaces
 
-## CLI Tools (`gcore-cli`)
+## MCP Server (`prism-mcp`)
 
-Command-line interface for GCore operations.
+Model Context Protocol server for code intelligence.
 
-### Commands
+### Starting the Server
 
-#### `parse`
-
-Parse a repository or file.
+The MCP server is designed to be launched by MCP clients:
 
 ```bash
-gcore-cli parse [OPTIONS] <PATH>
-
-OPTIONS:
-    -r, --repo-id <REPO_ID>    Repository identifier
-    -o, --output <FORMAT>      Output format (json, table) [default: table]
-    -v, --verbose              Verbose output
-    -h, --help                 Print help information
-
-EXAMPLES:
-    gcore-cli parse /path/to/repo
-    gcore-cli parse --repo-id my-repo src/app.js
-    gcore-cli parse --output json /path/to/repo > output.json
+prism-mcp <REPOSITORY_PATH>
 ```
 
-#### `trace`
+### MCP Client Configuration
 
-Trace code paths between symbols.
+#### Claude Desktop Configuration
 
-```bash
-gcore-cli trace [OPTIONS] <FROM> [TO]
-
-OPTIONS:
-    -r, --repo-id <REPO_ID>    Repository identifier
-    -d, --depth <DEPTH>        Maximum trace depth [default: 10]
-    -t, --type <TYPE>          Edge types to follow [default: calls]
-    -h, --help                 Print help information
-
-EXAMPLES:
-    gcore-cli trace "src/Login.tsx:55"
-    gcore-cli trace "Login.authenticate" "Database.query"
-    gcore-cli trace --depth 5 --type calls,reads "main"
+```json
+{
+  "mcpServers": {
+    "prism": {
+      "command": "prism-mcp",
+      "args": ["/path/to/repository"]
+    }
+  }
+}
 ```
 
-#### `query`
+#### Cursor Configuration
 
-Query the code graph.
-
-```bash
-gcore-cli query [OPTIONS] <QUERY>
-
-OPTIONS:
-    -r, --repo-id <REPO_ID>    Repository identifier
-    -f, --format <FORMAT>      Output format [default: table]
-    -h, --help                 Print help information
-
-EXAMPLES:
-    gcore-cli query "functions in src/"
-    gcore-cli query "calls to authenticate"
-    gcore-cli query "classes implementing User"
+```json
+{
+  "mcp": {
+    "servers": [{
+      "name": "prism",
+      "command": ["prism-mcp", "."]
+    }]
+  }
+}
 ```
 
-## Daemon Service (`gcore-daemon`)
+### MCP Resources
 
-Background service for continuous code analysis.
+The server exposes repository data through MCP resources:
 
-### Configuration
+- `prism://repository/file/{path}` - Access file content
+- `prism://graph/repository` - Repository graph structure  
+- `prism://symbols/{type}` - Symbol listings (functions, classes, etc.)
 
-The daemon uses TOML configuration:
+### MCP Tools
 
-```toml
-# config.toml
-[daemon]
-port = 8080
-log_level = "info"
+Available analysis tools:
 
-[parser]
-debounce_ms = 500
-max_file_size = "10MB"
+#### `repo_stats`
+Get repository statistics and metrics.
 
-[storage]
-neo4j_uri = "bolt://localhost:7687"
-neo4j_user = "neo4j"
-neo4j_password = "password"
+#### `find_references`
+Find all references to a symbol across the codebase.
 
-[kafka]
-brokers = ["localhost:9092"]
-topic = "ast-patches"
-```
+#### `search_symbols`
+Search for symbols by name or regex pattern.
 
-### Command Line
+#### `trace_path`
+Trace execution paths between symbols.
 
-```bash
-gcore-daemon [OPTIONS]
+#### `explain_symbol`
+Get detailed information about a symbol including context.
 
-OPTIONS:
-    -c, --config <CONFIG>      Configuration file [default: config.toml]
-    -d, --daemon               Run as daemon
-    -v, --verbose              Verbose logging
-    -h, --help                 Print help information
+#### `find_dependencies`
+Analyze dependencies for files or symbols.
 
-EXAMPLES:
-    gcore-daemon --config /etc/gcore/config.toml
-    gcore-daemon --daemon --verbose
-```
+### MCP Prompts
+
+Predefined analysis prompts:
+
+#### `repository_overview`
+Generate comprehensive repository overview.
+
+#### `code_analysis`  
+Analyze code quality, patterns, and improvements.
+
+#### `debug_assistance`
+Help debug issues with contextual information.
+
+#### `refactoring_guidance`
+Provide guidance for code refactoring.
 
 ## Error Handling
 
-All GCore components use structured error handling with `thiserror`.
+All Prism components use structured error handling with `thiserror`.
 
 ### Core Errors
 
@@ -811,7 +790,7 @@ All public APIs are thread-safe:
 
 ## Versioning
 
-GCore follows [Semantic Versioning](https://semver.org/):
+Prism follows [Semantic Versioning](https://semver.org/):
 
 - **Major**: Breaking API changes
 - **Minor**: New features, backward compatible

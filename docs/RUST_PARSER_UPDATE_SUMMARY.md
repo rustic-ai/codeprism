@@ -64,7 +64,7 @@ This document summarizes all the documentation updates made to add Rust language
 
 **Impact**: Technical documentation reflects new language support priorities and current implementation status.
 
-### 6. **docs/GCORE-MCP-SERVER-DESCRIPTION.md** (MCP Capabilities)
+### 6. **docs/PRISM-MCP-SERVER-DESCRIPTION.md** (MCP Capabilities)
 **Updated**:
 - Added Rust to supported languages section:
   - "🚧 Rust (next priority - self-analysis capability)"

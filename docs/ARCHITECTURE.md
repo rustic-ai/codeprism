@@ -1,6 +1,6 @@
 # Architecture Guide
 
-This document describes the high-level architecture, design decisions, and implementation details of GCore.
+This document describes the high-level architecture, design decisions, and implementation details of Prism.
 
 **🚨 ARCHITECTURAL PIVOT - December 2024**
 
@@ -19,13 +19,13 @@ After detailed review against official MCP (Model Context Protocol) documentatio
 
 ## System Overview
 
-GCore is a **MCP-compliant** graph-first code intelligence system designed to provide real-time, accurate code understanding for LLM assistants. The system implements the Model Context Protocol (JSON-RPC 2.0) specification to integrate seamlessly with MCP clients like Claude Desktop, Cursor, and VS Code GitHub Copilot.
+Prism is a **MCP-compliant** graph-first code intelligence system designed to provide real-time, accurate code understanding for LLM assistants. The system implements the Model Context Protocol (JSON-RPC 2.0) specification to integrate seamlessly with MCP clients like Claude Desktop, Cursor, and VS Code GitHub Copilot.
 
 ### **MCP-Optimized Architecture**
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                   MCP-Compliant GCore                      │
+│                   MCP-Compliant Prism                      │
 ├─────────────────────────────────────────────────────────────┤
 │  MCP Clients                                                │
 │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐           │
@@ -36,7 +36,7 @@ GCore is a **MCP-compliant** graph-first code intelligence system designed to pr
 │         └───────────────┼───────────────┘                 │
 │                         ▼ (JSON-RPC 2.0)                 │
 │  ┌─────────────────────────────────────────────────────────┐ │
-│  │              GCore MCP Server                           │ │
+│  │              Prism MCP Server                           │ │
 │  │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐       │ │
 │  │  │ Resources   │ │   Tools     │ │  Prompts    │       │ │
 │  │  │ Manager     │ │ Manager     │ │ Manager     │       │ │
@@ -86,7 +86,7 @@ GCore is a **MCP-compliant** graph-first code intelligence system designed to pr
 
 ### 1. **MCP Protocol Compliance**
 
-GCore strictly adheres to the Model Context Protocol specification:
+Prism strictly adheres to the Model Context Protocol specification:
 
 - **JSON-RPC 2.0**: All communication uses proper JSON-RPC 2.0 format
 - **Initialization Handshake**: Proper capability negotiation
@@ -103,7 +103,7 @@ Based on MCP best practices:
 
 ### 3. **Graph-First Design**
 
-Maintains the core strength of GCore:
+Maintains the core strength of Prism:
 - **Structural Understanding**: Relationships between functions, classes, and modules
 - **Cross-Language Analysis**: Unified representation across programming languages
 - **Efficient Queries**: Graph traversal for code navigation and analysis
@@ -187,18 +187,18 @@ impl ResourceManager {
     // MCP: resources/list
     pub async fn list_resources(&self) -> McpResult<ResourceList> {
         // Return available resources with URIs like:
-        // - gcore://repo/src/main.py (file content)
-        // - gcore://graph/nodes (graph nodes)
-        // - gcore://symbols/functions (code symbols)
+        // - prism://repo/src/main.py (file content)
+        // - prism://graph/nodes (graph nodes)
+        // - prism://symbols/functions (code symbols)
     }
     
     // MCP: resources/read
     pub async fn read_resource(&self, uri: &str) -> McpResult<ResourceContent> {
         // Handle URIs and return appropriate content
         match uri {
-            uri if uri.starts_with("gcore://repo/") => self.read_file(uri).await,
-            uri if uri.starts_with("gcore://graph/") => self.read_graph_data(uri).await,
-            uri if uri.starts_with("gcore://symbols/") => self.read_symbols(uri).await,
+            uri if uri.starts_with("prism://repo/") => self.read_file(uri).await,
+            uri if uri.starts_with("prism://graph/") => self.read_graph_data(uri).await,
+            uri if uri.starts_with("prism://symbols/") => self.read_symbols(uri).await,
             _ => Err(McpError::InvalidResource(uri.to_string())),
         }
     }
@@ -333,7 +333,7 @@ sequenceDiagram
     ResourceManager->>McpServer: resource URIs
     McpServer->>Client: resource list
     
-    Client->>McpServer: resources/read (gcore://repo/file.py)
+    Client->>McpServer: resources/read (prism://repo/file.py)
     McpServer->>ResourceManager: read_resource()
     ResourceManager->>FileSystem: read file
     FileSystem->>ResourceManager: file content
@@ -538,8 +538,8 @@ impl SecurityManager {
       "command": "gcore",
       "args": ["serve", "/path/to/repository"],
       "env": {
-        "GCORE_LOG_LEVEL": "info",
-        "GCORE_CACHE_ENABLED": "true"
+        "PRISM_LOG_LEVEL": "info",
+        "PRISM_CACHE_ENABLED": "true"
       }
     }
   }
@@ -568,7 +568,7 @@ services:
     build: .
     environment:
       RUST_LOG: debug
-      GCORE_REPOSITORY_PATH: /workspace
+      PRISM_REPOSITORY_PATH: /workspace
     volumes:
       - ./:/workspace
     command: ["gcore", "serve", "/workspace", "--http", "--port", "8080"]
@@ -614,7 +614,7 @@ pub struct HealthStatus {
 
 ## Conclusion
 
-This **MCP-compliant architecture** provides a robust, performant, and standards-compliant foundation for GCore that:
+This **MCP-compliant architecture** provides a robust, performant, and standards-compliant foundation for Prism that:
 
 1. **Meets MCP Requirements**: Full JSON-RPC 2.0 compliance with proper transport
 2. **Optimizes for Simplicity**: Removed unnecessary complexity for better performance

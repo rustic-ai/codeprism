@@ -1,6 +1,6 @@
 # JavaScript Dependency Test Project
 
-This test project validates JavaScript/Node.js dependency scanning modes in the GCore MCP server, complementing the Python dependency tests. It demonstrates real-world React/Node.js patterns similar to your original Agent class discovery issue but for JavaScript ecosystems.
+This test project validates JavaScript/Node.js dependency scanning modes in the Prism MCP server, complementing the Python dependency tests. It demonstrates real-world React/Node.js patterns similar to your original Agent class discovery issue but for JavaScript ecosystems.
 
 ## Project Structure
 
@@ -53,7 +53,7 @@ This project validates all three dependency scanning modes for JavaScript:
 
 ### 1. **Minimal Mode** (Default)
 ```bash
-./target/release/gcore-mcp test-projects/js-dependency-test-project
+./target/release/prism-mcp test-projects/js-dependency-test-project
 ```
 - **Excludes**: All `node_modules/`, test files, build artifacts
 - **Includes**: Only core project files (~8-15 files)
@@ -62,7 +62,7 @@ This project validates all three dependency scanning modes for JavaScript:
 
 ### 2. **Smart Mode** 
 ```bash
-./target/release/gcore-mcp --smart-deps test-projects/js-dependency-test-project
+./target/release/prism-mcp --smart-deps test-projects/js-dependency-test-project
 ```
 - **Includes**: Dependency APIs (`index.js`, `package.json`, public interfaces)
 - **Excludes**: Internal implementation, tests, private modules
@@ -71,7 +71,7 @@ This project validates all three dependency scanning modes for JavaScript:
 
 ### 3. **Complete Mode**
 ```bash
-./target/release/gcore-mcp --include-deps test-projects/js-dependency-test-project
+./target/release/prism-mcp --include-deps test-projects/js-dependency-test-project
 ```
 - **Includes**: All dependencies including internal implementation
 - **Use case**: Complete code analysis, following all import chains
@@ -145,7 +145,7 @@ This JavaScript test project integrates with the comprehensive test suite:
 cd test-projects && python3 test_js_dependency_scanning.py
 
 # Cross-language validation
-./target/release/gcore-mcp --smart-deps /path/to/mixed/project
+./target/release/prism-mcp --smart-deps /path/to/mixed/project
 ```
 
 ## Key Learnings Validated

@@ -1,6 +1,6 @@
 # Developer Guide
 
-This guide covers the development workflow, architecture, and best practices for contributing to GCore.
+This guide covers the development workflow, architecture, and best practices for contributing to Prism.
 
 ## Table of Contents
 
@@ -109,8 +109,7 @@ gcore/
 │   ├── gcore-storage/        # Neo4j integration (planned)
 │   ├── gcore-bus/            # Kafka integration (planned)
 │   ├── gcore-mcp/            # MCP server (planned)
-│   ├── gcore-cli/            # Command-line tools
-│   └── gcore-daemon/         # Background service
+# (CLI and daemon components have been removed)
 │
 ├── docs/                     # Documentation
 │   ├── DEVELOPER.md          # This file

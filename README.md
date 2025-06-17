@@ -1,6 +1,6 @@
-# GCore - Graph-First Code Intelligence MCP Server
+# Prism - Graph-First Code Intelligence MCP Server
 
-A production-ready, high-performance code intelligence server implementing the Model Context Protocol (MCP). GCore provides AI assistants with structured understanding of codebases through graph-based analysis rather than traditional text search, enabling real-time, accurate code intelligence without vector embeddings.
+A production-ready, high-performance code intelligence server implementing the Model Context Protocol (MCP). Prism provides AI assistants with structured understanding of codebases through graph-based analysis rather than traditional text search, enabling real-time, accurate code intelligence without vector embeddings.
 
 ## 🚀 Current Status: Production Ready
 
@@ -53,7 +53,7 @@ A production-ready, high-performance code intelligence server implementing the M
                                                  │
                                                  ▼
                     ┌─────────────────────────────────────────┐
-                    │           GCore Engine                  │
+                    │           Prism Engine                  │
                     │  ┌─────────────┐  ┌─────────────────┐   │
                     │  │ Repository  │  │ Real-time File  │   │
                     │  │   Scanner   │  │   Monitoring    │   │
@@ -92,7 +92,7 @@ cd gcore
 cargo build --release
 
 # Test the binary
-./target/release/gcore-mcp --help
+./target/release/prism-mcp --help
 ```
 
 ### Choose Your AI Client
@@ -285,7 +285,7 @@ cargo test --all
 
 Dual-licensed under **MIT** and **Apache 2.0**. See [LICENSE-MIT](LICENSE-MIT) and [LICENSE-APACHE](LICENSE-APACHE) for details.
 
-## 🎉 Why GCore?
+## 🎉 Why Prism?
 
 ### **For AI Assistants**
 - **Structured Understanding**: Graph-based analysis vs. text search

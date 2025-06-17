@@ -1,4 +1,4 @@
-# GCore Setup Status
+# Prism Setup Status
 
 ## Completed Tasks
 
@@ -11,8 +11,7 @@
   - `gcore-bus` - Kafka integration
   - `gcore-storage` - Neo4j storage layer
   - `gcore-mcp` - MCP server
-  - `gcore-cli` - Command-line interface
-  - `gcore-daemon` - Background service
+  - (CLI and daemon components have been removed to focus on MCP server)
 
 ### 2. Core Infrastructure ✅
 - Implemented Universal AST types:

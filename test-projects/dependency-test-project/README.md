@@ -1,6 +1,6 @@
 # Dependency Test Project
 
-This test project is designed to thoroughly test and validate the dependency scanning modes implemented in the GCore MCP server. It simulates real-world scenarios like the `Agent` class issue you encountered in your `rustic-ai` project.
+This test project is designed to thoroughly test and validate the dependency scanning modes implemented in the Prism MCP server. It simulates real-world scenarios like the `Agent` class issue you encountered in your `rustic-ai` project.
 
 ## Project Structure
 
@@ -55,7 +55,7 @@ This project tests all three dependency scanning modes:
 
 ### 1. **Minimal Mode** (Default)
 ```bash
-./target/release/gcore-mcp test-projects/dependency-test-project
+./target/release/prism-mcp test-projects/dependency-test-project
 ```
 - **Excludes**: All dependency directories (`venv/`, `.tox/`, etc.)
 - **Includes**: Only core project files (~15-25 files)
@@ -64,7 +64,7 @@ This project tests all three dependency scanning modes:
 
 ### 2. **Smart Mode** 
 ```bash
-./target/release/gcore-mcp --smart-deps test-projects/dependency-test-project
+./target/release/prism-mcp --smart-deps test-projects/dependency-test-project
 ```
 - **Includes**: Dependency APIs (`__init__.py`, public interfaces)
 - **Excludes**: Internal implementation, tests, private modules  
@@ -73,7 +73,7 @@ This project tests all three dependency scanning modes:
 
 ### 3. **Complete Mode**
 ```bash
-./target/release/gcore-mcp --include-deps test-projects/dependency-test-project
+./target/release/prism-mcp --include-deps test-projects/dependency-test-project
 ```
 - **Includes**: All dependencies including internal implementation
 - **Use case**: Complete code analysis, following all import chains
@@ -115,13 +115,13 @@ This project tests all three dependency scanning modes:
 ### Individual Mode Testing
 ```bash
 # Test minimal mode
-./target/release/gcore-mcp test-projects/dependency-test-project
+./target/release/prism-mcp test-projects/dependency-test-project
 
 # Test smart mode  
-./target/release/gcore-mcp --smart-deps test-projects/dependency-test-project
+./target/release/prism-mcp --smart-deps test-projects/dependency-test-project
 
 # Test complete mode
-./target/release/gcore-mcp --include-deps test-projects/dependency-test-project
+./target/release/prism-mcp --include-deps test-projects/dependency-test-project
 ```
 
 ### Python Test Suite

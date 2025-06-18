@@ -24,6 +24,7 @@ use prism_core::{
 pub mod transport;
 pub mod protocol;
 pub mod resources;
+pub mod tools_legacy;
 pub mod tools;
 pub mod prompts;
 pub mod server;

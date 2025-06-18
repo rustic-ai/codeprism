@@ -1,9 +1,16 @@
-//! MCP Tools implementation
+//! MCP Tools implementation - Now using modular architecture
+//! 
+//! This module has been restructured as part of Phase 1 enhancement.
+//! The massive monolithic implementation has been broken down into
+//! logical modules for better maintainability.
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use crate::PrismMcpServer;
+
+// This is the legacy tools implementation that will be phased out
+// The new modular structure is in tools/ directory
 
 /// Tool capabilities as defined by MCP
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -81,7 +88,8 @@ pub struct ListToolsResult {
     pub next_cursor: Option<String>,
 }
 
-/// Tool manager for MCP server
+/// Legacy ToolManager - maintains backward compatibility
+/// This maintains backward compatibility while the new modular architecture is being developed
 pub struct ToolManager {
     server: std::sync::Arc<tokio::sync::RwLock<PrismMcpServer>>,
 }

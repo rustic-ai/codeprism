@@ -17,7 +17,7 @@ use crate::{
     },
     transport::{Transport, TransportMessage, StdioTransport},
     resources::{ResourceManager, ListResourcesParams, ReadResourceParams},
-    tools::{ToolManager, ListToolsParams, CallToolParams},
+    tools::{ToolRegistry, ListToolsParams, CallToolParams, ToolCapabilities},
     prompts::{PromptManager, ListPromptsParams, GetPromptParams},
 };
 
@@ -46,8 +46,8 @@ pub struct McpServer {
     prism_server: Arc<RwLock<PrismMcpServer>>,
     /// Resource manager
     resource_manager: ResourceManager,
-    /// Tool manager
-    tool_manager: ToolManager,
+    /// Tool registry
+    tool_registry: ToolRegistry,
     /// Prompt manager
     prompt_manager: PromptManager,
 }
@@ -58,7 +58,7 @@ impl McpServer {
         let prism_server = Arc::new(RwLock::new(PrismMcpServer::new()?));
         
         let resource_manager = ResourceManager::new(prism_server.clone());
-        let tool_manager = ToolManager::new(prism_server.clone());
+        let tool_registry = ToolRegistry::new(prism_server.clone());
         let prompt_manager = PromptManager::new(prism_server.clone());
 
         Ok(Self {
@@ -71,7 +71,7 @@ impl McpServer {
             client_info: None,
             prism_server,
             resource_manager,
-            tool_manager,
+            tool_registry,
             prompt_manager,
         })
     }
@@ -97,7 +97,7 @@ impl McpServer {
         )?));
         
         let resource_manager = ResourceManager::new(prism_server.clone());
-        let tool_manager = ToolManager::new(prism_server.clone());
+        let tool_registry = ToolRegistry::new(prism_server.clone());
         let prompt_manager = PromptManager::new(prism_server.clone());
 
         Ok(Self {
@@ -110,7 +110,7 @@ impl McpServer {
             client_info: None,
             prism_server,
             resource_manager,
-            tool_manager,
+            tool_registry,
             prompt_manager,
         })
     }
@@ -282,7 +282,7 @@ impl McpServer {
             .map_err(|e| JsonRpcError::invalid_params(format!("Invalid parameters: {}", e)))?
             .unwrap_or(ListToolsParams { cursor: None });
 
-        let result = self.tool_manager.list_tools(params).await
+        let result = self.tool_registry.list_tools(params).await
             .map_err(|e| JsonRpcError::internal_error(format!("Tool list error: {}", e)))?;
 
         serde_json::to_value(result)
@@ -296,7 +296,7 @@ impl McpServer {
             .try_into_type()
             .map_err(|e| JsonRpcError::invalid_params(format!("Invalid parameters: {}", e)))?;
 
-        let result = self.tool_manager.call_tool(params).await
+        let result = self.tool_registry.call_tool(params).await
             .map_err(|e| JsonRpcError::internal_error(format!("Tool call error: {}", e)))?;
 
         serde_json::to_value(result)

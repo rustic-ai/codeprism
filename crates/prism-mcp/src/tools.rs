@@ -398,7 +398,7 @@ impl ToolManager {
             Tool {
                 name: "detect_patterns".to_string(),
                 title: Some("Detect Design Patterns".to_string()),
-                description: "Identify design patterns and architectural structures in the codebase".to_string(),
+                description: "Identify design patterns, architectural structures, and metaprogramming patterns in the codebase".to_string(),
                 input_schema: serde_json::json!({
                     "type": "object",
                     "properties": {
@@ -411,7 +411,7 @@ impl ToolManager {
                             "type": "array",
                             "items": {
                                 "type": "string",
-                                "enum": ["design_patterns", "anti_patterns", "architectural_patterns", "all"]
+                                "enum": ["design_patterns", "anti_patterns", "architectural_patterns", "metaprogramming_patterns", "all"]
                             },
                             "description": "Types of patterns to detect",
                             "default": ["all"]
@@ -4345,12 +4345,18 @@ impl ToolManager {
             detected_patterns.extend(anti_patterns);
         }
         
-        // Analyze Architectural patterns
+                // Analyze Architectural patterns
         if pattern_types.contains(&"architectural_patterns".to_string()) || pattern_types.contains(&"all".to_string()) {
             let arch_patterns = self.detect_architectural_patterns(server, confidence_threshold).await?;
             detected_patterns.extend(arch_patterns);
         }
         
+        // Analyze Metaprogramming patterns
+        if pattern_types.contains(&"metaprogramming_patterns".to_string()) || pattern_types.contains(&"all".to_string()) {
+            let metaprogramming_patterns = self.detect_metaprogramming_patterns(server, confidence_threshold).await?;
+            detected_patterns.extend(metaprogramming_patterns);
+        }
+
         // Add suggestions if requested
         if include_suggestions {
             for pattern in &mut detected_patterns {
@@ -4754,6 +4760,545 @@ impl ToolManager {
         Ok(patterns)
     }
 
+    /// Detect metaprogramming patterns specific to Python
+    async fn detect_metaprogramming_patterns(&self, server: &PrismMcpServer, confidence_threshold: f64) -> Result<Vec<serde_json::Value>> {
+        let mut patterns = Vec::new();
+        
+        // Registry Metaclass Pattern (like AgentMetaclass)
+        let registry_patterns = self.detect_registry_metaclass_pattern(server, confidence_threshold).await?;
+        patterns.extend(registry_patterns);
+        
+        // Attribute Injection Metaclass Pattern
+        let attribute_injection_patterns = self.detect_attribute_injection_metaclass_pattern(server, confidence_threshold).await?;
+        patterns.extend(attribute_injection_patterns);
+        
+        // Decorator Factory Pattern
+        let decorator_factory_patterns = self.detect_decorator_factory_pattern(server, confidence_threshold).await?;
+        patterns.extend(decorator_factory_patterns);
+        
+        // Property Descriptor Pattern
+        let descriptor_patterns = self.detect_property_descriptor_pattern(server, confidence_threshold).await?;
+        patterns.extend(descriptor_patterns);
+        
+        // Dynamic Attribute Pattern (__getattr__/__setattr__)
+        let dynamic_attr_patterns = self.detect_dynamic_attribute_pattern(server, confidence_threshold).await?;
+        patterns.extend(dynamic_attr_patterns);
+        
+        // Mixin Pattern
+        let mixin_patterns = self.detect_mixin_pattern(server, confidence_threshold).await?;
+        patterns.extend(mixin_patterns);
+        
+        // Abstract Base Class Pattern
+        let abc_patterns = self.detect_abstract_base_class_pattern(server, confidence_threshold).await?;
+        patterns.extend(abc_patterns);
+        
+        // Protocol/Interface Pattern (Duck Typing)
+        let protocol_patterns = self.detect_protocol_pattern(server, confidence_threshold).await?;
+        patterns.extend(protocol_patterns);
+        
+        Ok(patterns)
+    }
+
+    /// Detect Registry Metaclass Pattern (like AgentMetaclass)
+    async fn detect_registry_metaclass_pattern(&self, server: &PrismMcpServer, confidence_threshold: f64) -> Result<Vec<serde_json::Value>> {
+        let mut patterns = Vec::new();
+        let classes = server.graph_store().get_nodes_by_kind(prism_core::NodeKind::Class);
+        
+        for class in classes {
+            // Check if class is a metaclass that implements registry pattern
+            if let Ok(inheritance_info) = server.graph_query().get_inheritance_info(&class.id) {
+                if inheritance_info.is_metaclass {
+                    let mut confidence = 0.5; // Base confidence for being a metaclass
+                    let mut indicators = vec!["Is a metaclass".to_string()];
+                    
+                    // Check for registry-like naming
+                    if class.name.to_lowercase().contains("registry") || 
+                       class.name.to_lowercase().contains("manager") ||
+                       class.name.ends_with("Metaclass") {
+                        confidence += 0.2;
+                        indicators.push("Registry-like naming pattern".to_string());
+                    }
+                    
+                    // Check for classes that use this metaclass
+                    let affected_classes = inheritance_info.subclasses.len();
+                    if affected_classes > 2 {
+                        confidence += 0.3;
+                        indicators.push(format!("Used by {} classes", affected_classes));
+                    }
+                    
+                    // Check for dynamic attributes that suggest registry behavior
+                    if !inheritance_info.dynamic_attributes.is_empty() {
+                        confidence += 0.2;
+                        indicators.push(format!("{} dynamic attributes created", inheritance_info.dynamic_attributes.len()));
+                    }
+                    
+                    if confidence >= confidence_threshold {
+                        patterns.push(serde_json::json!({
+                            "type": "Registry Metaclass",
+                            "category": "metaprogramming_pattern",
+                            "confidence": confidence,
+                            "metaclass": {
+                                "id": class.id.to_hex(),
+                                "name": class.name,
+                                "file": class.file.display().to_string(),
+                                "span": class.span
+                            },
+                            "affected_classes": affected_classes,
+                            "dynamic_attributes": inheritance_info.dynamic_attributes,
+                            "indicators": indicators,
+                            "description": "Metaclass that automatically registers classes and injects functionality"
+                        }));
+                    }
+                }
+            }
+        }
+        
+        Ok(patterns)
+    }
+
+    /// Detect Attribute Injection Metaclass Pattern
+    async fn detect_attribute_injection_metaclass_pattern(&self, server: &PrismMcpServer, confidence_threshold: f64) -> Result<Vec<serde_json::Value>> {
+        let mut patterns = Vec::new();
+        let classes = server.graph_store().get_nodes_by_kind(prism_core::NodeKind::Class);
+        
+        for class in classes {
+            if let Ok(inheritance_info) = server.graph_query().get_inheritance_info(&class.id) {
+                if inheritance_info.is_metaclass && !inheritance_info.dynamic_attributes.is_empty() {
+                    let dynamic_count = inheritance_info.dynamic_attributes.len();
+                    let confidence = (dynamic_count as f64 / 10.0).min(1.0);
+                    
+                    if confidence >= confidence_threshold {
+                        patterns.push(serde_json::json!({
+                            "type": "Attribute Injection Metaclass",
+                            "category": "metaprogramming_pattern",
+                            "confidence": confidence,
+                            "metaclass": {
+                                "id": class.id.to_hex(),
+                                "name": class.name,
+                                "file": class.file.display().to_string(),
+                                "span": class.span
+                            },
+                            "injected_attributes": inheritance_info.dynamic_attributes,
+                            "indicators": [format!("Injects {} dynamic attributes", dynamic_count)],
+                            "description": "Metaclass that automatically injects attributes into classes"
+                        }));
+                    }
+                }
+            }
+        }
+        
+        Ok(patterns)
+    }
+
+    /// Detect Decorator Factory Pattern
+    async fn detect_decorator_factory_pattern(&self, server: &PrismMcpServer, confidence_threshold: f64) -> Result<Vec<serde_json::Value>> {
+        let mut patterns = Vec::new();
+        let functions = server.graph_store().get_nodes_by_kind(prism_core::NodeKind::Function);
+        
+        for function in functions {
+            let mut confidence = 0.0;
+            let mut indicators = Vec::new();
+            
+            // Check if function name suggests decorator factory
+            let name_lower = function.name.to_lowercase();
+            if name_lower.contains("decorator") || name_lower.ends_with("_decorator") || 
+               name_lower.starts_with("make_") || name_lower.contains("factory") {
+                confidence += 0.4;
+                indicators.push("Decorator-like naming pattern".to_string());
+            }
+            
+            // Check for nested function definitions (typical of decorator factories)
+            // This is a simplified check - in real implementation we'd parse the AST
+            if let Ok(content) = std::fs::read_to_string(&function.file) {
+                let lines: Vec<&str> = content.lines().collect();
+                let start_line = function.span.start_line.saturating_sub(1);
+                let end_line = function.span.end_line.min(lines.len());
+                
+                if start_line < end_line {
+                    let function_content: String = lines[start_line..end_line].join("\n");
+                    
+                    // Look for nested def statements
+                    let nested_defs = function_content.matches("def ").count();
+                    if nested_defs > 1 {
+                        confidence += 0.4;
+                        indicators.push("Contains nested function definitions".to_string());
+                    }
+                    
+                    // Look for return statements that return functions
+                    if function_content.contains("return ") && 
+                       (function_content.contains("wrapper") || function_content.contains("decorator")) {
+                        confidence += 0.3;
+                        indicators.push("Returns wrapper function".to_string());
+                    }
+                }
+            }
+            
+            if confidence >= confidence_threshold {
+                patterns.push(serde_json::json!({
+                    "type": "Decorator Factory",
+                    "category": "metaprogramming_pattern",
+                    "confidence": confidence,
+                    "function": {
+                        "id": function.id.to_hex(),
+                        "name": function.name,
+                        "file": function.file.display().to_string(),
+                        "span": function.span
+                    },
+                    "indicators": indicators,
+                    "description": "Function that creates and returns decorators"
+                }));
+            }
+        }
+        
+        Ok(patterns)
+    }
+
+    /// Detect Property Descriptor Pattern
+    async fn detect_property_descriptor_pattern(&self, server: &PrismMcpServer, confidence_threshold: f64) -> Result<Vec<serde_json::Value>> {
+        let mut patterns = Vec::new();
+        let classes = server.graph_store().get_nodes_by_kind(prism_core::NodeKind::Class);
+        
+        for class in classes {
+            let mut confidence = 0.0;
+            let mut indicators = Vec::new();
+            let mut descriptor_methods = Vec::new();
+            
+            // Check for descriptor protocol methods
+            let methods = server.graph_store().get_outgoing_edges(&class.id);
+            for edge in methods {
+                if let Some(method_node) = server.graph_store().get_node(&edge.target) {
+                    if method_node.kind == prism_core::NodeKind::Method {
+                        match method_node.name.as_str() {
+                            "__get__" => {
+                                confidence += 0.4;
+                                descriptor_methods.push("__get__".to_string());
+                            }
+                            "__set__" => {
+                                confidence += 0.3;
+                                descriptor_methods.push("__set__".to_string());
+                            }
+                            "__delete__" => {
+                                confidence += 0.2;
+                                descriptor_methods.push("__delete__".to_string());
+                            }
+                            "__set_name__" => {
+                                confidence += 0.2;
+                                descriptor_methods.push("__set_name__".to_string());
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+            }
+            
+            if !descriptor_methods.is_empty() {
+                indicators.push(format!("Implements descriptor methods: {}", descriptor_methods.join(", ")));
+            }
+            
+            // Check for property-like naming
+            if class.name.to_lowercase().contains("property") || 
+               class.name.to_lowercase().contains("descriptor") ||
+               class.name.to_lowercase().contains("field") {
+                confidence += 0.2;
+                indicators.push("Property-like naming pattern".to_string());
+            }
+            
+            if confidence >= confidence_threshold {
+                patterns.push(serde_json::json!({
+                    "type": "Property Descriptor",
+                    "category": "metaprogramming_pattern",
+                    "confidence": confidence,
+                    "class": {
+                        "id": class.id.to_hex(),
+                        "name": class.name,
+                        "file": class.file.display().to_string(),
+                        "span": class.span
+                    },
+                    "descriptor_methods": descriptor_methods,
+                    "indicators": indicators,
+                    "description": "Class implementing the descriptor protocol for managed attributes"
+                }));
+            }
+        }
+        
+        Ok(patterns)
+    }
+
+    /// Detect Dynamic Attribute Pattern (__getattr__/__setattr__)
+    async fn detect_dynamic_attribute_pattern(&self, server: &PrismMcpServer, confidence_threshold: f64) -> Result<Vec<serde_json::Value>> {
+        let mut patterns = Vec::new();
+        let classes = server.graph_store().get_nodes_by_kind(prism_core::NodeKind::Class);
+        
+        for class in classes {
+            let mut confidence = 0.0;
+            let mut indicators = Vec::new();
+            let mut dynamic_methods = Vec::new();
+            
+            // Check for dynamic attribute methods
+            let methods = server.graph_store().get_outgoing_edges(&class.id);
+            for edge in methods {
+                if let Some(method_node) = server.graph_store().get_node(&edge.target) {
+                    if method_node.kind == prism_core::NodeKind::Method {
+                        match method_node.name.as_str() {
+                            "__getattr__" => {
+                                confidence += 0.4;
+                                dynamic_methods.push("__getattr__".to_string());
+                            }
+                            "__setattr__" => {
+                                confidence += 0.3;
+                                dynamic_methods.push("__setattr__".to_string());
+                            }
+                            "__getattribute__" => {
+                                confidence += 0.3;
+                                dynamic_methods.push("__getattribute__".to_string());
+                            }
+                            "__delattr__" => {
+                                confidence += 0.2;
+                                dynamic_methods.push("__delattr__".to_string());
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+            }
+            
+            if !dynamic_methods.is_empty() {
+                indicators.push(format!("Implements dynamic attribute methods: {}", dynamic_methods.join(", ")));
+            }
+            
+            // Check for proxy-like naming
+            if class.name.to_lowercase().contains("proxy") || 
+               class.name.to_lowercase().contains("wrapper") ||
+               class.name.to_lowercase().contains("dynamic") {
+                confidence += 0.2;
+                indicators.push("Dynamic/proxy-like naming pattern".to_string());
+            }
+            
+            if confidence >= confidence_threshold {
+                patterns.push(serde_json::json!({
+                    "type": "Dynamic Attribute Pattern",
+                    "category": "metaprogramming_pattern",
+                    "confidence": confidence,
+                    "class": {
+                        "id": class.id.to_hex(),
+                        "name": class.name,
+                        "file": class.file.display().to_string(),
+                        "span": class.span
+                    },
+                    "dynamic_methods": dynamic_methods,
+                    "indicators": indicators,
+                    "description": "Class with dynamic attribute access and manipulation"
+                }));
+            }
+        }
+        
+        Ok(patterns)
+    }
+
+    /// Detect Mixin Pattern
+    async fn detect_mixin_pattern(&self, server: &PrismMcpServer, confidence_threshold: f64) -> Result<Vec<serde_json::Value>> {
+        let mut patterns = Vec::new();
+        let classes = server.graph_store().get_nodes_by_kind(prism_core::NodeKind::Class);
+        
+        for class in classes {
+            let mut confidence = 0.0;
+            let mut indicators = Vec::new();
+            
+            // Check for mixin naming convention
+            if class.name.ends_with("Mixin") || class.name.to_lowercase().contains("mixin") {
+                confidence += 0.6;
+                indicators.push("Mixin naming convention".to_string());
+            }
+            
+            // Check if this class is used as a mixin by others
+            if let Ok(inheritance_info) = server.graph_query().get_inheritance_info(&class.id) {
+                let usage_count = inheritance_info.subclasses.len();
+                if usage_count > 1 {
+                    confidence += 0.3;
+                    indicators.push(format!("Used by {} classes", usage_count));
+                }
+                
+                // Check if it has a small, focused set of methods (typical of mixins)
+                let method_count = server.graph_store().get_outgoing_edges(&class.id)
+                    .iter()
+                    .filter(|edge| {
+                        if let Some(target_node) = server.graph_store().get_node(&edge.target) {
+                            target_node.kind == prism_core::NodeKind::Method
+                        } else {
+                            false
+                        }
+                    })
+                    .count();
+                
+                if method_count > 0 && method_count <= 5 {
+                    confidence += 0.2;
+                    indicators.push(format!("Small focused interface ({} methods)", method_count));
+                }
+            }
+            
+            if confidence >= confidence_threshold {
+                patterns.push(serde_json::json!({
+                    "type": "Mixin Pattern",
+                    "category": "metaprogramming_pattern",
+                    "confidence": confidence,
+                    "class": {
+                        "id": class.id.to_hex(),
+                        "name": class.name,
+                        "file": class.file.display().to_string(),
+                        "span": class.span
+                    },
+                    "indicators": indicators,
+                    "description": "Class designed to be mixed into other classes to provide specific functionality"
+                }));
+            }
+        }
+        
+        Ok(patterns)
+    }
+
+    /// Detect Abstract Base Class Pattern
+    async fn detect_abstract_base_class_pattern(&self, server: &PrismMcpServer, confidence_threshold: f64) -> Result<Vec<serde_json::Value>> {
+        let mut patterns = Vec::new();
+        let classes = server.graph_store().get_nodes_by_kind(prism_core::NodeKind::Class);
+        
+        for class in classes {
+            let mut confidence = 0.0;
+            let mut indicators = Vec::new();
+            
+            // Check for ABC naming patterns
+            if class.name.starts_with("Abstract") || 
+               class.name.starts_with("Base") || 
+               class.name.ends_with("ABC") ||
+               class.name.ends_with("Base") {
+                confidence += 0.4;
+                indicators.push("Abstract/Base naming pattern".to_string());
+            }
+            
+            // Check if it has subclasses (typical of abstract base classes)
+            if let Ok(inheritance_info) = server.graph_query().get_inheritance_info(&class.id) {
+                let subclass_count = inheritance_info.subclasses.len();
+                if subclass_count > 0 {
+                    confidence += 0.4;
+                    indicators.push(format!("Has {} subclasses", subclass_count));
+                }
+                
+                // Check for ABC inheritance
+                if inheritance_info.base_classes.iter().any(|base| base.class_name == "ABC") {
+                    confidence += 0.3;
+                    indicators.push("Inherits from ABC".to_string());
+                }
+            }
+            
+            // Check for abstract method indicators (methods that might raise NotImplementedError)
+            let methods = server.graph_store().get_outgoing_edges(&class.id);
+            let abstract_methods = methods.iter().filter(|edge| {
+                if let Some(method_node) = server.graph_store().get_node(&edge.target) {
+                    if method_node.kind == prism_core::NodeKind::Method {
+                        // This is a simplified check - ideally we'd parse the method body
+                        if let Ok(content) = std::fs::read_to_string(&method_node.file) {
+                            let lines: Vec<&str> = content.lines().collect();
+                            let start_line = method_node.span.start_line.saturating_sub(1);
+                            let end_line = method_node.span.end_line.min(lines.len());
+                            
+                            if start_line < end_line {
+                                let method_content: String = lines[start_line..end_line].join("\n");
+                                return method_content.contains("NotImplementedError") || 
+                                       method_content.contains("@abstractmethod");
+                            }
+                        }
+                    }
+                }
+                false
+            }).count();
+            
+            if abstract_methods > 0 {
+                confidence += 0.3;
+                indicators.push(format!("{} abstract methods", abstract_methods));
+            }
+            
+            if confidence >= confidence_threshold {
+                patterns.push(serde_json::json!({
+                    "type": "Abstract Base Class",
+                    "category": "metaprogramming_pattern",
+                    "confidence": confidence,
+                    "class": {
+                        "id": class.id.to_hex(),
+                        "name": class.name,
+                        "file": class.file.display().to_string(),
+                        "span": class.span
+                    },
+                    "abstract_methods": abstract_methods,
+                    "indicators": indicators,
+                    "description": "Abstract base class defining interface for subclasses"
+                }));
+            }
+        }
+        
+        Ok(patterns)
+    }
+
+    /// Detect Protocol/Interface Pattern (Duck Typing)
+    async fn detect_protocol_pattern(&self, server: &PrismMcpServer, confidence_threshold: f64) -> Result<Vec<serde_json::Value>> {
+        let mut patterns = Vec::new();
+        let classes = server.graph_store().get_nodes_by_kind(prism_core::NodeKind::Class);
+        
+        for class in classes {
+            let mut confidence = 0.0;
+            let mut indicators = Vec::new();
+            
+            // Check for Protocol naming patterns
+            if class.name.ends_with("Protocol") || 
+               class.name.ends_with("Interface") ||
+               class.name.starts_with("I") && class.name.chars().nth(1).map_or(false, |c| c.is_uppercase()) {
+                confidence += 0.5;
+                indicators.push("Protocol/Interface naming pattern".to_string());
+            }
+            
+            // Check for Protocol inheritance (typing.Protocol)
+            if let Ok(inheritance_info) = server.graph_query().get_inheritance_info(&class.id) {
+                if inheritance_info.base_classes.iter().any(|base| base.class_name == "Protocol") {
+                    confidence += 0.4;
+                    indicators.push("Inherits from Protocol".to_string());
+                }
+            }
+            
+            // Check for interface-like structure (methods without implementation)
+            let methods = server.graph_store().get_outgoing_edges(&class.id);
+            let method_count = methods.iter().filter(|edge| {
+                if let Some(method_node) = server.graph_store().get_node(&edge.target) {
+                    method_node.kind == prism_core::NodeKind::Method
+                } else {
+                    false
+                }
+            }).count();
+            
+            // Protocol classes typically have methods but minimal implementation
+            if method_count > 0 && method_count <= 10 {
+                confidence += 0.2;
+                indicators.push(format!("Defines {} interface methods", method_count));
+            }
+            
+            if confidence >= confidence_threshold {
+                patterns.push(serde_json::json!({
+                    "type": "Protocol/Interface",
+                    "category": "metaprogramming_pattern",
+                    "confidence": confidence,
+                    "class": {
+                        "id": class.id.to_hex(),
+                        "name": class.name,
+                        "file": class.file.display().to_string(),
+                        "span": class.span
+                    },
+                    "method_count": method_count,
+                    "indicators": indicators,
+                    "description": "Protocol or interface defining expected behavior via duck typing"
+                }));
+            }
+        }
+        
+        Ok(patterns)
+    }
+
     /// Get improvement suggestions for a pattern type
     fn get_pattern_suggestions(&self, pattern_type: &str) -> Vec<String> {
         match pattern_type {
@@ -4781,6 +5326,47 @@ impl ToolManager {
                 "Break down into smaller, focused methods".to_string(),
                 "Extract common logic into helper methods".to_string(),
                 "Consider if the method has too many responsibilities".to_string(),
+            ],
+            "Registry Metaclass" => vec![
+                "Document the registration behavior clearly".to_string(),
+                "Consider thread safety for registry operations".to_string(),
+                "Provide clear error messages for registration failures".to_string(),
+                "Consider using class decorators as an alternative".to_string(),
+            ],
+            "Attribute Injection Metaclass" => vec![
+                "Document all injected attributes".to_string(),
+                "Avoid name conflicts with user-defined attributes".to_string(),
+                "Consider using descriptors for complex attribute behavior".to_string(),
+            ],
+            "Decorator Factory" => vec![
+                "Use functools.wraps to preserve function metadata".to_string(),
+                "Document the decorator's behavior and parameters".to_string(),
+                "Consider type hints for better IDE support".to_string(),
+            ],
+            "Property Descriptor" => vec![
+                "Implement proper error handling in descriptor methods".to_string(),
+                "Document the descriptor's behavior clearly".to_string(),
+                "Consider using __set_name__ for better introspection".to_string(),
+            ],
+            "Dynamic Attribute Pattern" => vec![
+                "Be careful with infinite recursion in __getattribute__".to_string(),
+                "Document the dynamic attribute behavior".to_string(),
+                "Consider performance implications of dynamic access".to_string(),
+            ],
+            "Mixin Pattern" => vec![
+                "Keep mixins small and focused on single responsibility".to_string(),
+                "Use clear naming conventions (e.g., SomethingMixin)".to_string(),
+                "Document the expected interface and dependencies".to_string(),
+            ],
+            "Abstract Base Class" => vec![
+                "Use @abstractmethod decorator for abstract methods".to_string(),
+                "Document the contract that subclasses must implement".to_string(),
+                "Consider using typing.Protocol for structural subtyping".to_string(),
+            ],
+            "Protocol/Interface" => vec![
+                "Use typing.Protocol for static type checking".to_string(),
+                "Document the expected behavior, not just signatures".to_string(),
+                "Consider runtime checks if needed".to_string(),
             ],
             _ => vec!["No specific suggestions available".to_string()],
         }

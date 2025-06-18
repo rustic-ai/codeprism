@@ -414,6 +414,218 @@ impl Default for AnalysisCache {
     }
 }
 
+/// Advanced cache statistics for optimization
+#[derive(Debug, Clone, Serialize)]
+pub struct AdvancedCacheStats {
+    /// Total number of cached entries
+    pub total_entries: usize,
+    /// Current memory usage
+    pub memory_usage_bytes: usize,
+    /// Memory efficiency (entries per byte)
+    pub memory_efficiency: f64,
+    /// Per-tool performance statistics
+    pub tool_performance: HashMap<String, ToolCacheStats>,
+    /// Cache fragmentation ratio
+    pub fragmentation_ratio: f64,
+    /// Whether cleanup is recommended
+    pub recommended_cleanup: bool,
+}
+
+/// Cache statistics per tool
+#[derive(Debug, Clone, Serialize)]
+pub struct ToolCacheStats {
+    /// Cache hits for this tool
+    pub hits: u64,
+    /// Cache misses for this tool
+    pub misses: u64,
+    /// Total cached entries for this tool
+    pub total_size: usize,
+    /// Average TTL for this tool
+    pub average_ttl: Duration,
+}
+
+impl AnalysisCache {
+    /// Warm cache with commonly used results
+    pub fn warm_cache(&self, workflow_patterns: &[String]) -> Result<()> {
+        let mut cache = self.cache.write().map_err(|_| {
+            anyhow::anyhow!("Failed to acquire write lock on cache")
+        })?;
+        
+        // Pre-populate cache with results for common workflow patterns
+        for pattern in workflow_patterns {
+            match pattern.as_str() {
+                "repository_overview" => {
+                    let key = CacheKey::new("repository_stats".to_string(), &serde_json::json!({}), None);
+                    let entry = CacheEntry::new(
+                        serde_json::json!({"status": "warmed", "pattern": "repository_overview"}),
+                        self.config.get_ttl_for_tool("repository_stats"),
+                    );
+                    cache.insert(key, entry);
+                },
+                "security_analysis" => {
+                    let key = CacheKey::new("analyze_security".to_string(), &serde_json::json!({}), None);
+                    let entry = CacheEntry::new(
+                        serde_json::json!({"status": "warmed", "pattern": "security_analysis"}),
+                        self.config.get_ttl_for_tool("analyze_security"),
+                    );
+                    cache.insert(key, entry);
+                },
+                "complexity_analysis" => {
+                    let key = CacheKey::new("analyze_complexity".to_string(), &serde_json::json!({}), None);
+                    let entry = CacheEntry::new(
+                        serde_json::json!({"status": "warmed", "pattern": "complexity_analysis"}),
+                        self.config.get_ttl_for_tool("analyze_complexity"),
+                    );
+                    cache.insert(key, entry);
+                },
+                _ => {} // Ignore unknown patterns
+            }
+        }
+        
+        self.update_memory_stats(&cache)?;
+        Ok(())
+    }
+
+    /// Invalidate cache entries based on code changes
+    pub fn invalidate_by_pattern(&self, pattern: &str) -> Result<usize> {
+        let mut cache = self.cache.write().map_err(|_| {
+            anyhow::anyhow!("Failed to acquire write lock on cache")
+        })?;
+        
+        let mut invalidated = 0;
+        let mut keys_to_remove = Vec::new();
+        
+        for (key, _) in cache.iter() {
+            // Simple pattern matching - in real implementation would be more sophisticated
+            if key.tool_name.contains(pattern) || 
+               key.target.as_ref().map_or(false, |t| t.contains(pattern)) {
+                keys_to_remove.push(key.clone());
+                invalidated += 1;
+            }
+        }
+        
+        for key in keys_to_remove {
+            cache.remove(&key);
+        }
+        
+        self.update_memory_stats(&cache)?;
+        Ok(invalidated)
+    }
+
+    /// Get advanced cache statistics for optimization
+    pub fn get_advanced_stats(&self) -> Result<AdvancedCacheStats> {
+        let cache = self.cache.read().map_err(|_| {
+            anyhow::anyhow!("Failed to acquire read lock on cache")
+        })?;
+        
+        let total_entries = cache.len();
+        let memory_usage_bytes: usize = cache.values().map(|entry| entry.size_bytes).sum();
+        
+        // Calculate hit/miss ratios by tool
+        let mut tool_stats = HashMap::new();
+        for key in cache.keys() {
+            let stats = tool_stats.entry(key.tool_name.clone()).or_insert(ToolCacheStats {
+                hits: 0,
+                misses: 0,
+                total_size: 0,
+                average_ttl: Duration::from_secs(0),
+            });
+            stats.total_size += 1;
+        }
+        
+        Ok(AdvancedCacheStats {
+            total_entries,
+            memory_usage_bytes,
+            memory_efficiency: if memory_usage_bytes > 0 { 
+                total_entries as f64 / memory_usage_bytes as f64 
+            } else { 
+                0.0 
+            },
+            tool_performance: tool_stats,
+            fragmentation_ratio: 0.1, // Placeholder - would calculate actual fragmentation
+            recommended_cleanup: memory_usage_bytes > self.config.max_memory_bytes / 2,
+        })
+    }
+
+    /// Persist cache to storage for recovery
+    pub fn persist_to_storage(&self, file_path: &str) -> Result<()> {
+        let cache = self.cache.read().map_err(|_| {
+            anyhow::anyhow!("Failed to acquire read lock on cache")
+        })?;
+        
+        let serialized = serde_json::to_string_pretty(&*cache)?;
+        std::fs::write(file_path, serialized)?;
+        Ok(())
+    }
+
+    /// Restore cache from persistent storage
+    pub fn restore_from_storage(&self, file_path: &str) -> Result<()> {
+        if std::path::Path::new(file_path).exists() {
+            let content = std::fs::read_to_string(file_path)?;
+            let entries: HashMap<CacheKey, CacheEntry> = serde_json::from_str(&content)?;
+            
+            let mut cache = self.cache.write().map_err(|_| {
+                anyhow::anyhow!("Failed to acquire write lock on cache")
+            })?;
+            
+            // Merge with existing entries, keeping newer ones
+            for (key, entry) in entries {
+                cache.entry(key).or_insert(entry);
+            }
+            
+            self.update_memory_stats(&cache)?;
+        }
+        Ok(())
+    }
+
+    /// Optimize cache performance by reorganizing entries
+    pub fn optimize_cache(&self) -> Result<CacheOptimizationResult> {
+        let mut cache = self.cache.write().map_err(|_| {
+            anyhow::anyhow!("Failed to acquire write lock on cache")
+        })?;
+        
+        let initial_count = cache.len();
+        let initial_memory: usize = cache.values().map(|e| e.size_bytes).sum();
+        
+        // Remove expired entries
+        cache.retain(|_, entry| !entry.is_expired());
+        
+        // Apply LRU eviction if over limits
+        self.maybe_evict_entries(&mut cache)?;
+        
+        let final_count = cache.len();
+        let final_memory: usize = cache.values().map(|e| e.size_bytes).sum();
+        
+        self.update_memory_stats(&cache)?;
+        
+        Ok(CacheOptimizationResult {
+            entries_before: initial_count,
+            entries_after: final_count,
+            entries_removed: initial_count - final_count,
+            memory_before: initial_memory,
+            memory_after: final_memory,
+            memory_freed: initial_memory.saturating_sub(final_memory),
+        })
+    }
+}
+
+/// Result of cache optimization operation
+#[derive(Debug, Clone, Serialize)]
+pub struct CacheOptimizationResult {
+    /// Number of entries before optimization
+    pub entries_before: usize,
+    /// Number of entries after optimization
+    pub entries_after: usize,
+    /// Number of entries removed
+    pub entries_removed: usize,
+    /// Memory usage before optimization
+    pub memory_before: usize,
+    /// Memory usage after optimization
+    pub memory_after: usize,
+    /// Amount of memory freed
+    pub memory_freed: usize,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

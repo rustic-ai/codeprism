@@ -1,22 +1,37 @@
-//! Workflow guidance tools
+//! Workflow orchestration and guidance tools
 //! 
-//! This module will contain workflow guidance capabilities in Phase 3 of the enhancement plan.
-//! Currently a placeholder for future implementation.
+//! Provides intelligent workflow guidance, batch analysis execution,
+//! and systematic analysis orchestration for efficient code analysis.
+
+pub mod guidance;
+pub mod batch;
+pub mod optimization;
 
 use anyhow::Result;
-use crate::tools::{Tool, CallToolParams, CallToolResult};
+use serde_json::{json, Value};
+
+use crate::tools::{Tool, CallToolParams, CallToolResult, ToolContent};
 use crate::PrismMcpServer;
 
-/// List workflow guidance tools (placeholder for Phase 3)
-pub fn list_tools() -> Vec<Tool> {
-    // Phase 3 will implement:
-    // - suggest_analysis_workflow
-    // - batch_analysis
-    // - optimize_workflow
-    vec![]
+/// Register all workflow orchestration tools
+pub fn register_workflow_tools() -> Vec<Tool> {
+    vec![
+        guidance::create_suggest_analysis_workflow_tool(),
+        batch::create_batch_analysis_tool(),
+        optimization::create_optimize_workflow_tool(),
+    ]
 }
 
-/// Route workflow guidance tool calls (placeholder for Phase 3)
-pub async fn call_tool(_server: &PrismMcpServer, params: &CallToolParams) -> Result<CallToolResult> {
-    Err(anyhow::anyhow!("Workflow guidance tool '{}' not yet implemented (Phase 3 feature)", params.name))
+/// Route workflow tool calls to appropriate handlers
+pub async fn handle_workflow_tool(
+    tool_name: &str,
+    server: &PrismMcpServer,
+    arguments: Option<&Value>
+) -> Result<CallToolResult> {
+    match tool_name {
+        "suggest_analysis_workflow" => guidance::suggest_analysis_workflow(server, arguments).await,
+        "batch_analysis" => batch::batch_analysis(server, arguments).await,
+        "optimize_workflow" => optimization::optimize_workflow(server, arguments).await,
+        _ => Err(anyhow::anyhow!("Unknown workflow tool: {}", tool_name)),
+    }
 } 

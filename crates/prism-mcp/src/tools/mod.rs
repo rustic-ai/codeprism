@@ -53,6 +53,9 @@ impl ToolRegistry {
         tools.extend(security::performance::list_tools());
         tools.extend(security::api::list_tools());
 
+        // Workflow orchestration tools
+        tools.extend(workflow::register_workflow_tools());
+
         Ok(ListToolsResult {
             tools,
             next_cursor: None,
@@ -104,6 +107,11 @@ impl ToolRegistry {
             },
             "analyze_api_surface" => {
                 security::api::call_tool(&*server, &params).await
+            },
+            
+            // Workflow orchestration tools
+            "suggest_analysis_workflow" | "batch_analysis" | "optimize_workflow" => {
+                workflow::handle_workflow_tool(&params.name, &*server, params.arguments.as_ref()).await
             },
             
             _ => {

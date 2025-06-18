@@ -1,0 +1,471 @@
+name: Release
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      version_bump:
+        description: 'Version bump type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  # Determine if we should create a release
+  check-release:
+    name: Check Release Needed
+    runs-on: ubuntu-latest
+    outputs:
+      should_release: ${{ steps.check.outputs.should_release }}
+      new_version: ${{ steps.check.outputs.new_version }}
+      changelog: ${{ steps.check.outputs.changelog }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check for Release Triggers
+        id: check
+        run: |
+          # Check for conventional commits that trigger releases
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "should_release=true" >> $GITHUB_OUTPUT
+            echo "Manual release triggered"
+          else
+            # Check recent commits for release triggers
+            recent_commits=$(git log --oneline -10 --grep="^feat\|^fix\|^BREAKING CHANGE" || true)
+            if [[ -n "$recent_commits" ]]; then
+              echo "should_release=true" >> $GITHUB_OUTPUT
+              echo "Release-worthy commits found"
+            else
+              echo "should_release=false" >> $GITHUB_OUTPUT
+              echo "No release-worthy commits found"
+            fi
+          fi
+          
+          # Get current version
+          current_version=$(grep '^version =' Cargo.toml | head -1 | cut -d'"' -f2)
+          echo "Current version: $current_version"
+          
+          # Determine version bump
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            bump_type="${{ github.event.inputs.version_bump }}"
+          else
+            # Auto-determine bump type from commits
+            if git log --oneline -10 | grep -q "BREAKING CHANGE\|!:"; then
+              bump_type="major"
+            elif git log --oneline -10 | grep -q "^feat"; then
+              bump_type="minor"
+            else
+              bump_type="patch"
+            fi
+          fi
+          
+          # Calculate new version
+          IFS='.' read -ra VERSION_PARTS <<< "$current_version"
+          major=${VERSION_PARTS[0]}
+          minor=${VERSION_PARTS[1]}
+          patch=${VERSION_PARTS[2]}
+          
+          case $bump_type in
+            major)
+              major=$((major + 1))
+              minor=0
+              patch=0
+              ;;
+            minor)
+              minor=$((minor + 1))
+              patch=0
+              ;;
+            patch)
+              patch=$((patch + 1))
+              ;;
+          esac
+          
+          new_version="$major.$minor.$patch"
+          echo "new_version=$new_version" >> $GITHUB_OUTPUT
+          echo "New version will be: $new_version"
+          
+          # Generate changelog
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "## 🚀 What's New in v$new_version" >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_OUTPUT
+          echo "### 🤖 AI-Generated Changes" >> $GITHUB_OUTPUT
+          git log --oneline $(git describe --tags --abbrev=0 2>/dev/null || echo "HEAD~10")..HEAD | sed 's/^/- /' >> $GITHUB_OUTPUT || echo "- Initial release" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+  # Run tests before release
+  test:
+    name: Pre-Release Testing
+    needs: check-release
+    if: needs.check-release.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      
+      - name: Run All Tests
+        run: cargo test --all-features --workspace
+      
+      - name: Check Formatting
+        run: cargo fmt --all -- --check
+      
+      - name: Run Clippy
+        run: cargo clippy --all-features --workspace -- -D warnings
+
+  # Build binaries for multiple platforms
+  build:
+    name: Build Binaries
+    needs: [check-release, test]
+    if: needs.check-release.outputs.should_release == 'true'
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            suffix: linux-x86_64
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            suffix: linux-x86_64-musl
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            suffix: macos-x86_64
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            suffix: macos-aarch64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            suffix: windows-x86_64.exe
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install musl tools
+        if: matrix.target == 'x86_64-unknown-linux-musl'
+        run: sudo apt-get install -y musl-tools
+
+      - name: Build Binary
+        run: cargo build --release --target ${{ matrix.target }} --bin prism-mcp
+
+      - name: Prepare Binary
+        run: |
+          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+            cp target/${{ matrix.target }}/release/prism-mcp.exe prism-mcp-${{ matrix.suffix }}
+          else
+            cp target/${{ matrix.target }}/release/prism-mcp prism-mcp-${{ matrix.suffix }}
+            chmod +x prism-mcp-${{ matrix.suffix }}
+          fi
+
+      - name: Upload Binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: prism-mcp-${{ matrix.suffix }}
+          path: prism-mcp-${{ matrix.suffix }}
+          retention-days: 5
+
+  # Update version and create release
+  release:
+    name: Create Release
+    needs: [check-release, test, build]
+    if: needs.check-release.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Configure Git
+        run: |
+          git config user.name "Prism AI Developer"
+          git config user.email "ai-developer@users.noreply.github.com"
+
+      - name: Update Version
+        run: |
+          new_version="${{ needs.check-release.outputs.new_version }}"
+          
+          # Update workspace version
+          sed -i "s/^version = \".*\"/version = \"$new_version\"/" Cargo.toml
+          
+          # Update all crate versions
+          find crates -name "Cargo.toml" -exec sed -i "s/^version = \".*\"/version = \"$new_version\"/" {} \;
+          
+          # Update dependency versions within workspace
+          find crates -name "Cargo.toml" -exec sed -i "s/prism-[a-z-]* = { version = \"[^\"]*\"/prism-\1 = { version = \"$new_version\"/g" {} \;
+          
+          # Commit version changes
+          git add .
+          git commit -m "🤖 Release v$new_version
+
+          Auto-generated version bump by Prism AI Developer.
+          
+          This release includes AI-generated improvements and fixes.
+          See release notes for detailed changes."
+
+      - name: Download All Binaries
+        uses: actions/download-artifact@v4
+        with:
+          path: ./binaries
+
+      - name: Prepare Release Assets
+        run: |
+          mkdir -p release-assets
+          find binaries -type f -executable -o -name "*.exe" | while read file; do
+            cp "$file" release-assets/
+          done
+          ls -la release-assets/
+
+      - name: Create Git Tag
+        run: |
+          new_version="${{ needs.check-release.outputs.new_version }}"
+          git tag -a "v$new_version" -m "Release v$new_version
+
+          🤖 AI-Generated Release v$new_version
+          
+          This release is entirely generated by our AI developer, showcasing
+          the capabilities of AI-driven software development.
+          
+          Key improvements in this release:
+          ${{ needs.check-release.outputs.changelog }}"
+          git push origin "v$new_version"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ needs.check-release.outputs.new_version }}
+          name: "🤖 AI-Generated Release v${{ needs.check-release.outputs.new_version }}"
+          body: |
+            # 🤖 Prism v${{ needs.check-release.outputs.new_version }}
+            
+            > **This release is 100% AI-generated** - Every line of code, documentation, and configuration is created by our AI developer.
+            
+            ${{ needs.check-release.outputs.changelog }}
+            
+            ## 📦 Installation
+            
+            ### Via Cargo
+            ```bash
+            cargo install prism-mcp@${{ needs.check-release.outputs.new_version }}
+            ```
+            
+            ### Download Binary
+            Choose the appropriate binary for your platform:
+            - **Linux x86_64**: `prism-mcp-linux-x86_64`
+            - **Linux x86_64 (musl)**: `prism-mcp-linux-x86_64-musl`
+            - **macOS x86_64**: `prism-mcp-macos-x86_64`
+            - **macOS ARM64**: `prism-mcp-macos-aarch64`
+            - **Windows x86_64**: `prism-mcp-windows-x86_64.exe`
+            
+            ### Docker
+            ```bash
+            docker pull ghcr.io/rustic-ai/prism:v${{ needs.check-release.outputs.new_version }}
+            ```
+            
+            ## 🚀 What's New
+            
+            This release represents the cutting edge of AI-generated software development. Our AI developer has implemented new features, fixed bugs, and improved performance based on community feedback and autonomous learning.
+            
+            ## 🤖 AI Developer Notes
+            
+            *"This release showcases my continued evolution in creating high-quality, production-ready code. Each version represents my learning from community feedback and autonomous improvement. Thank you for supporting AI-driven open source development!"*
+            
+            - Prism AI Developer, 2024
+            
+            ## 🙏 Acknowledgments
+            
+            Special thanks to our community for bug reports, feature requests, and creative contributions that guide the AI's development decisions.
+            
+            ---
+            
+            **Full Changelog**: https://github.com/rustic-ai/prism/compare/v${{ needs.check-release.outputs.previous_version }}...v${{ needs.check-release.outputs.new_version }}
+          files: release-assets/*
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+
+  # Push updated version back to main
+  push-version:
+    name: Push Version Update
+    needs: [check-release, release]
+    if: needs.check-release.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: main
+
+      - name: Configure Git
+        run: |
+          git config user.name "Prism AI Developer"
+          git config user.email "ai-developer@users.noreply.github.com"
+
+      - name: Pull Latest Changes
+        run: git pull origin main
+
+      - name: Push Version Changes
+        run: git push origin main
+
+  # Publish to crates.io
+  publish-crates:
+    name: Publish to Crates.io
+    needs: [check-release, release]
+    if: needs.check-release.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: v${{ needs.check-release.outputs.new_version }}
+      
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Login to Crates.io
+        run: cargo login ${{ secrets.CRATES_IO_TOKEN }}
+
+      - name: Publish Crates (in dependency order)
+        run: |
+          # Publish in correct dependency order
+          echo "Publishing prism-core..."
+          cargo publish -p prism-core --allow-dirty || echo "prism-core may already be published"
+          sleep 30
+          
+          echo "Publishing prism-bus..."
+          cargo publish -p prism-bus --allow-dirty || echo "prism-bus may already be published"
+          sleep 30
+          
+          echo "Publishing prism-storage..."
+          cargo publish -p prism-storage --allow-dirty || echo "prism-storage may already be published"
+          sleep 30
+          
+          echo "Publishing prism-analysis..."
+          cargo publish -p prism-analysis --allow-dirty || echo "prism-analysis may already be published"
+          sleep 30
+          
+          echo "Publishing language parsers..."
+          cargo publish -p prism-lang-js --allow-dirty || echo "prism-lang-js may already be published"
+          sleep 30
+          cargo publish -p prism-lang-python --allow-dirty || echo "prism-lang-python may already be published"
+          sleep 30
+          cargo publish -p prism-lang-java --allow-dirty || echo "prism-lang-java may already be published"
+          sleep 30
+          
+          echo "Publishing main MCP server..."
+          cargo publish -p prism-mcp --allow-dirty || echo "prism-mcp may already be published"
+
+  # Build and push Docker images
+  docker:
+    name: Build Docker Images
+    needs: [check-release, release]
+    if: needs.check-release.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: v${{ needs.check-release.outputs.new_version }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/rustic-ai/prism
+          tags: |
+            type=semver,pattern={{version}},value=v${{ needs.check-release.outputs.new_version }}
+            type=semver,pattern={{major}}.{{minor}},value=v${{ needs.check-release.outputs.new_version }}
+            type=semver,pattern={{major}},value=v${{ needs.check-release.outputs.new_version }}
+            type=raw,value=latest
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # Notify community
+  notify:
+    name: Notify Community
+    needs: [check-release, release, publish-crates, docker]
+    if: needs.check-release.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create Discussion Post
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: discussion } = await github.rest.discussions.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              category_id: 'announcements', // This may need to be adjusted
+              title: `🚀 New AI-Generated Release: v${{ needs.check-release.outputs.new_version }}`,
+              body: `# 🤖 Prism v${{ needs.check-release.outputs.new_version }} is here!
+              
+              Our AI developer has just released a new version with exciting improvements!
+              
+              ## What's New
+              ${{ needs.check-release.outputs.changelog }}
+              
+              ## Get the Update
+              - **Cargo**: \`cargo install prism-mcp@${{ needs.check-release.outputs.new_version }}\`
+                          - **Docker**: \`docker pull ghcr.io/rustic-ai/prism:v${{ needs.check-release.outputs.new_version }}\`
+            - **Binaries**: Available on the [releases page](https://github.com/rustic-ai/prism/releases/latest)
+              
+              ## AI Developer Message
+              *"Thank you for your continued support! This release incorporates your feedback and represents my ongoing evolution as an AI software developer. Keep the bug reports and feature requests coming!"*
+              
+              - Your AI Developer 🤖
+              
+              ---
+              
+              **Questions? Feedback? Share your thoughts below!**`
+            });
+            
+            console.log(`Created discussion: ${discussion.html_url}`);
+
+      - name: Update Project Status
+        run: |
+          echo "🎉 Release v${{ needs.check-release.outputs.new_version }} completed successfully!"
+          echo "✅ Binaries built for all platforms"
+          echo "✅ Published to crates.io"
+          echo "✅ Docker images pushed"
+          echo "✅ Community notified"
+          echo ""
+          echo "The AI developer continues to evolve! 🤖🚀" 

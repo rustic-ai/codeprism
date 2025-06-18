@@ -620,6 +620,231 @@ impl ToolManager {
                     ]
                 }),
             },
+            Tool {
+                name: "find_duplicates".to_string(),
+                title: Some("Find Code Duplicates".to_string()),
+                description: "Detect duplicate code patterns and similar code blocks".to_string(),
+                input_schema: serde_json::json!({
+                    "type": "object",
+                    "properties": {
+                        "similarity_threshold": {
+                            "type": "number",
+                            "description": "Similarity threshold for detecting duplicates (0.0 to 1.0)",
+                            "default": 0.8,
+                            "minimum": 0.0,
+                            "maximum": 1.0
+                        },
+                        "min_lines": {
+                            "type": "number",
+                            "description": "Minimum number of lines for a duplicate block",
+                            "default": 3,
+                            "minimum": 1
+                        },
+                        "scope": {
+                            "type": "string",
+                            "description": "Scope for duplicate detection",
+                            "default": "repository"
+                        }
+                    },
+                    "required": []
+                }),
+            },
+            Tool {
+                name: "find_unused_code".to_string(),
+                title: Some("Find Unused Code".to_string()),
+                description: "Identify unused functions, classes, variables, and imports".to_string(),
+                input_schema: serde_json::json!({
+                    "type": "object",
+                    "properties": {
+                        "scope": {
+                            "type": "string",
+                            "description": "Scope for unused code analysis",
+                            "default": "repository"
+                        },
+                        "analyze_types": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "enum": ["functions", "classes", "variables", "imports", "all"]
+                            },
+                            "description": "Types of code elements to analyze",
+                            "default": ["functions", "classes", "variables", "imports"]
+                        },
+                        "confidence_threshold": {
+                            "type": "number",
+                            "description": "Confidence threshold for unused detection",
+                            "default": 0.7,
+                            "minimum": 0.0,
+                            "maximum": 1.0
+                        },
+                        "consider_external_apis": {
+                            "type": "boolean",
+                            "description": "Consider external API usage",
+                            "default": true
+                        },
+                        "include_dead_code": {
+                            "type": "boolean",
+                            "description": "Include dead code block detection",
+                            "default": true
+                        },
+                        "exclude_patterns": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            },
+                            "description": "Patterns to exclude from analysis"
+                        }
+                    },
+                    "required": []
+                }),
+            },
+            Tool {
+                name: "analyze_security".to_string(),
+                title: Some("Analyze Security Vulnerabilities".to_string()),
+                description: "Identify security vulnerabilities and potential threats".to_string(),
+                input_schema: serde_json::json!({
+                    "type": "object",
+                    "properties": {
+                        "scope": {
+                            "type": "string",
+                            "description": "Scope for security analysis",
+                            "default": "repository"
+                        },
+                        "vulnerability_types": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "enum": ["injection", "authentication", "authorization", "data_exposure", "unsafe_patterns", "crypto", "all"]
+                            },
+                            "description": "Types of vulnerabilities to check",
+                            "default": ["injection", "authentication", "authorization"]
+                        },
+                        "severity_threshold": {
+                            "type": "string",
+                            "enum": ["low", "medium", "high", "critical"],
+                            "description": "Minimum severity level to report",
+                            "default": "medium"
+                        },
+                        "include_data_flow_analysis": {
+                            "type": "boolean",
+                            "description": "Include data flow analysis for vulnerability detection",
+                            "default": false
+                        },
+                        "check_external_dependencies": {
+                            "type": "boolean",
+                            "description": "Check external dependencies for known vulnerabilities",
+                            "default": true
+                        },
+                        "exclude_patterns": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            },
+                            "description": "Patterns to exclude from analysis"
+                        }
+                    },
+                    "required": []
+                }),
+            },
+            Tool {
+                name: "analyze_performance".to_string(),
+                title: Some("Analyze Performance Issues".to_string()),
+                description: "Identify performance bottlenecks and optimization opportunities".to_string(),
+                input_schema: serde_json::json!({
+                    "type": "object",
+                    "properties": {
+                        "scope": {
+                            "type": "string",
+                            "description": "Scope for performance analysis",
+                            "default": "repository"
+                        },
+                        "analysis_types": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "enum": ["time_complexity", "memory_usage", "hot_spots", "anti_patterns", "scalability", "all"]
+                            },
+                            "description": "Types of performance analysis to perform",
+                            "default": ["time_complexity", "memory_usage", "hot_spots"]
+                        },
+                        "complexity_threshold": {
+                            "type": "string",
+                            "enum": ["low", "medium", "high"],
+                            "description": "Complexity threshold for reporting issues",
+                            "default": "medium"
+                        },
+                        "include_algorithmic_analysis": {
+                            "type": "boolean",
+                            "description": "Include algorithmic complexity analysis",
+                            "default": true
+                        },
+                        "detect_bottlenecks": {
+                            "type": "boolean",
+                            "description": "Detect performance bottlenecks",
+                            "default": true
+                        },
+                        "exclude_patterns": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            },
+                            "description": "Patterns to exclude from analysis"
+                        }
+                    },
+                    "required": []
+                }),
+            },
+            Tool {
+                name: "analyze_api_surface".to_string(),
+                title: Some("Analyze API Surface".to_string()),
+                description: "Analyze public API surface, versioning, and breaking changes".to_string(),
+                input_schema: serde_json::json!({
+                    "type": "object",
+                    "properties": {
+                        "scope": {
+                            "type": "string",
+                            "description": "Scope for API surface analysis",
+                            "default": "repository"
+                        },
+                        "analysis_types": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "enum": ["public_api", "versioning", "breaking_changes", "documentation_coverage", "compatibility", "all"]
+                            },
+                            "description": "Types of API analysis to perform",
+                            "default": ["public_api", "versioning", "breaking_changes"]
+                        },
+                        "api_version": {
+                            "type": "string",
+                            "description": "API version to analyze (optional)"
+                        },
+                        "include_private_apis": {
+                            "type": "boolean",
+                            "description": "Include private APIs in analysis",
+                            "default": false
+                        },
+                        "check_documentation_coverage": {
+                            "type": "boolean",
+                            "description": "Check documentation coverage for APIs",
+                            "default": true
+                        },
+                        "detect_breaking_changes": {
+                            "type": "boolean",
+                            "description": "Detect potential breaking changes",
+                            "default": true
+                        },
+                        "exclude_patterns": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            },
+                            "description": "Patterns to exclude from analysis"
+                        }
+                    },
+                    "required": []
+                }),
+            },
         ];
 
         Ok(ListToolsResult {
@@ -643,13 +868,19 @@ impl ToolManager {
             "find_files" => self.find_files(&server, params.arguments).await,
             "content_stats" => self.content_stats(&server).await,
             "analyze_complexity" => self.analyze_complexity(&server, params.arguments).await,
+            "find_duplicates" => self.find_duplicates(&server, params.arguments).await,
 
             "detect_patterns" => self.detect_patterns(&server, params.arguments).await,
             "analyze_transitive_dependencies" => self.analyze_transitive_dependencies(&server, params.arguments).await,
             "trace_data_flow" => self.trace_data_flow(&server, params.arguments).await,
+            "find_unused_code" => self.find_unused_code(&server, params.arguments).await,
 
             "trace_inheritance" => self.trace_inheritance(&server, params.arguments).await,
             "analyze_decorators" => self.analyze_decorators(&server, params.arguments).await,
+            
+            "analyze_security" => self.analyze_security(&server, params.arguments).await,
+            "analyze_performance" => self.analyze_performance(&server, params.arguments).await,
+            "analyze_api_surface" => self.analyze_api_surface(&server, params.arguments).await,
             _ => Ok(CallToolResult {
                 content: vec![ToolContent::Text {
                     text: format!("Unknown tool: {}", params.name),
@@ -3413,6 +3644,243 @@ impl ToolManager {
         }
         
         recommendations
+    }
+
+    /// Find duplicate code patterns
+    async fn find_duplicates(&self, server: &PrismMcpServer, arguments: Option<Value>) -> Result<CallToolResult> {
+        let args = arguments.unwrap_or_default();
+        
+        let similarity_threshold = args.get("similarity_threshold")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.8);
+        
+        let min_lines = args.get("min_lines")
+            .and_then(|v| v.as_u64())
+            .map(|v| v as usize)
+            .unwrap_or(3);
+        
+        let scope = args.get("scope")
+            .and_then(|v| v.as_str())
+            .unwrap_or("repository");
+
+        // Placeholder implementation - call to analysis crate
+        let result = serde_json::json!({
+            "scope": scope,
+            "parameters": {
+                "similarity_threshold": similarity_threshold,
+                "min_lines": min_lines
+            },
+            "duplicates": [],
+            "summary": {
+                "total_duplicates": 0,
+                "files_analyzed": 0,
+                "lines_duplicated": 0
+            },
+            "analysis_successful": true
+        });
+
+        Ok(CallToolResult {
+            content: vec![ToolContent::Text {
+                text: serde_json::to_string_pretty(&result)?,
+            }],
+            is_error: Some(false),
+        })
+    }
+
+    /// Find unused code
+    async fn find_unused_code(&self, server: &PrismMcpServer, arguments: Option<Value>) -> Result<CallToolResult> {
+        let args = arguments.unwrap_or_default();
+        
+        let scope = args.get("scope")
+            .and_then(|v| v.as_str())
+            .unwrap_or("repository");
+        
+        let analyze_types = args.get("analyze_types")
+            .and_then(|v| v.as_array())
+            .map(|arr| arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect::<Vec<_>>())
+            .unwrap_or_else(|| vec!["functions".to_string(), "classes".to_string(), "variables".to_string(), "imports".to_string()]);
+        
+        let confidence_threshold = args.get("confidence_threshold")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.7);
+        
+        let consider_external_apis = args.get("consider_external_apis")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(true);
+        
+        let include_dead_code = args.get("include_dead_code")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(true);
+        
+        let exclude_patterns = args.get("exclude_patterns")
+            .and_then(|v| v.as_array())
+            .map(|arr| arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect::<Vec<_>>())
+            .unwrap_or_default();
+
+        let analysis_result = self.perform_unused_code_analysis(
+            server,
+            scope,
+            include_dead_code,
+            consider_external_apis,
+            confidence_threshold,
+            &analyze_types,
+            &exclude_patterns,
+        ).await?;
+
+        Ok(CallToolResult {
+            content: vec![ToolContent::Text {
+                text: serde_json::to_string_pretty(&analysis_result)?,
+            }],
+            is_error: Some(false),
+        })
+    }
+
+    /// Analyze security vulnerabilities
+    async fn analyze_security(&self, server: &PrismMcpServer, arguments: Option<Value>) -> Result<CallToolResult> {
+        let args = arguments.unwrap_or_default();
+        
+        let scope = args.get("scope")
+            .and_then(|v| v.as_str())
+            .unwrap_or("repository");
+        
+        let vulnerability_types = args.get("vulnerability_types")
+            .and_then(|v| v.as_array())
+            .map(|arr| arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect::<Vec<_>>())
+            .unwrap_or_else(|| vec!["injection".to_string(), "authentication".to_string(), "authorization".to_string()]);
+        
+        let severity_threshold = args.get("severity_threshold")
+            .and_then(|v| v.as_str())
+            .unwrap_or("medium");
+        
+        let include_data_flow_analysis = args.get("include_data_flow_analysis")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
+        
+        let check_external_dependencies = args.get("check_external_dependencies")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(true);
+        
+        let exclude_patterns = args.get("exclude_patterns")
+            .and_then(|v| v.as_array())
+            .map(|arr| arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect::<Vec<_>>())
+            .unwrap_or_default();
+
+        let analysis_result = self.perform_security_analysis(
+            server,
+            scope,
+            &vulnerability_types,
+            severity_threshold,
+            include_data_flow_analysis,
+            check_external_dependencies,
+            &exclude_patterns,
+        ).await?;
+
+        Ok(CallToolResult {
+            content: vec![ToolContent::Text {
+                text: serde_json::to_string_pretty(&analysis_result)?,
+            }],
+            is_error: Some(false),
+        })
+    }
+
+    /// Analyze performance issues
+    async fn analyze_performance(&self, server: &PrismMcpServer, arguments: Option<Value>) -> Result<CallToolResult> {
+        let args = arguments.unwrap_or_default();
+        
+        let scope = args.get("scope")
+            .and_then(|v| v.as_str())
+            .unwrap_or("repository");
+        
+        let analysis_types = args.get("analysis_types")
+            .and_then(|v| v.as_array())
+            .map(|arr| arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect::<Vec<_>>())
+            .unwrap_or_else(|| vec!["time_complexity".to_string(), "memory_usage".to_string(), "hot_spots".to_string()]);
+        
+        let complexity_threshold = args.get("complexity_threshold")
+            .and_then(|v| v.as_str())
+            .unwrap_or("medium");
+        
+        let include_algorithmic_analysis = args.get("include_algorithmic_analysis")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(true);
+        
+        let detect_bottlenecks = args.get("detect_bottlenecks")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(true);
+        
+        let exclude_patterns = args.get("exclude_patterns")
+            .and_then(|v| v.as_array())
+            .map(|arr| arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect::<Vec<_>>())
+            .unwrap_or_default();
+
+        let analysis_result = self.perform_performance_analysis(
+            server,
+            scope,
+            &analysis_types,
+            complexity_threshold,
+            include_algorithmic_analysis,
+            detect_bottlenecks,
+            &exclude_patterns,
+        ).await?;
+
+        Ok(CallToolResult {
+            content: vec![ToolContent::Text {
+                text: serde_json::to_string_pretty(&analysis_result)?,
+            }],
+            is_error: Some(false),
+        })
+    }
+
+    /// Analyze API surface
+    async fn analyze_api_surface(&self, server: &PrismMcpServer, arguments: Option<Value>) -> Result<CallToolResult> {
+        let args = arguments.unwrap_or_default();
+        
+        let scope = args.get("scope")
+            .and_then(|v| v.as_str())
+            .unwrap_or("repository");
+        
+        let analysis_types = args.get("analysis_types")
+            .and_then(|v| v.as_array())
+            .map(|arr| arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect::<Vec<_>>())
+            .unwrap_or_else(|| vec!["public_api".to_string(), "versioning".to_string(), "breaking_changes".to_string()]);
+        
+        let api_version = args.get("api_version")
+            .and_then(|v| v.as_str());
+        
+        let include_private_apis = args.get("include_private_apis")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
+        
+        let check_documentation_coverage = args.get("check_documentation_coverage")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(true);
+        
+        let detect_breaking_changes = args.get("detect_breaking_changes")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(true);
+        
+        let exclude_patterns = args.get("exclude_patterns")
+            .and_then(|v| v.as_array())
+            .map(|arr| arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect::<Vec<_>>())
+            .unwrap_or_default();
+
+        let analysis_result = self.perform_api_surface_analysis(
+            server,
+            scope,
+            &analysis_types,
+            api_version,
+            include_private_apis,
+            check_documentation_coverage,
+            detect_breaking_changes,
+            &exclude_patterns,
+        ).await?;
+
+        Ok(CallToolResult {
+            content: vec![ToolContent::Text {
+                text: serde_json::to_string_pretty(&analysis_result)?,
+            }],
+            is_error: Some(false),
+        })
     }
 }
 

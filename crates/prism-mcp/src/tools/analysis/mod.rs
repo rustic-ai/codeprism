@@ -1,8 +1,9 @@
-//! Analysis tools
+//! Analysis tools for code quality, complexity, and flow
 //! 
-//! This module contains tools for code analysis including complexity,
-//! quality assessment, data flow tracing, and specialized analysis.
+//! This module provides tools for analyzing code quality, detecting patterns,
+//! and understanding code flow and dependencies.
 
 pub mod complexity;
 pub mod flow;
-pub mod specialized; 
+pub mod specialized;
+pub mod quality; // New module for quality analysis tools 

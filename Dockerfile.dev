@@ -1,0 +1,88 @@
+# Development Dockerfile for Prism
+# Includes all development tools and dependencies for cloud development
+
+FROM rust:1.82
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    # Build essentials
+    pkg-config \
+    libssl-dev \
+    build-essential \
+    # Development tools
+    git \
+    curl \
+    wget \
+    vim \
+    nano \
+    # Optional: Node.js for JavaScript/TypeScript testing
+    nodejs \
+    npm \
+    # Optional: Python for Python testing
+    python3 \
+    python3-pip \
+    # Additional utilities
+    jq \
+    tree \
+    htop \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Rust development tools
+RUN rustup component add rustfmt clippy rust-src
+
+# Install additional Rust tools for development
+RUN cargo install cargo-watch cargo-tree cargo-tarpaulin
+
+# Set up development user (non-root)
+RUN useradd -m -s /bin/bash dev && \
+    usermod -aG sudo dev && \
+    echo "dev ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+# Create workspace directory
+RUN mkdir -p /workspace && chown -R dev:dev /workspace
+
+# Switch to development user
+USER dev
+WORKDIR /workspace
+
+# Set up git configuration (can be overridden)
+RUN git config --global user.name "Prism Developer" && \
+    git config --global user.email "dev@rustic-ai.dev" && \
+    git config --global init.defaultBranch main
+
+# Environment variables for development
+ENV RUST_LOG=debug
+ENV CARGO_TARGET_DIR=/workspace/target
+ENV REPOSITORY_PATH=/workspace
+
+# Create useful aliases for development
+RUN echo 'alias ll="ls -la"' >> ~/.bashrc && \
+    echo 'alias la="ls -la"' >> ~/.bashrc && \
+    echo 'alias ..="cd .."' >> ~/.bashrc && \
+    echo 'alias ...="cd ../.."' >> ~/.bashrc && \
+    echo 'alias prism-build="cargo build --release"' >> ~/.bashrc && \
+    echo 'alias prism-test="cargo test --all"' >> ~/.bashrc && \
+    echo 'alias prism-check="cargo check --all"' >> ~/.bashrc && \
+    echo 'alias prism-fmt="cargo fmt --all"' >> ~/.bashrc && \
+    echo 'alias prism-clippy="cargo clippy --all -- -D warnings"' >> ~/.bashrc
+
+# Set up bash prompt with git branch info
+RUN echo 'export PS1="\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\[\033[01;33m\]\$(__git_ps1 \" (%s)\")\[\033[00m\]\$ "' >> ~/.bashrc
+
+# Expose port for potential future HTTP interface
+EXPOSE 8080
+
+# Health check for development environment
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD cargo --version || exit 1
+
+# Default command for development
+CMD ["/bin/bash"]
+
+# Labels for metadata
+LABEL org.opencontainers.image.title="Prism Development Environment"
+LABEL org.opencontainers.image.description="Development environment for 100% AI-generated Prism MCP server"
+LABEL org.opencontainers.image.vendor="The Rustic Initiative"
+LABEL org.opencontainers.image.licenses="MIT OR Apache-2.0"
+LABEL org.opencontainers.image.source="https://github.com/rustic-ai/prism"
+LABEL org.opencontainers.image.documentation="https://github.com/rustic-ai/prism/blob/main/README.md" 

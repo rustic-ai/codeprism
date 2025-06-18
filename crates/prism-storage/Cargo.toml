@@ -6,7 +6,7 @@ authors.workspace = true
 license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
-description = "Neo4j graph storage for prism"
+description = "Storage layer for prism code intelligence"
 
 [dependencies]
 neo4rs.workspace = true

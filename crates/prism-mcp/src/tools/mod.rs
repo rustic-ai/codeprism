@@ -45,6 +45,7 @@ impl ToolRegistry {
         tools.extend(analysis::complexity::list_tools());
         tools.extend(analysis::flow::list_tools());
         tools.extend(analysis::specialized::list_tools());
+        tools.extend(analysis::quality::list_tools());
 
         // Workflow orchestration tools
         tools.extend(workflow::register_workflow_tools());
@@ -86,6 +87,9 @@ impl ToolRegistry {
             },
             "trace_inheritance" | "analyze_decorators" => {
                 analysis::specialized::call_tool(&*server, &params).await
+            },
+            "find_duplicates" | "find_unused_code" | "analyze_security" | "analyze_performance" | "analyze_api_surface" => {
+                analysis::quality::call_tool(&*server, &params).await
             },
             
             // Workflow orchestration tools

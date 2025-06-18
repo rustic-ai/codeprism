@@ -1,0 +1,209 @@
+name: 🐛 Bug Report
+description: Found a bug in our AI-generated code? Help us improve!
+title: "[BUG] "
+labels: ["bug", "triage-needed"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        # 🐛 Bug Report for Prism
+        
+        Thank you for helping improve our AI-generated project! 
+        
+        **Important**: This is a 100% AI-generated project. Your bug report will be processed by our AI developer with human oversight for complex issues.
+
+  - type: checkboxes
+    id: prerequisites
+    attributes:
+      label: Prerequisites
+      description: Please confirm you've completed these steps
+      options:
+        - label: I've searched existing issues to avoid duplicates
+          required: true
+        - label: I've read the [Contributing Guidelines](../../CONTRIBUTING.md)
+          required: true
+        - label: I'm using the latest version of Prism
+          required: false
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Affected Component
+      description: Which part of Prism is affected?
+      options:
+        - MCP Server (prism-mcp)
+        - Core Parser (prism-core)
+        - JavaScript/TypeScript Parser
+        - Python Parser
+        - Analysis Tools
+        - CLI Interface
+        - Documentation
+        - Other (specify in description)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Bug Severity
+      description: How severe is this bug?
+      options:
+        - "🔥 Critical - Crashes, data loss, security issue"
+        - "🚨 High - Major functionality broken"
+        - "⚠️ Medium - Feature partially broken"
+        - "📝 Low - Minor issue or cosmetic problem"
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Prism Version
+      description: What version of Prism are you using?
+      placeholder: "e.g., 0.1.0, latest, commit hash"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      options:
+        - Linux
+        - macOS
+        - Windows
+        - Other (specify in description)
+    validations:
+      required: true
+
+  - type: input
+    id: rust_version
+    attributes:
+      label: Rust Version (if building from source)
+      placeholder: "e.g., 1.82.0"
+
+  - type: dropdown
+    id: installation_method
+    attributes:
+      label: Installation Method
+      options:
+        - Cargo install
+        - Downloaded binary
+        - Built from source
+        - Docker
+        - Other (specify in description)
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: Clear and concise description of what the bug is
+      placeholder: "The AI developer seems to have made a mistake when..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Detailed steps to reproduce the bug
+      placeholder: |
+        1. Set REPOSITORY_PATH to '/path/to/repo'
+        2. Run command 'prism-mcp'
+        3. Execute MCP tool '...'
+        4. Observe error
+      render: markdown
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What should have happened?
+      placeholder: "The AI should have analyzed the code and returned..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened?
+      placeholder: "Instead, the AI generated an error..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error Logs
+      description: Relevant error messages, logs, or stack traces
+      placeholder: "Paste error logs here..."
+      render: text
+
+  - type: input
+    id: repository_info
+    attributes:
+      label: Repository Information
+      description: If analyzing a specific repository, provide details
+      placeholder: "Language: Python, Size: 1000 files, Public repo: github.com/user/repo"
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment Details
+      description: Additional environment information
+      placeholder: |
+        - MCP Client: Claude Desktop / Cursor / Other
+        - Shell: bash / zsh / fish
+        - Terminal: Terminal.app / iTerm2 / VS Code
+        - Any relevant environment variables
+
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: Additional Context
+      description: Screenshots, related issues, or other helpful information
+      placeholder: "This might be related to issue #123..."
+
+  - type: dropdown
+    id: ai_feedback
+    attributes:
+      label: Message to AI Developer
+      description: How would you like to address our AI developer?
+      options:
+        - "🤖 Hey AI, you made a small mistake!"
+        - "🔧 AI Developer, please investigate this issue"
+        - "🧠 This might be a learning opportunity for the AI"
+        - "⚡ Quick fix needed, AI!"
+        - "🎯 AI Developer, this is complex - take your time"
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: contribution_interest
+    attributes:
+      label: Contribution Interest
+      description: How would you like to help beyond this bug report?
+      options:
+        - label: I'd like to test the fix when available
+        - label: I can provide additional examples of this bug
+        - label: I'm interested in helping with similar issues
+        - label: I'd like to be notified when this is resolved
+
+  - type: markdown
+    attributes:
+      value: |
+        ## 🤖 What Happens Next?
+        
+        1. **AI Analysis**: Our AI developer will analyze your report
+        2. **Human Review**: Complex issues get human oversight
+        3. **Fix Generation**: The AI will generate a fix
+        4. **Testing**: Automated and manual testing of the fix
+        5. **Release**: Fix deployed in the next release
+        
+        **Thank you for helping improve AI-generated software! 🚀** 

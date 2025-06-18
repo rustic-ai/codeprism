@@ -1,0 +1,238 @@
+name: ✨ Feature Request
+description: Suggest a new feature for our AI developer to implement
+title: "[FEATURE] "
+labels: ["enhancement", "ai-todo"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        # ✨ Feature Request for Prism
+        
+        Help shape the future of AI-generated code intelligence! 
+        
+        **Your ideas directly influence our AI developer's roadmap.** The more detailed your request, the better our AI can understand and implement your vision.
+
+  - type: checkboxes
+    id: prerequisites
+    attributes:
+      label: Prerequisites
+      description: Please confirm you've completed these steps
+      options:
+        - label: I've searched existing issues and discussions
+          required: true
+        - label: I've checked the [project roadmap](../../docs/FUTURE_ROADMAP.md)
+          required: true
+        - label: This is not a bug report (use bug template instead)
+          required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Feature Category
+      description: What type of feature is this?
+      options:
+        - "🌐 New Language Support (Rust, Go, Java, C++, etc.)"
+        - "🔍 Analysis Tools (Security, Performance, Quality)"
+        - "🔗 Integration (VS Code, JetBrains, Vim, etc.)"
+        - "🛠️ MCP Protocol Enhancement"
+        - "📊 Output Formats (JSON, Markdown, GraphQL)"
+        - "🎨 User Interface Improvement"
+        - "⚡ Performance Optimization"
+        - "📚 Documentation & Tutorials"
+        - "🤖 AI Developer Enhancement"
+        - "🎯 Other (specify in description)"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority Level
+      description: How important is this feature to you?
+      options:
+        - "🔥 Critical - Blocks my workflow"
+        - "🚨 High - Would significantly improve my experience"
+        - "⚠️ Medium - Nice to have, would use it"
+        - "📝 Low - Interesting idea for the future"
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What problem does this feature solve?
+      placeholder: "I'm trying to accomplish X, but currently I can't because..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe your ideal solution
+      placeholder: "I would love it if the AI could..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: use_cases
+    attributes:
+      label: Use Cases & Examples
+      description: Provide specific examples of how this feature would be used
+      placeholder: |
+        Example 1: When analyzing a Rust repository...
+        Example 2: While working with microservices...
+        Example 3: During code review process...
+      render: markdown
+    validations:
+      required: true
+
+  - type: textarea
+    id: user_story
+    attributes:
+      label: User Story
+      description: Describe this feature as a user story
+      placeholder: "As a [type of user], I want [functionality] so that [benefit]"
+    validations:
+      required: true
+
+  - type: textarea
+    id: current_workaround
+    attributes:
+      label: Current Workaround
+      description: How do you currently handle this situation?
+      placeholder: "Currently I have to manually..."
+
+  - type: dropdown
+    id: complexity
+    attributes:
+      label: Estimated Complexity
+      description: How complex do you think this feature is?
+      options:
+        - "🟢 Simple - Small addition or enhancement"
+        - "🟡 Medium - Moderate development effort"
+        - "🟠 Complex - Significant new functionality"
+        - "🔴 Very Complex - Major architectural changes"
+        - "🤷 I'm not sure"
+
+  - type: checkboxes
+    id: implementation_ideas
+    attributes:
+      label: Implementation Ideas
+      description: Do you have thoughts on how this could be implemented?
+      options:
+        - label: New MCP tool
+        - label: Enhancement to existing tool
+        - label: New language parser
+        - label: Integration with external service
+        - label: Configuration option
+        - label: CLI enhancement
+        - label: Documentation improvement
+        - label: Other (describe below)
+
+  - type: textarea
+    id: technical_details
+    attributes:
+      label: Technical Details
+      description: Any technical considerations or implementation ideas?
+      placeholder: "This might require integrating with X API, or using Y algorithm..."
+
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance Criteria
+      description: How would you know this feature is complete and working correctly?
+      placeholder: |
+        - [ ] Feature X works as expected
+        - [ ] Performance is acceptable (< Y seconds)
+        - [ ] Documentation is updated
+        - [ ] Tests are added
+      render: markdown
+
+  - type: checkboxes
+    id: related_features
+    attributes:
+      label: Related Features
+      description: Does this relate to any existing or planned features?
+      options:
+        - label: Similar to existing tool but for different language
+        - label: Builds on existing analysis capabilities
+        - label: Complements planned roadmap items
+        - label: Standalone new capability
+        - label: Replacement for existing functionality
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternative Solutions
+      description: Have you considered other ways to solve this problem?
+      placeholder: "Alternative 1: ...\nAlternative 2: ..."
+
+  - type: dropdown
+    id: ai_developer_message
+    attributes:
+      label: Message to AI Developer
+      description: How would you like to communicate with our AI developer?
+      options:
+        - "🤖 Hey AI, this would be awesome to implement!"
+        - "🧠 AI Developer, this is a complex challenge for you"
+        - "⚡ Quick win opportunity for the AI!"
+        - "🎯 This aligns with your learning goals"
+        - "🚀 Ambitious feature - show us what you can do!"
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: contribution_offers
+    attributes:
+      label: How Can You Help?
+      description: Since we can't accept code, how else can you contribute?
+      options:
+        - label: I can test the feature when implemented
+        - label: I can provide additional use cases and examples
+        - label: I can help write documentation
+        - label: I can create tutorials or guides
+        - label: I can help promote the feature when released
+        - label: I can provide feedback during development
+
+  - type: textarea
+    id: community_impact
+    attributes:
+      label: Community Impact
+      description: How would this feature benefit the broader community?
+      placeholder: "This would help developers who..."
+
+  - type: input
+    id: timeline
+    attributes:
+      label: Desired Timeline
+      description: When would you ideally like to see this feature?
+      placeholder: "e.g., Next release, Within 3 months, No rush"
+
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: Additional Context
+      description: Links, screenshots, references, or other helpful information
+      placeholder: "Similar tools that implement this: ...\nRelevant documentation: ..."
+
+  - type: markdown
+    attributes:
+      value: |
+        ## 🤖 What Happens Next?
+        
+        1. **AI Analysis**: Our AI developer will analyze your request
+        2. **Feasibility Assessment**: Technical complexity evaluation
+        3. **Community Input**: Others can comment and vote
+        4. **Roadmap Integration**: Feature added to AI's development backlog
+        5. **Implementation**: AI begins development when prioritized
+        6. **Beta Testing**: You'll be invited to test early versions
+        7. **Release**: Feature ships in a future release
+        
+        **Your ideas drive AI innovation! Thank you for contributing to the future of AI-generated software! 🚀**
+        
+        ---
+        
+        *"Every great feature starts with a great idea. Thank you for helping me evolve!"* - Prism AI Developer 

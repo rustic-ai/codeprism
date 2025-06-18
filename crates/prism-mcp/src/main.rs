@@ -226,8 +226,12 @@ async fn main() -> Result<()> {
             e
         })?;
 
-    // Initialize with repository if provided
-    if let Some(repo_path) = matches.get_one::<String>("repository") {
+    // Initialize with repository if provided (check CLI args first, then environment variable)
+    let repo_path_str = matches.get_one::<String>("repository")
+        .cloned()
+        .or_else(|| std::env::var("REPOSITORY_PATH").ok());
+    
+    if let Some(repo_path) = repo_path_str {
         let path = PathBuf::from(repo_path);
         
         if !path.exists() {
@@ -270,7 +274,7 @@ async fn main() -> Result<()> {
             })?;
     } else {
         info!("No repository specified - server will start without repository context");
-        info!("Repository can be specified as: prism-mcp <path>");
+        info!("Repository can be specified as: prism-mcp <path> or via REPOSITORY_PATH environment variable");
     }
 
     // Run the server with stdio transport

@@ -6,7 +6,6 @@ pub mod core;
 pub mod search;
 pub mod analysis;
 pub mod workflow;
-pub mod security;
 
 // Re-export all types from tools_legacy for backward compatibility
 pub use crate::tools_legacy::{
@@ -44,14 +43,8 @@ impl ToolRegistry {
         
         // Analysis tools
         tools.extend(analysis::complexity::list_tools());
-        tools.extend(analysis::quality::list_tools());
         tools.extend(analysis::flow::list_tools());
         tools.extend(analysis::specialized::list_tools());
-        
-        // Security and performance tools
-        tools.extend(security::security::list_tools());
-        tools.extend(security::performance::list_tools());
-        tools.extend(security::api::list_tools());
 
         // Workflow orchestration tools
         tools.extend(workflow::register_workflow_tools());
@@ -88,25 +81,11 @@ impl ToolRegistry {
             "analyze_complexity" => {
                 analysis::complexity::call_tool(&*server, &params).await
             },
-            "find_duplicates" | "find_unused_code" => {
-                analysis::quality::call_tool(&*server, &params).await
-            },
             "trace_data_flow" | "analyze_transitive_dependencies" => {
                 analysis::flow::call_tool(&*server, &params).await
             },
             "trace_inheritance" | "analyze_decorators" => {
                 analysis::specialized::call_tool(&*server, &params).await
-            },
-            
-            // Security and performance tools
-            "analyze_security" => {
-                security::security::call_tool(&*server, &params).await
-            },
-            "analyze_performance" => {
-                security::performance::call_tool(&*server, &params).await
-            },
-            "analyze_api_surface" => {
-                security::api::call_tool(&*server, &params).await
             },
             
             // Workflow orchestration tools

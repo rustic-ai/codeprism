@@ -560,7 +560,7 @@ impl ResourceManager {
                         "Consider refactoring functions longer than 100 lines",
                         "Review classes with more than 15 methods for single responsibility principle",
                         "Use analyze_complexity tool for detailed complexity metrics",
-                        "Use find_duplicates tool to identify code duplication"
+                        "Use detect_patterns tool to identify architectural patterns"
                     ]
                 });
 

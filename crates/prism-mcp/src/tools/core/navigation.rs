@@ -97,6 +97,41 @@ fn parse_node_id(hex_str: &str) -> Result<prism_core::NodeId> {
         .map_err(|e| anyhow::anyhow!("Invalid node ID '{}': {}", hex_str, e))
 }
 
+/// Resolve symbol name to node ID using search
+async fn resolve_symbol_name(server: &PrismMcpServer, symbol_name: &str) -> Result<Option<prism_core::NodeId>> {
+    // Try to search for the symbol by name
+    let results = server.graph_query().search_symbols(symbol_name, None, Some(10))?;
+    
+    // Look for exact match first
+    for result in &results {
+        if result.node.name == symbol_name {
+            return Ok(Some(result.node.id));
+        }
+    }
+    
+    // If no exact match, return the first result if any
+    if let Some(first) = results.first() {
+        Ok(Some(first.node.id))
+    } else {
+        Ok(None)
+    }
+}
+
+/// Resolve symbol identifier - try as node ID first, then as symbol name
+async fn resolve_symbol_identifier(server: &PrismMcpServer, identifier: &str) -> Result<prism_core::NodeId> {
+    // First try to parse as node ID
+    if let Ok(node_id) = parse_node_id(identifier) {
+        return Ok(node_id);
+    }
+    
+    // Then try to resolve as symbol name
+    if let Some(node_id) = resolve_symbol_name(server, identifier).await? {
+        return Ok(node_id);
+    }
+    
+    Err(anyhow::anyhow!("Could not resolve symbol identifier '{}'. Please provide either a valid node ID (hex string) or symbol name that exists in the codebase.", identifier))
+}
+
 /// Extract source context around a specific line
 fn extract_source_context(file_path: &std::path::Path, line_number: usize, context_lines: usize) -> Option<serde_json::Value> {
     if let Ok(content) = std::fs::read_to_string(file_path) {
@@ -192,9 +227,9 @@ async fn trace_path(server: &PrismMcpServer, arguments: Option<&Value>) -> Resul
         .and_then(|v| v.as_u64())
         .map(|v| v as usize);
 
-    // Parse node IDs from hex strings
-    let source_id = parse_node_id(source_str)?;
-    let target_id = parse_node_id(target_str)?;
+    // Resolve source and target identifiers (node IDs or symbol names)
+    let source_id = resolve_symbol_identifier(server, source_str).await?;
+    let target_id = resolve_symbol_identifier(server, target_str).await?;
 
     match server.graph_query().find_path(&source_id, &target_id, max_depth)? {
         Some(path_result) => {
@@ -242,9 +277,11 @@ async fn trace_path(server: &PrismMcpServer, arguments: Option<&Value>) -> Resul
 async fn find_dependencies(server: &PrismMcpServer, arguments: Option<&Value>) -> Result<CallToolResult> {
     let args = arguments.ok_or_else(|| anyhow::anyhow!("Missing arguments"))?;
     
+    // Support both "target" and "symbol" parameter names for backward compatibility
     let target = args.get("target")
+        .or_else(|| args.get("symbol"))
         .and_then(|v| v.as_str())
-        .ok_or_else(|| anyhow::anyhow!("Missing target parameter"))?;
+        .ok_or_else(|| anyhow::anyhow!("Missing target parameter (or symbol)"))?;
     
     let dependency_type_str = args.get("dependency_type")
         .and_then(|v| v.as_str())
@@ -264,8 +301,8 @@ async fn find_dependencies(server: &PrismMcpServer, arguments: Option<&Value>) -
         }),
     };
 
-    // Try to parse as node ID first, then as file path
-    let dependencies = if let Ok(node_id) = parse_node_id(target) {
+    // Try to resolve as symbol identifier first, then as file path
+    let dependencies = if let Ok(node_id) = resolve_symbol_identifier(server, target).await {
         server.graph_query().find_dependencies(&node_id, dependency_type)?
     } else {
         // Handle file path - find all nodes in the file and get their dependencies
@@ -310,9 +347,11 @@ async fn find_dependencies(server: &PrismMcpServer, arguments: Option<&Value>) -
 async fn find_references(server: &PrismMcpServer, arguments: Option<&Value>) -> Result<CallToolResult> {
     let args = arguments.ok_or_else(|| anyhow::anyhow!("Missing arguments"))?;
     
+    // Support both "symbol_id" and "symbol" parameter names for backward compatibility
     let symbol_id_str = args.get("symbol_id")
+        .or_else(|| args.get("symbol"))
         .and_then(|v| v.as_str())
-        .ok_or_else(|| anyhow::anyhow!("Missing symbol_id parameter"))?;
+        .ok_or_else(|| anyhow::anyhow!("Missing symbol_id parameter (or symbol)"))?;
     
     let _include_definitions = args.get("include_definitions")
         .and_then(|v| v.as_bool())
@@ -323,7 +362,7 @@ async fn find_references(server: &PrismMcpServer, arguments: Option<&Value>) -> 
         .map(|v| v as usize)
         .unwrap_or(4);
 
-    let symbol_id = parse_node_id(symbol_id_str)?;
+    let symbol_id = resolve_symbol_identifier(server, symbol_id_str).await?;
     let references = server.graph_query().find_references(&symbol_id)?;
 
     let result = serde_json::json!({

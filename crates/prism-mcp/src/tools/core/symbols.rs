@@ -99,6 +99,41 @@ fn parse_node_id(hex_str: &str) -> Result<prism_core::NodeId> {
         .map_err(|e| anyhow::anyhow!("Invalid node ID '{}': {}", hex_str, e))
 }
 
+/// Resolve symbol name to node ID using search
+async fn resolve_symbol_name(server: &PrismMcpServer, symbol_name: &str) -> Result<Option<prism_core::NodeId>> {
+    // Try to search for the symbol by name
+    let results = server.graph_query().search_symbols(symbol_name, None, Some(10))?;
+    
+    // Look for exact match first
+    for result in &results {
+        if result.node.name == symbol_name {
+            return Ok(Some(result.node.id));
+        }
+    }
+    
+    // If no exact match, return the first result if any
+    if let Some(first) = results.first() {
+        Ok(Some(first.node.id))
+    } else {
+        Ok(None)
+    }
+}
+
+/// Resolve symbol identifier - try as node ID first, then as symbol name
+async fn resolve_symbol_identifier(server: &PrismMcpServer, identifier: &str) -> Result<prism_core::NodeId> {
+    // First try to parse as node ID
+    if let Ok(node_id) = parse_node_id(identifier) {
+        return Ok(node_id);
+    }
+    
+    // Then try to resolve as symbol name
+    if let Some(node_id) = resolve_symbol_name(server, identifier).await? {
+        return Ok(node_id);
+    }
+    
+    Err(anyhow::anyhow!("Could not resolve symbol identifier '{}'. Please provide either a valid node ID (hex string) or symbol name that exists in the codebase.", identifier))
+}
+
 /// Extract source context around a specific line
 fn extract_source_context(file_path: &std::path::Path, line_number: usize, context_lines: usize) -> Option<serde_json::Value> {
     if let Ok(content) = std::fs::read_to_string(file_path) {
@@ -254,9 +289,11 @@ fn generate_symbol_workflow_suggestions(symbol_id_str: &str, node: &prism_core::
 async fn explain_symbol(server: &PrismMcpServer, arguments: Option<&Value>) -> Result<CallToolResult> {
     let args = arguments.ok_or_else(|| anyhow::anyhow!("Missing arguments"))?;
     
+    // Support both "symbol_id" and "symbol" parameter names for backward compatibility
     let symbol_id_str = args.get("symbol_id")
+        .or_else(|| args.get("symbol"))
         .and_then(|v| v.as_str())
-        .ok_or_else(|| anyhow::anyhow!("Missing symbol_id parameter"))?;
+        .ok_or_else(|| anyhow::anyhow!("Missing symbol_id parameter (or symbol)"))?;
     
     let include_dependencies = args.get("include_dependencies")
         .and_then(|v| v.as_bool())
@@ -276,7 +313,7 @@ async fn explain_symbol(server: &PrismMcpServer, arguments: Option<&Value>) -> R
         .and_then(|v| v.as_str())
         .map(|s| SessionId(s.to_string()));
 
-    let symbol_id = parse_node_id(symbol_id_str)?;
+    let symbol_id = resolve_symbol_identifier(server, symbol_id_str).await?;
 
     if let Some(node) = server.graph_store().get_node(&symbol_id) {
         let mut result = serde_json::json!({

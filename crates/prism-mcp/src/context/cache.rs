@@ -307,8 +307,7 @@ impl AnalysisCache {
         matches!(tool_name, 
             "repository_stats" | "content_stats" | "find_files" | 
             "trace_path" | "explain_symbol" | "trace_inheritance" | 
-            "analyze_decorators" | "analyze_complexity" | "find_duplicates" |
-            "analyze_security" | "analyze_performance" | "detect_patterns" |
+                                            "analyze_decorators" | "analyze_complexity" | "detect_patterns" |
             "find_dependencies" | "find_references" | "analyze_transitive_dependencies"
         )
     }

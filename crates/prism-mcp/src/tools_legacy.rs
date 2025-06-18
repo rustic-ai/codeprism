@@ -362,47 +362,7 @@ impl ToolManager {
                     "required": ["target"]
                 }),
             },
-            Tool {
-                name: "find_duplicates".to_string(),
-                title: Some("Find Code Duplicates".to_string()),
-                description: "Detect code duplication and similar code blocks across the codebase".to_string(),
-                input_schema: serde_json::json!({
-                    "type": "object",
-                    "properties": {
-                        "similarity_threshold": {
-                            "type": "number",
-                            "description": "Similarity threshold (0.0 to 1.0)",
-                            "default": 0.85,
-                            "minimum": 0.0,
-                            "maximum": 1.0
-                        },
-                        "min_lines": {
-                            "type": "number",
-                            "description": "Minimum lines for duplicate detection",
-                            "default": 5,
-                            "minimum": 1
-                        },
-                        "scope": {
-                            "type": "string",
-                            "description": "Scope for duplicate detection (repository, package, or specific files)",
-                            "default": "repository"
-                        },
-                        "include_semantic_similarity": {
-                            "type": "boolean",
-                            "description": "Include semantic similarity analysis",
-                            "default": true
-                        },
-                        "exclude_patterns": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            },
-                            "description": "File patterns to exclude from analysis"
-                        }
-                    },
-                    "required": []
-                }),
-            },
+
             Tool {
                 name: "detect_patterns".to_string(),
                 title: Some("Detect Design Patterns".to_string()),
@@ -524,202 +484,10 @@ impl ToolManager {
                     "required": ["variable_or_parameter"]
                 }),
             },
-            Tool {
-                name: "find_unused_code".to_string(),
-                title: Some("Find Unused Code".to_string()),
-                description: "Identify potentially unused code elements such as functions, classes, variables, and imports".to_string(),
-                input_schema: serde_json::json!({
-                    "type": "object",
-                    "properties": {
-                        "scope": {
-                            "type": "string",
-                            "description": "Scope for unused code detection (repository, package, or specific files)",
-                            "default": "repository"
-                        },
-                        "include_dead_code": {
-                            "type": "boolean",
-                            "description": "Include detection of unreachable (dead) code",
-                            "default": true
-                        },
-                        "consider_external_apis": {
-                            "type": "boolean",
-                            "description": "Consider that some code might be used by external APIs",
-                            "default": true
-                        },
-                        "confidence_threshold": {
-                            "type": "number",
-                            "description": "Minimum confidence threshold for marking code as unused (0.0 to 1.0)",
-                            "default": 0.9,
-                            "minimum": 0.0,
-                            "maximum": 1.0
-                        },
-                        "analyze_types": {
-                            "type": "array",
-                            "items": {
-                                "type": "string",
-                                "enum": ["functions", "classes", "variables", "imports", "all"]
-                            },
-                            "description": "Types of code elements to analyze for unused code",
-                            "default": ["all"]
-                        },
-                        "exclude_patterns": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            },
-                            "description": "File patterns to exclude from unused code analysis"
-                        }
-                    },
-                    "required": []
-                }),
-            },
-            Tool {
-                name: "analyze_security".to_string(),
-                title: Some("Analyze Security Vulnerabilities".to_string()),
-                description: "Detect potential security vulnerabilities, data flow security issues, and unsafe coding patterns".to_string(),
-                input_schema: serde_json::json!({
-                    "type": "object",
-                    "properties": {
-                        "scope": {
-                            "type": "string",
-                            "description": "Scope for security analysis (repository, package, or specific files)",
-                            "default": "repository"
-                        },
-                        "vulnerability_types": {
-                            "type": "array",
-                            "items": {
-                                "type": "string",
-                                "enum": ["injection", "authentication", "authorization", "data_exposure", "unsafe_patterns", "crypto_issues", "all"]
-                            },
-                            "description": "Types of security vulnerabilities to detect",
-                            "default": ["all"]
-                        },
-                        "severity_threshold": {
-                            "type": "string",
-                            "enum": ["low", "medium", "high", "critical"],
-                            "description": "Minimum severity level to report",
-                            "default": "medium"
-                        },
-                        "include_data_flow_analysis": {
-                            "type": "boolean",
-                            "description": "Include data flow security analysis",
-                            "default": true
-                        },
-                        "check_external_dependencies": {
-                            "type": "boolean",
-                            "description": "Check for known vulnerable dependencies",
-                            "default": true
-                        },
-                        "exclude_patterns": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            },
-                            "description": "File patterns to exclude from security analysis"
-                        }
-                    },
-                    "required": []
-                }),
-            },
-            Tool {
-                name: "analyze_performance".to_string(),
-                title: Some("Analyze Performance Characteristics".to_string()),
-                description: "Analyze performance characteristics including time complexity, memory usage, bottlenecks, and scalability concerns".to_string(),
-                input_schema: serde_json::json!({
-                    "type": "object",
-                    "properties": {
-                        "scope": {
-                            "type": "string",
-                            "description": "Scope for performance analysis (repository, package, or specific files)",
-                            "default": "repository"
-                        },
-                        "analysis_types": {
-                            "type": "array",
-                            "items": {
-                                "type": "string",
-                                "enum": ["time_complexity", "memory_usage", "hot_spots", "anti_patterns", "scalability", "all"]
-                            },
-                            "description": "Types of performance analysis to perform",
-                            "default": ["all"]
-                        },
-                        "complexity_threshold": {
-                            "type": "string",
-                            "enum": ["low", "medium", "high"],
-                            "description": "Minimum complexity threshold to report",
-                            "default": "medium"
-                        },
-                        "include_algorithmic_analysis": {
-                            "type": "boolean",
-                            "description": "Include algorithmic complexity analysis",
-                            "default": true
-                        },
-                        "detect_bottlenecks": {
-                            "type": "boolean",
-                            "description": "Detect potential performance bottlenecks",
-                            "default": true
-                        },
-                        "exclude_patterns": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            },
-                            "description": "File patterns to exclude from performance analysis"
-                        }
-                    },
-                    "required": []
-                }),
-            },
-            Tool {
-                name: "analyze_api_surface".to_string(),
-                title: Some("Analyze API Surface".to_string()),
-                description: "Analyze public API surface including endpoint discovery, versioning, breaking changes, and documentation coverage".to_string(),
-                input_schema: serde_json::json!({
-                    "type": "object",
-                    "properties": {
-                        "scope": {
-                            "type": "string",
-                            "description": "Scope for API analysis (repository, package, or specific files)",
-                            "default": "repository"
-                        },
-                        "analysis_types": {
-                            "type": "array",
-                            "items": {
-                                "type": "string",
-                                "enum": ["public_api", "versioning", "breaking_changes", "documentation", "compatibility", "all"]
-                            },
-                            "description": "Types of API analysis to perform",
-                            "default": ["all"]
-                        },
-                        "api_version": {
-                            "type": "string",
-                            "description": "Current API version for compatibility analysis"
-                        },
-                        "include_private_apis": {
-                            "type": "boolean",
-                            "description": "Include analysis of private/internal APIs",
-                            "default": false
-                        },
-                        "check_documentation_coverage": {
-                            "type": "boolean",
-                            "description": "Analyze API documentation coverage",
-                            "default": true
-                        },
-                        "detect_breaking_changes": {
-                            "type": "boolean",
-                            "description": "Detect potential breaking changes",
-                            "default": true
-                        },
-                        "exclude_patterns": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            },
-                            "description": "File patterns to exclude from API analysis"
-                        }
-                    },
-                    "required": []
-                }),
-            },
+
+
+
+
             Tool {
                 name: "trace_inheritance".to_string(),
                 title: Some("Trace Inheritance Hierarchy".to_string()),
@@ -875,14 +643,11 @@ impl ToolManager {
             "find_files" => self.find_files(&server, params.arguments).await,
             "content_stats" => self.content_stats(&server).await,
             "analyze_complexity" => self.analyze_complexity(&server, params.arguments).await,
-            "find_duplicates" => self.find_duplicates(&server, params.arguments).await,
+
             "detect_patterns" => self.detect_patterns(&server, params.arguments).await,
             "analyze_transitive_dependencies" => self.analyze_transitive_dependencies(&server, params.arguments).await,
             "trace_data_flow" => self.trace_data_flow(&server, params.arguments).await,
-            "find_unused_code" => self.find_unused_code(&server, params.arguments).await,
-            "analyze_security" => self.analyze_security(&server, params.arguments).await,
-            "analyze_performance" => self.analyze_performance(&server, params.arguments).await,
-            "analyze_api_surface" => self.analyze_api_surface(&server, params.arguments).await,
+
             "trace_inheritance" => self.trace_inheritance(&server, params.arguments).await,
             "analyze_decorators" => self.analyze_decorators(&server, params.arguments).await,
             _ => Ok(CallToolResult {
@@ -1864,96 +1629,7 @@ impl ToolManager {
         })
     }
 
-    /// Find code duplicates
-    async fn find_duplicates(&self, server: &PrismMcpServer, arguments: Option<Value>) -> Result<CallToolResult> {
-        let args = arguments.unwrap_or_default();
-        
-        let similarity_threshold = args.get("similarity_threshold")
-            .and_then(|v| v.as_f64())
-            .unwrap_or(0.85);
-        
-        let min_lines = args.get("min_lines")
-            .and_then(|v| v.as_u64())
-            .map(|v| v as usize)
-            .unwrap_or(5);
-        
-        let _scope = args.get("scope")
-            .and_then(|v| v.as_str())
-            .unwrap_or("repository");
-        
-        let _include_semantic_similarity = args.get("include_semantic_similarity")
-            .and_then(|v| v.as_bool())
-            .unwrap_or(true);
-        
-        let exclude_patterns: Vec<String> = args.get("exclude_patterns")
-            .and_then(|v| v.as_array())
-            .map(|arr| arr.iter()
-                .filter_map(|v| v.as_str())
-                .map(|s| s.to_string())
-                .collect())
-            .unwrap_or_default();
 
-        if let Some(repo_path) = server.repository_path() {
-            match self.find_code_duplicates(repo_path, similarity_threshold, min_lines, &exclude_patterns) {
-                Ok(duplicates) => {
-                    let total_duplicates = duplicates.len();
-                    let affected_files: std::collections::HashSet<String> = duplicates
-                        .iter()
-                        .flat_map(|dup| {
-                            vec![
-                                dup.get("file1").and_then(|v| v.as_str()).unwrap_or("").to_string(),
-                                dup.get("file2").and_then(|v| v.as_str()).unwrap_or("").to_string(),
-                            ]
-                        })
-                        .filter(|f| !f.is_empty())
-                        .collect();
-
-                    let result = serde_json::json!({
-                        "duplicates": duplicates,
-                        "summary": {
-                            "total_duplicate_pairs": total_duplicates,
-                            "affected_files": affected_files.len(),
-                            "similarity_threshold": similarity_threshold,
-                            "min_lines_threshold": min_lines
-                        },
-                        "analysis_successful": true
-                    });
-
-                    Ok(CallToolResult {
-                        content: vec![ToolContent::Text {
-                            text: serde_json::to_string_pretty(&result)?,
-                        }],
-                        is_error: Some(false),
-                    })
-                }
-                Err(e) => {
-                    let result = serde_json::json!({
-                        "error": format!("Duplicate analysis failed: {}", e),
-                        "analysis_successful": false
-                    });
-
-                    Ok(CallToolResult {
-                        content: vec![ToolContent::Text {
-                            text: serde_json::to_string_pretty(&result)?,
-                        }],
-                        is_error: Some(true),
-                    })
-                }
-            }
-        } else {
-            let result = serde_json::json!({
-                "error": "No repository initialized",
-                "analysis_successful": false
-            });
-
-            Ok(CallToolResult {
-                content: vec![ToolContent::Text {
-                    text: serde_json::to_string_pretty(&result)?,
-                }],
-                is_error: Some(true),
-            })
-        }
-    }
 
     /// Analyze complexity for a file
     fn analyze_file_complexity(&self, file_path: &std::path::Path, metrics: &[String], threshold_warnings: bool) -> Result<serde_json::Value> {
@@ -2324,77 +2000,7 @@ impl ToolManager {
         mi.max(0.0).min(100.0)
     }
 
-    /// Find code duplicates in the repository (simplified implementation)
-    fn find_code_duplicates(
-        &self, 
-        repo_path: &std::path::Path, 
-        similarity_threshold: f64, 
-        min_lines: usize, 
-        exclude_patterns: &[String]
-    ) -> Result<Vec<serde_json::Value>> {
-        let mut duplicates = Vec::new();
-        
-        // Get all source files
-        let mut file_contents = std::collections::HashMap::new();
-        if let Ok(entries) = std::fs::read_dir(repo_path) {
-            for entry in entries.flatten() {
-                let path = entry.path();
-                if path.is_file() {
-                    if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
-                        if ["js", "ts", "py", "java", "rs", "c", "cpp"].contains(&ext) {
-                            // Skip if matches exclude patterns
-                            let path_str = path.to_string_lossy();
-                            if exclude_patterns.iter().any(|pattern| path_str.contains(pattern)) {
-                                continue;
-                            }
-                            
-                            if let Ok(content) = std::fs::read_to_string(&path) {
-                                file_contents.insert(path.clone(), content);
-                            }
-                        }
-                    }
-                }
-            }
-        }
 
-        // Simple duplicate detection based on similar line patterns
-        let mut analyzed_pairs = std::collections::HashSet::new();
-        
-        for (file1, content1) in &file_contents {
-            for (file2, content2) in &file_contents {
-                if file1 >= file2 || analyzed_pairs.contains(&(file1.clone(), file2.clone())) {
-                    continue;
-                }
-                analyzed_pairs.insert((file1.clone(), file2.clone()));
-                
-                let similarity = self.calculate_content_similarity(content1, content2);
-                if similarity >= similarity_threshold {
-                    let lines1 = content1.lines().count();
-                    let lines2 = content2.lines().count();
-                    
-                    if lines1 >= min_lines && lines2 >= min_lines {
-                        duplicates.push(serde_json::json!({
-                            "similarity": similarity,
-                            "files": [
-                                {
-                                    "path": file1.display().to_string(),
-                                    "lines": lines1
-                                },
-                                {
-                                    "path": file2.display().to_string(),
-                                    "lines": lines2
-                                }
-                            ],
-                            "lines": lines1.min(lines2),
-                            "type": "file_similarity"
-                        }));
-                    }
-                }
-            }
-        }
-
-        Ok(duplicates)
-    }
 
     /// Calculate content similarity between two text blocks (simplified)
     fn calculate_content_similarity(&self, content1: &str, content2: &str) -> f64 {
@@ -2582,241 +2188,13 @@ impl ToolManager {
         })
     }
 
-    /// Find unused code in the codebase
-    async fn find_unused_code(&self, server: &PrismMcpServer, arguments: Option<Value>) -> Result<CallToolResult> {
-        let args = arguments.unwrap_or_else(|| serde_json::json!({}));
-        
-        let scope = args.get("scope")
-            .and_then(|v| v.as_str())
-            .unwrap_or("repository");
-        
-        let include_dead_code = args.get("include_dead_code")
-            .and_then(|v| v.as_bool())
-            .unwrap_or(true);
-        
-        let consider_external_apis = args.get("consider_external_apis")
-            .and_then(|v| v.as_bool())
-            .unwrap_or(true);
-        
-        let confidence_threshold = args.get("confidence_threshold")
-            .and_then(|v| v.as_f64())
-            .unwrap_or(0.9);
-        
-        let analyze_types = args.get("analyze_types")
-            .and_then(|v| v.as_array())
-            .map(|arr| {
-                arr.iter()
-                    .filter_map(|v| v.as_str())
-                    .map(|s| s.to_string())
-                    .collect::<Vec<_>>()
-            })
-            .unwrap_or_else(|| vec!["all".to_string()]);
-        
-        let exclude_patterns = args.get("exclude_patterns")
-            .and_then(|v| v.as_array())
-            .map(|arr| {
-                arr.iter()
-                    .filter_map(|v| v.as_str())
-                    .map(|s| s.to_string())
-                    .collect::<Vec<_>>()
-            })
-            .unwrap_or_else(Vec::new);
 
-        let unused_code_result = self.perform_unused_code_analysis(
-            server,
-            scope,
-            include_dead_code,
-            consider_external_apis,
-            confidence_threshold,
-            &analyze_types,
-            &exclude_patterns,
-        ).await?;
 
-        Ok(CallToolResult {
-            content: vec![ToolContent::Text {
-                text: serde_json::to_string_pretty(&unused_code_result)?,
-            }],
-            is_error: Some(false),
-        })
-    }
 
-    /// Analyze security vulnerabilities in the codebase
-    async fn analyze_security(&self, server: &PrismMcpServer, arguments: Option<Value>) -> Result<CallToolResult> {
-        let args = arguments.unwrap_or_else(|| serde_json::json!({}));
-        
-        let scope = args.get("scope")
-            .and_then(|v| v.as_str())
-            .unwrap_or("repository");
-        
-        let vulnerability_types = args.get("vulnerability_types")
-            .and_then(|v| v.as_array())
-            .map(|arr| {
-                arr.iter()
-                    .filter_map(|v| v.as_str())
-                    .map(|s| s.to_string())
-                    .collect::<Vec<_>>()
-            })
-            .unwrap_or_else(|| vec!["all".to_string()]);
-        
-        let severity_threshold = args.get("severity_threshold")
-            .and_then(|v| v.as_str())
-            .unwrap_or("medium");
-        
-        let include_data_flow_analysis = args.get("include_data_flow_analysis")
-            .and_then(|v| v.as_bool())
-            .unwrap_or(true);
-        
-        let check_external_dependencies = args.get("check_external_dependencies")
-            .and_then(|v| v.as_bool())
-            .unwrap_or(true);
-        
-        let exclude_patterns = args.get("exclude_patterns")
-            .and_then(|v| v.as_array())
-            .map(|arr| {
-                arr.iter()
-                    .filter_map(|v| v.as_str())
-                    .map(|s| s.to_string())
-                    .collect::<Vec<_>>()
-            })
-            .unwrap_or_else(Vec::new);
 
-        let security_analysis_result = self.perform_security_analysis(
-            server,
-            scope,
-            &vulnerability_types,
-            severity_threshold,
-            include_data_flow_analysis,
-            check_external_dependencies,
-            &exclude_patterns,
-        ).await?;
 
-        Ok(CallToolResult {
-            content: vec![ToolContent::Text {
-                text: serde_json::to_string_pretty(&security_analysis_result)?,
-            }],
-            is_error: Some(false),
-        })
-    }
 
-    /// Analyze performance characteristics
-    async fn analyze_performance(&self, server: &PrismMcpServer, arguments: Option<Value>) -> Result<CallToolResult> {
-        let args = arguments.unwrap_or_else(|| serde_json::json!({}));
-        
-        let scope = args.get("scope")
-            .and_then(|v| v.as_str())
-            .unwrap_or("repository");
-        
-        let analysis_types = args.get("analysis_types")
-            .and_then(|v| v.as_array())
-            .map(|arr| {
-                arr.iter()
-                    .filter_map(|v| v.as_str())
-                    .map(|s| s.to_string())
-                    .collect::<Vec<_>>()
-            })
-            .unwrap_or_else(|| vec!["all".to_string()]);
-        
-        let complexity_threshold = args.get("complexity_threshold")
-            .and_then(|v| v.as_str())
-            .unwrap_or("medium");
-        
-        let include_algorithmic_analysis = args.get("include_algorithmic_analysis")
-            .and_then(|v| v.as_bool())
-            .unwrap_or(true);
-        
-        let detect_bottlenecks = args.get("detect_bottlenecks")
-            .and_then(|v| v.as_bool())
-            .unwrap_or(true);
-        
-        let exclude_patterns = args.get("exclude_patterns")
-            .and_then(|v| v.as_array())
-            .map(|arr| {
-                arr.iter()
-                    .filter_map(|v| v.as_str())
-                    .map(|s| s.to_string())
-                    .collect::<Vec<_>>()
-            })
-            .unwrap_or_else(Vec::new);
 
-        let performance_analysis_result = self.perform_performance_analysis(
-            server,
-            scope,
-            &analysis_types,
-            complexity_threshold,
-            include_algorithmic_analysis,
-            detect_bottlenecks,
-            &exclude_patterns,
-        ).await?;
-
-        Ok(CallToolResult {
-            content: vec![ToolContent::Text {
-                text: serde_json::to_string_pretty(&performance_analysis_result)?,
-            }],
-            is_error: Some(false),
-        })
-    }
-
-    /// Analyze API surface characteristics
-    async fn analyze_api_surface(&self, server: &PrismMcpServer, arguments: Option<Value>) -> Result<CallToolResult> {
-        let args = arguments.unwrap_or_else(|| serde_json::json!({}));
-        
-        let scope = args.get("scope")
-            .and_then(|v| v.as_str())
-            .unwrap_or("repository");
-        
-        let analysis_types = args.get("analysis_types")
-            .and_then(|v| v.as_array())
-            .map(|arr| {
-                arr.iter()
-                    .filter_map(|v| v.as_str())
-                    .map(|s| s.to_string())
-                    .collect::<Vec<_>>()
-            })
-            .unwrap_or_else(|| vec!["all".to_string()]);
-        
-        let api_version = args.get("api_version")
-            .and_then(|v| v.as_str());
-        
-        let include_private_apis = args.get("include_private_apis")
-            .and_then(|v| v.as_bool())
-            .unwrap_or(false);
-        
-        let check_documentation_coverage = args.get("check_documentation_coverage")
-            .and_then(|v| v.as_bool())
-            .unwrap_or(true);
-        
-        let detect_breaking_changes = args.get("detect_breaking_changes")
-            .and_then(|v| v.as_bool())
-            .unwrap_or(true);
-        
-        let exclude_patterns = args.get("exclude_patterns")
-            .and_then(|v| v.as_array())
-            .map(|arr| {
-                arr.iter()
-                    .filter_map(|v| v.as_str())
-                    .map(|s| s.to_string())
-                    .collect::<Vec<_>>()
-            })
-            .unwrap_or_else(Vec::new);
-
-        let api_analysis_result = self.perform_api_surface_analysis(
-            server,
-            scope,
-            &analysis_types,
-            api_version,
-            include_private_apis,
-            check_documentation_coverage,
-            detect_breaking_changes,
-            &exclude_patterns,
-        ).await?;
-
-        Ok(CallToolResult {
-            content: vec![ToolContent::Text {
-                text: serde_json::to_string_pretty(&api_analysis_result)?,
-            }],
-            is_error: Some(false),
-        })
-    }
 
     /// Trace complete inheritance hierarchy for a class
     async fn trace_inheritance(&self, server: &PrismMcpServer, arguments: Option<Value>) -> Result<CallToolResult> {
@@ -5675,6 +5053,8 @@ def test_function(x, y):
         // Total tools should now be 20
         assert_eq!(tools_result.tools.len(), 20);
     }
+
+
 }
 
 impl ToolManager {
@@ -9269,4 +8649,4 @@ impl ToolManager {
 
         recommendations
     }
-} 
+}

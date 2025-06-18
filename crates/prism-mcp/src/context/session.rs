@@ -67,10 +67,7 @@ impl WorkflowStage {
                 "find_references"
             ],
             WorkflowStage::Synthesis => vec![
-                "analyze_complexity",
-                "find_duplicates",
-                "analyze_security",
-                "analyze_performance"
+                "analyze_complexity"
             ],
         }
     }
@@ -189,7 +186,7 @@ impl AnalysisHistory {
         let discovery_tools = ["repository_stats", "search_content", "find_files", "content_stats"];
         let mapping_tools = ["search_symbols", "find_dependencies", "detect_patterns", "trace_path"];
         let deepdive_tools = ["explain_symbol", "trace_inheritance", "analyze_decorators", "find_references"];
-        let synthesis_tools = ["analyze_complexity", "find_duplicates", "analyze_security", "analyze_performance"];
+        let synthesis_tools = ["analyze_complexity"];
 
         let discovery_count = recent_tools.iter().filter(|t| discovery_tools.contains(&t.as_str())).count();
         let mapping_count = recent_tools.iter().filter(|t| mapping_tools.contains(&t.as_str())).count();

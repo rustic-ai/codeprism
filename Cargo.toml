@@ -4,6 +4,7 @@ members = [
     "crates/prism-core",
     "crates/prism-bus",
     "crates/prism-storage",
+    "crates/prism-analysis",
     "crates/prism-mcp",
     "crates/prism-lang-js",
     "crates/prism-lang-python",

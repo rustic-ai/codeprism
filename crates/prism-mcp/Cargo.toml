@@ -31,6 +31,7 @@ futures = "0.3"
 
 # Internal dependencies
 prism-core = { path = "../prism-core" }
+prism-analysis = { path = "../prism-analysis" }
 prism-lang-python = { path = "../prism-lang-python" }
 prism-lang-js = { path = "../prism-lang-js" }
 

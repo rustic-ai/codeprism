@@ -1,0 +1,28 @@
+[package]
+name = "prism-analysis"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Language-agnostic code analysis tools for Prism"
+
+[dependencies]
+# Core dependencies
+anyhow.workspace = true
+thiserror.workspace = true
+serde = { workspace = true, features = ["derive"] }
+serde_json.workspace = true
+regex.workspace = true
+
+# File operations
+walkdir = "2.4"
+tokio = { workspace = true, features = ["fs"] }
+
+# Internal dependencies
+prism-core = { path = "../prism-core" }
+
+[dev-dependencies]
+tempfile.workspace = true
+tokio = { workspace = true, features = ["test-util"] } 

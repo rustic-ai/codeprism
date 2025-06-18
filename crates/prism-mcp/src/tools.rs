@@ -4098,7 +4098,7 @@ def process_data(input_data: str) -> str:
         assert!(result.is_ok());
         
         let tools_result = result.unwrap();
-        assert_eq!(tools_result.tools.len(), 18); // All implemented tools including API surface analysis
+        assert_eq!(tools_result.tools.len(), 20); // All implemented tools including API surface analysis
         assert!(tools_result.next_cursor.is_none());
         
         // Verify all expected tools are present
@@ -5664,8 +5664,8 @@ def test_function(x, y):
         assert!(tool_names.contains(&"trace_data_flow".to_string()));
         assert!(tool_names.contains(&"find_unused_code".to_string()));
         
-        // Total tools should now be 18
-        assert_eq!(tools_result.tools.len(), 18);
+        // Total tools should now be 20
+        assert_eq!(tools_result.tools.len(), 20);
     }
 }
 

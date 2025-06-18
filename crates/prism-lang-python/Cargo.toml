@@ -23,6 +23,7 @@ tree-sitter-python.workspace = true
 # Import prism types without circular dependency
 blake3.workspace = true
 hex.workspace = true
+regex.workspace = true
 
 [dev-dependencies]
 insta.workspace = true

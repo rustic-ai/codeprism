@@ -667,7 +667,7 @@ def parse_config_value(value: str) -> Union[str, int, bool]:
         
         let tools_value = tools_result.unwrap();
         let tools: crate::tools::ListToolsResult = serde_json::from_value(tools_value).unwrap();
-        assert_eq!(tools.tools.len(), 18); // All 18 tools should be available including Phase 3 & 4 features
+        assert_eq!(tools.tools.len(), 20); // All 20 tools should be available including Phase 3 & 4 features
         
         // 5. Test tools/call with repository_stats
         let tool_params = crate::tools::CallToolParams {

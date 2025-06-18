@@ -5,6 +5,7 @@ pub mod duplicates;
 pub mod security;
 pub mod performance;
 pub mod api_surface;
+pub mod semantic;
 
 pub use complexity::ComplexityAnalyzer;
 pub use duplicates::DuplicateAnalyzer;

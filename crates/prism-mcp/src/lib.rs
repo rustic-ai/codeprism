@@ -26,6 +26,7 @@ pub mod protocol;
 pub mod resources;
 pub mod tools_legacy;
 pub mod tools;
+pub mod context;
 pub mod prompts;
 pub mod server;
 

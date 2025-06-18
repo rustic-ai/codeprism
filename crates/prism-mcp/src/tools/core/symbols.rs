@@ -3,6 +3,9 @@
 use anyhow::Result;
 use serde_json::Value;
 use crate::tools::{Tool, CallToolParams, CallToolResult, ToolContent};
+use crate::context::{WorkflowContext, ToolSuggestion, SessionManager, SessionState};
+use crate::context::workflow::ConfidenceLevel;
+use crate::context::session::SessionId;
 use crate::PrismMcpServer;
 
 /// List symbol tools
@@ -192,7 +195,62 @@ fn parse_inheritance_filter(filter_str: &str) -> Option<prism_core::InheritanceF
     }
 }
 
-/// Explain a symbol with context
+/// Generate workflow suggestions for a symbol
+fn generate_symbol_workflow_suggestions(symbol_id_str: &str, node: &prism_core::Node) -> Vec<ToolSuggestion> {
+    let mut suggestions = Vec::new();
+
+    // Suggest finding references if not already done
+    suggestions.push(
+        ToolSuggestion::new(
+            "find_references".to_string(),
+            ConfidenceLevel::High,
+            format!("Find all references to symbol '{}'", node.name),
+            "Understanding of how and where the symbol is used throughout the codebase".to_string(),
+            1,
+        ).with_parameter("symbol_id".to_string(), serde_json::Value::String(symbol_id_str.to_string()))
+    );
+
+    // Suggest dependency analysis
+    suggestions.push(
+        ToolSuggestion::new(
+            "find_dependencies".to_string(),
+            ConfidenceLevel::Medium,
+            format!("Analyze dependencies for symbol '{}'", node.name),
+            "Understanding of what this symbol depends on".to_string(),
+            2,
+        ).with_parameter("target".to_string(), serde_json::Value::String(symbol_id_str.to_string()))
+    );
+
+    // For classes, suggest inheritance analysis
+    if matches!(node.kind, prism_core::NodeKind::Class) {
+        suggestions.push(
+            ToolSuggestion::new(
+                "trace_inheritance".to_string(),
+                ConfidenceLevel::Medium,
+                format!("Analyze inheritance hierarchy for class '{}'", node.name),
+                "Complete understanding of inheritance relationships and method resolution".to_string(),
+                3,
+            ).with_parameter("class_name".to_string(), serde_json::Value::String(node.name.clone()))
+        );
+    }
+
+    // For functions, suggest data flow analysis
+    if matches!(node.kind, prism_core::NodeKind::Function | prism_core::NodeKind::Method) {
+        suggestions.push(
+            ToolSuggestion::new(
+                "trace_data_flow".to_string(),
+                ConfidenceLevel::Medium,
+                format!("Trace data flow through function '{}'", node.name),
+                "Understanding of how data flows through this function".to_string(),
+                3,
+            ).with_parameter("function_id".to_string(), serde_json::Value::String(symbol_id_str.to_string()))
+        );
+    }
+
+    suggestions
+}
+
+/// Explain a symbol with context and workflow guidance
 async fn explain_symbol(server: &PrismMcpServer, arguments: Option<&Value>) -> Result<CallToolResult> {
     let args = arguments.ok_or_else(|| anyhow::anyhow!("Missing arguments"))?;
     
@@ -212,6 +270,11 @@ async fn explain_symbol(server: &PrismMcpServer, arguments: Option<&Value>) -> R
         .and_then(|v| v.as_u64())
         .map(|v| v as usize)
         .unwrap_or(4);
+
+    // Session context for workflow guidance
+    let session_id = args.get("session_id")
+        .and_then(|v| v.as_str())
+        .map(|s| SessionId(s.to_string()));
 
     let symbol_id = parse_node_id(symbol_id_str)?;
 
@@ -363,6 +426,31 @@ async fn explain_symbol(server: &PrismMcpServer, arguments: Option<&Value>) -> R
                 }).collect::<Vec<_>>()
             );
         }
+
+        // Add workflow guidance
+        let workflow_suggestions = generate_symbol_workflow_suggestions(symbol_id_str, &node);
+        result["workflow_guidance"] = serde_json::json!({
+            "next_steps": workflow_suggestions.iter().map(|suggestion| {
+                serde_json::json!({
+                    "tool": suggestion.tool_name,
+                    "parameters": suggestion.suggested_parameters,
+                    "confidence": format!("{:?}", suggestion.confidence),
+                    "reasoning": suggestion.reasoning,
+                    "expected_outcome": suggestion.expected_outcome,
+                    "priority": suggestion.priority
+                })
+            }).collect::<Vec<_>>(),
+            "analysis_context": {
+                "symbol_type": format!("{:?}", node.kind),
+                "file": node.file.display().to_string(),
+                "complexity_hint": match node.kind {
+                    prism_core::NodeKind::Class => "Consider analyzing inheritance relationships and decorator patterns",
+                    prism_core::NodeKind::Function | prism_core::NodeKind::Method => "Consider tracing data flow and analyzing complexity",
+                    prism_core::NodeKind::Module => "Consider exploring contained symbols and dependencies",
+                    _ => "Consider analyzing dependencies and references"
+                }
+            }
+        });
 
         Ok(CallToolResult {
             content: vec![ToolContent::Text {

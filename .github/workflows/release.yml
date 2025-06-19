@@ -215,7 +215,7 @@ jobs:
           find crates -name "Cargo.toml" -exec sed -i "s/^version = \".*\"/version = \"$new_version\"/" {} \;
           
           # Update dependency versions within workspace
-          find crates -name "Cargo.toml" -exec sed -i "s /codeprism-[a-z-]* = { version = \"[^\"]*\" /codeprism-\1 = { version = \"$new_version\"/g" {} \;
+          find crates -name "Cargo.toml" -exec sed -i "s/\\(codeprism-[a-z-]*\\) = { version = \".*\" }/\\1 = { version = \"$new_version\" }/g" {} +
           
           # Commit version changes
           git add .

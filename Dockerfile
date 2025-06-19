@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
-WORKDIR /usr/src /codeprism
+WORKDIR /usr/src/codeprism
 
 # Copy manifests
 COPY Cargo.toml Cargo.lock ./

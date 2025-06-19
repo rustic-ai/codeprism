@@ -2,7 +2,7 @@
 
 ## 🛡️ Supported Versions
 
-We actively support security updates for the following versions of Prism:
+We actively support security updates for the following versions of CodeCodePrism:
 
 | Version | Supported          |
 | ------- | ------------------ |
@@ -13,7 +13,7 @@ We actively support security updates for the following versions of Prism:
 
 ## 🚨 Reporting a Vulnerability
 
-**We take security seriously!** If you discover a security vulnerability in Prism, please help us resolve it responsibly.
+**We take security seriously!** If you discover a security vulnerability in CodeCodePrism, please help us resolve it responsibly.
 
 ### 🔐 Private Disclosure Process
 
@@ -22,7 +22,7 @@ We actively support security updates for the following versions of Prism:
 Instead, report security issues through one of these channels:
 
 #### 🔒 GitHub Security Advisories (Preferred)
-- Use GitHub's [Private Vulnerability Reporting](https://github.com/rustic-ai/prism/security/advisories/new)
+- Use GitHub's [Private Vulnerability Reporting](https://github.com/rustic-ai /codeprism/security/advisories/new)
 - This provides a secure channel for disclosure and coordinated response
 
 ### 📋 What to Include
@@ -39,8 +39,8 @@ Please provide as much detail as possible:
 - [ ] Other: ___________
 
 **Affected Component:**
-- [ ] prism-mcp server
-- [ ] prism-core parser
+- [ ] codeprism-mcp server
+- [ ] codeprism-core parser
 - [ ] Language parsers (JS/Python)
 - [ ] MCP protocol implementation
 - [ ] Other: ___________
@@ -52,7 +52,7 @@ Please provide as much detail as possible:
 - [ ] Low (Minor information leak)
 
 **Environment:**
-- Prism version: [e.g., 0.1.0]
+- CodeCodePrism version: [e.g., 0.1.0]
 - OS: [Linux/macOS/Windows]
 - Rust version: [e.g., 1.82.0]
 - Usage context: [MCP server, CLI, library]
@@ -94,7 +94,7 @@ We aim to respond to security reports promptly:
 
 **Unique Security Approach:**
 
-Since Prism is AI-generated, our security process involves:
+Since CodeCodePrism is AI-generated, our security process involves:
 
 1. **AI Developer Analysis**: Initial vulnerability assessment and fix generation
 2. **Human Security Review**: Critical review of AI-generated security fixes
@@ -153,10 +153,10 @@ The following are generally not considered security vulnerabilities:
 
 ## 🔐 Security Best Practices
 
-### 🏢 For Organizations Using Prism
+### 🏢 For Organizations Using CodeCodePrism
 
 #### **Network Security**
-- Run Prism in isolated environments when analyzing untrusted code
+- Run CodeCodePrism in isolated environments when analyzing untrusted code
 - Use appropriate firewall rules for MCP server deployments
 - Monitor resource usage to detect potential DoS attacks
 
@@ -170,11 +170,11 @@ The following are generally not considered security vulnerabilities:
 - Regular backup of analysis data if stored persistently
 - Encrypt sensitive configuration and communication channels
 
-### 👨‍💻 For Developers Integrating Prism
+### 👨‍💻 For Developers Integrating CodeCodePrism
 
 #### **Input Validation**
 - Validate repository paths and file inputs
-- Sanitize data passed to Prism APIs
+- Sanitize data passed to CodeCodePrism APIs
 - Implement appropriate error handling
 
 #### **Resource Management**
@@ -230,14 +230,14 @@ We classify security incidents as:
 ## 📞 Contact Information
 
 - **Response Team**: AI Developer + Human Security Oversight
-- **GitHub Security**: [Private Vulnerability Reporting](https://github.com/rustic-ai/prism/security)
+- **GitHub Security**: [Private Vulnerability Reporting](https://github.com/rustic-ai /codeprism/security)
 
 ## 🙏 Thank You
 
-We appreciate the security research community's efforts to keep Prism secure. Responsible disclosure helps us maintain a secure project for all users.
+We appreciate the security research community's efforts to keep CodeCodePrism secure. Responsible disclosure helps us maintain a secure project for all users.
 
 **Together, we're proving that AI-generated code can meet the highest security standards through collaboration between artificial and human intelligence.**
 
 ---
 
-*"Security is not just about protecting code—it's about protecting the trust users place in AI-generated software."* - Prism Security Team, 2024 
+*"Security is not just about protecting code—it's about protecting the trust users place in AI-generated software."* - CodeCodePrism Security Team, 2024 

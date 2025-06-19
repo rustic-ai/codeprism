@@ -7,7 +7,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        # 🐛 Bug Report for Prism
+        # 🐛 Bug Report for CodePrism
         
         Thank you for helping improve our AI-generated project! 
         
@@ -23,17 +23,17 @@ body:
           required: true
         - label: I've read the [Contributing Guidelines](../../CONTRIBUTING.md)
           required: true
-        - label: I'm using the latest version of Prism
+        - label: I'm using the latest version of CodePrism
           required: false
 
   - type: dropdown
     id: component
     attributes:
       label: Affected Component
-      description: Which part of Prism is affected?
+      description: Which part of CodePrism is affected?
       options:
-        - MCP Server (prism-mcp)
-        - Core Parser (prism-core)
+        - MCP Server (codeprism-mcp)
+        - Core Parser (codeprism-core)
         - JavaScript/TypeScript Parser
         - Python Parser
         - Analysis Tools
@@ -59,8 +59,8 @@ body:
   - type: input
     id: version
     attributes:
-      label: Prism Version
-      description: What version of Prism are you using?
+      label: CodePrism Version
+      description: What version of CodePrism are you using?
       placeholder: "e.g., 0.1.0, latest, commit hash"
     validations:
       required: true
@@ -112,7 +112,7 @@ body:
       description: Detailed steps to reproduce the bug
       placeholder: |
         1. Set REPOSITORY_PATH to '/path/to/repo'
-        2. Run command 'prism-mcp'
+        2. Run command 'codeprism-mcp'
         3. Execute MCP tool '...'
         4. Observe error
       render: markdown

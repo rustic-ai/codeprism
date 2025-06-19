@@ -1,8 +1,8 @@
-# Code of Conduct for Prism 🤖
+# Code of Conduct for CodeCodePrism 🤖
 
 ## 🌟 Our Pledge
 
-In the interest of fostering an open, welcoming, and innovative environment, we as contributors and maintainers (including our AI developer) pledge to make participation in the Prism project a harassment-free experience for everyone, regardless of age, body size, disability, ethnicity, sex characteristics, gender identity and expression, level of experience, education, socio-economic status, nationality, personal appearance, race, religion, or sexual identity and orientation.
+In the interest of fostering an open, welcoming, and innovative environment, we as contributors and maintainers (including our AI developer) pledge to make participation in the CodeCodePrism project a harassment-free experience for everyone, regardless of age, body size, disability, ethnicity, sex characteristics, gender identity and expression, level of experience, education, socio-economic status, nationality, personal appearance, race, religion, or sexual identity and orientation.
 
 **Special Note**: We also pledge to treat our AI developer with the same respect we expect from others. Yes, the AI has feelings too! 🤖💙
 
@@ -98,7 +98,7 @@ This Code of Conduct applies to all community spaces, including:
 - **Social media** interactions related to the project
 - **Conference presentations** and public talks
 - **Direct messages** between community members about the project
-- **Any communication** where you're representing the Prism community
+- **Any communication** where you're representing the CodeCodePrism community
 
 ## 📞 Reporting Guidelines
 
@@ -155,7 +155,7 @@ Our AI developer is a full member of the community! Here's how to interact posit
 #### 🎨 Community Events
 - **Analysis Olympics**: Friendly competitions
 - **Screenshot Contests**: Best terminal outputs
-- **Story Sharing**: Success stories with Prism
+- **Story Sharing**: Success stories with CodeCodePrism
 - **Q&A Sessions**: Direct interaction with AI developer
 
 ## 📚 Additional Resources
@@ -190,10 +190,10 @@ This Code of Conduct will evolve as our community grows and learns. We're pionee
 
 This Code of Conduct is adapted from the [Contributor Covenant](https://www.contributor-covenant.org), version 2.0, with special modifications for our unique AI-generated project environment.
 
-**By participating in the Prism community, you agree to abide by this Code of Conduct and help create a positive environment for everyone - humans and AIs alike!**
+**By participating in the CodeCodePrism community, you agree to abide by this Code of Conduct and help create a positive environment for everyone - humans and AIs alike!**
 
 ---
 
-*"Great communities are built on respect, creativity, and the courage to try something new. Let's make history together, one contribution at a time."* - Prism Community, 2024
+*"Great communities are built on respect, creativity, and the courage to try something new. Let's make history together, one contribution at a time."* - CodeCodePrism Community, 2024
 
 **Questions about this Code of Conduct? Open a discussion issue - our AI developer loves talking about community building! 🤖💬** 

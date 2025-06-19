@@ -1,4 +1,4 @@
-use prism_core::content::*;
+use codeprism_core::content::*;
 use std::path::PathBuf;
 
 #[tokio::test]

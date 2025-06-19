@@ -1,16 +1,16 @@
 # API Documentation
 
-This document provides detailed API documentation for all Prism components.
+This document provides detailed API documentation for all CodeCodePrism components.
 
 ## Table of Contents
 
-- [Core Library (`prism`)](#core-library-prism)
-- [JavaScript/TypeScript Parser (`prism-lang-js`)](#javascripttypescript-parser-prism-lang-js)
-- [MCP Server (`prism-mcp`)](#mcp-server-prism-mcp)
+- [Core Library (codeprism`)](#core-librarycodeprism)
+- [JavaScript/TypeScript Parser (`codeprism-lang-js`)](#javascripttypescript-parser-codeprism-lang-js)
+- [MCP Server (`codeprism-mcp`)](#mcp-server-codeprism-mcp)
 - [Error Handling](#error-handling)
 - [Examples](#examples)
 
-## Core Library (`prism`)
+## Core Library (codeprism`)
 
 The core library provides the fundamental types and engine for code analysis.
 
@@ -39,7 +39,7 @@ impl NodeId {
 
 **Example:**
 ```rust
-use prism::ast::{NodeId, NodeKind, Span};
+use codeprism::ast::{NodeId, NodeKind, Span};
 use std::path::Path;
 
 let span = Span::new(0, 10, 1, 1, 1, 11);
@@ -380,7 +380,7 @@ impl AstPatch {
 }
 ```
 
-## JavaScript/TypeScript Parser (`prism-lang-js`)
+## JavaScript/TypeScript Parser (`codeprism-lang-js`)
 
 Language-specific parser for JavaScript and TypeScript files.
 
@@ -466,7 +466,7 @@ The JavaScript/TypeScript parser supports:
 - **Calls**: Function calls, method calls
 - **TypeScript**: Basic type annotations, interfaces
 
-## MCP Server (`prism-mcp`)
+## MCP Server (`codeprism-mcp`)
 
 Model Context Protocol server for code intelligence.
 
@@ -475,7 +475,7 @@ Model Context Protocol server for code intelligence.
 The MCP server is designed to be launched by MCP clients:
 
 ```bash
-prism-mcp <REPOSITORY_PATH>
+codeprism-mcp <REPOSITORY_PATH>
 ```
 
 ### MCP Client Configuration
@@ -485,8 +485,8 @@ prism-mcp <REPOSITORY_PATH>
 ```json
 {
   "mcpServers": {
-    "prism": {
-      "command": "prism-mcp",
+    codeprism": {
+      "command": "codeprism-mcp",
       "args": ["/path/to/repository"]
     }
   }
@@ -499,8 +499,8 @@ prism-mcp <REPOSITORY_PATH>
 {
   "mcp": {
     "servers": [{
-      "name": "prism",
-      "command": ["prism-mcp", "."]
+      "name": codeprism",
+      "command": ["codeprism-mcp", "."]
     }]
   }
 }
@@ -510,9 +510,9 @@ prism-mcp <REPOSITORY_PATH>
 
 The server exposes repository data through MCP resources:
 
-- `prism://repository/file/{path}` - Access file content
-- `prism://graph/repository` - Repository graph structure  
-- `prism://symbols/{type}` - Symbol listings (functions, classes, etc.)
+- codeprism://repository/file/{path}` - Access file content
+- codeprism://graph/repository` - Repository graph structure  
+- codeprism://symbols/{type}` - Symbol listings (functions, classes, etc.)
 
 ### MCP Tools
 
@@ -554,7 +554,7 @@ Provide guidance for code refactoring.
 
 ## Error Handling
 
-All Prism components use structured error handling with `thiserror`.
+All CodeCodePrism components use structured error handling with `thiserror`.
 
 ### Core Errors
 
@@ -610,7 +610,7 @@ pub enum Error {
 ### Basic Parsing
 
 ```rust
-use prism_lang_js::{JavaScriptParser, ParseContext};
+use codeprism_lang_js::{JavaScriptParser, ParseContext};
 use std::path::PathBuf;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -648,7 +648,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### File Watching
 
 ```rust
-use prism::{FileWatcher, ChangeKind};
+use codeprism::{FileWatcher, ChangeKind};
 use std::path::Path;
 
 #[tokio::main]
@@ -688,8 +688,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### Parser Engine Usage
 
 ```rust
-use prism::{LanguageRegistry, ParserEngine, ParseContext};
-use prism_lang_js::JavaScriptLanguageParser;
+use codeprism::{LanguageRegistry, ParserEngine, ParseContext};
+use codeprism_lang_js::JavaScriptLanguageParser;
 use std::sync::Arc;
 
 #[tokio::main]
@@ -723,7 +723,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### Creating Graph Patches
 
 ```rust
-use prism::{AstPatch, Node, NodeKind, Language, Span};
+use codeprism::{AstPatch, Node, NodeKind, Language, Span};
 use std::path::PathBuf;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -790,7 +790,7 @@ All public APIs are thread-safe:
 
 ## Versioning
 
-Prism follows [Semantic Versioning](https://semver.org/):
+CodeCodePrism follows [Semantic Versioning](https://semver.org/):
 
 - **Major**: Breaking API changes
 - **Minor**: New features, backward compatible

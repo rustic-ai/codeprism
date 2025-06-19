@@ -1,6 +1,6 @@
-# Getting Started with Prism - MCP Integration Guide
+# Getting Started with CodeCodePrism - MCP Integration Guide
 
-This guide walks you through setting up prism with the three major MCP clients: Claude Desktop, Cursor, and VS Code. By the end, you'll have a powerful AI assistant with graph-first code intelligence for your repositories.
+This guide walks you through setting up codeprism with the three major MCP clients: Claude Desktop, Cursor, and VS Code. By the end, you'll have a powerful AI assistant with graph-first code intelligence for your repositories.
 
 ## 🎯 What You'll Achieve
 
@@ -12,8 +12,8 @@ This guide walks you through setting up prism with the three major MCP clients: 
 ## 📋 Prerequisites
 
 ### Required Software
-- **Node.js 18+** (for building prism)
-- **Rust 1.82+** (for building prism from source)
+- **Node.js 18+** (for building codeprism)
+- **Rust 1.82+** (for building codeprism from source)
 - **Git** (for cloning repositories)
 
 ### MCP Clients (Choose one or more)
@@ -33,18 +33,18 @@ rustc --version  # Should be 1.82.0 or higher
 git --version
 ```
 
-## 🚀 Step 1: Install Prism
+## 🚀 Step 1: Install CodeCodePrism
 
 ### Option A: Build from Source (Recommended)
 ```bash
 # Clone the repository
-git clone https://github.com/dragonscale/prism
-cd prism
+git clone https://github.com/rustic-ai /codeprism
+cd codeprism
 
 # Build the release binary
 cargo build --release
 
-# The binary will be at: ./target/release/prism-mcp
+# The binary will be at: ./target/release/codeprism-mcp
 ```
 
 ### Option B: Using Pre-built Binary (Coming Soon)
@@ -56,7 +56,7 @@ cargo build --release
 ### Verify Installation
 ```bash
 # Test the binary
-./target/release/prism-mcp --help
+./target/release/codeprism-mcp --help
 
 # Should show usage information and available options
 ```
@@ -86,8 +86,8 @@ Open the configuration file in your preferred editor and add:
 ```json
 {
   "mcpServers": {
-    "prism": {
-      "command": "/path/to/prism/target/release/prism-mcp",
+    codeprism": {
+      "command": "/path/to /codeprism/target/release/codeprism-mcp",
       "args": ["/path/to/your/repository"],
       "env": {
         "RUST_LOG": "info"
@@ -98,7 +98,7 @@ Open the configuration file in your preferred editor and add:
 ```
 
 **Replace the paths:**
-- `/path/to/prism/target/release/prism-mcp` → Your actual prism binary path
+- `/path/to /codeprism/target/release/codeprism-mcp` → Your actual codeprism binary path
 - `/path/to/your/repository` → Your project directory
 
 ### 3. Complete Setup Example
@@ -106,15 +106,15 @@ Open the configuration file in your preferred editor and add:
 ```json
 {
   "mcpServers": {
-    "prism-main-project": {
-      "command": "/Users/username/code/prism/target/release/prism-mcp",
+    "codeprism-main-project": {
+      "command": "/Users/username/code /codeprism/target/release/codeprism-mcp",
       "args": ["/Users/username/code/my-project"],
       "env": {
         "RUST_LOG": "info"
       }
     },
-    "prism-client-app": {
-      "command": "/Users/username/code/prism/target/release/prism-mcp", 
+    "codeprism-client-app": {
+      "command": "/Users/username/code /codeprism/target/release/codeprism-mcp", 
       "args": ["/Users/username/code/client-app"],
       "env": {
         "RUST_LOG": "warn"
@@ -157,8 +157,8 @@ Open the configuration file in your preferred editor and add:
 ```json
 {
   "mcpServers": {
-    "prism": {
-      "command": "/path/to/prism/target/release/prism-mcp",
+    codeprism": {
+      "command": "/path/to /codeprism/target/release/codeprism-mcp",
       "args": ["."],
       "env": {
         "RUST_LOG": "info"
@@ -173,16 +173,16 @@ Open the configuration file in your preferred editor and add:
 ```json
 {
   "mcpServers": {
-    "prism-current": {
-      "command": "/Users/username/code/prism/target/release/prism-mcp",
+    "codeprism-current": {
+      "command": "/Users/username/code /codeprism/target/release/codeprism-mcp",
       "args": ["."],
-      "description": "Analyze current repository with prism",
+      "description": "Analyze current repository with codeprism",
       "env": {
         "RUST_LOG": "info"
       }
     },
-    "prism-parent": {
-      "command": "/Users/username/code/prism/target/release/prism-mcp",
+    "codeprism-parent": {
+      "command": "/Users/username/code /codeprism/target/release/codeprism-mcp",
       "args": [".."],
       "description": "Analyze parent directory",
       "env": {
@@ -204,7 +204,7 @@ Open the configuration file in your preferred editor and add:
 
 1. Open the Command Palette (`Cmd/Ctrl + Shift + P`)
 2. Run "MCP: List Servers"
-3. You should see your prism server listed
+3. You should see your codeprism server listed
 4. In chat, you should see MCP tools available
 
 ---
@@ -224,8 +224,8 @@ Open the configuration file in your preferred editor and add:
 2. Run "MCP: Add Server"
 3. Choose "CLI Server - Node.js" 
 4. Fill in the details:
-   - **Server Name:** `prism`
-   - **Command:** Full path to your prism-mcp binary
+   - **Server Name:** codeprism`
+   - **Command:** Full path to your codeprism-mcp binary
    - **Args:** `["/path/to/your/repository"]`
 
 ### 3. Add MCP Server (Method 2: Configuration File)
@@ -235,9 +235,9 @@ Create `.vscode/mcp.json` in your workspace:
 ```json
 {
   "servers": {
-    "prism": {
+    codeprism": {
       "type": "stdio",
-      "command": "/path/to/prism/target/release/prism-mcp",
+      "command": "/path/to /codeprism/target/release/codeprism-mcp",
       "args": ["."],
       "env": {
         "RUST_LOG": "info"
@@ -255,9 +255,9 @@ In your VS Code `settings.json`:
 {
   "mcp": {
     "servers": {
-      "prism-global": {
+      "codeprism-global": {
         "type": "stdio", 
-        "command": "/Users/username/code/prism/target/release/prism-mcp",
+        "command": "/Users/username/code /codeprism/target/release/codeprism-mcp",
         "args": ["."],
         "env": {
           "RUST_LOG": "info"
@@ -273,7 +273,7 @@ In your VS Code `settings.json`:
 1. Open GitHub Copilot Chat (`Ctrl/Cmd + Alt + I`)
 2. Select "Agent" mode from the dropdown
 3. Click the "Tools" button to see available MCP tools
-4. Enable the prism tools you want to use
+4. Enable the codeprism tools you want to use
 
 ---
 
@@ -290,7 +290,7 @@ What files are in this repository? Can you analyze the overall structure?
 
 **Cursor:**
 ```
-@prism Analyze the dependencies in this JavaScript project
+codeprism Analyze the dependencies in this JavaScript project
 ```
 
 **VS Code (Agent Mode):**
@@ -328,8 +328,8 @@ This repository has both Python and JavaScript. How do they interact?
 ```json
 {
   "mcpServers": {
-    "prism": {
-      "command": "/path/to/prism-mcp",
+    codeprism": {
+      "command": "/path/to/codeprism-mcp",
       "args": ["/path/to/repo"],
       "env": {
         "RUST_LOG": "warn",
@@ -344,8 +344,8 @@ This repository has both Python and JavaScript. How do they interact?
 ```json
 {
   "mcpServers": {
-    "prism-dev": {
-      "command": "/path/to/prism-mcp",
+    "codeprism-dev": {
+      "command": "/path/to/codeprism-mcp",
       "args": ["/path/to/repo", "--verbose"],
       "env": {
         "RUST_LOG": "debug"
@@ -361,16 +361,16 @@ This repository has both Python and JavaScript. How do they interact?
 ```json
 {
   "mcpServers": {
-    "prism-frontend": {
-      "command": "/path/to/prism-mcp",
+    "codeprism-frontend": {
+      "command": "/path/to/codeprism-mcp",
       "args": ["/path/to/frontend-app"]
     },
-    "prism-backend": {
-      "command": "/path/to/prism-mcp", 
+    "codeprism-backend": {
+      "command": "/path/to/codeprism-mcp", 
       "args": ["/path/to/backend-api"]
     },
-    "prism-mobile": {
-      "command": "/path/to/prism-mcp",
+    "codeprism-mobile": {
+      "command": "/path/to/codeprism-mcp",
       "args": ["/path/to/mobile-app"]
     }
   }
@@ -385,10 +385,10 @@ This repository has both Python and JavaScript. How do they interact?
 
 ```bash
 # Make sure the binary is executable
-chmod +x /path/to/prism/target/release/prism-mcp
+chmod +x /path/to /codeprism/target/release/codeprism-mcp
 
 # Test the binary directly
-/path/to/prism/target/release/prism-mcp --help
+/path/to /codeprism/target/release/codeprism-mcp --help
 ```
 
 **2. "Repository not found" or "Permission denied"**
@@ -425,8 +425,8 @@ Enable detailed logging:
 ```json
 {
   "mcpServers": {
-    "prism-debug": {
-      "command": "/path/to/prism-mcp",
+    "codeprism-debug": {
+      "command": "/path/to/codeprism-mcp",
       "args": ["/path/to/repo", "--verbose"],
       "env": {
         "RUST_LOG": "debug",
@@ -460,17 +460,17 @@ tail -f ~/Library/Logs/Claude/mcp*.log
 # VS Code: View > Output > MCP
 ```
 
-**Test prism directly:**
+**Test codeprism directly:**
 ```bash
 # Test with minimal arguments
-./target/release/prism-mcp /path/to/small/test/repo
+./target/release/codeprism-mcp /path/to/small/test/repo
 
 # Check for error messages
 ```
 
 **Common Solutions:**
-1. **Rebuild prism:** `cargo build --release`
-2. **Check permissions:** `chmod +x prism-mcp`
+1. **Rebuild codeprism:** `cargo build --release`
+2. **Check permissions:** `chmod +x codeprism-mcp`
 3. **Verify paths:** Use absolute paths in configuration
 4. **Restart client:** Completely quit and restart MCP client
 
@@ -487,7 +487,7 @@ Once your setup is working:
 
 ### Upcoming Features
 
-- **Rust Parser:** Soon you'll be able to analyze Rust code (including prism itself!)
+- **Rust Parser:** Soon you'll be able to analyze Rust code (including codeprism itself!)
 - **Java Support:** Enterprise language support coming
 - **Enhanced CLI:** Additional commands for repository analysis
 - **Performance Improvements:** Better handling of large repositories
@@ -496,7 +496,7 @@ Once your setup is working:
 
 - **GitHub Issues:** Report bugs and request features
 - **Discussions:** Share your use cases and tips
-- **Contributing:** Help improve prism for everyone
+- **Contributing:** Help improve codeprism for everyone
 
 ---
 
@@ -516,14 +516,14 @@ Once your setup is working:
 ### Essential Commands
 
 ```bash
-# Build prism
+# Build codeprism
 cargo build --release
 
-# Test prism binary
-./target/release/prism-mcp --help
+# Test codeprism binary
+./target/release/codeprism-mcp --help
 
 # Run with debug logging
-RUST_LOG=debug ./target/release/prism-mcp /path/to/repo
+RUST_LOG=debug ./target/release/codeprism-mcp /path/to/repo
 ```
 
 ### Example Prompts

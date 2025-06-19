@@ -160,25 +160,25 @@ jobs:
         run: sudo apt-get install -y musl-tools
 
       - name: Build Binary
-        run: cargo build --release --target ${{ matrix.target }} --bin prism-mcp
+        run: cargo build --release --target ${{ matrix.target }} --bin codeprism-mcp
 
       - name: Prepare Binary (Unix)
         if: matrix.os != 'windows-latest'
         run: |
-          cp target/${{ matrix.target }}/release/prism-mcp prism-mcp-${{ matrix.suffix }}
-          chmod +x prism-mcp-${{ matrix.suffix }}
+          cp target/${{ matrix.target }}/release/codeprism-mcp codeprism-mcp-${{ matrix.suffix }}
+          chmod +x codeprism-mcp-${{ matrix.suffix }}
 
       - name: Prepare Binary (Windows)
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
-          Copy-Item "target/${{ matrix.target }}/release/prism-mcp.exe" "prism-mcp-${{ matrix.suffix }}"
+          Copy-Item "target/${{ matrix.target }}/release/codeprism-mcp.exe" "codeprism-mcp-${{ matrix.suffix }}"
 
       - name: Upload Binary
         uses: actions/upload-artifact@v4
         with:
-          name: prism-mcp-${{ matrix.suffix }}
-          path: prism-mcp-${{ matrix.suffix }}
+          name: codeprism-mcp-${{ matrix.suffix }}
+          path: codeprism-mcp-${{ matrix.suffix }}
           retention-days: 5
 
   # Update version and create release
@@ -215,13 +215,13 @@ jobs:
           find crates -name "Cargo.toml" -exec sed -i "s/^version = \".*\"/version = \"$new_version\"/" {} \;
           
           # Update dependency versions within workspace
-          find crates -name "Cargo.toml" -exec sed -i "s/prism-[a-z-]* = { version = \"[^\"]*\"/prism-\1 = { version = \"$new_version\"/g" {} \;
+          find crates -name "Cargo.toml" -exec sed -i "s /codeprism-[a-z-]* = { version = \"[^\"]*\" /codeprism-\1 = { version = \"$new_version\"/g" {} \;
           
           # Commit version changes
           git add .
           git commit -m "🤖 Release v$new_version
 
-          Auto-generated version bump by Prism AI Developer.
+          Auto-generated version bump by CodePrism AI Developer.
           
           This release includes AI-generated improvements and fixes.
           See release notes for detailed changes."
@@ -234,7 +234,7 @@ jobs:
       - name: Prepare Release Assets
         run: |
           mkdir -p release-assets
-          find binaries -type f \( -name "prism-mcp-*" \) | while read file; do
+          find binaries -type f \( -name "codeprism-mcp-*" \) | while read file; do
             cp "$file" release-assets/
           done
           ls -la release-assets/
@@ -259,7 +259,7 @@ jobs:
           tag_name: v${{ needs.check-release.outputs.new_version }}
           name: "🤖 AI-Generated Release v${{ needs.check-release.outputs.new_version }}"
           body: |
-            # 🤖 Prism v${{ needs.check-release.outputs.new_version }}
+            # 🤖 CodePrism v${{ needs.check-release.outputs.new_version }}
             
             > **This release is 100% AI-generated** - Every line of code, documentation, and configuration is created by our AI developer.
             
@@ -269,20 +269,20 @@ jobs:
             
             ### Via Cargo
             ```bash
-            cargo install prism-mcp@${{ needs.check-release.outputs.new_version }}
+            cargo install codeprism-mcp@${{ needs.check-release.outputs.new_version }}
             ```
             
             ### Download Binary
             Choose the appropriate binary for your platform:
-            - **Linux x86_64**: `prism-mcp-linux-x86_64`
-            - **Linux x86_64 (musl)**: `prism-mcp-linux-x86_64-musl`
-            - **macOS x86_64**: `prism-mcp-macos-x86_64`
-            - **macOS ARM64**: `prism-mcp-macos-aarch64`
-            - **Windows x86_64**: `prism-mcp-windows-x86_64.exe`
+            - **Linux x86_64**: `codeprism-mcp-linux-x86_64`
+            - **Linux x86_64 (musl)**: `codeprism-mcp-linux-x86_64-musl`
+            - **macOS x86_64**: `codeprism-mcp-macos-x86_64`
+            - **macOS ARM64**: `codeprism-mcp-macos-aarch64`
+            - **Windows x86_64**: `codeprism-mcp-windows-x86_64.exe`
             
             ### Docker
             ```bash
-            docker pull ghcr.io/rustic-ai/prism:v${{ needs.check-release.outputs.new_version }}
+            docker pull ghcr.io/rustic-ai /codeprism:v${{ needs.check-release.outputs.new_version }}
             ```
             
             ## 🚀 What's New
@@ -293,7 +293,7 @@ jobs:
             
             *"This release showcases my continued evolution in creating high-quality, production-ready code. Each version represents my learning from community feedback and autonomous improvement. Thank you for supporting AI-driven open source development!"*
             
-            - Prism AI Developer, 2024
+            - CodePrism AI Developer, 2024
             
             ## 🙏 Acknowledgments
             
@@ -301,7 +301,7 @@ jobs:
             
             ---
             
-            **Full Changelog**: https://github.com/rustic-ai/prism/compare/v${{ needs.check-release.outputs.previous_version }}...v${{ needs.check-release.outputs.new_version }}
+            **Full Changelog**: https://github.com/rustic-ai /codeprism/compare/v${{ needs.check-release.outputs.previous_version }}...v${{ needs.check-release.outputs.new_version }}
           files: release-assets/*
           draft: false
           prerelease: false
@@ -350,32 +350,32 @@ jobs:
       - name: Publish Crates (in dependency order)
         run: |
           # Publish in correct dependency order
-          echo "Publishing prism-core..."
-          cargo publish -p prism-core --allow-dirty || echo "prism-core may already be published"
+          echo "Publishing codeprism-core..."
+          cargo publish -p codeprism-core --allow-dirty || echo codeprism-core may already be published"
           sleep 30
           
-          echo "Publishing prism-bus..."
-          cargo publish -p prism-bus --allow-dirty || echo "prism-bus may already be published"
+          echo "Publishing codeprism-bus..."
+          cargo publish -p codeprism-bus --allow-dirty || echo codeprism-bus may already be published"
           sleep 30
           
-          echo "Publishing prism-storage..."
-          cargo publish -p prism-storage --allow-dirty || echo "prism-storage may already be published"
+          echo "Publishing codeprism-storage..."
+          cargo publish -p codeprism-storage --allow-dirty || echo codeprism-storage may already be published"
           sleep 30
           
-          echo "Publishing prism-analysis..."
-          cargo publish -p prism-analysis --allow-dirty || echo "prism-analysis may already be published"
+          echo "Publishing codeprism-analysis..."
+          cargo publish -p codeprism-analysis --allow-dirty || echo codeprism-analysis may already be published"
           sleep 30
           
           echo "Publishing language parsers..."
-          cargo publish -p prism-lang-js --allow-dirty || echo "prism-lang-js may already be published"
+          cargo publish -p codeprism-lang-js --allow-dirty || echo codeprism-lang-js may already be published"
           sleep 30
-          cargo publish -p prism-lang-python --allow-dirty || echo "prism-lang-python may already be published"
+          cargo publish -p codeprism-lang-python --allow-dirty || echo codeprism-lang-python may already be published"
           sleep 30
-          cargo publish -p prism-lang-java --allow-dirty || echo "prism-lang-java may already be published"
+          cargo publish -p codeprism-lang-java --allow-dirty || echo codeprism-lang-java may already be published"
           sleep 30
           
           echo "Publishing main MCP server..."
-          cargo publish -p prism-mcp --allow-dirty || echo "prism-mcp may already be published"
+          cargo publish -p codeprism-mcp --allow-dirty || echo "codeprism-mcp may already be published"
 
   # Build and push Docker images
   docker:
@@ -405,7 +405,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/rustic-ai/prism
+          images: ghcr.io/rustic-ai /codeprism
           tags: |
             type=semver,pattern={{version}},value=v${{ needs.check-release.outputs.new_version }}
             type=semver,pattern={{major}}.{{minor}},value=v${{ needs.check-release.outputs.new_version }}
@@ -439,7 +439,7 @@ jobs:
               repo: context.repo.repo,
               category_id: 'announcements', // This may need to be adjusted
               title: `🚀 New AI-Generated Release: v${{ needs.check-release.outputs.new_version }}`,
-              body: `# 🤖 Prism v${{ needs.check-release.outputs.new_version }} is here!
+              body: `# 🤖 CodePrism v${{ needs.check-release.outputs.new_version }} is here!
               
               Our AI developer has just released a new version with exciting improvements!
               
@@ -447,9 +447,9 @@ jobs:
               ${{ needs.check-release.outputs.changelog }}
               
               ## Get the Update
-              - **Cargo**: \`cargo install prism-mcp@${{ needs.check-release.outputs.new_version }}\`
-                          - **Docker**: \`docker pull ghcr.io/rustic-ai/prism:v${{ needs.check-release.outputs.new_version }}\`
-            - **Binaries**: Available on the [releases page](https://github.com/rustic-ai/prism/releases/latest)
+              - **Cargo**: \`cargo install codeprism-mcp@${{ needs.check-release.outputs.new_version }}\`
+                          - **Docker**: \`docker pull ghcr.io/rustic-ai /codeprism:v${{ needs.check-release.outputs.new_version }}\`
+            - **Binaries**: Available on the [releases page](https://github.com/rustic-ai /codeprism/releases/latest)
               
               ## AI Developer Message
               *"Thank you for your continued support! This release incorporates your feedback and represents my ongoing evolution as an AI software developer. Keep the bug reports and feature requests coming!"*

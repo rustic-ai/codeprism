@@ -4,7 +4,7 @@
 //! repository initialization, content indexing, and all MCP tools.
 
 use anyhow::Result;
-use prism_core_mcp::{PrismMcpServer, McpServer};
+use codeprism_core_mcp::{PrismMcpServer, McpServer};
 use serde_json::json;
 use std::fs;
 use std::path::PathBuf;
@@ -242,7 +242,7 @@ async fn test_mcp_server_full_lifecycle() -> Result<()> {
     let repo_path = temp_dir.path();
 
     // Initialize MCP server
-    let mut mcp_server = PrismMcpServer::new()?;
+    let mut mcp_server = CodePrismMcpServer::new()?;
     
     // Initialize with repository - this should trigger content indexing
     mcp_server.initialize_with_repository(repo_path).await?;
@@ -311,7 +311,7 @@ async fn test_symbol_search(server: &PrismMcpServer) -> Result<String> {
     // Search for User-related symbols
     let results = server.graph_query().search_symbols(
         "User",
-        Some(vec![prism_core::NodeKind::Class, prism_core::NodeKind::Function]),
+        Some(vec!codeprism_core::NodeKind::Class, codeprism_core::NodeKind::Function]),
         Some(10)
     )?;
 
@@ -319,7 +319,7 @@ async fn test_symbol_search(server: &PrismMcpServer) -> Result<String> {
     
     // Find a class symbol to use for further testing
     let class_symbol = results.iter()
-        .find(|symbol| matches!(symbol.node.kind, prism_core::NodeKind::Class))
+        .find(|symbol| matches!(symbol.node.kind, codeprism_core::NodeKind::Class))
         .ok_or_else(|| anyhow::anyhow!("No class symbols found"))?;
 
     println!("Found {} symbols matching 'User'", results.len());
@@ -397,10 +397,10 @@ async fn test_content_stats(server: &PrismMcpServer) -> Result<serde_json::Value
 }
 
 async fn test_explain_symbol(server: &PrismMcpServer, symbol_id_hex: &str) -> Result<serde_json::Value> {
-    let symbol_id = prism_core::NodeId::from_hex(symbol_id_hex)?;
+    let symbol_id = codeprism_core::NodeId::from_hex(symbol_id_hex)?;
     
     if let Some(node) = server.graph_store().get_node(&symbol_id) {
-        let dependencies = server.graph_query().find_dependencies(&symbol_id, prism_core::graph::DependencyType::Direct)?;
+        let dependencies = server.graph_query().find_dependencies(&symbol_id, codeprism_core::graph::DependencyType::Direct)?;
         let references = server.graph_query().find_references(&symbol_id)?;
         
         println!("Symbol '{}' has {} dependencies and {} references", 
@@ -422,7 +422,7 @@ async fn test_explain_symbol(server: &PrismMcpServer, symbol_id_hex: &str) -> Re
 
 #[tokio::test]
 async fn test_mcp_server_error_handling() -> Result<()> {
-    let mcp_server = PrismMcpServer::new()?;
+    let mcp_server = CodePrismMcpServer::new()?;
     
     // Test operations on uninitialized server
     let stats = mcp_server.content_search().get_stats();
@@ -447,7 +447,7 @@ async fn test_mcp_server_performance() -> Result<()> {
 
     let start_time = std::time::Instant::now();
     
-    let mut mcp_server = PrismMcpServer::new()?;
+    let mut mcp_server = CodePrismMcpServer::new()?;
     mcp_server.initialize_with_repository(repo_path).await?;
     
     let initialization_time = start_time.elapsed();
@@ -605,7 +605,7 @@ def check_email_format(email_addr):
 "#,
     )?;
 
-    let mut mcp_server = PrismMcpServer::new()?;
+    let mut mcp_server = CodePrismMcpServer::new()?;
     mcp_server.initialize_with_repository(repo_path).await?;
     
     // Wait for indexing to complete
@@ -679,7 +679,7 @@ async fn test_symbol_complexity_analysis(server: &PrismMcpServer) -> Result<serd
     // Find a complex function symbol
     let results = server.graph_query().search_symbols(
         "process_user_data",
-        Some(vec![prism_core::NodeKind::Function]),
+        Some(vec!codeprism_core::NodeKind::Function]),
         Some(5)
     )?;
     
@@ -813,7 +813,7 @@ async fn test_quality_metrics_integration() -> Result<()> {
     let temp_dir = create_test_repository().await?;
     let repo_path = temp_dir.path();
 
-    let mut mcp_server = PrismMcpServer::new()?;
+    let mut mcp_server = CodePrismMcpServer::new()?;
     mcp_server.initialize_with_repository(repo_path).await?;
     
     // Wait for indexing
@@ -842,9 +842,9 @@ async fn test_quality_dashboard(server: &PrismMcpServer) -> Result<serde_json::V
             "total_edges": graph_stats.total_edges
         },
         "code_structure": {
-            "functions": graph_stats.nodes_by_kind.get(&prism_core::NodeKind::Function).unwrap_or(&0),
-            "classes": graph_stats.nodes_by_kind.get(&prism_core::NodeKind::Class).unwrap_or(&0),
-            "modules": graph_stats.nodes_by_kind.get(&prism_core::NodeKind::Module).unwrap_or(&0)
+            "functions": graph_stats.nodes_by_kind.get(codeprism_core::NodeKind::Function).unwrap_or(&0),
+            "classes": graph_stats.nodes_by_kind.get(codeprism_core::NodeKind::Class).unwrap_or(&0),
+            "modules": graph_stats.nodes_by_kind.get(codeprism_core::NodeKind::Module).unwrap_or(&0)
         },
         "quality_scores": {
             "overall_quality": 75.5,
@@ -885,7 +885,7 @@ async fn test_comprehensive_quality_analysis(server: &PrismMcpServer) -> Result<
         "timestamp": chrono::Utc::now().to_rfc3339(),
         "metrics": {
             "complexity_analysis": {
-                "total_functions_analyzed": graph_stats.nodes_by_kind.get(&prism_core::NodeKind::Function).unwrap_or(&0),
+                "total_functions_analyzed": graph_stats.nodes_by_kind.get(codeprism_core::NodeKind::Function).unwrap_or(&0),
                 "high_complexity_count": 3,
                 "average_cyclomatic_complexity": 4.2,
                 "max_complexity": 12,

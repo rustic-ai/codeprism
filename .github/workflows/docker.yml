@@ -63,6 +63,6 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-          repository: rustic-ai/prism
+          repository: rustic-ai /codeprism
           short-description: "100% AI-generated code intelligence MCP server"
           readme-filepath: ./README.md 

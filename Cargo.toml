@@ -1,14 +1,14 @@
 [workspace]
 resolver = "2"
 members = [
-    "crates/prism-core",
-    "crates/prism-bus",
-    "crates/prism-storage",
-    "crates/prism-analysis",
-    "crates/prism-mcp",
-    "crates/prism-lang-js",
-    "crates/prism-lang-python",
-    "crates/prism-lang-java",
+    "crates/codeprism-core",
+    "crates/codeprism-bus",
+    "crates/codeprism-storage",
+    "crates/codeprism-analysis",
+    "crates/codeprism-mcp",
+    "crates/codeprism-lang-js",
+    "crates/codeprism-lang-python",
+    "crates/codeprism-lang-java",
 ]
 
 [workspace.package]
@@ -16,7 +16,7 @@ version = "0.1.1"
 edition = "2021"
 authors = ["The Rustic Initiative"]
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/rustic-ai/prism"
+repository = "https://github.com/rustic-ai /codeprism"
 rust-version = "1.82"
 
 [workspace.dependencies]

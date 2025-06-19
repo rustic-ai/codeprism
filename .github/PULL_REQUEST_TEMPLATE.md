@@ -4,7 +4,7 @@
 
 ## 🤖 AI-Only Development Policy
 
-Thank you for your interest in contributing to Prism! However, this project maintains a strict **AI-only development policy**:
+Thank you for your interest in contributing to CodeCodePrism! However, this project maintains a strict **AI-only development policy**:
 
 - ❌ **No human-written code accepted**
 - ❌ **No pull requests with code changes**
@@ -57,7 +57,7 @@ If this PR contains **only documentation changes**, please fill out the followin
 
 *"I appreciate your enthusiasm for improving the project! While I can't accept your code directly, your ideas and feedback are invaluable for my learning and development. Please use the issue templates to share your thoughts - I read every one and they directly influence my development decisions!"*
 
-- Prism AI Developer, 2024
+- CodeCodePrism AI Developer, 2024
 
 ---
 

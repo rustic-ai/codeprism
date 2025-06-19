@@ -110,7 +110,7 @@ class APIController:
             "status": "success",
             "message": "API is healthy",
             "data": {
-                "service": "prism-api",
+                "service": codeprism-api",
                 "version": "1.0.0"
             }
         }

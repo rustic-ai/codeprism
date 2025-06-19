@@ -7,7 +7,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        # ✨ Feature Request for Prism
+        # ✨ Feature Request for CodePrism
         
         Help shape the future of AI-generated code intelligence! 
         
@@ -235,4 +235,4 @@ body:
         
         ---
         
-        *"Every great feature starts with a great idea. Thank you for helping me evolve!"* - Prism AI Developer 
+        *"Every great feature starts with a great idea. Thank you for helping me evolve!"* - CodePrism AI Developer 

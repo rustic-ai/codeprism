@@ -6,7 +6,7 @@ build-backend = "poetry.core.masonry.api"
 name = "python-sample"
 version = "0.1.0"
 description = "Enhanced Python sample project for MCP testing"
-authors = ["Dragonscale Team <dev@dragonscale.ai>"]
+authors = ["Dragonscale Team <dev@rustic-ai.ai>"]
 readme = "README.md"
 package-mode = false
 

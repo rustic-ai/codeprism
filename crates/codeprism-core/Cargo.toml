@@ -1,0 +1,73 @@
+[package]
+name = "codeprism-core"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Core incremental polyglot parser and graph builder for code analysis"
+
+[dependencies]
+# Core dependencies
+anyhow.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+chrono.workspace = true
+tokio = { workspace = true, features = ["sync", "fs"] }
+async-trait.workspace = true
+
+# Tree-sitter
+tree-sitter.workspace = true
+tree-sitter-highlight.workspace = true
+
+# Utilities
+blake3.workspace = true
+hex.workspace = true
+dashmap.workspace = true
+once_cell.workspace = true
+rayon.workspace = true
+regex.workspace = true
+
+# File watching
+notify.workspace = true
+
+# Repository scanning
+walkdir = "2.4"
+num_cpus = "1.16"
+
+[dev-dependencies]
+insta.workspace = true
+proptest.workspace = true
+criterion.workspace = true
+tokio = { workspace = true, features = ["test-util"] }
+tempfile.workspace = true
+tree-sitter-javascript.workspace = true
+
+[features]
+default = []
+full = ["lang-js", "lang-python", "lang-java"]
+lang-js = ["codeprism-lang-js"]
+lang-python = ["codeprism-lang-python"]
+lang-java = ["codeprism-lang-java"]
+
+[dependencies.codeprism-lang-js]
+path = "../codeprism-lang-js"
+optional = true
+
+[dependencies.codeprism-lang-python]
+path = "../codeprism-lang-python"
+optional = true
+
+[dependencies.codeprism-lang-java]
+path = "../codeprism-lang-java"
+optional = true
+
+[[example]]
+name = "phase_2_5_demo"
+required-features = []
+
+[dependencies.tempfile]
+workspace = true 

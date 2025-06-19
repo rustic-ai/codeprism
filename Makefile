@@ -1,4 +1,4 @@
-# Prism Development Makefile
+# CodePrism Development Makefile
 # 
 # This Makefile provides convenient commands for development, testing, and deployment.
 # Run 'make help' to see all available commands.
@@ -16,12 +16,12 @@ RED := \033[31m
 RESET := \033[0m
 
 # Project configuration
-PROJECT_NAME := prism
+PROJECT_NAME := codeprism
 RUST_VERSION := 1.82
 DOCKER_COMPOSE := docker-compose
 
 help: ## Show this help message
-	@echo "$(CYAN)Prism Development Commands$(RESET)"
+	@echo "$(CYAN)CodePrism Development Commands$(RESET)"
 	@echo ""
 	@echo "$(GREEN)Development:$(RESET)"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -54,11 +54,11 @@ test: ## Run all tests
 
 test-js: ## Run JavaScript parser tests only
 	@echo "$(GREEN)Running JavaScript parser tests...$(RESET)"
-	cargo test -p prism-lang-js
+	cargo test -p codeprism-lang-js
 
 test-core: ## Run core library tests only
 	@echo "$(GREEN)Running core library tests...$(RESET)"
-	cargo test -p prism
+	cargo test --workspace
 
 test-integration: ## Run integration tests
 	@echo "$(GREEN)Running integration tests...$(RESET)"
@@ -144,7 +144,7 @@ bench: ## Run performance benchmarks
 
 bench-js: ## Run JavaScript parser benchmarks
 	@echo "$(GREEN)Running JavaScript parser benchmarks...$(RESET)"
-	cargo bench -p prism-lang-js
+	cargo bench -p codeprism-lang-js
 
 # Development Tools
 
@@ -158,11 +158,11 @@ watch-check: ## Watch for changes and run checks
 
 expand: ## Expand macros for debugging
 	@echo "$(GREEN)Expanding macros...$(RESET)"
-	cargo expand --package prism
+	cargo expand --package codeprism-core
 
 expand-js: ## Expand macros for JavaScript parser
 	@echo "$(GREEN)Expanding macros (JavaScript parser)...$(RESET)"
-	cargo expand --package prism-lang-js
+	cargo expand --package codeprism-lang-js
 
 # Installation and Setup
 
@@ -188,7 +188,7 @@ db-reset: ## Reset Neo4j database
 	@echo "$(GREEN)Resetting Neo4j database...$(RESET)"
 	$(DOCKER_COMPOSE) stop neo4j
 	$(DOCKER_COMPOSE) rm -f neo4j
-	docker volume rm prism_neo4j_data 2>/dev/null || true
+	docker volume rm codeprism_neo4j_data 2>/dev/null || true
 	$(DOCKER_COMPOSE) up -d neo4j
 	@echo "$(GREEN)Neo4j database reset complete$(RESET)"
 
@@ -227,7 +227,7 @@ docker-build: ## Build Docker image
 docker-run: ## Run Docker container
 	@echo "$(GREEN)Running Docker container...$(RESET)"
 	docker run --rm -it \
-		--network prism_default \
+		--network codeprism_default \
 		-e NEO4J_URI=bolt://neo4j:7687 \
 		-e KAFKA_BROKERS=kafka:9092 \
 		-e REDIS_URL=redis://redis:6379 \
@@ -280,7 +280,7 @@ perf: ## Run performance tests
 
 flamegraph: ## Generate flamegraph for profiling
 	@echo "$(GREEN)Generating flamegraph...$(RESET)"
-	cargo flamegraph --bin prism-mcp
+	cargo flamegraph --bin codeprism-mcp
 
 # Maintenance
 

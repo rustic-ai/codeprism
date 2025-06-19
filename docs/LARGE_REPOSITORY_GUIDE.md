@@ -1,6 +1,6 @@
 # Large Repository Handling Guide
 
-This guide explains how to handle large repositories with the Prism MCP server, including memory management, filtering options, and performance optimization.
+This guide explains how to handle large repositories with the CodeCodePrism MCP server, including memory management, filtering options, and performance optimization.
 
 ## New Improved Defaults ✨
 
@@ -13,7 +13,7 @@ This guide explains how to handle large repositories with the Prism MCP server, 
 
 This means for most repositories, you can simply run:
 ```bash
-./target/release/prism-mcp /path/to/your/repository
+./target/release/codeprism-mcp /path/to/your/repository
 ```
 
 ## Default Configuration
@@ -48,7 +48,7 @@ This means for most repositories, you can simply run:
 
 #### 1. Minimal (Default) - Fast but Limited
 ```bash
-./target/release/prism-mcp /path/to/repo
+./target/release/codeprism-mcp /path/to/repo
 ```
 - **Excludes**: All dependency directories (`.tox`, `venv`, `node_modules`, etc.)
 - **Pros**: Fast indexing, low memory usage, focuses on your code
@@ -56,7 +56,7 @@ This means for most repositories, you can simply run:
 
 #### 2. Smart Dependency Scanning - Balanced
 ```bash
-./target/release/prism-mcp --smart-deps /path/to/repo
+./target/release/codeprism-mcp --smart-deps /path/to/repo
 ```
 - **Includes**: Public APIs and commonly used dependency files only
 - **Excludes**: Internal implementation details, tests, documentation
@@ -66,7 +66,7 @@ This means for most repositories, you can simply run:
 
 #### 3. Complete Analysis - Comprehensive but Slow
 ```bash
-./target/release/prism-mcp --include-deps /path/to/repo
+./target/release/codeprism-mcp --include-deps /path/to/repo
 ```
 - **Includes**: Everything including full dependency source code
 - **Pros**: Complete code intelligence, full import following, comprehensive analysis
@@ -87,43 +87,43 @@ from some_lib.internal._private import InternalHelper  ❌ (excluded in smart mo
 
 1. **Start with smart mode** for most development:
 ```bash
-./target/release/prism-mcp --smart-deps --memory-limit 4096 /path/to/repo
+./target/release/codeprism-mcp --smart-deps --memory-limit 4096 /path/to/repo
 ```
 
 2. **Use complete analysis** when you need full dependency intelligence:
 ```bash
-./target/release/prism-mcp --include-deps --memory-limit 8192 /path/to/repo
+./target/release/codeprism-mcp --include-deps --memory-limit 8192 /path/to/repo
 ```
 
 3. **Use minimal mode** for CI/CD or when performance is critical:
 ```bash
-./target/release/prism-mcp /path/to/repo  # Default
+./target/release/codeprism-mcp /path/to/repo  # Default
 ```
 
 ### Very Large Repositories (>50,000 files)
 ```bash
-./target/release/prism-mcp --memory-limit 8192 --batch-size 20 /path/to/huge/repo
+./target/release/codeprism-mcp --memory-limit 8192 --batch-size 20 /path/to/huge/repo
 ```
 
 ### Specific Language Focus
 ```bash
 # Only Python and JavaScript
-./target/release/prism-mcp --include-extensions py,js,ts /path/to/repo
+./target/release/codeprism-mcp --include-extensions py,js,ts /path/to/repo
 
 # Only Rust projects  
-./target/release/prism-mcp --include-extensions rs,toml /path/to/repo
+./target/release/codeprism-mcp --include-extensions rs,toml /path/to/repo
 ```
 
 ### Memory-Constrained Systems
 ```bash
 # For systems with limited RAM
-./target/release/prism-mcp --memory-limit 2048 --batch-size 15 /path/to/repo
+./target/release/codeprism-mcp --memory-limit 2048 --batch-size 15 /path/to/repo
 ```
 
 ### Include All File Types
 ```bash
 # Override defaults to include all files (not recommended for large repos)
-./target/release/prism-mcp --include-extensions "*" /path/to/repo
+./target/release/codeprism-mcp --include-extensions "*" /path/to/repo
 ```
 
 ## Command Line Options Reference
@@ -152,7 +152,7 @@ If you were using the old defaults and want to include all file types like befor
 
 ```bash
 # Old behavior (include all files, 1GB limit)
-./target/release/prism-mcp --memory-limit 1024 --include-extensions "*" /path/to/repo
+./target/release/codeprism-mcp --memory-limit 1024 --include-extensions "*" /path/to/repo
 ```
 
 ## Examples
@@ -160,28 +160,19 @@ If you were using the old defaults and want to include all file types like befor
 ### Simple Usage (Recommended)
 ```bash
 # Uses optimized defaults - works for most repositories
-./target/release/prism-mcp /path/to/your/repository
-```
-
-### Your 2.8GB Repository (Now Works with Defaults!)
-```bash
-# This now works without any special flags!
-./target/release/prism-mcp /home/rohit/work/dragonscale/ai-platform/rustic-ai
-
-# Or add verbose logging to see progress
-./target/release/prism-mcp --verbose /home/rohit/work/dragonscale/ai-platform/rustic-ai
+./target/release/codeprism-mcp /path/to/your/repository
 ```
 
 ### Custom Configuration Examples
 ```bash
 # Minimal memory usage
-./target/release/prism-mcp --memory-limit 1024 --batch-size 15
+./target/release/codeprism-mcp --memory-limit 1024 --batch-size 15
 
 # Maximum performance (if you have lots of RAM)
-./target/release/prism-mcp --memory-limit 16384 --batch-size 50
+./target/release/codeprism-mcp --memory-limit 16384 --batch-size 50
 
 # Disable memory limits entirely
-./target/release/prism-mcp --disable-memory-limit
+./target/release/codeprism-mcp --disable-memory-limit
 ```
 
 The new defaults should handle most real-world repositories without any configuration needed! 

@@ -1,6 +1,6 @@
 # Architecture Guide
 
-This document describes the high-level architecture, design decisions, and implementation details of Prism.
+This document describes the high-level architecture, design decisions, and implementation details of CodeCodePrism.
 
 **🚨 ARCHITECTURAL PIVOT - December 2024**
 
@@ -19,13 +19,13 @@ After detailed review against official MCP (Model Context Protocol) documentatio
 
 ## System Overview
 
-Prism is a **MCP-compliant** graph-first code intelligence system designed to provide real-time, accurate code understanding for LLM assistants. The system implements the Model Context Protocol (JSON-RPC 2.0) specification to integrate seamlessly with MCP clients like Claude Desktop, Cursor, and VS Code GitHub Copilot.
+CodeCodePrism is a **MCP-compliant** graph-first code intelligence system designed to provide real-time, accurate code understanding for LLM assistants. The system implements the Model Context Protocol (JSON-RPC 2.0) specification to integrate seamlessly with MCP clients like Claude Desktop, Cursor, and VS Code GitHub Copilot.
 
 ### **MCP-Optimized Architecture**
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                   MCP-Compliant Prism                      │
+│                   MCP-Compliant CodeCodePrism                      │
 ├─────────────────────────────────────────────────────────────┤
 │  MCP Clients                                                │
 │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐           │
@@ -36,7 +36,7 @@ Prism is a **MCP-compliant** graph-first code intelligence system designed to pr
 │         └───────────────┼───────────────┘                 │
 │                         ▼ (JSON-RPC 2.0)                 │
 │  ┌─────────────────────────────────────────────────────────┐ │
-│  │              Prism MCP Server                           │ │
+│  │              CodeCodePrism MCP Server                           │ │
 │  │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐       │ │
 │  │  │ Resources   │ │   Tools     │ │  Prompts    │       │ │
 │  │  │ Manager     │ │ Manager     │ │ Manager     │       │ │
@@ -86,7 +86,7 @@ Prism is a **MCP-compliant** graph-first code intelligence system designed to pr
 
 ### 1. **MCP Protocol Compliance**
 
-Prism strictly adheres to the Model Context Protocol specification:
+CodeCodePrism strictly adheres to the Model Context Protocol specification:
 
 - **JSON-RPC 2.0**: All communication uses proper JSON-RPC 2.0 format
 - **Initialization Handshake**: Proper capability negotiation
@@ -103,7 +103,7 @@ Based on MCP best practices:
 
 ### 3. **Graph-First Design**
 
-Maintains the core strength of Prism:
+Maintains the core strength of CodeCodePrism:
 - **Structural Understanding**: Relationships between functions, classes, and modules
 - **Cross-Language Analysis**: Unified representation across programming languages
 - **Efficient Queries**: Graph traversal for code navigation and analysis
@@ -187,18 +187,18 @@ impl ResourceManager {
     // MCP: resources/list
     pub async fn list_resources(&self) -> McpResult<ResourceList> {
         // Return available resources with URIs like:
-        // - prism://repo/src/main.py (file content)
-        // - prism://graph/nodes (graph nodes)
-        // - prism://symbols/functions (code symbols)
+        // - codeprism://repo/src/main.py (file content)
+        // - codeprism://graph/nodes (graph nodes)
+        // - codeprism://symbols/functions (code symbols)
     }
     
     // MCP: resources/read
     pub async fn read_resource(&self, uri: &str) -> McpResult<ResourceContent> {
         // Handle URIs and return appropriate content
         match uri {
-            uri if uri.starts_with("prism://repo/") => self.read_file(uri).await,
-            uri if uri.starts_with("prism://graph/") => self.read_graph_data(uri).await,
-            uri if uri.starts_with("prism://symbols/") => self.read_symbols(uri).await,
+            uri if uri.starts_with(codeprism://repo/") => self.read_file(uri).await,
+            uri if uri.starts_with(codeprism://graph/") => self.read_graph_data(uri).await,
+            uri if uri.starts_with(codeprism://symbols/") => self.read_symbols(uri).await,
             _ => Err(McpError::InvalidResource(uri.to_string())),
         }
     }
@@ -333,7 +333,7 @@ sequenceDiagram
     ResourceManager->>McpServer: resource URIs
     McpServer->>Client: resource list
     
-    Client->>McpServer: resources/read (prism://repo/file.py)
+    Client->>McpServer: resources/read (codeprism://repo/file.py)
     McpServer->>ResourceManager: read_resource()
     ResourceManager->>FileSystem: read file
     FileSystem->>ResourceManager: file content
@@ -534,8 +534,8 @@ impl SecurityManager {
 # ~/.config/claude-desktop/claude-desktop.json
 {
   "mcpServers": {
-    "prism": {
-      "command": "prism",
+    codeprism": {
+      "command": codeprism",
       "args": ["serve", "/path/to/repository"],
       "env": {
         "PRISM_LOG_LEVEL": "info",
@@ -550,8 +550,8 @@ impl SecurityManager {
 {
   "mcp.servers": [
     {
-      "name": "prism",
-      "command": ["prism", "serve", "."],
+      "name": codeprism",
+      "command": [codeprism", "serve", "."],
       "capabilities": ["resources", "tools", "prompts"]
     }
   ]
@@ -564,14 +564,14 @@ impl SecurityManager {
 # docker-compose.yml (Optional - for development)
 version: '3.8'
 services:
-  prism-dev:
+  codeprism-dev:
     build: .
     environment:
       RUST_LOG: debug
       PRISM_REPOSITORY_PATH: /workspace
     volumes:
       - ./:/workspace
-    command: ["prism", "serve", "/workspace", "--http", "--port", "8080"]
+    command: [codeprism", "serve", "/workspace", "--http", "--port", "8080"]
     ports:
       - "8080:8080"
 ```
@@ -580,8 +580,8 @@ services:
 
 ```bash
 # Single Binary Deployment
-curl -L https://github.com/org/prism/releases/latest/download/prism-linux-x64 -o prism
-chmod +x prism
+curl -L https://github.com/org /codeprism/releases/latest/download/codeprism-linux-x64 -o codeprism
+chmod +x codeprism
 
 # Configure MCP Client
 prism configure --client claude-desktop --repository /path/to/repo
@@ -614,7 +614,7 @@ pub struct HealthStatus {
 
 ## Conclusion
 
-This **MCP-compliant architecture** provides a robust, performant, and standards-compliant foundation for Prism that:
+This **MCP-compliant architecture** provides a robust, performant, and standards-compliant foundation for CodeCodePrism that:
 
 1. **Meets MCP Requirements**: Full JSON-RPC 2.0 compliance with proper transport
 2. **Optimizes for Simplicity**: Removed unnecessary complexity for better performance

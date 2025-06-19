@@ -1,0 +1,19 @@
+[package]
+name = "codeprism-lang-java"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Java language support for codeprism"
+
+[dependencies]
+tree-sitter.workspace = true
+tree-sitter-java.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+insta.workspace = true 

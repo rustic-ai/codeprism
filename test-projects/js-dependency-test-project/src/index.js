@@ -49,7 +49,7 @@ const App = () => {
       <div className="app">
         <header className="app-header">
           <h1>JavaScript Dependency Test Project</h1>
-          <p>Testing Prism MCP dependency scanning with React components</p>
+          <p>Testing CodePrism MCP dependency scanning with React components</p>
         </header>
         
         <main className="app-main">
@@ -57,7 +57,7 @@ const App = () => {
         </main>
         
         <footer className="app-footer">
-          <p>© 2024 Prism Test Suite</p>
+          <p>© 2024 CodePrism Test Suite</p>
         </footer>
       </div>
     </Provider>

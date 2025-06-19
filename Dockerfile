@@ -1,4 +1,4 @@
-# Multi-stage Dockerfile for Prism MCP Server
+# Multi-stage Dockerfile for CodePrism MCP Server
 # Optimized for size and security
 
 # Build stage
@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
-WORKDIR /usr/src/prism
+WORKDIR /usr/src /codeprism
 
 # Copy manifests
 COPY Cargo.toml Cargo.lock ./
@@ -19,7 +19,7 @@ COPY rust-toolchain.toml ./
 COPY crates/ crates/
 
 # Build dependencies (this step is cached if dependencies don't change)
-RUN cargo build --release --bin prism-mcp
+RUN cargo build --release --bin codeprism-mcp
 
 # Runtime stage
 FROM debian:bookworm-slim
@@ -28,16 +28,16 @@ FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/* \
-    && useradd -r -s /bin/false prism
+    && useradd -r -s /bin/false codeprism
 
 # Copy the binary from builder stage
-COPY --from=builder /usr/src/prism/target/release/prism-mcp /usr/local/bin/prism-mcp
+COPY --from=builder /usr/src /codeprism/target/release/codeprism-mcp /usr/local/bin/codeprism-mcp
 
 # Create workspace directory
-RUN mkdir -p /workspace && chown prism:prism /workspace
+RUN mkdir -p /workspace && chown codeprismcodeprism /workspace
 
 # Switch to non-root user
-USER prism
+USER codeprism
 
 # Set working directory
 WORKDIR /workspace
@@ -51,15 +51,15 @@ ENV REPOSITORY_PATH=/workspace
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD prism-mcp --help || exit 1
+    CMD codeprism-mcp --help || exit 1
 
 # Default command
-CMD ["prism-mcp"]
+CMD ["codeprism-mcp"]
 
 # Labels for metadata
-LABEL org.opencontainers.image.title="Prism MCP Server"
+LABEL org.opencontainers.image.title="CodePrism MCP Server"
 LABEL org.opencontainers.image.description="100% AI-generated code intelligence MCP server"
 LABEL org.opencontainers.image.vendor="The Rustic Initiative"
 LABEL org.opencontainers.image.licenses="MIT OR Apache-2.0"
-LABEL org.opencontainers.image.source="https://github.com/rustic-ai/prism"
-LABEL org.opencontainers.image.documentation="https://github.com/rustic-ai/prism/blob/main/README.md" 
+LABEL org.opencontainers.image.source="https://github.com/rustic-ai /codeprism"
+LABEL org.opencontainers.image.documentation="https://github.com/rustic-ai /codeprism/blob/main/README.md" 

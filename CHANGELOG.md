@@ -64,13 +64,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Scalability**: Tested on repositories with 3000+ files
 
 ### 🏗️ Architecture
-- **prism-core**: Universal AST parsing and graph construction
-- **prism-analysis**: Language-agnostic analysis tools
-- **prism-lang-python**: Python-specific parsing and analysis
-- **prism-lang-js**: JavaScript/TypeScript support
-- **prism-mcp**: MCP protocol implementation and server
-- **prism-bus**: Event messaging system
-- **prism-storage**: Data persistence layer
+- **codeprism-core**: Universal AST parsing and graph construction
+- **codeprism-analysis**: Language-agnostic analysis tools
+- **codeprism-lang-python**: Python-specific parsing and analysis
+- **codeprism-lang-js**: JavaScript/TypeScript support
+- **codeprism-mcp**: MCP protocol implementation and server
+- **codeprism-bus**: Event messaging system
+- **codeprism-storage**: Data persistence layer
 
 ### 🧪 Testing & Quality
 - **100% Success Rate**: All 18 tools working perfectly
@@ -140,4 +140,4 @@ The AI developer's autonomous roadmap includes:
 
 *"Every changelog entry represents a step forward in AI-driven software development. Thank you for being part of this revolutionary journey!"*
 
-**- Prism AI Developer, 2024** 
+**- CodeCodePrism AI Developer, 2024** 

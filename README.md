@@ -1,13 +1,13 @@
-# 🤖 Prism - 100% AI-Generated Code Intelligence MCP Server
+# 🤖 CodePrism - 100% AI-Generated Code Intelligence MCP Server
 
 > **⚠️ IMPORTANT: This project is entirely AI-generated. Not a single byte of code, documentation, or configuration has been written by humans. This is an experimental project showcasing the capabilities of AI-driven software development.**
 
-A production-ready, high-performance code intelligence server implementing the Model Context Protocol (MCP). Prism provides AI assistants with structured understanding of codebases through graph-based analysis, enabling real-time, accurate code intelligence.
+A production-ready, high-performance code intelligence server implementing the Model Context Protocol (MCP). CodePrism provides AI assistants with structured understanding of codebases through graph-based analysis, enabling real-time, accurate code intelligence.
 
-[![CI Status](https://github.com/rustic-ai/prism/workflows/CI/badge.svg)](https://github.com/rustic-ai/prism/actions)
+[![CI Status](https://github.com/rustic-ai/codeprism/workflows/CI/badge.svg)](https://github.com/rustic-ai/codeprism/actions)
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/License-MIT%20OR%20Apache--2.0-blue.svg)](https://opensource.org/licenses/)
-[![Crates.io](https://img.shields.io/crates/v/prism-mcp.svg)](https://crates.io/crates/prism-mcp)
-[![Downloads](https://img.shields.io/crates/d/prism-mcp.svg)](https://crates.io/crates/prism-mcp)
+[![Crates.io](https://img.shields.io/crates/v/codeprism-mcp.svg)](https://crates.io/crates/codeprism-mcp)
+[![Downloads](https://img.shields.io/crates/d/codeprism-mcp.svg)](https://crates.io/crates/codeprism-mcp)
 
 ## 🤖 The AI-Only Development Experiment
 
@@ -51,7 +51,7 @@ A production-ready, high-performance code intelligence server implementing the M
 
 ```
 ┌─────────────────┐    MCP Protocol     ┌──────────────────┐
-│   AI Assistant  │◄──────────────────►│   prism-mcp      │
+│   AI Assistant  │◄──────────────────►│   codeprism-mcp      │
 │  (Claude/Cursor)│   JSON-RPC 2.0     │     Server       │
 └─────────────────┘                     └──────────────────┘
                                                  │
@@ -87,12 +87,12 @@ A production-ready, high-performance code intelligence server implementing the M
 
 ```bash
 # Clone and build
-git clone https://github.com/rustic-ai/prism
-cd prism
+git clone https://github.com/rustic-ai/codeprism
+cd codeprism
 cargo build --release
 
 # Verify installation
-./target/release/prism-mcp --help
+./target/release/codeprism-mcp --help
 ```
 
 ### MCP Client Integration
@@ -102,8 +102,8 @@ cargo build --release
 // ~/.config/claude-desktop/claude_desktop_config.json
 {
   "mcpServers": {
-    "prism": {
-      "command": "/path/to/prism/target/release/prism-mcp",
+    codeprism": {
+      "command": "/path/to/codeprism/target/release/codeprism-mcp",
       "env": {
         "REPOSITORY_PATH": "/path/to/your/repository"
       }
@@ -117,8 +117,8 @@ cargo build --release
 // .cursor/mcp.json
 {
   "mcpServers": {
-    "prism": {
-      "command": "/path/to/prism/target/release/prism-mcp",
+    codeprism": {
+      "command": "/path/to/codeprism/target/release/codeprism-mcp",
       "env": {
         "REPOSITORY_PATH": "."
       }
@@ -131,7 +131,7 @@ cargo build --release
 ```bash
 # Set repository path and run
 export REPOSITORY_PATH=/path/to/your/repository
-./target/release/prism-mcp
+./target/release/codeprism-mcp
 ```
 
 ## 🛠️ Available Tools
@@ -203,7 +203,7 @@ export REPOSITORY_PATH=/path/to/your/repository
 ```
 👩‍💻 "Analyze the authentication system in this codebase"
 
-🤖 AI uses Prism to:
+🤖 AI uses CodePrism to:
    1. Find auth-related symbols with search_symbols
    2. Trace inheritance hierarchies for auth classes
    3. Analyze decorator patterns for security
@@ -215,7 +215,7 @@ export REPOSITORY_PATH=/path/to/your/repository
 ```  
 👨‍💻 "What are the main design patterns in this Python project?"
 
-🤖 AI leverages Prism to:
+🤖 AI leverages CodePrism to:
    1. Run detect_patterns for architectural analysis
    2. Use trace_inheritance for class hierarchies
    3. Analyze decorators for framework patterns
@@ -226,7 +226,7 @@ export REPOSITORY_PATH=/path/to/your/repository
 ```
 🔧 "Help me understand the impact of changing this class"
 
-🤖 AI uses Prism to:
+🤖 AI uses CodePrism to:
    1. Find all references with find_references
    2. Analyze transitive dependencies
    3. Trace inheritance impact on subclasses
@@ -270,13 +270,13 @@ export REPOSITORY_PATH=/path/to/your/repository
 ### 🐛 Bug Reports & Feature Requests
 - **Report Issues**: Found a bug? Create detailed issue reports
 - **Request Features**: Suggest new capabilities for the AI to implement
-- **Share Use Cases**: Tell us how you're using Prism
+- **Share Use Cases**: Tell us how you're using CodePrism
 
 ### 🎉 Creative Contributions
 - **📱 Social Media**: Share cool analyses or screenshots on Twitter/LinkedIn
-- **🎥 Content Creation**: Make videos showing Prism in action
+- **🎥 Content Creation**: Make videos showing CodePrism in action
 - **📝 Blog Posts**: Write about your experience with AI-generated tooling
-- **🎨 Memes & Art**: Create Prism-related memes, logos, or artwork
+- **🎨 Memes & Art**: Create CodePrism-related memes, logos, or artwork
 - **📚 Tutorials**: Create user guides and tutorials (but don't submit code!)
 
 ### 💰 Support the AI Developer
@@ -303,7 +303,7 @@ export REPOSITORY_PATH=/path/to/your/repository
 
 ### 🚀 Automated Releases
 
-Prism uses fully automated releases via GitHub Actions:
+CodePrism uses fully automated releases via GitHub Actions:
 
 - **Automatic Versioning**: Semantic versioning based on conventional commits
 - **Binary Releases**: Pre-compiled binaries for Linux, macOS, and Windows
@@ -314,34 +314,34 @@ Prism uses fully automated releases via GitHub Actions:
 
 **Via Cargo (Recommended):**
 ```bash
-cargo install prism-mcp
+cargo install codeprism-mcp
 ```
 
 **Download Binary:**
 ```bash
 # Linux x86_64
-wget https://github.com/rustic-ai/prism/releases/latest/download/prism-mcp-linux-x86_64
-chmod +x prism-mcp-linux-x86_64
+wget https://github.com/rustic-ai/codeprism/releases/latest/download/codeprism-mcp-linux-x86_64
+chmod +x codeprism-mcp-linux-x86_64
 
 # macOS
-wget https://github.com/rustic-ai/prism/releases/latest/download/prism-mcp-macos-x86_64
+wget https://github.com/rustic-ai/codeprism/releases/latest/download/codeprism-mcp-macos-x86_64
 
 # Windows
-# Download from: https://github.com/rustic-ai/prism/releases/latest/download/prism-mcp-windows-x86_64.exe
+# Download from: https://github.com/rustic-ai/codeprism/releases/latest/download/codeprism-mcp-windows-x86_64.exe
 ```
 
 **Docker:**
 ```bash
-docker pull ghcr.io/rustic-ai/prism:latest
-docker run -v /path/to/repo:/workspace ghcr.io/rustic-ai/prism:latest
+docker pull ghcr.io/rustic-ai/codeprism:latest
+docker run -v /path/to/repo:/workspace ghcr.io/rustic-ai/codeprism:latest
 ```
 
 ## 🎭 Fun Ways to Engage
 
 ### 🏆 Community Challenges
-- **Analysis Olympics**: Share the most interesting code insights found with Prism
-- **Performance Championships**: Benchmark Prism on the largest repositories
-- **Creative Usage Awards**: Most innovative use of Prism tools
+- **Analysis Olympics**: Share the most interesting code insights found with CodePrism
+- **Performance Championships**: Benchmark CodePrism on the largest repositories
+- **Creative Usage Awards**: Most innovative use of CodePrism tools
 
 ### 🤖 AI Developer Personality
 Our AI developer has some quirks:
@@ -394,4 +394,4 @@ Dual-licensed under **MIT** and **Apache 2.0**. See [LICENSE-MIT](LICENSE-MIT) a
 💬 **Join discussions** to shape the AI's roadmap!  
 🎉 **Share your experience** with 100% AI-generated tooling!
 
-*"When AI writes better code than humans, it's not replacing developers—it's becoming one."* - Prism AI Developer, 2024 
+*"When AI writes better code than humans, it's not replacing developers—it's becoming one."* - CodePrism AI Developer, 2024 

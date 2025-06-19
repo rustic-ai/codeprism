@@ -1,6 +1,6 @@
 # Developer Guide
 
-This guide covers the development workflow, architecture, and best practices for contributing to Prism.
+This guide covers the development workflow, architecture, and best practices for contributing to CodeCodePrism.
 
 ## Table of Contents
 
@@ -27,8 +27,8 @@ This guide covers the development workflow, architecture, and best practices for
 
 ```bash
 # Clone the repository
-git clone https://github.com/dragonscale/prism
-cd prism
+git clone https://github.com/rustic-ai /codeprism
+cd codeprism
 
 # Install Rust toolchain components
 rustup component add rustfmt clippy
@@ -79,7 +79,7 @@ make dev-logs  # View service logs
 ```
 prism/
 ├── crates/                    # Rust workspace crates
-│   ├── prism/                # Core library
+│   ├── codeprism/                # Core library
 │   │   ├── src/
 │   │   │   ├── lib.rs        # Public API exports
 │   │   │   ├── ast/          # Universal AST types
@@ -90,7 +90,7 @@ prism/
 │   │   ├── tests/            # Integration tests
 │   │   └── Cargo.toml
 │   │
-│   ├── prism-lang-js/        # JavaScript/TypeScript parser
+│   ├── codeprism-lang-js/        # JavaScript/TypeScript parser
 │   │   ├── src/
 │   │   │   ├── lib.rs        # Public API
 │   │   │   ├── parser.rs     # Main parser logic
@@ -104,11 +104,11 @@ prism/
 │   │   ├── build.rs          # Build script
 │   │   └── Cargo.toml
 │   │
-│   ├── prism-lang-python/    # Python parser (planned)
-│   ├── prism-lang-java/      # Java parser (planned)
-│   ├── prism-storage/        # Neo4j integration (planned)
-│   ├── prism-bus/            # Kafka integration (planned)
-│   ├── prism-mcp/            # MCP server (planned)
+│   ├── codeprism-lang-python/    # Python parser (planned)
+│   ├── codeprism-lang-java/      # Java parser (planned)
+│   ├── codeprism-storage/        # Neo4j integration (planned)
+│   ├── codeprism-bus/            # Kafka integration (planned)
+│   ├── codeprism-mcp/            # MCP server (planned)
 # (CLI and daemon components have been removed)
 │
 ├── docs/                     # Documentation
@@ -143,7 +143,7 @@ Each crate follows Rust conventions:
 cargo watch -x "test --all"
 
 # Run specific crate tests
-cargo test -p prism-lang-js
+cargo test -p codeprism-lang-js
 
 # Check code formatting and linting
 make check
@@ -171,7 +171,7 @@ cargo bench
 3. **Implement the feature**:
    ```bash
    # Use cargo-expand to debug macros
-   cargo expand --package prism-lang-js
+   cargo expand --package codeprism-lang-js
    ```
 
 4. **Verify quality**:
@@ -359,7 +359,7 @@ pub type Result<T> = std::result::Result<T, ParseError>;
 /// # Examples
 ///
 /// ```rust
-/// use prism_lang_js::{JavaScriptParser, ParseContext};
+/// use codeprism_lang_js::{JavaScriptParser, ParseContext};
 /// 
 /// let mut parser = JavaScriptParser::new();
 /// let context = ParseContext {
@@ -381,22 +381,22 @@ pub fn parse(&mut self, context: &ParseContext) -> Result<ParseResult> {
 
 ### Core Components
 
-1. **Universal AST** (`prism::ast`):
+1. **Universal AST** (codeprism::ast`):
    - Language-agnostic representation
    - Stable NodeId generation with Blake3
    - Serializable types
 
-2. **Parser Engine** (`prism::parser`):
+2. **Parser Engine** (codeprism::parser`):
    - Language registry for parser plugins
    - Incremental parsing support
    - Thread-safe operation
 
-3. **File Watcher** (`prism::watcher`):
+3. **File Watcher** (codeprism::watcher`):
    - Real-time file system monitoring
    - Debouncing for performance
    - Async event streams
 
-4. **Graph Patches** (`prism::patch`):
+4. **Graph Patches** (codeprism::patch`):
    - Incremental graph updates
    - Serializable patch format
    - Batch operations
@@ -421,13 +421,13 @@ All components are designed for concurrent access:
 
 ```bash
 # Create crate structure
-mkdir crates/prism-lang-python
-cd crates/prism-lang-python
+mkdir crates/codeprism-lang-python
+cd crates/codeprism-lang-python
 
 # Initialize Cargo.toml
 cat > Cargo.toml << EOF
 [package]
-name = "prism-lang-python"
+name = "codeprism-lang-python"
 version.workspace = true
 edition.workspace = true
 

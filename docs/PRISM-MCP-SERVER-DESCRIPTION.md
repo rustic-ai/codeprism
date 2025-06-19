@@ -1,8 +1,8 @@
-# Prism MCP Server - Current Implementation Description
+# CodeCodePrism MCP Server - Current Implementation Description
 
 ## Overview
 
-Prism provides a **graph-first code intelligence** MCP server that enables LLM applications to understand and navigate codebases through structured relationships rather than traditional text-based search. The Prism MCP server offers comprehensive repository analysis, **code quality metrics**, **complexity analysis**, and intelligent code traversal capabilities through the standardized Model Context Protocol.
+CodeCodePrism provides a **graph-first code intelligence** MCP server that enables LLM applications to understand and navigate codebases through structured relationships rather than traditional text-based search. The CodeCodePrism MCP server offers comprehensive repository analysis, **code quality metrics**, **complexity analysis**, and intelligent code traversal capabilities through the standardized Model Context Protocol.
 
 ### Key Features ⭐
 - **18 Production-Ready MCP Tools** including complexity analysis, flow tracing, and architectural pattern analysis
@@ -23,7 +23,7 @@ Prism provides a **graph-first code intelligence** MCP server that enables LLM a
 ## Architecture Integration
 
 ### MCP Compliance
-Prism's MCP server implements the complete MCP specification with support for:
+CodeCodePrism's MCP server implements the complete MCP specification with support for:
 - ✅ **Resources**: Repository files, code symbols, and graph data
 - ✅ **Tools**: Code analysis, path tracing, and graph traversal functions  
 - ✅ **Prompts**: Code analysis templates and workflow guidance
@@ -32,7 +32,7 @@ Prism's MCP server implements the complete MCP specification with support for:
 ### Server Configuration
 ```json
 {
-  "name": "prism-mcp-server",
+  "name": "codeprism-mcp-server",
   "version": "0.1.0",
   "capabilities": {
     "resources": {
@@ -54,7 +54,7 @@ Prism's MCP server implements the complete MCP specification with support for:
 ### 1. Repository Scanning and Indexing
 
 #### Initial Repository Analysis
-When pointed to a codebase, Prism performs comprehensive analysis:
+When pointed to a codebase, CodeCodePrism performs comprehensive analysis:
 
 **Languages Supported:**
 - ✅ **JavaScript/TypeScript**: Complete ES6+ and TSX support with Tree-sitter parsing
@@ -73,7 +73,7 @@ When pointed to a codebase, Prism performs comprehensive analysis:
 ### 2. Graph-First Code Intelligence
 
 #### Universal AST Representation
-Prism maintains a language-agnostic graph structure where each node represents a code symbol (function, class, variable, module) and edges represent relationships (calls, imports, reads, writes).
+CodeCodePrism maintains a language-agnostic graph structure where each node represents a code symbol (function, class, variable, module) and edges represent relationships (calls, imports, reads, writes).
 
 ## MCP Resources Implementation
 
@@ -82,42 +82,42 @@ Prism maintains a language-agnostic graph structure where each node represents a
 The following resources are currently implemented and available:
 
 #### Repository Resources
-- `prism://repository/` - Repository root information
-- `prism://repository/stats` - Repository statistics and metrics
-- `prism://repository/config` - Repository configuration and settings
-- `prism://repository/tree` - Complete file tree structure
-- `prism://repository/file/{path}` - Individual file content with analysis
+- codeprism://repository/` - Repository root information
+- codeprism://repository/stats` - Repository statistics and metrics
+- codeprism://repository/config` - Repository configuration and settings
+- codeprism://repository/tree` - Complete file tree structure
+- codeprism://repository/file/{path}` - Individual file content with analysis
 
 #### Graph Resources
-- `prism://graph/repository` - Graph structure and statistics
+- codeprism://graph/repository` - Graph structure and statistics
 
 #### Symbol Resources
-- `prism://symbols/functions` - All function symbols in the repository
-- `prism://symbols/classes` - All class symbols in the repository
-- `prism://symbols/variables` - All variable symbols in the repository
-- `prism://symbols/modules` - All module symbols in the repository
+- codeprism://symbols/functions` - All function symbols in the repository
+- codeprism://symbols/classes` - All class symbols in the repository
+- codeprism://symbols/variables` - All variable symbols in the repository
+- codeprism://symbols/modules` - All module symbols in the repository
 
 #### Quality Metrics Resources ⭐ 
-- `prism://metrics/quality_dashboard` - Code quality metrics, complexity analysis, and technical debt assessment
+- codeprism://metrics/quality_dashboard` - Code quality metrics, complexity analysis, and technical debt assessment
 
 #### Architectural Resources ⭐ **NEW**
-- `prism://architecture/layers` - Architectural layer structure identification
-- `prism://architecture/patterns` - Detected design patterns and structures
-- `prism://architecture/dependencies` - High-level dependency analysis
+- codeprism://architecture/layers` - Architectural layer structure identification
+- codeprism://architecture/patterns` - Detected design patterns and structures
+- codeprism://architecture/dependencies` - High-level dependency analysis
 
 ### Resource Examples
 
 #### Repository Statistics Resource
 **Request:**
 ```json
-GET /resources/read?uri=prism://repository/stats
+GET /resources/read?uricodeprism://repository/stats
 ```
 
 **Response:**
 ```json
 {
   "contents": [{
-    "uri": "prism://repository/stats",
+    "uri": codeprism://repository/stats",
     "mimeType": "application/json",
     "text": {
       "total_repositories": 1,
@@ -132,14 +132,14 @@ GET /resources/read?uri=prism://repository/stats
 #### Functions Resource
 **Request:**
 ```json
-GET /resources/read?uri=prism://symbols/functions
+GET /resources/read?uricodeprism://symbols/functions
 ```
 
 **Response:**
 ```json
 {
   "contents": [{
-    "uri": "prism://symbols/functions",
+    "uri": codeprism://symbols/functions",
     "mimeType": "application/json",
     "text": [
       {
@@ -163,14 +163,14 @@ GET /resources/read?uri=prism://symbols/functions
 #### Graph Repository Resource
 **Request:**
 ```json
-GET /resources/read?uri=prism://graph/repository
+GET /resources/read?uricodeprism://graph/repository
 ```
 
 **Response:**
 ```json
 {
   "contents": [{
-    "uri": "prism://graph/repository",
+    "uri": codeprism://graph/repository",
     "mimeType": "application/json",
     "text": {
       "nodes": 1250,
@@ -191,14 +191,14 @@ GET /resources/read?uri=prism://graph/repository
 #### Quality Dashboard Resource
 **Request:**
 ```json
-GET /resources/read?uri=prism://metrics/quality_dashboard
+GET /resources/read?uricodeprism://metrics/quality_dashboard
 ```
 
 **Response:**
 ```json
 {
   "contents": [{
-    "uri": "prism://metrics/quality_dashboard",
+    "uri": codeprism://metrics/quality_dashboard",
     "mimeType": "application/json",
     "text": {
       "repository_overview": {
@@ -272,14 +272,14 @@ The following **18 tools** are currently implemented and fully functional:
 #### Repository Statistics Resource
 **Request:**
 ```json
-GET /resources/read?uri=prism://repository/stats
+GET /resources/read?uricodeprism://repository/stats
 ```
 
 **Response:**
 ```json
 {
   "contents": [{
-    "uri": "prism://repository/stats",
+    "uri": codeprism://repository/stats",
     "mimeType": "application/json",
     "text": {
       "repository_path": "/path/to/repository",
@@ -301,14 +301,14 @@ GET /resources/read?uri=prism://repository/stats
 #### Functions Resource
 **Request:**
 ```json
-GET /resources/read?uri=prism://symbols/functions
+GET /resources/read?uricodeprism://symbols/functions
 ```
 
 **Response:**
 ```json
 {
   "contents": [{
-    "uri": "prism://symbols/functions",
+    "uri": codeprism://symbols/functions",
     "mimeType": "application/json",
     "text": [
       {
@@ -332,14 +332,14 @@ GET /resources/read?uri=prism://symbols/functions
 #### Graph Repository Resource
 **Request:**
 ```json
-GET /resources/read?uri=prism://graph/repository
+GET /resources/read?uricodeprism://graph/repository
 ```
 
 **Response:**
 ```json
 {
   "contents": [{
-    "uri": "prism://graph/repository",
+    "uri": codeprism://graph/repository",
     "mimeType": "application/json",
     "text": {
       "nodes": 1250,
@@ -360,14 +360,14 @@ GET /resources/read?uri=prism://graph/repository
 #### Quality Dashboard Resource
 **Request:**
 ```json
-GET /resources/read?uri=prism://metrics/quality_dashboard
+GET /resources/read?uricodeprism://metrics/quality_dashboard
 ```
 
 **Response:**
 ```json
 {
   "contents": [{
-    "uri": "prism://metrics/quality_dashboard",
+    "uri": codeprism://metrics/quality_dashboard",
     "mimeType": "application/json",
     "text": {
       "repository_overview": {
@@ -552,7 +552,7 @@ The following prompts are currently implemented:
 ## Client Integration
 
 ### Supported MCP Clients
-Prism is designed to work seamlessly with major MCP clients:
+CodeCodePrism is designed to work seamlessly with major MCP clients:
 
 - ✅ **Claude Desktop**: Full resources, tools, and prompts support
 - ✅ **Cursor**: Tools integration for code analysis
@@ -566,8 +566,8 @@ Prism is designed to work seamlessly with major MCP clients:
 ```json
 {
   "mcpServers": {
-    "prism": {
-      "command": "prism-mcp",
+    codeprism": {
+      "command": "codeprism-mcp",
       "args": ["/path/to/repository"],
       "env": {
         "PRISM_LOG_LEVEL": "info"
@@ -583,8 +583,8 @@ Prism is designed to work seamlessly with major MCP clients:
   "mcp": {
     "servers": [
       {
-        "name": "prism",
-        "command": ["prism-mcp", "."],
+        "name": codeprism",
+        "command": ["codeprism-mcp", "."],
         "capabilities": ["tools", "resources", "prompts"]
       }
     ]
@@ -610,8 +610,8 @@ Prism is designed to work seamlessly with major MCP clients:
 
 ### Repository Configuration
 ```bash
-# Start Prism MCP server with repository
-prism-mcp /path/to/repository
+# Start CodeCodePrism MCP server with repository
+codeprism-mcp /path/to/repository
 
 # The MCP server is designed to be launched by MCP clients
 # Not as a standalone command-line tool
@@ -688,7 +688,7 @@ prism-mcp /path/to/repository
 
 ## Conclusion
 
-The Prism MCP server provides a comprehensive graph-first code intelligence solution through the Model Context Protocol. With **18 advanced tools** across multiple development phases, it enables LLM applications to understand and navigate codebases through structured relationship data, advanced complexity analysis, and architectural intelligence.
+The CodeCodePrism MCP server provides a comprehensive graph-first code intelligence solution through the Model Context Protocol. With **18 advanced tools** across multiple development phases, it enables LLM applications to understand and navigate codebases through structured relationship data, advanced complexity analysis, and architectural intelligence.
 
 ### Core Strengths
 - **Graph-First Architecture**: Superior relationship understanding compared to text-based tools
@@ -707,5 +707,5 @@ The server provides a solid foundation for AI-powered code intelligence with a c
 
 ---
 
-*This specification accurately describes the current implementation of Prism's MCP server as of the latest testing. Tool stability and feature completeness vary by phase. For detailed tool-by-tool status and known issues, refer to the implementation testing documentation.*
+*This specification accurately describes the current implementation of CodeCodePrism's MCP server as of the latest testing. Tool stability and feature completeness vary by phase. For detailed tool-by-tool status and known issues, refer to the implementation testing documentation.*
 

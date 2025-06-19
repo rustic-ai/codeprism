@@ -2,11 +2,11 @@
 
 ## Overview
 
-The Rust parser implementation enables prism to analyze its own source code, providing the ultimate "dogfooding" capability. This parser will handle Rust's unique features like ownership, traits, macros, and complex type system.
+The Rust parser implementation enables codeprism to analyze its own source code, providing the ultimate "dogfooding" capability. This parser will handle Rust's unique features like ownership, traits, macros, and complex type system.
 
 ## 🎯 Primary Goal: Self-Analysis
 
-**Use Case**: Enable prism to analyze its own Rust codebase for:
+**Use Case**: Enable codeprism to analyze its own Rust codebase for:
 - Code quality assessment
 - Dependency analysis  
 - Refactoring opportunities
@@ -16,7 +16,7 @@ The Rust parser implementation enables prism to analyze its own source code, pro
 ## 🏗️ Implementation Roadmap
 
 ### Phase 1: Basic Structure (Week 1)
-1. **Crate Setup** (`crates/prism-lang-rust/`)
+1. **Crate Setup** (`crates/codeprism-lang-rust/`)
    - Cargo.toml with tree-sitter-rust dependency
    - Basic module structure following established pattern
    - Initial error handling and types
@@ -70,7 +70,7 @@ The Rust parser implementation enables prism to analyze its own source code, pro
 ### Crate Structure
 
 ```
-crates/prism-lang-rust/
+crates/codeprism-lang-rust/
 ├── Cargo.toml
 ├── src/
 │   ├── lib.rs              # Public API
@@ -88,7 +88,7 @@ crates/prism-lang-rust/
 │   │   ├── advanced.rs     # Complex generics and traits
 │   │   ├── macros.rs       # Macro usage
 │   │   ├── patterns.rs     # Pattern matching
-│   │   └── prism_sample.rs # Real prism code samples
+│   │   └── codeprism_sample.rs # Real codeprism code samples
 │   └── integration_test.rs
 └── benches/
     └── parse_benchmark.rs
@@ -98,14 +98,14 @@ crates/prism-lang-rust/
 
 ```toml
 [package]
-name = "prism-lang-rust"
+name = "codeprism-lang-rust"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
-description = "Rust language support for prism - enables self-analysis"
+description = "Rust language support for codeprism - enables self-analysis"
 
 [dependencies]
 # Core dependencies
@@ -119,7 +119,7 @@ serde_json.workspace = true
 tree-sitter.workspace = true
 tree-sitter-rust.workspace = true
 
-# Prism types
+# CodeCodePrism types
 blake3.workspace = true
 hex.workspace = true
 
@@ -137,7 +137,7 @@ cc = "1.0"
 #### 1. Macro Analysis
 ```rust
 // Challenge: Analyze macro invocations and expansions
-// Examples from prism codebase:
+// Examples from codeprism codebase:
 tracing::info!("Starting server");
 serde_json::json!({ "key": value });
 ```
@@ -184,7 +184,7 @@ match result {
 #### 4. Module System
 ```rust
 // Challenge: Track complex module relationships
-use prism::{
+use codeprism::{
     ast::{Node, Edge},
     parser::ParserEngine,
 };
@@ -276,12 +276,12 @@ pub enum RustEdgeKind {
 
 ### Integration Tests
 1. **Real Code Analysis**
-   - Parse actual prism source files
+   - Parse actual codeprism source files
    - Verify extracted relationships
    - Performance benchmarks
 
 2. **Self-Analysis Tests**
-   - Analyze prism-lang-rust itself
+   - Analyze codeprism-lang-rust itself
    - Cross-reference with known structure
    - Validate completeness
 
@@ -346,9 +346,9 @@ where
 }
 ```
 
-#### `tests/fixtures/prism_sample.rs`
+#### `tests/fixtures /codeprism_sample.rs`
 ```rust
-// Real prism code sample for testing
+// Real codeprism code sample for testing
 use anyhow::Result;
 use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
@@ -378,7 +378,7 @@ impl Node {
 
 ### Registry Integration
 ```rust
-// In crates/prism/src/parser/mod.rs
+// In crates /codeprism/src/parser/mod.rs
 impl LanguageRegistry {
     pub fn new() -> Self {
         let mut registry = Self::default();
@@ -399,7 +399,7 @@ impl LanguageRegistry {
     
     #[cfg(feature = "rust")]
     fn register_rust(&mut self) {
-        use prism_lang_rust::RustLanguageParser;
+        use codeprism_lang_rust::RustLanguageParser;
         self.register(Box::new(RustLanguageParser::new()));
     }
 }
@@ -413,25 +413,25 @@ The Rust parser will automatically be available through the MCP server for:
 
 ### CLI Integration
 ```bash
-# Analyze prism itself
-prism-mcp /path/to/prism
+# Analyze codeprism itself
+codeprism-mcp /path/to /codeprism
 
 # Focus on Rust files only
-prism analyze --language rust /path/to/prism
+prism analyze --language rust /path/to /codeprism
 ```
 
 ## 📊 Success Metrics
 
 ### Functionality Metrics
-- [ ] Parse 100% of prism Rust source files without errors
+- [ ] Parse 100% of codeprism Rust source files without errors
 - [ ] Extract 95%+ of function/struct/trait definitions
 - [ ] Correctly identify 90%+ of function calls and dependencies
 - [ ] Handle complex generics and trait bounds
 
 ### Performance Metrics
-- [ ] Parse prism codebase (~50k LOC) in < 2 seconds
+- [ ] Parse codeprism codebase (~50k LOC) in < 2 seconds
 - [ ] Incremental updates < 10ms for typical file changes
-- [ ] Memory usage < 100MB for full prism analysis
+- [ ] Memory usage < 100MB for full codeprism analysis
 
 ### Self-Analysis Capabilities
 - [ ] Generate accurate module dependency graph
@@ -468,23 +468,23 @@ prism analyze --language rust /path/to/prism
    - Dependency drift detection
    - Code quality gates
 
-## 🎉 Benefits for prism Project
+## 🎉 Benefits for codeprism Project
 
 ### Immediate Benefits
-1. **Self-Analysis**: Understand prism's own architecture
+1. **Self-Analysis**: Understand codeprism's own architecture
 2. **Quality Assurance**: Automated code quality checks
 3. **Refactoring Support**: Safe restructuring with dependency awareness
 
 ### Long-term Benefits
 1. **Architecture Evolution**: Track and guide architectural changes
 2. **Performance Optimization**: Data-driven performance improvements
-3. **Educational Value**: Demonstrate prism capabilities on complex Rust code
+3. **Educational Value**: Demonstrate codeprism capabilities on complex Rust code
 
 ### Community Benefits
 1. **Reference Implementation**: Example of advanced Rust parsing
 2. **Open Source Contribution**: Enhance tree-sitter-rust ecosystem
-3. **Tool Validation**: Real-world validation of prism capabilities
+3. **Tool Validation**: Real-world validation of codeprism capabilities
 
 ---
 
-This implementation plan provides a comprehensive roadmap for adding Rust parser support to prism, enabling powerful self-analysis capabilities while following established patterns and maintaining high code quality standards. 
+This implementation plan provides a comprehensive roadmap for adding Rust parser support to codeprism, enabling powerful self-analysis capabilities while following established patterns and maintaining high code quality standards. 

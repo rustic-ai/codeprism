@@ -1,4 +1,4 @@
-# Development Best Practices for Prism 🎯
+# Development Best Practices for CodeCodePrism 🎯
 
 ## 🤖 AI-Generated Excellence Standards
 
@@ -7,7 +7,7 @@ This document outlines the rigorous engineering practices our AI developer follo
 ## 🏗️ Architectural Principles
 
 ### 1. Separation of Concerns
-- **Crate-level**: Clear responsibility boundaries between prism-core, prism-analysis, etc.
+- **Crate-level**: Clear responsibility boundaries between codeprism-core, codeprism-analysis, etc.
 - **Module-level**: Single responsibility per module
 - **Function-level**: Each function has one clear purpose
 

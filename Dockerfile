@@ -13,10 +13,11 @@ RUN apt-get update && apt-get install -y \
 # Set working directory
 WORKDIR /usr/src/codeprism
 
-# Copy manifests
-COPY Cargo.toml Cargo.lock ./
-COPY rust-toolchain.toml ./
-COPY crates/ crates/
+# Create app directory
+RUN mkdir -p /usr/src/codeprism
+
+# Copy manifests and all source code
+COPY . .
 
 # Build dependencies (this step is cached if dependencies don't change)
 RUN cargo build --release --bin codeprism-mcp

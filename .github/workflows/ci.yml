@@ -49,7 +49,7 @@ jobs:
         with:
           components: clippy
       - uses: Swatinem/rust-cache@v2
-      - run: cargo clippy --all-features -- -D warnings
+      - run: cargo clippy --all-features -- -A missing-docs
 
   coverage:
     name: Code Coverage

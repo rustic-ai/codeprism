@@ -16,10 +16,8 @@ WORKDIR /usr/src/codeprism
 # Create app directory
 RUN mkdir -p /usr/src/codeprism
 
-# Copy manifests
-COPY Cargo.toml Cargo.lock ./
-COPY rust-toolchain.toml ./
-COPY crates/ crates/
+# Copy manifests and all source code
+COPY . .
 
 # Build dependencies (this step is cached if dependencies don't change)
 RUN cargo build --release --bin codeprism-mcp
@@ -34,7 +32,7 @@ RUN apt-get update && apt-get install -y \
     && useradd -r -s /bin/false codeprism
 
 # Copy the binary from builder stage
-COPY --from=builder /usr/src/codeprism/target/release/codeprism-mcp /usr/local/bin/codeprism-mcp
+COPY --from=builder /usr/src /codeprism/target/release/codeprism-mcp /usr/local/bin/codeprism-mcp
 
 # Create workspace directory
 RUN mkdir -p /workspace && chown codeprismcodeprism /workspace

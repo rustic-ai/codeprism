@@ -37,7 +37,7 @@ pub struct IndexingStats {
 }
 
 /// Memory usage statistics
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct MemoryStats {
     /// Peak memory usage in bytes
     pub peak_memory_bytes: usize,
@@ -47,15 +47,7 @@ pub struct MemoryStats {
     pub graph_overhead_bytes: usize,
 }
 
-impl Default for MemoryStats {
-    fn default() -> Self {
-        Self {
-            peak_memory_bytes: 0,
-            current_memory_bytes: 0,
-            graph_overhead_bytes: 0,
-        }
-    }
-}
+
 
 /// Bulk indexing result
 #[derive(Debug)]
@@ -179,7 +171,7 @@ impl BulkIndexer {
             || self
                 .config
                 .memory_limit
-                .map_or(false, |limit| limit < 2 * 1024 * 1024 * 1024); // < 2GB
+                .is_some_and(|limit| limit < 2 * 1024 * 1024 * 1024); // < 2GB
 
         if use_streaming {
             tracing::info!(

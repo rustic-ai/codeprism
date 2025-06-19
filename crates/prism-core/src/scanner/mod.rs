@@ -218,7 +218,7 @@ impl RepositoryScanner {
                 result
                     .files_by_language
                     .entry(file.language)
-                    .or_insert_with(Vec::new)
+                    .or_default()
                     .push(file);
                 result.total_files += 1;
             }

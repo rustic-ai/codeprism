@@ -7,7 +7,7 @@ use crate::ast::{Edge, EdgeKind, Node, NodeId, NodeKind};
 use crate::error::Result;
 use crate::graph::GraphStore;
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 /// Symbol resolver for cross-file linking
@@ -68,7 +68,7 @@ impl SymbolResolver {
                             // Add to module symbols
                             self.module_symbols
                                 .entry(module_name.clone())
-                                .or_insert_with(Vec::new)
+                                .or_default()
                                 .push(node_id);
 
                             // Add to qualified symbols
@@ -145,7 +145,7 @@ impl SymbolResolver {
                 .name
                 .chars()
                 .next()
-                .map_or(false, |c| c.is_uppercase())
+                .is_some_and(|c| c.is_uppercase())
             {
                 if let Some(class_id) = self.find_class_by_name(&call_node.name) {
                     // Find the __init__ method of this class
@@ -276,7 +276,7 @@ impl SymbolResolver {
     }
 
     /// Convert file path to module name
-    fn file_path_to_module_name(&self, file_path: &PathBuf) -> String {
+    fn file_path_to_module_name(&self, file_path: &Path) -> String {
         // Convert file path to Python module name
         if let Some(stem) = file_path.file_stem().and_then(|s| s.to_str()) {
             if stem == "__init__" {

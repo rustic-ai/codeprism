@@ -49,19 +49,19 @@ impl GraphStore {
         // Add to file index
         self.file_index
             .entry(node.file.clone())
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(node_id);
 
         // Add to symbol index
         self.symbol_index
             .entry(node.name.clone())
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(node_id);
 
         // Add to kind index
         self.kind_index
             .entry(node.kind)
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(node_id);
 
         // Add the node
@@ -73,13 +73,13 @@ impl GraphStore {
         // Add to outgoing edges
         self.outgoing_edges
             .entry(edge.source)
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(edge.clone());
 
         // Add to incoming edges
         self.incoming_edges
             .entry(edge.target)
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(edge);
     }
 
@@ -875,7 +875,7 @@ pub enum InheritanceFilter {
 }
 
 /// Comprehensive inheritance information for a class
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct InheritanceInfo {
     /// The class name
     pub class_name: String,
@@ -897,21 +897,7 @@ pub struct InheritanceInfo {
     pub inheritance_chain: Vec<String>,
 }
 
-impl Default for InheritanceInfo {
-    fn default() -> Self {
-        Self {
-            class_name: String::new(),
-            base_classes: Vec::new(),
-            subclasses: Vec::new(),
-            metaclass: None,
-            mixins: Vec::new(),
-            method_resolution_order: Vec::new(),
-            dynamic_attributes: Vec::new(),
-            is_metaclass: false,
-            inheritance_chain: Vec::new(),
-        }
-    }
-}
+
 
 /// Represents an inheritance relationship
 #[derive(Debug, Clone, Serialize, Deserialize)]

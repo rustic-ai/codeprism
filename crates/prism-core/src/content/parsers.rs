@@ -432,6 +432,7 @@ impl ConfigParser {
     }
 
     /// Extract values from JSON recursively
+    #[allow(clippy::only_used_in_recursion)]
     fn extract_json_values(
         &self,
         value: &Value,

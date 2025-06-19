@@ -1,5 +1,5 @@
 //! Symbol resolver for creating cross-file edges
-//! 
+//!
 //! This module resolves imports, function calls, and other references across files
 //! to create a complete dependency graph after initial parsing.
 
@@ -18,6 +18,7 @@ pub struct SymbolResolver {
     /// Index of symbols by qualified name (module.symbol)
     qualified_symbols: HashMap<String, NodeId>,
     /// Import resolution cache
+    #[allow(dead_code)]
     import_cache: HashMap<String, String>,
 }
 
@@ -140,7 +141,12 @@ impl SymbolResolver {
 
         for call_node in call_nodes {
             // Check if this is a class name (first letter uppercase)
-            if call_node.name.chars().next().map_or(false, |c| c.is_uppercase()) {
+            if call_node
+                .name
+                .chars()
+                .next()
+                .map_or(false, |c| c.is_uppercase())
+            {
                 if let Some(class_id) = self.find_class_by_name(&call_node.name) {
                     // Find the __init__ method of this class
                     if let Some(init_id) = self.find_method_in_class(class_id, "__init__") {
@@ -162,7 +168,7 @@ impl SymbolResolver {
             // Module.symbol or complex import
             let parts: Vec<&str> = import_name.split('.').collect();
             if parts.len() >= 2 {
-                let module = parts[..parts.len()-1].join(".");
+                let module = parts[..parts.len() - 1].join(".");
                 let symbol = parts.last().unwrap().to_string();
                 results.push((module, symbol));
             }
@@ -210,7 +216,9 @@ impl SymbolResolver {
         // First check for local functions in the same file
         let file_nodes = self.graph.get_nodes_in_file(calling_file);
         for node in &file_nodes {
-            if matches!(node.kind, NodeKind::Function | NodeKind::Method) && node.name == call_node.name {
+            if matches!(node.kind, NodeKind::Function | NodeKind::Method)
+                && node.name == call_node.name
+            {
                 return Ok(Some(node.id));
             }
         }
@@ -222,7 +230,9 @@ impl SymbolResolver {
                 let import_parts = self.parse_import_statement(&node.name);
                 for (module_path, symbol_name) in import_parts {
                     if symbol_name == call_node.name {
-                        if let Some(target_id) = self.find_symbol_in_module(&module_path, &symbol_name) {
+                        if let Some(target_id) =
+                            self.find_symbol_in_module(&module_path, &symbol_name)
+                        {
                             return Ok(Some(target_id));
                         }
                     }
@@ -250,12 +260,13 @@ impl SymbolResolver {
         // Get the class node to find its file
         if let Some(class_node) = self.graph.get_node(&class_id) {
             let file_nodes = self.graph.get_nodes_in_file(&class_node.file);
-            
+
             for node in file_nodes {
                 if node.kind == NodeKind::Method && node.name == method_name {
                     // Check if this method is within the class span
-                    if node.span.start_line >= class_node.span.start_line && 
-                       node.span.end_line <= class_node.span.end_line {
+                    if node.span.start_line >= class_node.span.start_line
+                        && node.span.end_line <= class_node.span.end_line
+                    {
                         return Some(node.id);
                     }
                 }
@@ -276,17 +287,17 @@ impl SymbolResolver {
                     }
                 }
             }
-            
+
             // Convert path separators to dots for module name
             let path_str = file_path.to_string_lossy();
             let module_path = path_str
                 .replace(['/', '\\'], ".")
                 .replace(".py", "")
                 .replace(".__init__", "");
-            
+
             return module_path;
         }
-        
+
         "unknown".to_string()
     }
 
@@ -300,16 +311,22 @@ impl SymbolResolver {
         for class_node in class_nodes {
             // Get all outgoing Call edges from this class (inheritance is represented as Call)
             let outgoing_edges = self.graph.get_outgoing_edges(&class_node.id);
-            
+
             for edge in outgoing_edges {
                 if edge.kind == EdgeKind::Calls {
                     // Check if the target node represents a base class reference
                     if let Some(call_node) = self.graph.get_node(&edge.target) {
                         if call_node.kind == NodeKind::Call {
                             // Try to resolve this call to an actual class
-                            if let Some(target_class_id) = self.resolve_base_class_name(&call_node.name, &class_node.file) {
+                            if let Some(target_class_id) =
+                                self.resolve_base_class_name(&call_node.name, &class_node.file)
+                            {
                                 // Create inheritance edge: child class -> parent class
-                                edges.push(Edge::new(class_node.id, target_class_id, EdgeKind::Calls));
+                                edges.push(Edge::new(
+                                    class_node.id,
+                                    target_class_id,
+                                    EdgeKind::Calls,
+                                ));
                             }
                         }
                     }
@@ -321,7 +338,11 @@ impl SymbolResolver {
     }
 
     /// Resolve a base class name to its actual class node
-    fn resolve_base_class_name(&self, class_name: &str, calling_file: &std::path::PathBuf) -> Option<NodeId> {
+    fn resolve_base_class_name(
+        &self,
+        class_name: &str,
+        calling_file: &std::path::PathBuf,
+    ) -> Option<NodeId> {
         // First check for local classes in the same file
         let file_nodes = self.graph.get_nodes_in_file(calling_file);
         for node in &file_nodes {
@@ -337,7 +358,9 @@ impl SymbolResolver {
                 let import_parts = self.parse_import_statement(&node.name);
                 for (module_path, symbol_name) in import_parts {
                     if symbol_name == class_name {
-                        if let Some(target_id) = self.find_symbol_in_module(&module_path, &symbol_name) {
+                        if let Some(target_id) =
+                            self.find_symbol_in_module(&module_path, &symbol_name)
+                        {
                             // Verify it's actually a class
                             if let Some(target_node) = self.graph.get_node(&target_id) {
                                 if target_node.kind == NodeKind::Class {
@@ -365,15 +388,18 @@ impl SymbolResolver {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ast::{Language, Span};
+
 
     #[test]
     fn test_module_name_conversion() {
         let resolver = SymbolResolver::new(Arc::new(GraphStore::new()));
-        
+
         let path1 = PathBuf::from("src/rustic_ai/core/guild/agent.py");
-        assert_eq!(resolver.file_path_to_module_name(&path1), "src.rustic_ai.core.guild.agent");
-        
+        assert_eq!(
+            resolver.file_path_to_module_name(&path1),
+            "src.rustic_ai.core.guild.agent"
+        );
+
         let path2 = PathBuf::from("src/utils/__init__.py");
         assert_eq!(resolver.file_path_to_module_name(&path2), "utils");
     }
@@ -381,9 +407,12 @@ mod tests {
     #[test]
     fn test_import_parsing() {
         let resolver = SymbolResolver::new(Arc::new(GraphStore::new()));
-        
+
         let parts = resolver.parse_import_statement("rustic_ai.core.guild.Agent");
         assert_eq!(parts.len(), 1);
-        assert_eq!(parts[0], ("rustic_ai.core.guild".to_string(), "Agent".to_string()));
+        assert_eq!(
+            parts[0],
+            ("rustic_ai.core.guild".to_string(), "Agent".to_string())
+        );
     }
-} 
+}

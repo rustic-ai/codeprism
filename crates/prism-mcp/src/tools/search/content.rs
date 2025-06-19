@@ -1,9 +1,9 @@
 //! Content search and file discovery tools
 
+use crate::tools_legacy::{CallToolParams, CallToolResult, Tool, ToolContent};
+use crate::PrismMcpServer;
 use anyhow::Result;
 use serde_json::Value;
-use crate::tools_legacy::{Tool, CallToolParams, CallToolResult, ToolContent};
-use crate::PrismMcpServer;
 
 /// List content search tools
 pub fn list_tools() -> Vec<Tool> {
@@ -98,19 +98,27 @@ pub async fn call_tool(server: &PrismMcpServer, params: &CallToolParams) -> Resu
         "search_content" => search_content(server, params.arguments.as_ref()).await,
         "find_files" => find_files(server, params.arguments.as_ref()).await,
         "content_stats" => content_stats(server).await,
-        _ => Err(anyhow::anyhow!("Unknown content search tool: {}", params.name)),
+        _ => Err(anyhow::anyhow!(
+            "Unknown content search tool: {}",
+            params.name
+        )),
     }
 }
 
 /// Search content across all files
-async fn search_content(server: &PrismMcpServer, arguments: Option<&Value>) -> Result<CallToolResult> {
+async fn search_content(
+    server: &PrismMcpServer,
+    arguments: Option<&Value>,
+) -> Result<CallToolResult> {
     let args = arguments.ok_or_else(|| anyhow::anyhow!("Missing arguments"))?;
-    
-    let query = args.get("query")
+
+    let query = args
+        .get("query")
         .and_then(|v| v.as_str())
         .ok_or_else(|| anyhow::anyhow!("Missing query parameter"))?;
 
-    let content_types = args.get("content_types")
+    let content_types = args
+        .get("content_types")
         .and_then(|v| v.as_array())
         .map(|arr| {
             arr.iter()
@@ -120,7 +128,8 @@ async fn search_content(server: &PrismMcpServer, arguments: Option<&Value>) -> R
         })
         .unwrap_or_default();
 
-    let file_patterns = args.get("file_patterns")
+    let file_patterns = args
+        .get("file_patterns")
         .and_then(|v| v.as_array())
         .map(|arr| {
             arr.iter()
@@ -130,7 +139,8 @@ async fn search_content(server: &PrismMcpServer, arguments: Option<&Value>) -> R
         })
         .unwrap_or_default();
 
-    let exclude_patterns = args.get("exclude_patterns")
+    let exclude_patterns = args
+        .get("exclude_patterns")
         .and_then(|v| v.as_array())
         .map(|arr| {
             arr.iter()
@@ -140,20 +150,24 @@ async fn search_content(server: &PrismMcpServer, arguments: Option<&Value>) -> R
         })
         .unwrap_or_default();
 
-    let max_results = args.get("max_results")
+    let max_results = args
+        .get("max_results")
         .and_then(|v| v.as_u64())
         .map(|v| v as usize)
         .unwrap_or(50);
 
-    let case_sensitive = args.get("case_sensitive")
+    let case_sensitive = args
+        .get("case_sensitive")
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
 
-    let use_regex = args.get("use_regex")
+    let use_regex = args
+        .get("use_regex")
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
 
-    let include_context = args.get("include_context")
+    let include_context = args
+        .get("include_context")
         .and_then(|v| v.as_bool())
         .unwrap_or(true);
 
@@ -177,7 +191,10 @@ async fn search_content(server: &PrismMcpServer, arguments: Option<&Value>) -> R
         });
     }
 
-    match server.content_search().simple_search(query, Some(max_results)) {
+    match server
+        .content_search()
+        .simple_search(query, Some(max_results))
+    {
         Ok(search_results) => {
             let result = serde_json::json!({
                 "query": query,
@@ -231,8 +248,9 @@ async fn search_content(server: &PrismMcpServer, arguments: Option<&Value>) -> R
 /// Find files by pattern
 async fn find_files(server: &PrismMcpServer, arguments: Option<&Value>) -> Result<CallToolResult> {
     let args = arguments.ok_or_else(|| anyhow::anyhow!("Missing arguments"))?;
-    
-    let pattern = args.get("pattern")
+
+    let pattern = args
+        .get("pattern")
         .and_then(|v| v.as_str())
         .ok_or_else(|| anyhow::anyhow!("Missing pattern parameter"))?;
 
@@ -262,7 +280,8 @@ async fn find_files(server: &PrismMcpServer, arguments: Option<&Value>) -> Resul
                         }
                     };
 
-                    let matching_files: Vec<_> = all_files.iter()
+                    let matching_files: Vec<_> = all_files
+                        .iter()
                         .filter(|path| pattern_regex.is_match(&path.to_string_lossy()))
                         .collect();
 
@@ -355,7 +374,7 @@ async fn find_files(server: &PrismMcpServer, arguments: Option<&Value>) -> Resul
 /// Get content statistics
 async fn content_stats(server: &PrismMcpServer) -> Result<CallToolResult> {
     let stats = server.content_search().get_stats();
-    
+
     let result = if stats.total_files == 0 {
         serde_json::json!({
             "total_files": 0,
@@ -387,4 +406,4 @@ async fn content_stats(server: &PrismMcpServer) -> Result<CallToolResult> {
         }],
         is_error: Some(false),
     })
-} 
+}

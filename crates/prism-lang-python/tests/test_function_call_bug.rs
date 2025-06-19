@@ -9,7 +9,7 @@ fn test_function_calls_with_parser(source: &str) -> ParseResult {
         old_tree: None,
         content: source.to_string(),
     };
-    
+
     parser.parse(&context).unwrap()
 }
 
@@ -21,29 +21,39 @@ def test_function():
     method.call()
     obj.attr.nested()
 "#;
-    
+
     let result = test_function_calls_with_parser(source);
-    
+
     // Find all call nodes
-    let call_nodes: Vec<_> = result.nodes.iter()
+    let call_nodes: Vec<_> = result
+        .nodes
+        .iter()
         .filter(|n| matches!(n.kind, NodeKind::Call))
         .collect();
-    
+
     println!("Found {} call nodes:", call_nodes.len());
     for node in &call_nodes {
         println!("  Call: '{}' (kind: {:?})", node.name, node.kind);
     }
-    
+
     // Verify no invalid call names
-    let invalid_calls: Vec<_> = call_nodes.iter()
+    let invalid_calls: Vec<_> = call_nodes
+        .iter()
         .filter(|n| n.name == ")" || n.name.is_empty())
         .collect();
-    
-    assert_eq!(invalid_calls.len(), 0, 
-        "Found {} invalid call nodes with name ')'", invalid_calls.len());
-    
+
+    assert_eq!(
+        invalid_calls.len(),
+        0,
+        "Found {} invalid call nodes with name ')'",
+        invalid_calls.len()
+    );
+
     // Should have at least 3 valid calls
-    assert!(call_nodes.len() >= 3, "Should have at least 3 function calls");
+    assert!(
+        call_nodes.len() >= 3,
+        "Should have at least 3 function calls"
+    );
 }
 
 #[test]
@@ -59,33 +69,40 @@ class Agent:
         data = transform(result)
         return validate(data)
 "#;
-    
+
     let result = test_function_calls_with_parser(source);
-    
+
     // Find all call nodes
-    let call_nodes: Vec<_> = result.nodes.iter()
+    let call_nodes: Vec<_> = result
+        .nodes
+        .iter()
         .filter(|n| matches!(n.kind, NodeKind::Call))
         .collect();
-    
+
     println!("Found {} call nodes in complex example:", call_nodes.len());
     for node in &call_nodes {
         println!("  Call: '{}' (kind: {:?})", node.name, node.kind);
     }
-    
+
     // Check for invalid names - this should fail and show us the bug
-    let invalid_calls: Vec<_> = call_nodes.iter()
+    let invalid_calls: Vec<_> = call_nodes
+        .iter()
         .filter(|n| n.name == ")" || n.name.trim().is_empty())
         .collect();
-    
+
     if !invalid_calls.is_empty() {
         println!("BUG REPRODUCED! Invalid call nodes found:");
         for invalid in &invalid_calls {
             println!("  Invalid call: '{}'", invalid.name);
         }
     }
-    
+
     // For now, let's see what we get instead of asserting
-    println!("Total calls: {}, Invalid calls: {}", call_nodes.len(), invalid_calls.len());
+    println!(
+        "Total calls: {}, Invalid calls: {}",
+        call_nodes.len(),
+        invalid_calls.len()
+    );
 }
 
 #[test]
@@ -104,28 +121,31 @@ class Agent:
         self._client = client
         return self._client
 "#;
-    
+
     let result = test_function_calls_with_parser(source);
-    
+
     // Find all call nodes
-    let call_nodes: Vec<_> = result.nodes.iter()
+    let call_nodes: Vec<_> = result
+        .nodes
+        .iter()
         .filter(|n| matches!(n.kind, NodeKind::Call))
         .collect();
-    
+
     println!("Agent class call analysis:");
     println!("Found {} call nodes:", call_nodes.len());
-    
+
     for (i, node) in call_nodes.iter().enumerate() {
-        println!("  {}. Call: '{}' (kind: {:?})", i+1, node.name, node.kind);
+        println!("  {}. Call: '{}' (kind: {:?})", i + 1, node.name, node.kind);
     }
-    
+
     // Look specifically for invalid calls
-    let invalid_calls: Vec<_> = call_nodes.iter()
-        .filter(|n| n.name == ")")
-        .collect();
-    
+    let invalid_calls: Vec<_> = call_nodes.iter().filter(|n| n.name == ")").collect();
+
     if !invalid_calls.is_empty() {
-        println!("FOUND THE BUG! {} invalid calls with name ')'", invalid_calls.len());
+        println!(
+            "FOUND THE BUG! {} invalid calls with name ')'",
+            invalid_calls.len()
+        );
         for invalid in &invalid_calls {
             println!("  File: {}", invalid.file.display());
             println!("  Span: {:?}", invalid.span);
@@ -154,32 +174,37 @@ class TestClass:
             another_arg
         )
 "#;
-    
+
     let result = test_function_calls_with_parser(source);
-    
+
     // Find all call nodes
-    let call_nodes: Vec<_> = result.nodes.iter()
+    let call_nodes: Vec<_> = result
+        .nodes
+        .iter()
         .filter(|n| matches!(n.kind, NodeKind::Call))
         .collect();
-    
+
     println!("Problematic patterns call analysis:");
     println!("Found {} call nodes:", call_nodes.len());
-    
+
     for (i, node) in call_nodes.iter().enumerate() {
-        println!("  {}. Call: '{}' (kind: {:?})", i+1, node.name, node.kind);
+        println!("  {}. Call: '{}' (kind: {:?})", i + 1, node.name, node.kind);
         if node.name == ")" || node.name.trim().is_empty() {
             println!("      ⚠️  INVALID CALL DETECTED!");
         }
     }
-    
+
     // Count invalid calls
-    let invalid_calls: Vec<_> = call_nodes.iter()
+    let invalid_calls: Vec<_> = call_nodes
+        .iter()
         .filter(|n| n.name == ")" || n.name.trim().is_empty())
         .collect();
-    
-    println!("Summary: {} valid, {} invalid calls", 
-        call_nodes.len() - invalid_calls.len(), 
-        invalid_calls.len());
+
+    println!(
+        "Summary: {} valid, {} invalid calls",
+        call_nodes.len() - invalid_calls.len(),
+        invalid_calls.len()
+    );
 }
 
 #[test]
@@ -216,32 +241,38 @@ class Agent:
         # Deeply nested attribute access
         value = self._origin_message.routing_slip.get_next_steps()
 "#;
-    
+
     let result = test_function_calls_with_parser(source);
-    
+
     // Find all call nodes
-    let call_nodes: Vec<_> = result.nodes.iter()
+    let call_nodes: Vec<_> = result
+        .nodes
+        .iter()
         .filter(|n| matches!(n.kind, NodeKind::Call))
         .collect();
-    
+
     println!("Real Agent patterns analysis:");
     println!("Found {} call nodes:", call_nodes.len());
-    
+
     for (i, node) in call_nodes.iter().enumerate() {
-        println!("  {}. Call: '{}' (kind: {:?})", i+1, node.name, node.kind);
+        println!("  {}. Call: '{}' (kind: {:?})", i + 1, node.name, node.kind);
         if node.name == ")" || node.name.trim().is_empty() {
             println!("      🚨 BUG FOUND: Invalid call name!");
         }
     }
-    
+
     // Count invalid calls
-    let invalid_calls: Vec<_> = call_nodes.iter()
+    let invalid_calls: Vec<_> = call_nodes
+        .iter()
         .filter(|n| n.name == ")" || n.name.trim().is_empty())
         .collect();
-    
-    if invalid_calls.len() > 0 {
-        println!("🎯 SUCCESS: Reproduced the bug with {} invalid calls!", invalid_calls.len());
+
+    if !invalid_calls.is_empty() {
+        println!(
+            "🎯 SUCCESS: Reproduced the bug with {} invalid calls!",
+            invalid_calls.len()
+        );
     } else {
         println!("❌ Bug not reproduced in this test");
     }
-} 
+}

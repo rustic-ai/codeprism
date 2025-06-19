@@ -8,12 +8,11 @@ use crate::parser::{ParseContext, ParserEngine};
 use crate::patch::{AstPatch, PatchBuilder};
 use crate::watcher::{ChangeEvent, ChangeKind, FileWatcher};
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::oneshot;
 use tokio::time::sleep;
-use std::sync::atomic::{AtomicUsize, Ordering};
-
 
 /// Pipeline event representing a processed file change
 #[derive(Debug, Clone)]
@@ -59,7 +58,7 @@ impl PipelineStats {
     /// Update statistics with a new event
     pub fn update(&mut self, event: &PipelineEvent, success: bool) {
         self.events_processed += 1;
-        
+
         if success {
             self.events_success += 1;
             if let Some(ref patch) = event.patch {
@@ -74,7 +73,7 @@ impl PipelineStats {
         }
 
         // Update average processing time
-        let total_time = self.avg_processing_ms * (self.events_processed - 1) as f64 
+        let total_time = self.avg_processing_ms * (self.events_processed - 1) as f64
             + event.processing_duration_ms as f64;
         self.avg_processing_ms = total_time / self.events_processed as f64;
     }
@@ -102,7 +101,7 @@ impl PipelineStats {
 pub trait PipelineEventHandler: Send + Sync {
     /// Handle a processed pipeline event
     fn handle_event(&self, event: &PipelineEvent) -> Result<()>;
-    
+
     /// Handle pipeline errors
     fn handle_error(&self, error: &Error, change_event: &ChangeEvent);
 }
@@ -115,7 +114,7 @@ impl PipelineEventHandler for NoOpEventHandler {
     fn handle_event(&self, _event: &PipelineEvent) -> Result<()> {
         Ok(())
     }
-    
+
     fn handle_error(&self, _error: &Error, _change_event: &ChangeEvent) {}
 }
 
@@ -135,23 +134,29 @@ impl LoggingEventHandler {
 impl PipelineEventHandler for LoggingEventHandler {
     fn handle_event(&self, event: &PipelineEvent) -> Result<()> {
         if self.verbose {
-            println!("Pipeline event: {:?} processed in {}ms", 
-                event.change_event.kind, 
-                event.processing_duration_ms);
-            
+            println!(
+                "Pipeline event: {:?} processed in {}ms",
+                event.change_event.kind, event.processing_duration_ms
+            );
+
             if let Some(ref patch) = event.patch {
-                println!("  Generated patch: +{} nodes, +{} edges, -{} nodes, -{} edges",
+                println!(
+                    "  Generated patch: +{} nodes, +{} edges, -{} nodes, -{} edges",
                     patch.nodes_add.len(),
                     patch.edges_add.len(),
                     patch.nodes_delete.len(),
-                    patch.edges_delete.len());
+                    patch.edges_delete.len()
+                );
             }
         }
         Ok(())
     }
-    
+
     fn handle_error(&self, error: &Error, change_event: &ChangeEvent) {
-        eprintln!("Pipeline error processing {:?}: {}", change_event.path, error);
+        eprintln!(
+            "Pipeline error processing {:?}: {}",
+            change_event.path, error
+        );
     }
 }
 
@@ -207,7 +212,7 @@ impl MonitoringPipeline {
         event_handler: Arc<dyn PipelineEventHandler>,
     ) -> Result<Self> {
         let file_watcher = FileWatcher::with_debounce(config.debounce_duration)?;
-        
+
         Ok(Self {
             config,
             parser_engine,
@@ -221,17 +226,18 @@ impl MonitoringPipeline {
     /// Start monitoring a repository path
     pub async fn start_monitoring<P: AsRef<Path>>(&mut self, repo_path: P) -> Result<()> {
         let repo_path = repo_path.as_ref();
-        
+
         // Start watching the repository
-        self.file_watcher.watch_dir(repo_path, repo_path.to_path_buf())?;
-        
+        self.file_watcher
+            .watch_dir(repo_path, repo_path.to_path_buf())?;
+
         // Start the processing loop
         let (shutdown_tx, shutdown_rx) = oneshot::channel();
         self.shutdown_tx = Some(shutdown_tx);
-        
+
         let mut event_queue = Vec::new();
         let mut last_batch_time = Instant::now();
-        
+
         tokio::select! {
             _ = self.process_events(&mut event_queue, &mut last_batch_time) => {
                 // Processing loop ended
@@ -241,7 +247,7 @@ impl MonitoringPipeline {
                 tracing::info!("Pipeline shutdown requested");
             }
         }
-        
+
         Ok(())
     }
 
@@ -262,12 +268,13 @@ impl MonitoringPipeline {
             // Try to get the next change event
             if let Some(change_event) = self.file_watcher.next_change().await {
                 event_queue.push(change_event);
-                
+
                 // Process batch if conditions are met
                 let should_process_batch = event_queue.len() >= self.config.batch_size
                     || (!self.config.enable_batching && !event_queue.is_empty())
-                    || (last_batch_time.elapsed() > self.config.debounce_duration && !event_queue.is_empty());
-                
+                    || (last_batch_time.elapsed() > self.config.debounce_duration
+                        && !event_queue.is_empty());
+
                 if should_process_batch {
                     self.process_event_batch(event_queue).await?;
                     *last_batch_time = Instant::now();
@@ -278,7 +285,7 @@ impl MonitoringPipeline {
                     self.process_event_batch(event_queue).await?;
                     *last_batch_time = Instant::now();
                 }
-                
+
                 // Brief pause to avoid busy waiting
                 sleep(Duration::from_millis(10)).await;
             }
@@ -288,7 +295,7 @@ impl MonitoringPipeline {
     /// Process a batch of change events
     async fn process_event_batch(&mut self, event_queue: &mut Vec<ChangeEvent>) -> Result<()> {
         let events_to_process = std::mem::take(event_queue);
-        
+
         for change_event in events_to_process {
             match self.process_single_event(change_event.clone()).await {
                 Ok(pipeline_event) => {
@@ -303,28 +310,24 @@ impl MonitoringPipeline {
                 }
             }
         }
-        
+
         Ok(())
     }
 
     /// Process a single change event
     async fn process_single_event(&self, change_event: ChangeEvent) -> Result<PipelineEvent> {
         let start_time = Instant::now();
-        
+
         let patch = match change_event.kind {
             ChangeKind::Created | ChangeKind::Modified => {
                 self.process_file_change(&change_event.path).await?
             }
-            ChangeKind::Deleted => {
-                self.process_file_deletion(&change_event.path).await?
-            }
-            ChangeKind::Renamed { ref old, ref new } => {
-                self.process_file_rename(old, new).await?
-            }
+            ChangeKind::Deleted => self.process_file_deletion(&change_event.path).await?,
+            ChangeKind::Renamed { ref old, ref new } => self.process_file_rename(old, new).await?,
         };
-        
+
         let processing_duration = start_time.elapsed();
-        
+
         Ok(PipelineEvent {
             repo_id: self.config.repo_id.clone(),
             change_event,
@@ -342,8 +345,13 @@ impl MonitoringPipeline {
         }
 
         // Read file content
-        let content = tokio::fs::read_to_string(file_path).await
-            .map_err(|e| Error::io(format!("Failed to read file {}: {}", file_path.display(), e)))?;
+        let content = tokio::fs::read_to_string(file_path).await.map_err(|e| {
+            Error::io(format!(
+                "Failed to read file {}: {}",
+                file_path.display(),
+                e
+            ))
+        })?;
 
         // Skip empty files
         if content.trim().is_empty() {
@@ -361,13 +369,10 @@ impl MonitoringPipeline {
         let parse_result = self.parser_engine.parse_incremental(context)?;
 
         // Create patch with new nodes and edges
-        let patch = PatchBuilder::new(
-            self.config.repo_id.clone(),
-            self.config.commit_sha.clone(),
-        )
-        .add_nodes(parse_result.nodes)
-        .add_edges(parse_result.edges)
-        .build();
+        let patch = PatchBuilder::new(self.config.repo_id.clone(), self.config.commit_sha.clone())
+            .add_nodes(parse_result.nodes)
+            .add_edges(parse_result.edges)
+            .build();
 
         Ok(Some(patch))
     }
@@ -377,18 +382,19 @@ impl MonitoringPipeline {
         // For deletion, we would need to track which nodes belong to which files
         // and generate deletion patches. For now, we'll create an empty patch
         // that represents the deletion event.
-        
-        let patch = PatchBuilder::new(
-            self.config.repo_id.clone(),
-            self.config.commit_sha.clone(),
-        )
-        .build();
+
+        let patch =
+            PatchBuilder::new(self.config.repo_id.clone(), self.config.commit_sha.clone()).build();
 
         Ok(Some(patch))
     }
 
     /// Process a file rename
-    async fn process_file_rename(&self, _old_path: &Path, new_path: &Path) -> Result<Option<AstPatch>> {
+    async fn process_file_rename(
+        &self,
+        _old_path: &Path,
+        new_path: &Path,
+    ) -> Result<Option<AstPatch>> {
         // For rename, we could:
         // 1. Delete nodes from old file
         // 2. Parse and add nodes from new file
@@ -445,13 +451,14 @@ mod tests {
         let registry = Arc::new(LanguageRegistry::new());
         let parser_engine = Arc::new(ParserEngine::new(registry));
         let handler = Arc::new(TestEventHandler::new());
-        
+
         let pipeline = MonitoringPipeline::new(
             config,
             parser_engine,
             handler.clone() as Arc<dyn PipelineEventHandler>,
-        ).unwrap();
-        
+        )
+        .unwrap();
+
         (pipeline, temp_dir, handler)
     }
 
@@ -466,7 +473,7 @@ mod tests {
     #[test]
     fn test_pipeline_stats() {
         let mut stats = PipelineStats::default();
-        
+
         let event = PipelineEvent {
             repo_id: "test".to_string(),
             change_event: ChangeEvent {
@@ -479,7 +486,7 @@ mod tests {
             processed_at: Instant::now(),
             processing_duration_ms: 100,
         };
-        
+
         stats.update(&event, true);
         assert_eq!(stats.events_processed, 1);
         assert_eq!(stats.events_success, 1);
@@ -497,11 +504,13 @@ mod tests {
     #[tokio::test]
     async fn test_process_file_change() {
         let (pipeline, temp_dir, _handler) = create_test_pipeline();
-        
+
         // Create a test file
         let test_file = temp_dir.path().join("test.js");
-        fs::write(&test_file, "console.log('hello');").await.unwrap();
-        
+        fs::write(&test_file, "console.log('hello');")
+            .await
+            .unwrap();
+
         // This will fail because no JS parser is registered, but tests the logic
         let result = pipeline.process_file_change(&test_file).await;
         assert!(result.is_err()); // Expected because no parser registered
@@ -510,11 +519,11 @@ mod tests {
     #[tokio::test]
     async fn test_process_empty_file() {
         let (pipeline, temp_dir, _handler) = create_test_pipeline();
-        
+
         // Create an empty test file
         let test_file = temp_dir.path().join("empty.js");
         fs::write(&test_file, "").await.unwrap();
-        
+
         let result = pipeline.process_file_change(&test_file).await.unwrap();
         assert!(result.is_none()); // Should be None for empty files
     }
@@ -522,9 +531,9 @@ mod tests {
     #[tokio::test]
     async fn test_process_nonexistent_file() {
         let (pipeline, temp_dir, _handler) = create_test_pipeline();
-        
+
         let test_file = temp_dir.path().join("nonexistent.js");
-        
+
         let result = pipeline.process_file_change(&test_file).await.unwrap();
         assert!(result.is_none()); // Should be None for nonexistent files
     }
@@ -532,7 +541,7 @@ mod tests {
     #[test]
     fn test_event_handlers() {
         let handler = LoggingEventHandler::new(true);
-        
+
         let event = PipelineEvent {
             repo_id: "test".to_string(),
             change_event: ChangeEvent {
@@ -545,10 +554,10 @@ mod tests {
             processed_at: Instant::now(),
             processing_duration_ms: 100,
         };
-        
+
         // Should not panic
         let _ = handler.handle_event(&event);
-        
+
         let error = Error::other("test error");
         handler.handle_error(&error, &event.change_event);
     }

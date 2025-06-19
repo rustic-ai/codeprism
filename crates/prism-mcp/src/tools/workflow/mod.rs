@@ -1,16 +1,16 @@
 //! Workflow orchestration and guidance tools
-//! 
+//!
 //! Provides intelligent workflow guidance, batch analysis execution,
 //! and systematic analysis orchestration for efficient code analysis.
 
-pub mod guidance;
 pub mod batch;
+pub mod guidance;
 pub mod optimization;
 
 use anyhow::Result;
 use serde_json::{json, Value};
 
-use crate::tools::{Tool, CallToolParams, CallToolResult, ToolContent};
+use crate::tools::{CallToolParams, CallToolResult, Tool, ToolContent};
 use crate::PrismMcpServer;
 
 /// Register all workflow orchestration tools
@@ -26,7 +26,7 @@ pub fn register_workflow_tools() -> Vec<Tool> {
 pub async fn handle_workflow_tool(
     tool_name: &str,
     server: &PrismMcpServer,
-    arguments: Option<&Value>
+    arguments: Option<&Value>,
 ) -> Result<CallToolResult> {
     match tool_name {
         "suggest_analysis_workflow" => guidance::suggest_analysis_workflow(server, arguments).await,
@@ -34,4 +34,4 @@ pub async fn handle_workflow_tool(
         "optimize_workflow" => optimization::optimize_workflow(server, arguments).await,
         _ => Err(anyhow::anyhow!("Unknown workflow tool: {}", tool_name)),
     }
-} 
+}

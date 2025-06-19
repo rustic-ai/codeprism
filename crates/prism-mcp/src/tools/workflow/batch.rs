@@ -1,5 +1,5 @@
 //! Batch analysis and parallel tool execution
-//! 
+//!
 //! Provides intelligent batch execution of multiple analysis tools
 //! with result merging, deduplication, and dependency management.
 
@@ -7,7 +7,7 @@ use anyhow::Result;
 use serde_json::{json, Value};
 use std::collections::HashMap;
 
-use crate::tools::{Tool, CallToolResult, ToolContent};
+use crate::tools::{CallToolResult, Tool, ToolContent};
 use crate::PrismMcpServer;
 
 /// Create the batch_analysis tool
@@ -51,25 +51,28 @@ pub fn create_batch_analysis_tool() -> Tool {
 /// Execute batch analysis with multiple tools
 pub async fn batch_analysis(
     _server: &PrismMcpServer,
-    arguments: Option<&Value>
+    arguments: Option<&Value>,
 ) -> Result<CallToolResult> {
     let args = arguments.ok_or_else(|| anyhow::anyhow!("Missing arguments"))?;
-    
-    let tool_calls = args.get("tool_calls")
+
+    let tool_calls = args
+        .get("tool_calls")
         .and_then(|v| v.as_array())
         .ok_or_else(|| anyhow::anyhow!("Missing tool_calls parameter"))?;
-    
-    let execution_strategy = args.get("execution_strategy")
+
+    let execution_strategy = args
+        .get("execution_strategy")
         .and_then(|v| v.as_str())
         .unwrap_or("optimized");
-    
+
     // Simple implementation for Phase 3
     let mut results = Vec::new();
     for (i, tool_call) in tool_calls.iter().enumerate() {
-        let tool_name = tool_call.get("tool_name")
+        let tool_name = tool_call
+            .get("tool_name")
             .and_then(|v| v.as_str())
             .unwrap_or("unknown");
-        
+
         results.push(json!({
             "tool": tool_name,
             "index": i,
@@ -77,7 +80,7 @@ pub async fn batch_analysis(
             "result": format!("Mock result for {}", tool_name)
         }));
     }
-    
+
     let response = json!({
         "batch_summary": {
             "total_tools": tool_calls.len(),
@@ -90,11 +93,11 @@ pub async fn batch_analysis(
             "Cache results for repeated tool calls"
         ]
     });
-    
+
     Ok(CallToolResult {
         content: vec![ToolContent::Text {
             text: serde_json::to_string_pretty(&response)?,
         }],
         is_error: Some(false),
     })
-} 
+}

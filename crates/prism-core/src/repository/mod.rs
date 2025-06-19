@@ -4,9 +4,9 @@
 //! coordinating the scanner, indexer, and file monitoring components.
 
 use crate::error::{Error, Result};
-use crate::indexer::{BulkIndexer, IndexingConfig, IndexingResult, IndexingStats};  
+use crate::indexer::{BulkIndexer, IndexingConfig, IndexingResult, IndexingStats};
 use crate::parser::{LanguageRegistry, ParserEngine};
-use crate::scanner::{RepositoryScanner, ProgressReporter, NoOpProgressReporter};
+use crate::scanner::{NoOpProgressReporter, ProgressReporter, RepositoryScanner};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -132,7 +132,10 @@ impl RepositoryInfo {
 
     /// Check if repository needs reindexing
     pub fn needs_reindexing(&self) -> bool {
-        matches!(self.health, HealthStatus::Stale | HealthStatus::Unhealthy { .. })
+        matches!(
+            self.health,
+            HealthStatus::Stale | HealthStatus::Unhealthy { .. }
+        )
     }
 
     /// Get time since last index in seconds
@@ -159,7 +162,7 @@ impl RepositoryManager {
     pub fn new(language_registry: Arc<LanguageRegistry>) -> Self {
         let parser_engine = Arc::new(ParserEngine::new(language_registry));
         let scanner = RepositoryScanner::new();
-        
+
         Self {
             scanner,
             parser_engine,
@@ -175,7 +178,7 @@ impl RepositoryManager {
         dependency_mode: Option<crate::scanner::DependencyMode>,
     ) -> Self {
         let parser_engine = Arc::new(ParserEngine::new(language_registry));
-        
+
         let mut scanner = if let Some(exclude_dirs) = exclude_dirs {
             RepositoryScanner::with_exclude_dirs(exclude_dirs)
         } else {
@@ -185,12 +188,12 @@ impl RepositoryManager {
         if let Some(extensions) = include_extensions {
             scanner = scanner.with_extensions(extensions);
         }
-        
+
         // Apply dependency mode if provided
         if let Some(dep_mode) = dependency_mode {
             scanner = scanner.with_dependency_mode(dep_mode);
         }
-        
+
         Self {
             scanner,
             parser_engine,
@@ -242,13 +245,16 @@ impl RepositoryManager {
         repo_id: &str,
         progress_reporter: Option<Arc<dyn ProgressReporter>>,
     ) -> Result<IndexingResult> {
-        let repo_info = self.repositories.get_mut(repo_id)
+        let repo_info = self
+            .repositories
+            .get_mut(repo_id)
             .ok_or_else(|| Error::other(format!("Repository not found: {}", repo_id)))?;
 
         let progress = progress_reporter.unwrap_or_else(|| Arc::new(NoOpProgressReporter));
 
         // Step 1: Scan repository
-        let scan_result = self.scanner
+        let scan_result = self
+            .scanner
             .scan_repository(&repo_info.config.root_path, Arc::clone(&progress))
             .await?;
 
@@ -257,7 +263,7 @@ impl RepositoryManager {
             SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .unwrap_or_default()
-                .as_secs()
+                .as_secs(),
         );
         repo_info.total_files = scan_result.total_files;
 
@@ -268,16 +274,14 @@ impl RepositoryManager {
         );
 
         let indexer = BulkIndexer::new(indexing_config, Arc::clone(&self.parser_engine));
-        let indexing_result = indexer
-            .index_scan_result(&scan_result, progress)
-            .await?;
+        let indexing_result = indexer.index_scan_result(&scan_result, progress).await?;
 
         // Update repository info with indexing results
         repo_info.last_index = Some(
             SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .unwrap_or_default()
-                .as_secs()
+                .as_secs(),
         );
         repo_info.last_stats = Some(indexing_result.stats.clone());
         repo_info.total_nodes = indexing_result.stats.nodes_created;
@@ -287,14 +291,15 @@ impl RepositoryManager {
         repo_info.health = if indexing_result.stats.error_count == 0 {
             HealthStatus::Healthy
         } else if indexing_result.stats.error_count < indexing_result.stats.files_processed / 10 {
-            HealthStatus::Degraded { 
-                error_count: indexing_result.stats.error_count 
+            HealthStatus::Degraded {
+                error_count: indexing_result.stats.error_count,
             }
         } else {
-            HealthStatus::Unhealthy { 
-                reason: format!("High error rate: {}/{} files failed", 
-                    indexing_result.stats.error_count,
-                    indexing_result.stats.files_processed)
+            HealthStatus::Unhealthy {
+                reason: format!(
+                    "High error rate: {}/{} files failed",
+                    indexing_result.stats.error_count, indexing_result.stats.files_processed
+                ),
             }
         };
 
@@ -303,20 +308,23 @@ impl RepositoryManager {
 
     /// Quick repository health check
     pub async fn health_check(&mut self, repo_id: &str) -> Result<HealthStatus> {
-        let repo_info = self.repositories.get_mut(repo_id)
+        let repo_info = self
+            .repositories
+            .get_mut(repo_id)
             .ok_or_else(|| Error::other(format!("Repository not found: {}", repo_id)))?;
 
         // Check if repository path still exists
         if !repo_info.config.root_path.exists() {
-            repo_info.health = HealthStatus::Unhealthy { 
-                reason: "Repository path no longer exists".to_string() 
+            repo_info.health = HealthStatus::Unhealthy {
+                reason: "Repository path no longer exists".to_string(),
             };
             return Ok(repo_info.health.clone());
         }
 
         // Check if indexing is stale (older than 24 hours)
         if let Some(time_since) = repo_info.time_since_last_index() {
-            if time_since > 24 * 60 * 60 { // 24 hours
+            if time_since > 24 * 60 * 60 {
+                // 24 hours
                 repo_info.health = HealthStatus::Stale;
             }
         }
@@ -334,15 +342,21 @@ impl RepositoryManager {
     /// Get total statistics across all repositories
     pub fn get_total_stats(&self) -> HashMap<String, usize> {
         let mut stats = HashMap::new();
-        
+
         let total_repos = self.repositories.len();
-        let total_files: usize = self.repositories.values()
+        let total_files: usize = self
+            .repositories
+            .values()
             .map(|info| info.total_files)
             .sum();
-        let total_nodes: usize = self.repositories.values()
+        let total_nodes: usize = self
+            .repositories
+            .values()
             .map(|info| info.total_nodes)
             .sum();
-        let total_edges: usize = self.repositories.values()
+        let total_edges: usize = self
+            .repositories
+            .values()
             .map(|info| info.total_edges)
             .sum();
 
@@ -359,8 +373,8 @@ impl RepositoryManager {
 mod tests {
     use super::*;
     use crate::parser::LanguageRegistry;
-    use tempfile::TempDir;
     use std::fs;
+    use tempfile::TempDir;
 
     fn create_test_manager() -> (RepositoryManager, TempDir) {
         let temp_dir = TempDir::new().unwrap();
@@ -371,10 +385,7 @@ mod tests {
 
     #[test]
     fn test_repository_config() {
-        let config = RepositoryConfig::new(
-            "test_repo".to_string(),
-            "/tmp/test"
-        );
+        let config = RepositoryConfig::new("test_repo".to_string(), "/tmp/test");
 
         assert_eq!(config.repo_id, "test_repo");
         assert_eq!(config.root_path, PathBuf::from("/tmp/test"));
@@ -414,11 +425,8 @@ mod tests {
     #[test]
     fn test_register_repository() {
         let (mut manager, temp_dir) = create_test_manager();
-        
-        let config = RepositoryConfig::new(
-            "test_repo".to_string(),
-            temp_dir.path()
-        );
+
+        let config = RepositoryConfig::new("test_repo".to_string(), temp_dir.path());
 
         let result = manager.register_repository(config);
         assert!(result.is_ok());
@@ -428,11 +436,8 @@ mod tests {
     #[test]
     fn test_register_nonexistent_repository() {
         let (mut manager, _temp_dir) = create_test_manager();
-        
-        let config = RepositoryConfig::new(
-            "test_repo".to_string(),
-            "/nonexistent/path"
-        );
+
+        let config = RepositoryConfig::new("test_repo".to_string(), "/nonexistent/path");
 
         let result = manager.register_repository(config);
         assert!(result.is_err());
@@ -441,11 +446,8 @@ mod tests {
     #[test]
     fn test_unregister_repository() {
         let (mut manager, temp_dir) = create_test_manager();
-        
-        let config = RepositoryConfig::new(
-            "test_repo".to_string(),
-            temp_dir.path()
-        );
+
+        let config = RepositoryConfig::new("test_repo".to_string(), temp_dir.path());
 
         manager.register_repository(config).unwrap();
         assert_eq!(manager.list_repositories().len(), 1);
@@ -457,7 +459,7 @@ mod tests {
     #[tokio::test]
     async fn test_index_nonexistent_repository() {
         let (mut manager, _temp_dir) = create_test_manager();
-        
+
         let result = manager.index_repository("nonexistent", None).await;
         assert!(result.is_err());
     }
@@ -465,17 +467,14 @@ mod tests {
     #[tokio::test]
     async fn test_health_check() {
         let (mut manager, temp_dir) = create_test_manager();
-        
+
         // Create test file
         fs::write(temp_dir.path().join("test.js"), "console.log('hello');").unwrap();
-        
-        let config = RepositoryConfig::new(
-            "test_repo".to_string(),
-            temp_dir.path()
-        );
+
+        let config = RepositoryConfig::new("test_repo".to_string(), temp_dir.path());
 
         manager.register_repository(config).unwrap();
-        
+
         let health = manager.health_check("test_repo").await.unwrap();
         assert!(matches!(health, HealthStatus::Stale));
     }
@@ -483,14 +482,11 @@ mod tests {
     #[test]
     fn test_total_stats() {
         let (mut manager, temp_dir) = create_test_manager();
-        
-        let config = RepositoryConfig::new(
-            "test_repo".to_string(),
-            temp_dir.path()
-        );
+
+        let config = RepositoryConfig::new("test_repo".to_string(), temp_dir.path());
 
         manager.register_repository(config).unwrap();
-        
+
         let stats = manager.get_total_stats();
         assert_eq!(stats.get("repositories"), Some(&1));
         assert_eq!(stats.get("files"), Some(&0));

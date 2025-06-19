@@ -1,5 +1,5 @@
 //! MCP Protocol types and JSON-RPC 2.0 implementation
-//! 
+//!
 //! This module implements the core Model Context Protocol types according to the specification.
 //! All message types follow JSON-RPC 2.0 format as required by MCP.
 
@@ -190,7 +190,11 @@ impl JsonRpcError {
 
     /// Create a new JSON-RPC error
     pub fn new(code: i32, message: String, data: Option<serde_json::Value>) -> Self {
-        Self { code, message, data }
+        Self {
+            code,
+            message,
+            data,
+        }
     }
 
     /// Create a method not found error
@@ -273,4 +277,4 @@ mod tests {
         assert_eq!(params.protocol_version, deserialized.protocol_version);
         assert_eq!(params.client_info.name, deserialized.client_info.name);
     }
-} 
+}

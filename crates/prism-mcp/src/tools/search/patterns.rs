@@ -1,9 +1,9 @@
 //! Pattern detection tools
 
+use crate::tools_legacy::{CallToolParams, CallToolResult, Tool, ToolContent};
+use crate::PrismMcpServer;
 use anyhow::Result;
 use serde_json::Value;
-use crate::tools_legacy::{Tool, CallToolParams, CallToolResult, ToolContent};
-use crate::PrismMcpServer;
 
 /// List pattern detection tools
 pub fn list_tools() -> Vec<Tool> {
@@ -52,32 +52,44 @@ pub fn list_tools() -> Vec<Tool> {
 pub async fn call_tool(server: &PrismMcpServer, params: &CallToolParams) -> Result<CallToolResult> {
     match params.name.as_str() {
         "detect_patterns" => detect_patterns(server, params.arguments.as_ref()).await,
-        _ => Err(anyhow::anyhow!("Unknown pattern detection tool: {}", params.name)),
+        _ => Err(anyhow::anyhow!(
+            "Unknown pattern detection tool: {}",
+            params.name
+        )),
     }
 }
 
 /// Detect design patterns in the codebase
-async fn detect_patterns(server: &PrismMcpServer, arguments: Option<&Value>) -> Result<CallToolResult> {
+async fn detect_patterns(
+    server: &PrismMcpServer,
+    arguments: Option<&Value>,
+) -> Result<CallToolResult> {
     let default_args = serde_json::Value::Object(serde_json::Map::new());
     let args = arguments.unwrap_or(&default_args);
-    
-    let _scope = args.get("scope")
+
+    let _scope = args
+        .get("scope")
         .and_then(|v| v.as_str())
         .unwrap_or("repository");
-    
-    let pattern_types: Vec<String> = args.get("pattern_types")
+
+    let pattern_types: Vec<String> = args
+        .get("pattern_types")
         .and_then(|v| v.as_array())
-        .map(|arr| arr.iter()
-            .filter_map(|v| v.as_str())
-            .map(|s| s.to_string())
-            .collect())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|v| v.as_str())
+                .map(|s| s.to_string())
+                .collect()
+        })
         .unwrap_or_else(|| vec!["all".to_string()]);
-    
-    let confidence_threshold = args.get("confidence_threshold")
+
+    let confidence_threshold = args
+        .get("confidence_threshold")
         .and_then(|v| v.as_f64())
         .unwrap_or(0.8);
-    
-    let include_suggestions = args.get("include_suggestions")
+
+    let include_suggestions = args
+        .get("include_suggestions")
         .and_then(|v| v.as_bool())
         .unwrap_or(true);
 
@@ -87,11 +99,14 @@ async fn detect_patterns(server: &PrismMcpServer, arguments: Option<&Value>) -> 
 
     // Simple pattern detection based on graph analysis
     let graph_stats = server.graph_store().get_stats();
-    
+
     // Check for common patterns based on node counts and relationships
     if graph_stats.total_nodes > 0 {
         // Singleton pattern detection (simplified)
-        if let Some(class_count) = graph_stats.nodes_by_kind.get(&prism_core::ast::NodeKind::Class) {
+        if let Some(class_count) = graph_stats
+            .nodes_by_kind
+            .get(&prism_core::ast::NodeKind::Class)
+        {
             if *class_count > 0 {
                 detected_patterns.push(serde_json::json!({
                     "pattern_type": "structural",
@@ -110,7 +125,10 @@ async fn detect_patterns(server: &PrismMcpServer, arguments: Option<&Value>) -> 
         }
 
         // Module pattern detection
-        if let Some(module_count) = graph_stats.nodes_by_kind.get(&prism_core::ast::NodeKind::Module) {
+        if let Some(module_count) = graph_stats
+            .nodes_by_kind
+            .get(&prism_core::ast::NodeKind::Module)
+        {
             if *module_count > 1 {
                 detected_patterns.push(serde_json::json!({
                     "pattern_type": "architectural",
@@ -133,15 +151,15 @@ async fn detect_patterns(server: &PrismMcpServer, arguments: Option<&Value>) -> 
     if !pattern_types.contains(&"all".to_string()) {
         detected_patterns.retain(|pattern| {
             if let Some(pattern_type) = pattern.get("pattern_type").and_then(|v| v.as_str()) {
-                pattern_types.iter().any(|requested| {
-                    match requested.as_str() {
+                pattern_types
+                    .iter()
+                    .any(|requested| match requested.as_str() {
                         "design_patterns" => pattern_type == "design",
                         "architectural_patterns" => pattern_type == "architectural",
                         "anti_patterns" => pattern_type == "anti",
                         "metaprogramming_patterns" => pattern_type == "metaprogramming",
                         _ => false,
-                    }
-                })
+                    })
             } else {
                 false
             }
@@ -150,7 +168,8 @@ async fn detect_patterns(server: &PrismMcpServer, arguments: Option<&Value>) -> 
 
     // Filter by confidence threshold
     detected_patterns.retain(|pattern| {
-        pattern.get("confidence")
+        pattern
+            .get("confidence")
             .and_then(|v| v.as_f64())
             .map(|conf| conf >= confidence_threshold)
             .unwrap_or(false)
@@ -165,12 +184,12 @@ async fn detect_patterns(server: &PrismMcpServer, arguments: Option<&Value>) -> 
         },
         "patterns": detected_patterns,
         "summary": {
-            "architectural_health": if detected_patterns.len() > 0 { "good" } else { "needs_analysis" },
+            "architectural_health": if !detected_patterns.is_empty() { "good" } else { "needs_analysis" },
             "complexity_indicators": {
                 "total_nodes": graph_stats.total_nodes,
                 "total_edges": graph_stats.total_edges,
-                "density": if graph_stats.total_nodes > 0 { 
-                    graph_stats.total_edges as f64 / graph_stats.total_nodes as f64 
+                "density": if graph_stats.total_nodes > 0 {
+                    graph_stats.total_edges as f64 / graph_stats.total_nodes as f64
                 } else { 0.0 }
             }
         },
@@ -186,4 +205,4 @@ async fn detect_patterns(server: &PrismMcpServer, arguments: Option<&Value>) -> 
         }],
         is_error: Some(false),
     })
-} 
+}

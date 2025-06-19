@@ -1,9 +1,9 @@
 //! Security analysis module
 
 use anyhow::Result;
+use regex::Regex;
 use serde_json::Value;
 use std::collections::HashMap;
-use regex::Regex;
 
 /// Security vulnerability information
 #[derive(Debug, Clone)]
@@ -50,10 +50,14 @@ impl SecurityAnalyzer {
             },
             VulnerabilityPattern {
                 name: "SQL Injection Format".to_string(),
-                pattern: Regex::new(r#"(?i)(query|execute|exec)\s*\(\s*['""][^'"]*%[sd][^'"]*['""]"#).unwrap(),
+                pattern: Regex::new(
+                    r#"(?i)(query|execute|exec)\s*\(\s*['""][^'"]*%[sd][^'"]*['""]"#,
+                )
+                .unwrap(),
                 severity: "high".to_string(),
                 description: "SQL query using string formatting detected".to_string(),
-                recommendation: "Use parameterized queries instead of string formatting".to_string(),
+                recommendation: "Use parameterized queries instead of string formatting"
+                    .to_string(),
             },
         ];
         self.patterns.insert("injection".to_string(), sql_patterns);
@@ -62,20 +66,25 @@ impl SecurityAnalyzer {
         let auth_patterns = vec![
             VulnerabilityPattern {
                 name: "Hardcoded Password".to_string(),
-                pattern: Regex::new(r#"(?i)(password|pwd|passwd)\s*=\s*['""][^'""]{3,}['""]"#).unwrap(),
+                pattern: Regex::new(r#"(?i)(password|pwd|passwd)\s*=\s*['""][^'""]{3,}['""]"#)
+                    .unwrap(),
                 severity: "high".to_string(),
                 description: "Hardcoded password detected".to_string(),
-                recommendation: "Store passwords securely using environment variables or secure vaults".to_string(),
+                recommendation:
+                    "Store passwords securely using environment variables or secure vaults"
+                        .to_string(),
             },
             VulnerabilityPattern {
                 name: "Weak Password Check".to_string(),
                 pattern: Regex::new(r#"(?i)len\s*\(\s*password\s*\)\s*[<>=]\s*[1-5]"#).unwrap(),
                 severity: "medium".to_string(),
                 description: "Weak password length requirement detected".to_string(),
-                recommendation: "Enforce stronger password requirements (minimum 8 characters)".to_string(),
+                recommendation: "Enforce stronger password requirements (minimum 8 characters)"
+                    .to_string(),
             },
         ];
-        self.patterns.insert("authentication".to_string(), auth_patterns);
+        self.patterns
+            .insert("authentication".to_string(), auth_patterns);
 
         // Crypto patterns
         let crypto_patterns = vec![
@@ -88,7 +97,8 @@ impl SecurityAnalyzer {
             },
             VulnerabilityPattern {
                 name: "Hardcoded Crypto Key".to_string(),
-                pattern: Regex::new(r#"(?i)(key|secret|token)\s*=\s*['""][a-fA-F0-9]{16,}['""]"#).unwrap(),
+                pattern: Regex::new(r#"(?i)(key|secret|token)\s*=\s*['""][a-fA-F0-9]{16,}['""]"#)
+                    .unwrap(),
                 severity: "critical".to_string(),
                 description: "Hardcoded cryptographic key detected".to_string(),
                 recommendation: "Store keys securely using key management systems".to_string(),
@@ -113,13 +123,15 @@ impl SecurityAnalyzer {
                 recommendation: "Log errors securely without exposing internal details".to_string(),
             },
         ];
-        self.patterns.insert("data_exposure".to_string(), exposure_patterns);
+        self.patterns
+            .insert("data_exposure".to_string(), exposure_patterns);
 
         // Unsafe patterns
         let unsafe_patterns = vec![
             VulnerabilityPattern {
                 name: "Command Injection".to_string(),
-                pattern: Regex::new(r#"(?i)(system|exec|popen|subprocess)\s*\([^)]*\+[^)]*\)"#).unwrap(),
+                pattern: Regex::new(r#"(?i)(system|exec|popen|subprocess)\s*\([^)]*\+[^)]*\)"#)
+                    .unwrap(),
                 severity: "critical".to_string(),
                 description: "Potential command injection vulnerability detected".to_string(),
                 recommendation: "Validate and sanitize input, use safe alternatives".to_string(),
@@ -132,7 +144,8 @@ impl SecurityAnalyzer {
                 recommendation: "Validate file paths and use safe path operations".to_string(),
             },
         ];
-        self.patterns.insert("unsafe_patterns".to_string(), unsafe_patterns);
+        self.patterns
+            .insert("unsafe_patterns".to_string(), unsafe_patterns);
     }
 
     /// Analyze content for security vulnerabilities
@@ -143,7 +156,7 @@ impl SecurityAnalyzer {
         severity_threshold: &str,
     ) -> Result<Vec<SecurityVulnerability>> {
         let mut vulnerabilities = Vec::new();
-        
+
         let target_types = if vulnerability_types.contains(&"all".to_string()) {
             self.patterns.keys().cloned().collect::<Vec<_>>()
         } else {
@@ -174,25 +187,39 @@ impl SecurityAnalyzer {
     /// Check if severity meets threshold
     fn meets_severity_threshold(&self, severity: &str, threshold: &str) -> bool {
         let severity_levels = ["low", "medium", "high", "critical"];
-        let severity_idx = severity_levels.iter().position(|&s| s == severity).unwrap_or(0);
-        let threshold_idx = severity_levels.iter().position(|&s| s == threshold).unwrap_or(0);
-        
+        let severity_idx = severity_levels
+            .iter()
+            .position(|&s| s == severity)
+            .unwrap_or(0);
+        let threshold_idx = severity_levels
+            .iter()
+            .position(|&s| s == threshold)
+            .unwrap_or(0);
+
         severity_idx >= threshold_idx
     }
 
     /// Get security recommendations based on vulnerabilities
-    pub fn get_security_recommendations(&self, vulnerabilities: &[SecurityVulnerability]) -> Vec<String> {
+    pub fn get_security_recommendations(
+        &self,
+        vulnerabilities: &[SecurityVulnerability],
+    ) -> Vec<String> {
         let mut recommendations = Vec::new();
-        
+
         if vulnerabilities.is_empty() {
-            recommendations.push("No security vulnerabilities detected. Continue following security best practices.".to_string());
+            recommendations.push(
+                "No security vulnerabilities detected. Continue following security best practices."
+                    .to_string(),
+            );
             return recommendations;
         }
 
         // Group by vulnerability type
         let mut vuln_counts = HashMap::new();
         for vuln in vulnerabilities {
-            *vuln_counts.entry(vuln.vulnerability_type.clone()).or_insert(0) += 1;
+            *vuln_counts
+                .entry(vuln.vulnerability_type.clone())
+                .or_insert(0) += 1;
         }
 
         // General recommendations based on found vulnerabilities
@@ -200,61 +227,92 @@ impl SecurityAnalyzer {
             recommendations.push("Implement input validation and use parameterized queries for all database operations.".to_string());
         }
 
-        if vuln_counts.contains_key("Hardcoded Password") || vuln_counts.contains_key("Hardcoded Crypto Key") {
-            recommendations.push("Use environment variables or secure key management systems for sensitive data.".to_string());
+        if vuln_counts.contains_key("Hardcoded Password")
+            || vuln_counts.contains_key("Hardcoded Crypto Key")
+        {
+            recommendations.push(
+                "Use environment variables or secure key management systems for sensitive data."
+                    .to_string(),
+            );
         }
 
         if vuln_counts.contains_key("Command Injection") {
-            recommendations.push("Validate all user input and use safe alternatives to system commands.".to_string());
+            recommendations.push(
+                "Validate all user input and use safe alternatives to system commands.".to_string(),
+            );
         }
 
         if vuln_counts.contains_key("Weak Crypto Algorithm") {
-            recommendations.push("Upgrade to modern, secure cryptographic algorithms (SHA-256, AES-256, etc.).".to_string());
+            recommendations.push(
+                "Upgrade to modern, secure cryptographic algorithms (SHA-256, AES-256, etc.)."
+                    .to_string(),
+            );
         }
 
-        recommendations.push("Conduct regular security audits and penetration testing.".to_string());
-        recommendations.push("Implement proper error handling that doesn't expose sensitive information.".to_string());
-        
+        recommendations
+            .push("Conduct regular security audits and penetration testing.".to_string());
+        recommendations.push(
+            "Implement proper error handling that doesn't expose sensitive information."
+                .to_string(),
+        );
+
         recommendations
     }
 
     /// Analyze for specific vulnerability patterns
     pub fn detect_injection_vulnerabilities(&self, content: &str) -> Result<Vec<Value>> {
         let vulnerabilities = self.analyze_content(content, &["injection".to_string()], "low")?;
-        
-        Ok(vulnerabilities.into_iter().map(|v| serde_json::json!({
-            "type": v.vulnerability_type,
-            "severity": v.severity,
-            "description": v.description,
-            "location": v.location,
-            "recommendation": v.recommendation
-        })).collect())
+
+        Ok(vulnerabilities
+            .into_iter()
+            .map(|v| {
+                serde_json::json!({
+                    "type": v.vulnerability_type,
+                    "severity": v.severity,
+                    "description": v.description,
+                    "location": v.location,
+                    "recommendation": v.recommendation
+                })
+            })
+            .collect())
     }
 
     /// Analyze for authentication issues
     pub fn detect_authentication_issues(&self, content: &str) -> Result<Vec<Value>> {
-        let vulnerabilities = self.analyze_content(content, &["authentication".to_string()], "low")?;
-        
-        Ok(vulnerabilities.into_iter().map(|v| serde_json::json!({
-            "type": v.vulnerability_type,
-            "severity": v.severity,
-            "description": v.description,
-            "location": v.location,
-            "recommendation": v.recommendation
-        })).collect())
+        let vulnerabilities =
+            self.analyze_content(content, &["authentication".to_string()], "low")?;
+
+        Ok(vulnerabilities
+            .into_iter()
+            .map(|v| {
+                serde_json::json!({
+                    "type": v.vulnerability_type,
+                    "severity": v.severity,
+                    "description": v.description,
+                    "location": v.location,
+                    "recommendation": v.recommendation
+                })
+            })
+            .collect())
     }
 
     /// Analyze for data exposure issues
     pub fn detect_data_exposure_issues(&self, content: &str) -> Result<Vec<Value>> {
-        let vulnerabilities = self.analyze_content(content, &["data_exposure".to_string()], "low")?;
-        
-        Ok(vulnerabilities.into_iter().map(|v| serde_json::json!({
-            "type": v.vulnerability_type,
-            "severity": v.severity,
-            "description": v.description,
-            "location": v.location,
-            "recommendation": v.recommendation
-        })).collect())
+        let vulnerabilities =
+            self.analyze_content(content, &["data_exposure".to_string()], "low")?;
+
+        Ok(vulnerabilities
+            .into_iter()
+            .map(|v| {
+                serde_json::json!({
+                    "type": v.vulnerability_type,
+                    "severity": v.severity,
+                    "description": v.description,
+                    "location": v.location,
+                    "recommendation": v.recommendation
+                })
+            })
+            .collect())
     }
 }
 
@@ -271,10 +329,12 @@ mod tests {
     #[test]
     fn test_sql_injection_detection() {
         let analyzer = SecurityAnalyzer::new();
-        
+
         let vulnerable_code = r#"query("SELECT * FROM users WHERE id = " + user_id)"#;
-        let vulnerabilities = analyzer.analyze_content(vulnerable_code, &["injection".to_string()], "low").unwrap();
-        
+        let vulnerabilities = analyzer
+            .analyze_content(vulnerable_code, &["injection".to_string()], "low")
+            .unwrap();
+
         assert!(!vulnerabilities.is_empty());
         assert_eq!(vulnerabilities[0].vulnerability_type, "SQL Injection");
     }
@@ -282,10 +342,12 @@ mod tests {
     #[test]
     fn test_hardcoded_password_detection() {
         let analyzer = SecurityAnalyzer::new();
-        
+
         let vulnerable_code = r#"password = "admin123""#;
-        let vulnerabilities = analyzer.analyze_content(vulnerable_code, &["authentication".to_string()], "low").unwrap();
-        
+        let vulnerabilities = analyzer
+            .analyze_content(vulnerable_code, &["authentication".to_string()], "low")
+            .unwrap();
+
         assert!(!vulnerabilities.is_empty());
         assert_eq!(vulnerabilities[0].vulnerability_type, "Hardcoded Password");
     }
@@ -293,18 +355,23 @@ mod tests {
     #[test]
     fn test_weak_crypto_detection() {
         let analyzer = SecurityAnalyzer::new();
-        
+
         let vulnerable_code = r#"hash = md5(password)"#;
-        let vulnerabilities = analyzer.analyze_content(vulnerable_code, &["crypto".to_string()], "low").unwrap();
-        
+        let vulnerabilities = analyzer
+            .analyze_content(vulnerable_code, &["crypto".to_string()], "low")
+            .unwrap();
+
         assert!(!vulnerabilities.is_empty());
-        assert_eq!(vulnerabilities[0].vulnerability_type, "Weak Crypto Algorithm");
+        assert_eq!(
+            vulnerabilities[0].vulnerability_type,
+            "Weak Crypto Algorithm"
+        );
     }
 
     #[test]
     fn test_severity_threshold() {
         let analyzer = SecurityAnalyzer::new();
-        
+
         assert!(analyzer.meets_severity_threshold("high", "medium"));
         assert!(!analyzer.meets_severity_threshold("low", "high"));
         assert!(analyzer.meets_severity_threshold("critical", "high"));
@@ -313,18 +380,16 @@ mod tests {
     #[test]
     fn test_security_recommendations() {
         let analyzer = SecurityAnalyzer::new();
-        
-        let vulnerabilities = vec![
-            SecurityVulnerability {
-                vulnerability_type: "SQL Injection".to_string(),
-                severity: "high".to_string(),
-                description: "Test".to_string(),
-                location: None,
-                recommendation: "Test".to_string(),
-            }
-        ];
-        
+
+        let vulnerabilities = vec![SecurityVulnerability {
+            vulnerability_type: "SQL Injection".to_string(),
+            severity: "high".to_string(),
+            description: "Test".to_string(),
+            location: None,
+            recommendation: "Test".to_string(),
+        }];
+
         let recommendations = analyzer.get_security_recommendations(&vulnerabilities);
         assert!(!recommendations.is_empty());
     }
-} 
+}

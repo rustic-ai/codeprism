@@ -1,5 +1,5 @@
 //! MCP Server implementation
-//! 
+//!
 //! This module implements the main MCP server that handles the protocol lifecycle,
 //! request routing, and integration with repository components.
 
@@ -10,15 +10,15 @@ use tokio::sync::RwLock;
 use tracing::{debug, info, warn};
 
 use crate::{
-    PrismMcpServer,
+    prompts::{GetPromptParams, ListPromptsParams, PromptManager},
     protocol::{
-        JsonRpcRequest, JsonRpcResponse, JsonRpcError, JsonRpcNotification,
-        InitializeParams, InitializeResult, ServerInfo, ClientInfo,
+        ClientInfo, InitializeParams, InitializeResult, JsonRpcError, JsonRpcNotification,
+        JsonRpcRequest, JsonRpcResponse, ServerInfo,
     },
-    transport::{Transport, TransportMessage, StdioTransport},
-    resources::{ResourceManager, ListResourcesParams, ReadResourceParams},
-    tools::{ToolRegistry, ListToolsParams, CallToolParams, ToolCapabilities},
-    prompts::{PromptManager, ListPromptsParams, GetPromptParams},
+    resources::{ListResourcesParams, ReadResourceParams, ResourceManager},
+    tools::{CallToolParams, ListToolsParams, ToolCapabilities, ToolRegistry},
+    transport::{StdioTransport, Transport, TransportMessage},
+    PrismMcpServer,
 };
 
 /// MCP Server state
@@ -56,7 +56,7 @@ impl McpServer {
     /// Create a new MCP server
     pub fn new() -> Result<Self> {
         let prism_server = Arc::new(RwLock::new(PrismMcpServer::new()?));
-        
+
         let resource_manager = ResourceManager::new(prism_server.clone());
         let tool_registry = ToolRegistry::new(prism_server.clone());
         let prompt_manager = PromptManager::new(prism_server.clone());
@@ -95,7 +95,7 @@ impl McpServer {
             include_extensions,
             dependency_mode,
         )?));
-        
+
         let resource_manager = ResourceManager::new(prism_server.clone());
         let tool_registry = ToolRegistry::new(prism_server.clone());
         let prompt_manager = PromptManager::new(prism_server.clone());
@@ -116,7 +116,10 @@ impl McpServer {
     }
 
     /// Initialize with repository path
-    pub async fn initialize_with_repository<P: AsRef<std::path::Path>>(&self, path: P) -> Result<()> {
+    pub async fn initialize_with_repository<P: AsRef<std::path::Path>>(
+        &self,
+        path: P,
+    ) -> Result<()> {
         let mut server = self.prism_server.write().await;
         server.initialize_with_repository(path).await
     }
@@ -155,7 +158,10 @@ impl McpServer {
     }
 
     /// Handle an incoming message
-    async fn handle_message(&mut self, message: TransportMessage) -> Result<Option<TransportMessage>> {
+    async fn handle_message(
+        &mut self,
+        message: TransportMessage,
+    ) -> Result<Option<TransportMessage>> {
         match message {
             TransportMessage::Request(request) => {
                 let response = self.handle_request(request).await;
@@ -174,7 +180,10 @@ impl McpServer {
 
     /// Handle a JSON-RPC request
     async fn handle_request(&mut self, request: JsonRpcRequest) -> JsonRpcResponse {
-        debug!("Handling request: method={}, id={:?}", request.method, request.id);
+        debug!(
+            "Handling request: method={}, id={:?}",
+            request.method, request.id
+        );
 
         let result = match request.method.as_str() {
             "initialize" => self.handle_initialize(request.params).await,
@@ -221,16 +230,20 @@ impl McpServer {
             .try_into_type()
             .map_err(|e| JsonRpcError::invalid_params(format!("Invalid parameters: {}", e)))?;
 
-        info!("Initializing MCP server with client: {} v{}", 
-              params.client_info.name, params.client_info.version);
+        info!(
+            "Initializing MCP server with client: {} v{}",
+            params.client_info.name, params.client_info.version
+        );
 
         // Store client info
         self.client_info = Some(params.client_info);
 
         // Check protocol version compatibility
         if params.protocol_version != self.protocol_version {
-            warn!("Protocol version mismatch: client={}, server={}", 
-                  params.protocol_version, self.protocol_version);
+            warn!(
+                "Protocol version mismatch: client={}, server={}",
+                params.protocol_version, self.protocol_version
+            );
         }
 
         // Create initialize result
@@ -248,12 +261,15 @@ impl McpServer {
     /// Handle resources/list request
     async fn handle_resources_list(&self, params: Option<Value>) -> Result<Value, JsonRpcError> {
         let params = params
-            .map(|p| serde_json::from_value(p))
+            .map(serde_json::from_value)
             .transpose()
             .map_err(|e| JsonRpcError::invalid_params(format!("Invalid parameters: {}", e)))?
             .unwrap_or(ListResourcesParams { cursor: None });
 
-        let result = self.resource_manager.list_resources(params).await
+        let result = self
+            .resource_manager
+            .list_resources(params)
+            .await
             .map_err(|e| JsonRpcError::internal_error(format!("Resource list error: {}", e)))?;
 
         serde_json::to_value(result)
@@ -267,7 +283,10 @@ impl McpServer {
             .try_into_type()
             .map_err(|e| JsonRpcError::invalid_params(format!("Invalid parameters: {}", e)))?;
 
-        let result = self.resource_manager.read_resource(params).await
+        let result = self
+            .resource_manager
+            .read_resource(params)
+            .await
             .map_err(|e| JsonRpcError::internal_error(format!("Resource read error: {}", e)))?;
 
         serde_json::to_value(result)
@@ -277,12 +296,15 @@ impl McpServer {
     /// Handle tools/list request
     async fn handle_tools_list(&self, params: Option<Value>) -> Result<Value, JsonRpcError> {
         let params = params
-            .map(|p| serde_json::from_value(p))
+            .map(serde_json::from_value)
             .transpose()
             .map_err(|e| JsonRpcError::invalid_params(format!("Invalid parameters: {}", e)))?
             .unwrap_or(ListToolsParams { cursor: None });
 
-        let result = self.tool_registry.list_tools(params).await
+        let result = self
+            .tool_registry
+            .list_tools(params)
+            .await
             .map_err(|e| JsonRpcError::internal_error(format!("Tool list error: {}", e)))?;
 
         serde_json::to_value(result)
@@ -296,7 +318,10 @@ impl McpServer {
             .try_into_type()
             .map_err(|e| JsonRpcError::invalid_params(format!("Invalid parameters: {}", e)))?;
 
-        let result = self.tool_registry.call_tool(params).await
+        let result = self
+            .tool_registry
+            .call_tool(params)
+            .await
             .map_err(|e| JsonRpcError::internal_error(format!("Tool call error: {}", e)))?;
 
         serde_json::to_value(result)
@@ -306,12 +331,15 @@ impl McpServer {
     /// Handle prompts/list request
     async fn handle_prompts_list(&self, params: Option<Value>) -> Result<Value, JsonRpcError> {
         let params = params
-            .map(|p| serde_json::from_value(p))
+            .map(serde_json::from_value)
             .transpose()
             .map_err(|e| JsonRpcError::invalid_params(format!("Invalid parameters: {}", e)))?
             .unwrap_or(ListPromptsParams { cursor: None });
 
-        let result = self.prompt_manager.list_prompts(params).await
+        let result = self
+            .prompt_manager
+            .list_prompts(params)
+            .await
             .map_err(|e| JsonRpcError::internal_error(format!("Prompt list error: {}", e)))?;
 
         serde_json::to_value(result)
@@ -325,7 +353,10 @@ impl McpServer {
             .try_into_type()
             .map_err(|e| JsonRpcError::invalid_params(format!("Invalid parameters: {}", e)))?;
 
-        let result = self.prompt_manager.get_prompt(params).await
+        let result = self
+            .prompt_manager
+            .get_prompt(params)
+            .await
             .map_err(|e| JsonRpcError::internal_error(format!("Prompt get error: {}", e)))?;
 
         serde_json::to_value(result)
@@ -384,7 +415,7 @@ mod tests {
     #[tokio::test]
     async fn test_initialize_request() {
         let mut server = McpServer::new().expect("Failed to create MCP server");
-        
+
         let params = InitializeParams {
             protocol_version: "2024-11-05".to_string(),
             capabilities: ClientCapabilities::default(),
@@ -396,7 +427,7 @@ mod tests {
 
         let params_value = serde_json::to_value(params).unwrap();
         let result = server.handle_initialize(Some(params_value)).await;
-        
+
         assert!(result.is_ok());
         assert!(server.client_info().is_some());
         assert_eq!(server.client_info().unwrap().name, "test-client");
@@ -410,14 +441,16 @@ mod tests {
     }
 
     async fn create_test_server_with_repository() -> McpServer {
-        use tempfile::TempDir;
         use std::fs;
-        
+        use tempfile::TempDir;
+
         let temp_dir = TempDir::new().expect("Failed to create temp dir");
         let repo_path = temp_dir.path();
-        
+
         // Create test files for server testing
-        fs::write(repo_path.join("app.py"), r#"
+        fs::write(
+            repo_path.join("app.py"),
+            r#"
 """Main application module."""
 
 import logging
@@ -509,9 +542,13 @@ def main():
 
 if __name__ == "__main__":
     main()
-"#).unwrap();
+"#,
+        )
+        .unwrap();
 
-        fs::write(repo_path.join("utils.py"), r#"
+        fs::write(
+            repo_path.join("utils.py"),
+            r#"
 """Utility functions for the application."""
 
 import re
@@ -587,34 +624,39 @@ def parse_config_value(value: str) -> Union[str, int, bool]:
     
     # Return as string
     return value
-"#).unwrap();
+"#,
+        )
+        .unwrap();
 
         let server = McpServer::new_with_config(
-            2048, // memory_limit_mb
-            20,   // batch_size
-            5,    // max_file_size_mb
+            2048,  // memory_limit_mb
+            20,    // batch_size
+            5,     // max_file_size_mb
             false, // disable_memory_limit
             vec!["__pycache__".to_string(), ".pytest_cache".to_string()],
             Some(vec!["py".to_string()]),
             Some("exclude".to_string()),
-        ).expect("Failed to create MCP server");
-        
-        server.initialize_with_repository(repo_path).await
+        )
+        .expect("Failed to create MCP server");
+
+        server
+            .initialize_with_repository(repo_path)
+            .await
             .expect("Failed to initialize repository");
-        
+
         // Keep temp_dir alive
         std::mem::forget(temp_dir);
-        
+
         server
     }
 
     #[tokio::test]
     async fn test_server_with_repository_initialization() {
         let server = create_test_server_with_repository().await;
-        
+
         // Server should be properly configured
         assert_eq!(server.state(), ServerState::Uninitialized);
-        
+
         // Should have repository configured
         let prism_server = server.prism_server.read().await;
         assert!(prism_server.repository_path().is_some());
@@ -623,7 +665,7 @@ def parse_config_value(value: str) -> Union[str, int, bool]:
     #[tokio::test]
     async fn test_full_mcp_workflow() {
         let mut server = create_test_server_with_repository().await;
-        
+
         // 1. Initialize the MCP server
         let init_params = InitializeParams {
             protocol_version: "2024-11-05".to_string(),
@@ -633,73 +675,84 @@ def parse_config_value(value: str) -> Union[str, int, bool]:
                 version: "1.0.0".to_string(),
             },
         };
-        
-        let init_result = server.handle_initialize(Some(serde_json::to_value(init_params).unwrap())).await;
+
+        let init_result = server
+            .handle_initialize(Some(serde_json::to_value(init_params).unwrap()))
+            .await;
         assert!(init_result.is_ok());
-        
+
         // Server should have client info
         assert!(server.client_info().is_some());
-        
+
         // 2. Test resources/list
         let resources_result = server.handle_resources_list(None).await;
         assert!(resources_result.is_ok());
-        
+
         let resources_value = resources_result.unwrap();
-        let resources: crate::resources::ListResourcesResult = serde_json::from_value(resources_value).unwrap();
+        let resources: crate::resources::ListResourcesResult =
+            serde_json::from_value(resources_value).unwrap();
         assert!(!resources.resources.is_empty());
-        
+
         // Should have various resource types
         let uris: Vec<String> = resources.resources.iter().map(|r| r.uri.clone()).collect();
         assert!(uris.iter().any(|uri| uri == "prism://repository/stats"));
         assert!(uris.iter().any(|uri| uri == "prism://graph/repository"));
         assert!(uris.iter().any(|uri| uri.contains("app.py")));
-        
+
         // 3. Test resources/read
         let read_params = crate::resources::ReadResourceParams {
             uri: "prism://repository/stats".to_string(),
         };
-        let read_result = server.handle_resources_read(Some(serde_json::to_value(read_params).unwrap())).await;
+        let read_result = server
+            .handle_resources_read(Some(serde_json::to_value(read_params).unwrap()))
+            .await;
         assert!(read_result.is_ok());
-        
+
         // 4. Test tools/list
         let tools_result = server.handle_tools_list(None).await;
         assert!(tools_result.is_ok());
-        
+
         let tools_value = tools_result.unwrap();
         let tools: crate::tools::ListToolsResult = serde_json::from_value(tools_value).unwrap();
         assert_eq!(tools.tools.len(), 23); // All 23 tools should be available including all implemented tools
-        
+
         // 5. Test tools/call with repository_stats
         let tool_params = crate::tools::CallToolParams {
             name: "repository_stats".to_string(),
             arguments: Some(serde_json::json!({})),
         };
-        let tool_result = server.handle_tools_call(Some(serde_json::to_value(tool_params).unwrap())).await;
+        let tool_result = server
+            .handle_tools_call(Some(serde_json::to_value(tool_params).unwrap()))
+            .await;
         assert!(tool_result.is_ok());
-        
+
         // 6. Test prompts/list
         let prompts_result = server.handle_prompts_list(None).await;
         assert!(prompts_result.is_ok());
-        
+
         let prompts_value = prompts_result.unwrap();
-        let prompts: crate::prompts::ListPromptsResult = serde_json::from_value(prompts_value).unwrap();
+        let prompts: crate::prompts::ListPromptsResult =
+            serde_json::from_value(prompts_value).unwrap();
         assert_eq!(prompts.prompts.len(), 16); // All 16 prompts should be available (original 8 + 8 new for large codebase understanding)
-        
+
         // 7. Test prompts/get
         let prompt_params = crate::prompts::GetPromptParams {
             name: "repository_overview".to_string(),
-            arguments: Some(serde_json::Map::from_iter([
-                ("focus_area".to_string(), serde_json::Value::String("architecture".to_string())),
-            ])),
+            arguments: Some(serde_json::Map::from_iter([(
+                "focus_area".to_string(),
+                serde_json::Value::String("architecture".to_string()),
+            )])),
         };
-        let prompt_result = server.handle_prompts_get(Some(serde_json::to_value(prompt_params).unwrap())).await;
+        let prompt_result = server
+            .handle_prompts_get(Some(serde_json::to_value(prompt_params).unwrap()))
+            .await;
         assert!(prompt_result.is_ok());
     }
 
     #[tokio::test]
     async fn test_request_handling_errors() {
         let mut server = McpServer::new().expect("Failed to create MCP server");
-        
+
         // Test invalid method
         let invalid_request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
@@ -707,11 +760,11 @@ def parse_config_value(value: str) -> Union[str, int, bool]:
             method: "invalid_method".to_string(),
             params: None,
         };
-        
+
         let response = server.handle_request(invalid_request).await;
         assert!(response.error.is_some());
         assert_eq!(response.error.unwrap().code, -32601); // Method not found
-        
+
         // Test missing required parameters
         let missing_params_request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
@@ -719,7 +772,7 @@ def parse_config_value(value: str) -> Union[str, int, bool]:
             method: "resources/read".to_string(),
             params: None, // Missing required uri parameter
         };
-        
+
         let response = server.handle_request(missing_params_request).await;
         assert!(response.error.is_some());
         assert_eq!(response.error.unwrap().code, -32602); // Invalid params
@@ -728,27 +781,27 @@ def parse_config_value(value: str) -> Union[str, int, bool]:
     #[tokio::test]
     async fn test_notification_handling() {
         let mut server = McpServer::new().expect("Failed to create MCP server");
-        
+
         // Test initialized notification
         let initialized_notification = JsonRpcNotification {
             jsonrpc: "2.0".to_string(),
             method: "initialized".to_string(),
             params: None,
         };
-        
+
         assert_eq!(server.state(), ServerState::Uninitialized);
-        
+
         let result = server.handle_notification(initialized_notification).await;
         assert!(result.is_ok());
         assert_eq!(server.state(), ServerState::Ready);
-        
+
         // Test unknown notification
         let unknown_notification = JsonRpcNotification {
             jsonrpc: "2.0".to_string(),
             method: "unknown_notification".to_string(),
             params: None,
         };
-        
+
         let result = server.handle_notification(unknown_notification).await;
         assert!(result.is_ok()); // Should not fail, just log warning
     }
@@ -756,7 +809,7 @@ def parse_config_value(value: str) -> Union[str, int, bool]:
     #[tokio::test]
     async fn test_message_handling() {
         let mut server = McpServer::new().expect("Failed to create MCP server");
-        
+
         // Test request message handling
         let request_message = crate::transport::TransportMessage::Request(JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
@@ -771,18 +824,19 @@ def parse_config_value(value: str) -> Union[str, int, bool]:
                 }
             })),
         });
-        
+
         let response = server.handle_message(request_message).await;
         assert!(response.is_ok());
         assert!(response.unwrap().is_some()); // Should return a response
-        
+
         // Test notification message handling
-        let notification_message = crate::transport::TransportMessage::Notification(JsonRpcNotification {
-            jsonrpc: "2.0".to_string(),
-            method: "initialized".to_string(),
-            params: None,
-        });
-        
+        let notification_message =
+            crate::transport::TransportMessage::Notification(JsonRpcNotification {
+                jsonrpc: "2.0".to_string(),
+                method: "initialized".to_string(),
+                params: None,
+            });
+
         let response = server.handle_message(notification_message).await;
         assert!(response.is_ok());
         assert!(response.unwrap().is_none()); // Notifications don't return responses
@@ -793,21 +847,21 @@ def parse_config_value(value: str) -> Union[str, int, bool]:
         let server = create_test_server_with_repository().await;
         let prism_server = server.prism_server.read().await;
         let capabilities = prism_server.capabilities();
-        
+
         // Verify all required capabilities are present
         assert!(capabilities.resources.is_some());
         assert!(capabilities.tools.is_some());
         assert!(capabilities.prompts.is_some());
-        
+
         // Verify resource capabilities
         let resource_caps = capabilities.resources.as_ref().unwrap();
         assert_eq!(resource_caps.subscribe, Some(true));
         assert_eq!(resource_caps.list_changed, Some(true));
-        
+
         // Verify tool capabilities
         let tool_caps = capabilities.tools.as_ref().unwrap();
         assert_eq!(tool_caps.list_changed, Some(true));
-        
+
         // Verify prompt capabilities
         let prompt_caps = capabilities.prompts.as_ref().unwrap();
         assert_eq!(prompt_caps.list_changed, Some(false));
@@ -817,9 +871,9 @@ def parse_config_value(value: str) -> Union[str, int, bool]:
     async fn test_concurrent_requests() {
         use std::sync::Arc;
         use tokio::sync::RwLock;
-        
+
         let server = Arc::new(RwLock::new(create_test_server_with_repository().await));
-        
+
         // Initialize the server first
         {
             let mut server_lock = server.write().await;
@@ -831,32 +885,35 @@ def parse_config_value(value: str) -> Union[str, int, bool]:
                     version: "1.0.0".to_string(),
                 },
             };
-            
-            server_lock.handle_initialize(Some(serde_json::to_value(init_params).unwrap())).await.unwrap();
+
+            server_lock
+                .handle_initialize(Some(serde_json::to_value(init_params).unwrap()))
+                .await
+                .unwrap();
         }
-        
+
         // Run multiple concurrent requests
         let mut handles = Vec::new();
-        
+
         for i in 0..5 {
             let server_clone = server.clone();
             let handle = tokio::spawn(async move {
-                let mut server_lock = server_clone.write().await;
-                
+                let server_lock = server_clone.write().await;
+
                 // Test resources/list
                 let resources_result = server_lock.handle_resources_list(None).await;
                 assert!(resources_result.is_ok());
-                
+
                 // Test tools/list
                 let tools_result = server_lock.handle_tools_list(None).await;
                 assert!(tools_result.is_ok());
-                
+
                 i // Return the task number
             });
-            
+
             handles.push(handle);
         }
-        
+
         // Wait for all tasks to complete
         for handle in handles {
             let result = handle.await;
@@ -870,10 +927,10 @@ def parse_config_value(value: str) -> Union[str, int, bool]:
             name: "test-server".to_string(),
             version: "1.0.0".to_string(),
         };
-        
+
         let json = serde_json::to_string(&server_info).unwrap();
         let deserialized: ServerInfo = serde_json::from_str(&json).unwrap();
-        
+
         assert_eq!(server_info.name, deserialized.name);
         assert_eq!(server_info.version, deserialized.version);
     }
@@ -884,11 +941,11 @@ def parse_config_value(value: str) -> Union[str, int, bool]:
             name: "test-client".to_string(),
             version: "2.0.0".to_string(),
         };
-        
+
         let json = serde_json::to_string(&client_info).unwrap();
         let deserialized: ClientInfo = serde_json::from_str(&json).unwrap();
-        
+
         assert_eq!(client_info.name, deserialized.name);
         assert_eq!(client_info.version, deserialized.version);
     }
-} 
+}

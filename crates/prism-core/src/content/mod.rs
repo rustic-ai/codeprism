@@ -6,15 +6,15 @@
 
 use crate::ast::{Language, NodeId, Span};
 use blake3::Hasher;
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
-use regex::Regex;
 
-pub mod parsers;
 pub mod extractors;
 pub mod index;
+pub mod parsers;
 pub mod search;
 
 /// Unique identifier for content chunks
@@ -28,13 +28,13 @@ impl ChunkId {
         hasher.update(file_path.to_string_lossy().as_bytes());
         hasher.update(&chunk_index.to_le_bytes());
         hasher.update(content_hash);
-        
+
         let hash = hasher.finalize();
         let mut id = [0u8; 16];
         id.copy_from_slice(&hash.as_bytes()[..16]);
         Self(id)
     }
-    
+
     /// Get the ID as a hex string
     pub fn to_hex(&self) -> String {
         hex::encode(self.0)
@@ -52,7 +52,10 @@ pub enum ContentType {
     /// Configuration files
     Configuration { format: ConfigFormat },
     /// Code comments
-    Comment { language: Language, context: CommentContext },
+    Comment {
+        language: Language,
+        context: CommentContext,
+    },
     /// Plain text files
     PlainText,
 }
@@ -133,7 +136,7 @@ impl ContentChunk {
     ) -> Self {
         let content_bytes = blake3::hash(content.as_bytes());
         let id = ChunkId::new(&file_path, chunk_index, content_bytes.as_bytes());
-        
+
         Self {
             id,
             content_type,
@@ -146,7 +149,7 @@ impl ContentChunk {
             metadata: serde_json::Value::Null,
         }
     }
-    
+
     /// Extract tokens from content for search indexing
     fn tokenize_content(content: &str) -> Vec<String> {
         // Simple tokenization - split on whitespace and common delimiters
@@ -156,14 +159,14 @@ impl ContentChunk {
             .map(|s| s.to_lowercase())
             .collect()
     }
-    
+
     /// Add related AST node
     pub fn add_related_node(&mut self, node_id: NodeId) {
         if !self.related_nodes.contains(&node_id) {
             self.related_nodes.push(node_id);
         }
     }
-    
+
     /// Set metadata
     pub fn with_metadata(mut self, metadata: serde_json::Value) -> Self {
         self.metadata = metadata;
@@ -203,19 +206,19 @@ impl ContentNode {
             is_monitored: true,
         }
     }
-    
+
     /// Add a content chunk
     pub fn add_chunk(&mut self, chunk: ContentChunk) {
         self.chunks.push(chunk);
     }
-    
+
     /// Add related AST node
     pub fn add_ast_node(&mut self, node_id: NodeId) {
         if !self.ast_nodes.contains(&node_id) {
             self.ast_nodes.push(node_id);
         }
     }
-    
+
     /// Get all tokens from all chunks
     pub fn get_all_tokens(&self) -> Vec<String> {
         let mut all_tokens = Vec::new();
@@ -226,12 +229,17 @@ impl ContentNode {
         all_tokens.dedup();
         all_tokens
     }
-    
+
     /// Search for content within this node
     pub fn search(&self, query: &str, case_sensitive: bool) -> Vec<&ContentChunk> {
-        let search_query = if case_sensitive { query.to_string() } else { query.to_lowercase() };
-        
-        self.chunks.iter()
+        let search_query = if case_sensitive {
+            query.to_string()
+        } else {
+            query.to_lowercase()
+        };
+
+        self.chunks
+            .iter()
             .filter(|chunk| {
                 let content = if case_sensitive {
                     &chunk.content
@@ -309,9 +317,16 @@ impl Default for SearchQuery {
         Self {
             query: String::new(),
             content_types: vec![
-                ContentType::Code { language: Language::Unknown },
-                ContentType::Documentation { format: DocumentFormat::Markdown },
-                ContentType::Comment { language: Language::Unknown, context: CommentContext::Block },
+                ContentType::Code {
+                    language: Language::Unknown,
+                },
+                ContentType::Documentation {
+                    format: DocumentFormat::Markdown,
+                },
+                ContentType::Comment {
+                    language: Language::Unknown,
+                    context: CommentContext::Block,
+                },
             ],
             file_patterns: Vec::new(),
             exclude_patterns: Vec::new(),
@@ -382,34 +397,48 @@ pub enum ContentUpdateKind {
 mod tests {
     use super::*;
     use crate::ast::NodeKind;
-    use std::time::Duration;
+
 
     #[test]
     fn test_chunk_id_generation() {
         let file_path = PathBuf::from("test.md");
         let content_hash = [0u8; 32];
-        
+
         let id1 = ChunkId::new(&file_path, 0, &content_hash);
         let id2 = ChunkId::new(&file_path, 0, &content_hash);
         let id3 = ChunkId::new(&file_path, 1, &content_hash);
-        
+
         assert_eq!(id1, id2, "Same inputs should generate same ID");
-        assert_ne!(id1, id3, "Different chunk index should generate different ID");
-        
+        assert_ne!(
+            id1, id3,
+            "Different chunk index should generate different ID"
+        );
+
         let hex = id1.to_hex();
         assert_eq!(hex.len(), 32, "Hex string should be 32 characters");
-        assert!(hex.chars().all(|c| c.is_ascii_hexdigit()), "Should be valid hex");
+        assert!(
+            hex.chars().all(|c| c.is_ascii_hexdigit()),
+            "Should be valid hex"
+        );
     }
 
     #[test]
     fn test_content_types_serialization() {
         let test_cases = vec![
-            ContentType::Code { language: Language::Python },
-            ContentType::Documentation { format: DocumentFormat::Markdown },
-            ContentType::Configuration { format: ConfigFormat::Json },
-            ContentType::Comment { 
-                language: Language::JavaScript, 
-                context: CommentContext::Function { function_name: "test".to_string() } 
+            ContentType::Code {
+                language: Language::Python,
+            },
+            ContentType::Documentation {
+                format: DocumentFormat::Markdown,
+            },
+            ContentType::Configuration {
+                format: ConfigFormat::Json,
+            },
+            ContentType::Comment {
+                language: Language::JavaScript,
+                context: CommentContext::Function {
+                    function_name: "test".to_string(),
+                },
             },
             ContentType::PlainText,
         ];
@@ -429,24 +458,46 @@ mod tests {
     #[test]
     fn test_content_chunk_creation() {
         let file_path = PathBuf::from("test.md");
-        let content_type = ContentType::Documentation { format: DocumentFormat::Markdown };
+        let content_type = ContentType::Documentation {
+            format: DocumentFormat::Markdown,
+        };
         let content = "# Test Header\nSome content here.".to_string();
         let span = Span::new(0, content.len(), 1, 2, 1, 19);
 
-        let chunk = ContentChunk::new(file_path.clone(), content_type.clone(), content.clone(), span, 0);
+        let chunk = ContentChunk::new(
+            file_path.clone(),
+            content_type.clone(),
+            content.clone(),
+            span,
+            0,
+        );
 
         assert_eq!(chunk.file_path, file_path);
         assert_eq!(chunk.content, content);
-        assert!(!chunk.tokens.is_empty(), "Should extract tokens from content");
-        assert!(chunk.tokens.contains(&"test".to_string()), "Should extract 'test' token");
-        assert!(chunk.tokens.contains(&"header".to_string()), "Should extract 'header' token");
-        assert!(chunk.tokens.contains(&"content".to_string()), "Should extract 'content' token");
+        assert!(
+            !chunk.tokens.is_empty(),
+            "Should extract tokens from content"
+        );
+        assert!(
+            chunk.tokens.contains(&"test".to_string()),
+            "Should extract 'test' token"
+        );
+        assert!(
+            chunk.tokens.contains(&"header".to_string()),
+            "Should extract 'header' token"
+        );
+        assert!(
+            chunk.tokens.contains(&"content".to_string()),
+            "Should extract 'content' token"
+        );
     }
 
     #[test]
     fn test_content_chunk_tokenization() {
         let file_path = PathBuf::from("test.py");
-        let content_type = ContentType::Code { language: Language::Python };
+        let content_type = ContentType::Code {
+            language: Language::Python,
+        };
         let content = "def hello_world():\n    print('Hello, World!')".to_string();
         let span = Span::new(0, content.len(), 1, 2, 1, 26);
 
@@ -456,13 +507,18 @@ mod tests {
         assert!(chunk.tokens.contains(&"hello".to_string()));
         assert!(chunk.tokens.contains(&"world".to_string()));
         assert!(chunk.tokens.contains(&"print".to_string()));
-        assert!(!chunk.tokens.contains(&"(".to_string()), "Should filter out single chars");
+        assert!(
+            !chunk.tokens.contains(&"(".to_string()),
+            "Should filter out single chars"
+        );
     }
 
     #[test]
     fn test_content_node_operations() {
         let file_path = PathBuf::from("test.md");
-        let content_type = ContentType::Documentation { format: DocumentFormat::Markdown };
+        let content_type = ContentType::Documentation {
+            format: DocumentFormat::Markdown,
+        };
         let mut node = ContentNode::new(file_path.clone(), content_type.clone());
 
         assert_eq!(node.file_path, file_path);
@@ -482,7 +538,12 @@ mod tests {
         assert_eq!(node.chunks.len(), 1);
 
         // Add AST node
-        let node_id = NodeId::new("test", &file_path, &Span::new(0, 5, 1, 1, 1, 6), &NodeKind::Function);
+        let node_id = NodeId::new(
+            "test",
+            &file_path,
+            &Span::new(0, 5, 1, 1, 1, 6),
+            &NodeKind::Function,
+        );
         node.add_ast_node(node_id);
 
         assert_eq!(node.ast_nodes.len(), 1);
@@ -497,7 +558,9 @@ mod tests {
     #[test]
     fn test_content_node_search() {
         let file_path = PathBuf::from("test.md");
-        let content_type = ContentType::Documentation { format: DocumentFormat::Markdown };
+        let content_type = ContentType::Documentation {
+            format: DocumentFormat::Markdown,
+        };
         let mut node = ContentNode::new(file_path.clone(), content_type.clone());
 
         // Add chunks with different content
@@ -536,7 +599,7 @@ mod tests {
     #[test]
     fn test_search_query_default() {
         let query = SearchQuery::default();
-        
+
         assert_eq!(query.query, "");
         assert_eq!(query.max_results, 100);
         assert!(!query.case_sensitive);
@@ -550,7 +613,9 @@ mod tests {
     fn test_search_query_builder() {
         let query = SearchQuery {
             query: "test query".to_string(),
-            content_types: vec![ContentType::Code { language: Language::Python }],
+            content_types: vec![ContentType::Code {
+                language: Language::Python,
+            }],
             file_patterns: vec!["*.py".to_string()],
             exclude_patterns: vec!["test_*.py".to_string()],
             max_results: 25,
@@ -574,7 +639,7 @@ mod tests {
     #[test]
     fn test_content_stats_creation() {
         let mut stats = ContentStats::new();
-        
+
         assert_eq!(stats.total_files, 0);
         assert_eq!(stats.total_chunks, 0);
         assert_eq!(stats.total_tokens, 0);
@@ -598,7 +663,9 @@ mod tests {
         let file_path = PathBuf::from("test.md");
         let chunk = ContentChunk::new(
             file_path,
-            ContentType::Documentation { format: DocumentFormat::Markdown },
+            ContentType::Documentation {
+                format: DocumentFormat::Markdown,
+            },
             "Test content with query match".to_string(),
             Span::new(0, 29, 1, 1, 1, 30),
             0,
@@ -630,8 +697,12 @@ mod tests {
     #[test]
     fn test_comment_context_variants() {
         let contexts = vec![
-            CommentContext::Function { function_name: "test_func".to_string() },
-            CommentContext::Class { class_name: "TestClass".to_string() },
+            CommentContext::Function {
+                function_name: "test_func".to_string(),
+            },
+            CommentContext::Class {
+                class_name: "TestClass".to_string(),
+            },
             CommentContext::Module,
             CommentContext::Inline,
             CommentContext::Block,
@@ -643,12 +714,16 @@ mod tests {
                 language: Language::Python,
                 context: context.clone(),
             };
-            
+
             // Test serialization
             let json = serde_json::to_string(&content_type).unwrap();
             let deserialized: ContentType = serde_json::from_str(&json).unwrap();
-            
-            if let ContentType::Comment { context: deserialized_context, .. } = deserialized {
+
+            if let ContentType::Comment {
+                context: deserialized_context,
+                ..
+            } = deserialized
+            {
                 assert_eq!(
                     std::mem::discriminant(&context),
                     std::mem::discriminant(&deserialized_context),
@@ -660,7 +735,7 @@ mod tests {
         }
     }
 
-    #[test] 
+    #[test]
     fn test_document_format_variants() {
         let formats = vec![
             DocumentFormat::Markdown,
@@ -671,14 +746,22 @@ mod tests {
         ];
 
         for format in formats {
-            let content_type = ContentType::Documentation { format: format.clone() };
-            
+            let content_type = ContentType::Documentation {
+                format: format.clone(),
+            };
+
             // Test serialization
             let json = serde_json::to_string(&content_type).unwrap();
             let deserialized: ContentType = serde_json::from_str(&json).unwrap();
-            
-            if let ContentType::Documentation { format: deserialized_format } = deserialized {
-                assert_eq!(format, deserialized_format, "Format should match after serialization");
+
+            if let ContentType::Documentation {
+                format: deserialized_format,
+            } = deserialized
+            {
+                assert_eq!(
+                    format, deserialized_format,
+                    "Format should match after serialization"
+                );
             } else {
                 panic!("Expected Documentation content type");
             }
@@ -698,14 +781,22 @@ mod tests {
         ];
 
         for format in formats {
-            let content_type = ContentType::Configuration { format: format.clone() };
-            
-            // Test serialization  
+            let content_type = ContentType::Configuration {
+                format: format.clone(),
+            };
+
+            // Test serialization
             let json = serde_json::to_string(&content_type).unwrap();
             let deserialized: ContentType = serde_json::from_str(&json).unwrap();
-            
-            if let ContentType::Configuration { format: deserialized_format } = deserialized {
-                assert_eq!(format, deserialized_format, "Format should match after serialization");
+
+            if let ContentType::Configuration {
+                format: deserialized_format,
+            } = deserialized
+            {
+                assert_eq!(
+                    format, deserialized_format,
+                    "Format should match after serialization"
+                );
             } else {
                 panic!("Expected Configuration content type");
             }
@@ -716,7 +807,7 @@ mod tests {
     fn test_content_update_kinds() {
         let file_path = PathBuf::from("test.md");
         let old_path = PathBuf::from("old_test.md");
-        
+
         let updates = vec![
             ContentUpdate {
                 file_path: file_path.clone(),
@@ -735,7 +826,9 @@ mod tests {
             },
             ContentUpdate {
                 file_path: file_path.clone(),
-                update_kind: ContentUpdateKind::Renamed { old_path: old_path.clone() },
+                update_kind: ContentUpdateKind::Renamed {
+                    old_path: old_path.clone(),
+                },
                 timestamp: SystemTime::now(),
             },
         ];
@@ -744,16 +837,18 @@ mod tests {
             // Test that all update kinds can be created and used
             assert_eq!(update.file_path, file_path);
             assert!(update.timestamp <= SystemTime::now());
-            
+
             // Test the specific update kind
             match &update.update_kind {
                 ContentUpdateKind::Created => assert!(true),
                 ContentUpdateKind::Modified => assert!(true),
                 ContentUpdateKind::Deleted => assert!(true),
-                ContentUpdateKind::Renamed { old_path: renamed_old_path } => {
+                ContentUpdateKind::Renamed {
+                    old_path: renamed_old_path,
+                } => {
                     assert_eq!(renamed_old_path, &old_path);
                 }
             }
         }
     }
-} 
+}

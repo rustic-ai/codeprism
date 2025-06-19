@@ -1,5 +1,5 @@
 //! MCP Transport layer implementation
-//! 
+//!
 //! This module implements the MCP transport layer using stdio as the primary transport.
 //! Messages are JSON-RPC 2.0 format, delimited by newlines, as specified by MCP.
 
@@ -9,20 +9,20 @@ use serde_json;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader, BufWriter};
 use tracing::{debug, error, info, warn};
 
-use crate::protocol::{JsonRpcRequest, JsonRpcResponse, JsonRpcNotification};
+use crate::protocol::{JsonRpcNotification, JsonRpcRequest, JsonRpcResponse};
 
 /// Transport trait for MCP communication
 #[async_trait]
 pub trait Transport {
     /// Start the transport
     async fn start(&mut self) -> Result<()>;
-    
+
     /// Send a JSON-RPC message
     async fn send(&mut self, message: TransportMessage) -> Result<()>;
-    
+
     /// Receive a JSON-RPC message
     async fn receive(&mut self) -> Result<Option<TransportMessage>>;
-    
+
     /// Close the transport
     async fn close(&mut self) -> Result<()>;
 }
@@ -39,7 +39,7 @@ pub enum TransportMessage {
 }
 
 /// Stdio transport implementation for MCP
-/// 
+///
 /// This transport uses stdin/stdout for communication with newline-delimited
 /// JSON-RPC 2.0 messages, as specified by the MCP standard.
 pub struct StdioTransport {
@@ -88,7 +88,7 @@ impl Transport for StdioTransport {
 
         self.started = true;
         debug!("Stdio transport started successfully");
-        
+
         Ok(())
     }
 
@@ -97,12 +97,17 @@ impl Transport for StdioTransport {
             return Err(anyhow::anyhow!("Transport not started"));
         }
 
-        let output = self.output.as_mut()
+        let output = self
+            .output
+            .as_mut()
             .ok_or_else(|| anyhow::anyhow!("Output not initialized"))?;
 
         let json_str = match message {
             TransportMessage::Request(req) => {
-                debug!("Sending JSON-RPC request: method={}, id={:?}", req.method, req.id);
+                debug!(
+                    "Sending JSON-RPC request: method={}, id={:?}",
+                    req.method, req.id
+                );
                 serde_json::to_string(&req)?
             }
             TransportMessage::Response(resp) => {
@@ -116,11 +121,17 @@ impl Transport for StdioTransport {
         };
 
         // Send the message as a line (MCP spec requires newline delimiting)
-        output.write_all(json_str.as_bytes()).await
+        output
+            .write_all(json_str.as_bytes())
+            .await
             .map_err(|e| anyhow::anyhow!("Failed to write message: {}", e))?;
-        output.write_all(b"\n").await
+        output
+            .write_all(b"\n")
+            .await
             .map_err(|e| anyhow::anyhow!("Failed to write newline: {}", e))?;
-        output.flush().await
+        output
+            .flush()
+            .await
             .map_err(|e| anyhow::anyhow!("Failed to flush output: {}", e))?;
 
         Ok(())
@@ -131,7 +142,9 @@ impl Transport for StdioTransport {
             return Err(anyhow::anyhow!("Transport not started"));
         }
 
-        let input = self.input.as_mut()
+        let input = self
+            .input
+            .as_mut()
             .ok_or_else(|| anyhow::anyhow!("Input not initialized"))?;
 
         // Read the next line
@@ -154,14 +167,17 @@ impl Transport for StdioTransport {
                         // Has both id and method -> Request
                         let request: JsonRpcRequest = serde_json::from_str(&line)
                             .map_err(|e| anyhow::anyhow!("Failed to parse request: {}", e))?;
-                        
-                        debug!("Parsed JSON-RPC request: method={}, id={:?}", request.method, request.id);
+
+                        debug!(
+                            "Parsed JSON-RPC request: method={}, id={:?}",
+                            request.method, request.id
+                        );
                         Ok(Some(TransportMessage::Request(request)))
                     } else {
                         // Has id but no method -> Response
                         let response: JsonRpcResponse = serde_json::from_str(&line)
                             .map_err(|e| anyhow::anyhow!("Failed to parse response: {}", e))?;
-                        
+
                         debug!("Parsed JSON-RPC response: id={:?}", response.id);
                         Ok(Some(TransportMessage::Response(response)))
                     }
@@ -169,8 +185,11 @@ impl Transport for StdioTransport {
                     // Has method but no id -> Notification
                     let notification: JsonRpcNotification = serde_json::from_str(&line)
                         .map_err(|e| anyhow::anyhow!("Failed to parse notification: {}", e))?;
-                    
-                    debug!("Parsed JSON-RPC notification: method={}", notification.method);
+
+                    debug!(
+                        "Parsed JSON-RPC notification: method={}",
+                        notification.method
+                    );
                     Ok(Some(TransportMessage::Notification(notification)))
                 } else {
                     error!("Invalid JSON-RPC message format: {}", line);
@@ -208,7 +227,7 @@ impl Transport for StdioTransport {
 
         self.started = false;
         debug!("Stdio transport closed");
-        
+
         Ok(())
     }
 }
@@ -245,7 +264,7 @@ impl TransportMessage {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::protocol::{JsonRpcRequest, JsonRpcResponse, JsonRpcNotification};
+    use crate::protocol::{JsonRpcNotification, JsonRpcRequest, JsonRpcResponse};
 
     #[test]
     fn test_transport_message_methods() {
@@ -276,10 +295,7 @@ mod tests {
 
     #[test]
     fn test_transport_message_notification() {
-        let notification = JsonRpcNotification::new(
-            "test_notification".to_string(),
-            None,
-        );
+        let notification = JsonRpcNotification::new("test_notification".to_string(), None);
         let msg = TransportMessage::Notification(notification);
 
         assert_eq!(msg.jsonrpc_version(), "2.0");
@@ -298,4 +314,4 @@ mod tests {
         let transport = StdioTransport::default();
         assert!(!transport.started);
     }
-} 
+}

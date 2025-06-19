@@ -2,10 +2,10 @@
 
 use crate::error::Result;
 use crate::types::{Edge, EdgeKind, Language, Node, NodeKind, Span};
+
 use std::collections::HashMap;
 use std::path::PathBuf;
 use tree_sitter::{Tree, TreeCursor};
-use serde_json;
 
 /// AST mapper for Python
 pub struct AstMapper {
@@ -185,7 +185,7 @@ impl AstMapper {
 
         // Extract class name
         let name = self.extract_class_name(&node)?;
-        
+
         // Skip if name extraction failed
         if name == "anonymous" || name.is_empty() {
             return Ok(());
@@ -230,7 +230,11 @@ impl AstMapper {
     }
 
     /// Extract assignment targets (variables being assigned to)
-    fn extract_assignment_targets(&mut self, target_node: &tree_sitter::Node, span: &Span) -> Result<()> {
+    fn extract_assignment_targets(
+        &mut self,
+        target_node: &tree_sitter::Node,
+        span: &Span,
+    ) -> Result<()> {
         match target_node.kind() {
             "identifier" => {
                 let name = self.get_node_text(target_node);
@@ -318,9 +322,7 @@ impl AstMapper {
     /// Extract the target of a call (function name)
     fn extract_call_target(&self, node: &tree_sitter::Node) -> String {
         match node.kind() {
-            "identifier" => {
-                self.get_node_text(node)
-            }
+            "identifier" => self.get_node_text(node),
             "attribute" => {
                 // Handle method calls like obj.method()
                 if let Some(attr_node) = node.child_by_field_name("attribute") {
@@ -356,16 +358,19 @@ impl AstMapper {
     /// Safely extract a function name from a node, avoiding malformed names
     fn extract_safe_function_name(&self, node: &tree_sitter::Node) -> String {
         let raw_text = self.get_node_text(node);
-        
+
         // Check for obviously invalid names
-        if raw_text.is_empty() || 
-           raw_text == ")" || 
-           raw_text == "(" || 
-           raw_text.trim().is_empty() ||
-           raw_text.chars().all(|c| !c.is_alphanumeric() && c != '_' && c != '.') {
+        if raw_text.is_empty()
+            || raw_text == ")"
+            || raw_text == "("
+            || raw_text.trim().is_empty()
+            || raw_text
+                .chars()
+                .all(|c| !c.is_alphanumeric() && c != '_' && c != '.')
+        {
             return "anonymous_call".to_string();
         }
-        
+
         // Try to extract a meaningful name from complex expressions
         if let Some(extracted) = self.extract_function_name_from_text(&raw_text) {
             extracted
@@ -382,12 +387,12 @@ impl AstMapper {
     /// Extract function name from raw text using pattern matching
     fn extract_function_name_from_text(&self, text: &str) -> Option<String> {
         let text = text.trim();
-        
+
         // Handle simple identifier
         if text.chars().all(|c| c.is_alphanumeric() || c == '_') {
             return Some(text.to_string());
         }
-        
+
         // Handle attribute access: obj.method
         if let Some(dot_pos) = text.rfind('.') {
             let after_dot = &text[dot_pos + 1..];
@@ -395,22 +400,20 @@ impl AstMapper {
                 return Some(after_dot.to_string());
             }
         }
-        
+
         // Handle complex expressions by finding the last valid identifier
         let mut last_identifier = String::new();
         let mut current_identifier = String::new();
-        
+
         for ch in text.chars() {
             if ch.is_alphanumeric() || ch == '_' {
                 current_identifier.push(ch);
-            } else {
-                if !current_identifier.is_empty() {
-                    last_identifier = current_identifier.clone();
-                    current_identifier.clear();
-                }
+            } else if !current_identifier.is_empty() {
+                last_identifier = current_identifier.clone();
+                current_identifier.clear();
             }
         }
-        
+
         // Use the last identifier found
         if !current_identifier.is_empty() {
             Some(current_identifier)
@@ -494,7 +497,7 @@ impl AstMapper {
     /// Handle decorated definitions (might be methods)
     fn handle_decorated_definition(&mut self, cursor: &TreeCursor) -> Result<()> {
         let node = cursor.node();
-        
+
         // Look for function_definition inside decorated_definition
         let mut child_cursor = node.walk();
         if child_cursor.goto_first_child() {
@@ -526,7 +529,7 @@ impl AstMapper {
         if let Some(name_node) = node.child_by_field_name("name") {
             return Ok(self.get_node_text(&name_node));
         }
-        
+
         // Fallback: search for identifier nodes in the class definition
         let mut cursor = node.walk();
         if cursor.goto_first_child() {
@@ -544,16 +547,16 @@ impl AstMapper {
                 }
             }
         }
-        
+
         // Last resort: extract from full node text
         let full_text = self.get_node_text(node);
         if let Some(name) = self.extract_class_name_from_text(&full_text) {
             return Ok(name);
         }
-        
+
         Ok("anonymous".to_string())
     }
-    
+
     /// Extract class name from raw text using regex-like parsing
     fn extract_class_name_from_text(&self, text: &str) -> Option<String> {
         // Look for pattern: class ClassName(...):
@@ -562,8 +565,8 @@ impl AstMapper {
             let trimmed = first_line.trim();
             if trimmed.starts_with("class ") {
                 // Extract everything between "class " and "(" or ":"
-                let after_class = &trimmed[6..]; // Skip "class "
-                
+                let after_class = trimmed.strip_prefix("class ").unwrap_or(trimmed);
+
                 // Find the class name (everything up to '(' or ':' or whitespace)
                 for (i, ch) in after_class.char_indices() {
                     if ch == '(' || ch == ':' || ch.is_whitespace() {
@@ -574,7 +577,7 @@ impl AstMapper {
                         break;
                     }
                 }
-                
+
                 // If no special chars found, take the whole thing
                 let class_name = after_class.trim();
                 if !class_name.is_empty() {
@@ -639,16 +642,16 @@ impl AstMapper {
     }
 
     /// Find containing function ID
-    fn find_containing_function_id(&self, node: &tree_sitter::Node) -> Option<crate::types::NodeId> {
+    fn find_containing_function_id(
+        &self,
+        node: &tree_sitter::Node,
+    ) -> Option<crate::types::NodeId> {
         let mut parent = node.parent();
         while let Some(p) = parent {
-            match p.kind() {
-                "function_definition" => {
-                    if let Some(id) = self.node_map.get(&p.id()) {
-                        return Some(*id);
-                    }
+            if p.kind() == "function_definition" {
+                if let Some(id) = self.node_map.get(&p.id()) {
+                    return Some(*id);
                 }
-                _ => {}
             }
             parent = p.parent();
         }
@@ -656,7 +659,11 @@ impl AstMapper {
     }
 
     /// Extract base classes and create inheritance edges
-    fn extract_base_classes(&mut self, node: &tree_sitter::Node, class_id: crate::types::NodeId) -> Result<()> {
+    fn extract_base_classes(
+        &mut self,
+        node: &tree_sitter::Node,
+        class_id: crate::types::NodeId,
+    ) -> Result<()> {
         // Look for argument_list node which contains base classes
         if let Some(arg_list) = node.child_by_field_name("superclasses") {
             self.parse_base_class_list(&arg_list, class_id, node)?;
@@ -680,7 +687,12 @@ impl AstMapper {
     }
 
     /// Parse base class list and create inheritance nodes
-    fn parse_base_class_list(&mut self, arg_list: &tree_sitter::Node, class_id: crate::types::NodeId, _class_node: &tree_sitter::Node) -> Result<()> {
+    fn parse_base_class_list(
+        &mut self,
+        arg_list: &tree_sitter::Node,
+        class_id: crate::types::NodeId,
+        _class_node: &tree_sitter::Node,
+    ) -> Result<()> {
         let mut cursor = arg_list.walk();
         if cursor.goto_first_child() {
             loop {
@@ -713,9 +725,10 @@ impl AstMapper {
                         // Extract the base part before the subscript
                         if let Some(value_node) = child.child_by_field_name("value") {
                             let base_class = self.extract_call_target(&value_node);
-                            if !base_class.trim().is_empty() && 
-                               base_class != "anonymous_call" && 
-                               base_class != "complex_call" {
+                            if !base_class.trim().is_empty()
+                                && base_class != "anonymous_call"
+                                && base_class != "complex_call"
+                            {
                                 self.create_inheritance_edge(class_id, base_class, &child)?;
                             }
                         }
@@ -734,7 +747,12 @@ impl AstMapper {
     }
 
     /// Create an inheritance edge (child extends parent)
-    fn create_inheritance_edge(&mut self, child_class_id: crate::types::NodeId, parent_class_name: String, base_class_node: &tree_sitter::Node) -> Result<()> {
+    fn create_inheritance_edge(
+        &mut self,
+        child_class_id: crate::types::NodeId,
+        parent_class_name: String,
+        base_class_node: &tree_sitter::Node,
+    ) -> Result<()> {
         // Use the actual span of the base class node to ensure unique IDs
         let span = Span::from_node(base_class_node);
 
@@ -749,17 +767,25 @@ impl AstMapper {
         );
 
         // Create inheritance edge from child class to parent class
-        self.edges.push(Edge::new(child_class_id, parent_class_node.id, EdgeKind::Extends));
+        self.edges.push(Edge::new(
+            child_class_id,
+            parent_class_node.id,
+            EdgeKind::Extends,
+        ));
 
         // Add metadata to track if this might be a metaclass
         let mut metadata = serde_json::Map::new();
-        if parent_class_name.to_lowercase().contains("meta") || 
-           parent_class_name == "type" ||
-           parent_class_name.ends_with("Metaclass") {
+        if parent_class_name.to_lowercase().contains("meta")
+            || parent_class_name == "type"
+            || parent_class_name.ends_with("Metaclass")
+        {
             metadata.insert("is_metaclass".to_string(), serde_json::Value::Bool(true));
         }
-        metadata.insert("inheritance_type".to_string(), serde_json::Value::String("extends".to_string()));
-        
+        metadata.insert(
+            "inheritance_type".to_string(),
+            serde_json::Value::String("extends".to_string()),
+        );
+
         let parent_with_metadata = Node {
             metadata: serde_json::Value::Object(metadata),
             ..parent_class_node
@@ -768,4 +794,4 @@ impl AstMapper {
         self.nodes.push(parent_with_metadata);
         Ok(())
     }
-} 
+}

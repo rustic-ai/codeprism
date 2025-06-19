@@ -3,9 +3,7 @@
 //! This module provides parsers for various non-code file formats including
 //! markdown, configuration files, and plain text documents.
 
-use super::{
-    ContentChunk, ContentNode, ContentType, DocumentFormat, ConfigFormat
-};
+use super::{ConfigFormat, ContentChunk, ContentNode, ContentType, DocumentFormat};
 use crate::ast::Span;
 use anyhow::{anyhow, Result};
 use regex::Regex;
@@ -31,91 +29,91 @@ impl DocumentParser {
             text_parser: TextParser::new(),
         }
     }
-    
+
     /// Parse a file based on its extension
     pub fn parse_file(&self, file_path: &Path, content: &str) -> Result<ContentNode> {
         let content_type = self.detect_content_type(file_path)?;
         let mut node = ContentNode::new(file_path.to_path_buf(), content_type.clone());
-        
+
         let chunks = match content_type {
-            ContentType::Documentation { format } => {
-                match format {
-                    DocumentFormat::Markdown => self.markdown_parser.parse(file_path, content)?,
-                    DocumentFormat::PlainText | DocumentFormat::RestructuredText | 
-                    DocumentFormat::AsciiDoc | DocumentFormat::Html => {
-                        self.text_parser.parse(file_path, content, format)?
-                    }
-                }
-            }
+            ContentType::Documentation { format } => match format {
+                DocumentFormat::Markdown => self.markdown_parser.parse(file_path, content)?,
+                DocumentFormat::PlainText
+                | DocumentFormat::RestructuredText
+                | DocumentFormat::AsciiDoc
+                | DocumentFormat::Html => self.text_parser.parse(file_path, content, format)?,
+            },
             ContentType::Configuration { format } => {
                 self.config_parser.parse(file_path, content, format)?
             }
             ContentType::PlainText => {
-                self.text_parser.parse(file_path, content, DocumentFormat::PlainText)?
+                self.text_parser
+                    .parse(file_path, content, DocumentFormat::PlainText)?
             }
             _ => return Err(anyhow!("Unsupported content type for document parser")),
         };
-        
+
         for chunk in chunks {
             node.add_chunk(chunk);
         }
         node.file_size = content.len();
-        
+
         Ok(node)
     }
-    
+
     /// Detect content type from file extension
     fn detect_content_type(&self, file_path: &Path) -> Result<ContentType> {
         // Handle special files without extensions first
         if let Some(file_name) = file_path.file_name().and_then(|n| n.to_str()) {
             if file_name == ".env" {
-                return Ok(ContentType::Configuration { 
-                    format: ConfigFormat::Env 
+                return Ok(ContentType::Configuration {
+                    format: ConfigFormat::Env,
                 });
             }
         }
-        
-        let extension = file_path.extension()
+
+        let extension = file_path
+            .extension()
             .and_then(|ext| ext.to_str())
             .unwrap_or("")
             .to_lowercase();
-        
+
         match extension.as_str() {
-            "md" | "markdown" => Ok(ContentType::Documentation { 
-                format: DocumentFormat::Markdown 
+            "md" | "markdown" => Ok(ContentType::Documentation {
+                format: DocumentFormat::Markdown,
             }),
-            "rst" => Ok(ContentType::Documentation { 
-                format: DocumentFormat::RestructuredText 
+            "rst" => Ok(ContentType::Documentation {
+                format: DocumentFormat::RestructuredText,
             }),
-            "adoc" | "asciidoc" => Ok(ContentType::Documentation { 
-                format: DocumentFormat::AsciiDoc 
+            "adoc" | "asciidoc" => Ok(ContentType::Documentation {
+                format: DocumentFormat::AsciiDoc,
             }),
-            "html" | "htm" => Ok(ContentType::Documentation { 
-                format: DocumentFormat::Html 
+            "html" | "htm" => Ok(ContentType::Documentation {
+                format: DocumentFormat::Html,
             }),
-            "txt" | "text" => Ok(ContentType::Documentation { 
-                format: DocumentFormat::PlainText 
+            "txt" | "text" => Ok(ContentType::Documentation {
+                format: DocumentFormat::PlainText,
             }),
-            "json" => Ok(ContentType::Configuration { 
-                format: ConfigFormat::Json 
+            "json" => Ok(ContentType::Configuration {
+                format: ConfigFormat::Json,
             }),
-            "yaml" | "yml" => Ok(ContentType::Configuration { 
-                format: ConfigFormat::Yaml 
+            "yaml" | "yml" => Ok(ContentType::Configuration {
+                format: ConfigFormat::Yaml,
             }),
-            "toml" => Ok(ContentType::Configuration { 
-                format: ConfigFormat::Toml 
+            "toml" => Ok(ContentType::Configuration {
+                format: ConfigFormat::Toml,
             }),
-            "ini" => Ok(ContentType::Configuration { 
-                format: ConfigFormat::Ini 
+            "ini" => Ok(ContentType::Configuration {
+                format: ConfigFormat::Ini,
             }),
-            "properties" => Ok(ContentType::Configuration { 
-                format: ConfigFormat::Properties 
+            "properties" => Ok(ContentType::Configuration {
+                format: ConfigFormat::Properties,
             }),
-            "env" => Ok(ContentType::Configuration { 
-                format: ConfigFormat::Env 
+            "env" => Ok(ContentType::Configuration {
+                format: ConfigFormat::Env,
             }),
-            "xml" => Ok(ContentType::Configuration { 
-                format: ConfigFormat::Xml 
+            "xml" => Ok(ContentType::Configuration {
+                format: ConfigFormat::Xml,
             }),
             _ => Ok(ContentType::PlainText),
         }
@@ -135,10 +133,13 @@ pub struct MarkdownParser {
     /// Regex for code blocks
     code_block_regex: Regex,
     /// Regex for inline code
+    #[allow(dead_code)]
     inline_code_regex: Regex,
     /// Regex for links
+    #[allow(dead_code)]
     link_regex: Regex,
     /// Regex for lists
+    #[allow(dead_code)]
     list_regex: Regex,
 }
 
@@ -153,96 +154,106 @@ impl MarkdownParser {
             list_regex: Regex::new(r"(?m)^[\s]*[-*+]\s+(.+)$").unwrap(),
         }
     }
-    
+
     /// Parse markdown content into chunks
     pub fn parse(&self, file_path: &Path, content: &str) -> Result<Vec<ContentChunk>> {
         let mut chunks = Vec::new();
         let lines: Vec<&str> = content.lines().collect();
         let mut _current_line = 0;
         let mut chunk_index = 0;
-        
+
         // Parse headers
         for (line_idx, line) in lines.iter().enumerate() {
             if let Some(captures) = self.header_regex.captures(line) {
                 let level = captures.get(1).unwrap().as_str().len();
                 let header_text = captures.get(2).unwrap().as_str();
-                
+
                 let span = self.calculate_line_span(line_idx, line, content);
                 let chunk = ContentChunk::new(
                     file_path.to_path_buf(),
-                    ContentType::Documentation { format: DocumentFormat::Markdown },
+                    ContentType::Documentation {
+                        format: DocumentFormat::Markdown,
+                    },
                     header_text.to_string(),
                     span,
                     chunk_index,
-                ).with_metadata(serde_json::json!({
+                )
+                .with_metadata(serde_json::json!({
                     "header_level": level,
                     "element_type": "header"
                 }));
-                
+
                 chunks.push(chunk);
                 chunk_index += 1;
             }
         }
-        
+
         // Parse code blocks
         for captures in self.code_block_regex.captures_iter(content) {
             let language = captures.get(1).map(|m| m.as_str()).unwrap_or("text");
             let code_content = captures.get(2).unwrap().as_str();
             let full_match = captures.get(0).unwrap();
-            
+
             let span = self.calculate_match_span(&full_match, content);
             let chunk = ContentChunk::new(
                 file_path.to_path_buf(),
-                ContentType::Documentation { format: DocumentFormat::Markdown },
+                ContentType::Documentation {
+                    format: DocumentFormat::Markdown,
+                },
                 code_content.to_string(),
                 span,
                 chunk_index,
-            ).with_metadata(serde_json::json!({
+            )
+            .with_metadata(serde_json::json!({
                 "language": language,
                 "element_type": "code_block"
             }));
-            
+
             chunks.push(chunk);
             chunk_index += 1;
         }
-        
+
         // Parse regular paragraphs (non-header, non-code block content)
         let mut paragraph_start = 0;
         let mut in_paragraph = false;
         let mut paragraph_lines = Vec::new();
-        
+
         for (line_idx, line) in lines.iter().enumerate() {
             let line_trimmed = line.trim();
-            
+
             // Skip headers and lines that are part of code blocks
-            if self.header_regex.is_match(line) || 
-               line_trimmed.starts_with("```") ||
-               line_trimmed.is_empty() {
-                
+            if self.header_regex.is_match(line)
+                || line_trimmed.starts_with("```")
+                || line_trimmed.is_empty()
+            {
                 // End current paragraph if we have one
                 if in_paragraph && !paragraph_lines.is_empty() {
                     let paragraph_text = paragraph_lines.join("\n");
-                    let span = self.calculate_paragraph_span(paragraph_start, line_idx - 1, content);
-                    
+                    let span =
+                        self.calculate_paragraph_span(paragraph_start, line_idx - 1, content);
+
                     let chunk = ContentChunk::new(
                         file_path.to_path_buf(),
-                        ContentType::Documentation { format: DocumentFormat::Markdown },
+                        ContentType::Documentation {
+                            format: DocumentFormat::Markdown,
+                        },
                         paragraph_text,
                         span,
                         chunk_index,
-                    ).with_metadata(serde_json::json!({
+                    )
+                    .with_metadata(serde_json::json!({
                         "element_type": "paragraph"
                     }));
-                    
+
                     chunks.push(chunk);
                     chunk_index += 1;
                 }
-                
+
                 in_paragraph = false;
                 paragraph_lines.clear();
                 continue;
             }
-            
+
             // Start or continue paragraph
             if !in_paragraph {
                 in_paragraph = true;
@@ -250,34 +261,37 @@ impl MarkdownParser {
             }
             paragraph_lines.push(line_trimmed);
         }
-        
+
         // Handle final paragraph
         if in_paragraph && !paragraph_lines.is_empty() {
             let paragraph_text = paragraph_lines.join("\n");
             let span = self.calculate_paragraph_span(paragraph_start, lines.len() - 1, content);
-            
+
             let chunk = ContentChunk::new(
                 file_path.to_path_buf(),
-                ContentType::Documentation { format: DocumentFormat::Markdown },
+                ContentType::Documentation {
+                    format: DocumentFormat::Markdown,
+                },
                 paragraph_text,
                 span,
                 chunk_index,
-            ).with_metadata(serde_json::json!({
+            )
+            .with_metadata(serde_json::json!({
                 "element_type": "paragraph"
             }));
-            
+
             chunks.push(chunk);
         }
-        
+
         Ok(chunks)
     }
-    
+
     /// Calculate span for a single line
     fn calculate_line_span(&self, line_idx: usize, line: &str, content: &str) -> Span {
         let lines_before: usize = content.lines().take(line_idx).map(|l| l.len() + 1).sum();
         let start_byte = lines_before;
         let end_byte = start_byte + line.len();
-        
+
         Span::new(
             start_byte,
             end_byte,
@@ -287,17 +301,17 @@ impl MarkdownParser {
             line.len() + 1,
         )
     }
-    
+
     /// Calculate span for a regex match
     fn calculate_match_span(&self, match_obj: &regex::Match, content: &str) -> Span {
         let start_byte = match_obj.start();
         let end_byte = match_obj.end();
-        
+
         // Count lines up to start
         let content_before = &content[..start_byte];
         let start_line = content_before.lines().count();
         let start_column = content_before.lines().last().map(|l| l.len()).unwrap_or(0) + 1;
-        
+
         // Count lines in match
         let match_content = match_obj.as_str();
         let lines_in_match = match_content.lines().count();
@@ -307,7 +321,7 @@ impl MarkdownParser {
         } else {
             start_column + match_content.len()
         };
-        
+
         Span::new(
             start_byte,
             end_byte,
@@ -317,13 +331,22 @@ impl MarkdownParser {
             end_column,
         )
     }
-    
+
     /// Calculate span for a paragraph
     fn calculate_paragraph_span(&self, start_line: usize, end_line: usize, content: &str) -> Span {
         let lines: Vec<&str> = content.lines().collect();
-        let start_byte: usize = lines.iter().take(start_line).map(|l| l.len() + 1).sum::<usize>();
-        let end_byte: usize = lines.iter().take(end_line + 1).map(|l| l.len() + 1).sum::<usize>() - 1;
-        
+        let start_byte: usize = lines
+            .iter()
+            .take(start_line)
+            .map(|l| l.len() + 1)
+            .sum::<usize>();
+        let end_byte: usize = lines
+            .iter()
+            .take(end_line + 1)
+            .map(|l| l.len() + 1)
+            .sum::<usize>()
+            - 1;
+
         Span::new(
             start_byte,
             end_byte,
@@ -349,9 +372,14 @@ impl ConfigParser {
     pub fn new() -> Self {
         Self
     }
-    
+
     /// Parse configuration file content
-    pub fn parse(&self, file_path: &Path, content: &str, format: ConfigFormat) -> Result<Vec<ContentChunk>> {
+    pub fn parse(
+        &self,
+        file_path: &Path,
+        content: &str,
+        format: ConfigFormat,
+    ) -> Result<Vec<ContentChunk>> {
         match format {
             ConfigFormat::Json => self.parse_json(file_path, content),
             ConfigFormat::Yaml => self.parse_yaml(file_path, content),
@@ -362,11 +390,11 @@ impl ConfigParser {
             ConfigFormat::Xml => self.parse_xml(file_path, content),
         }
     }
-    
+
     /// Parse JSON configuration
     fn parse_json(&self, file_path: &Path, content: &str) -> Result<Vec<ContentChunk>> {
         let mut chunks = Vec::new();
-        
+
         // Try to parse as JSON to validate structure
         match serde_json::from_str::<Value>(content) {
             Ok(value) => {
@@ -375,35 +403,73 @@ impl ConfigParser {
             }
             Err(_) => {
                 // If JSON is invalid, treat as plain text
-                chunks.push(ContentChunk::new(
-                    file_path.to_path_buf(),
-                    ContentType::Configuration { format: ConfigFormat::Json },
-                    content.to_string(),
-                    Span::new(0, content.len(), 1, content.lines().count(), 1, content.lines().last().map(|l| l.len()).unwrap_or(0)),
-                    0,
-                ).with_metadata(serde_json::json!({
-                    "parse_error": true,
-                    "config_type": "json"
-                })));
+                chunks.push(
+                    ContentChunk::new(
+                        file_path.to_path_buf(),
+                        ContentType::Configuration {
+                            format: ConfigFormat::Json,
+                        },
+                        content.to_string(),
+                        Span::new(
+                            0,
+                            content.len(),
+                            1,
+                            content.lines().count(),
+                            1,
+                            content.lines().last().map(|l| l.len()).unwrap_or(0),
+                        ),
+                        0,
+                    )
+                    .with_metadata(serde_json::json!({
+                        "parse_error": true,
+                        "config_type": "json"
+                    })),
+                );
             }
         }
-        
+
         Ok(chunks)
     }
-    
+
     /// Extract values from JSON recursively
-    fn extract_json_values(&self, value: &Value, file_path: &Path, content: &str, chunks: &mut Vec<ContentChunk>, chunk_index: usize, key_path: &str) {
+    fn extract_json_values(
+        &self,
+        value: &Value,
+        file_path: &Path,
+        content: &str,
+        chunks: &mut Vec<ContentChunk>,
+        chunk_index: usize,
+        key_path: &str,
+    ) {
         match value {
             Value::Object(map) => {
                 for (key, val) in map {
-                    let new_path = if key_path.is_empty() { key.clone() } else { format!("{}.{}", key_path, key) };
-                    self.extract_json_values(val, file_path, content, chunks, chunks.len(), &new_path);
+                    let new_path = if key_path.is_empty() {
+                        key.clone()
+                    } else {
+                        format!("{}.{}", key_path, key)
+                    };
+                    self.extract_json_values(
+                        val,
+                        file_path,
+                        content,
+                        chunks,
+                        chunks.len(),
+                        &new_path,
+                    );
                 }
             }
             Value::Array(arr) => {
                 for (index, val) in arr.iter().enumerate() {
                     let new_path = format!("{}[{}]", key_path, index);
-                    self.extract_json_values(val, file_path, content, chunks, chunks.len(), &new_path);
+                    self.extract_json_values(
+                        val,
+                        file_path,
+                        content,
+                        chunks,
+                        chunks.len(),
+                        &new_path,
+                    );
                 }
             }
             Value::String(_) | Value::Number(_) | Value::Bool(_) => {
@@ -412,20 +478,20 @@ impl ConfigParser {
                     Value::String(s) => s.clone(),
                     _ => value.to_string(),
                 };
-                
+
                 // Include key in the searchable content
                 let searchable_content = if key_path.is_empty() {
                     value_str.clone()
                 } else {
                     format!("{}: {}", key_path, value_str)
                 };
-                
+
                 // Try to find the approximate location in the original content
                 if let Some(position) = content.find(&value_str) {
                     let lines_before = content[..position].lines().count();
                     let line_start = content[..position].rfind('\n').map(|i| i + 1).unwrap_or(0);
                     let column = position - line_start + 1;
-                    
+
                     let span = Span::new(
                         position,
                         position + value_str.len(),
@@ -434,14 +500,17 @@ impl ConfigParser {
                         column,
                         column + value_str.len(),
                     );
-                    
+
                     let chunk = ContentChunk::new(
                         file_path.to_path_buf(),
-                        ContentType::Configuration { format: ConfigFormat::Json },
+                        ContentType::Configuration {
+                            format: ConfigFormat::Json,
+                        },
                         searchable_content,
                         span,
                         chunk_index,
-                    ).with_metadata(serde_json::json!({
+                    )
+                    .with_metadata(serde_json::json!({
                         "key_path": key_path,
                         "value": value_str,
                         "value_type": match value {
@@ -452,200 +521,221 @@ impl ConfigParser {
                         },
                         "config_type": "json"
                     }));
-                    
+
                     chunks.push(chunk);
                 }
             }
             Value::Null => {} // Skip null values
         }
     }
-    
+
     /// Parse YAML configuration (simplified)
     fn parse_yaml(&self, file_path: &Path, content: &str) -> Result<Vec<ContentChunk>> {
         // Simple line-by-line parsing for YAML
         let mut chunks = Vec::new();
         let lines: Vec<&str> = content.lines().collect();
-        
+
         for (line_idx, line) in lines.iter().enumerate() {
             let trimmed = line.trim();
             if trimmed.is_empty() || trimmed.starts_with('#') {
                 continue;
             }
-            
+
             // Look for key-value pairs
             if let Some(colon_pos) = trimmed.find(':') {
                 let key = trimmed[..colon_pos].trim();
                 let value = trimmed[colon_pos + 1..].trim();
-                
+
                 if !value.is_empty() {
                     let span = self.calculate_line_span(line_idx, line, content);
                     let chunk = ContentChunk::new(
                         file_path.to_path_buf(),
-                        ContentType::Configuration { format: ConfigFormat::Yaml },
+                        ContentType::Configuration {
+                            format: ConfigFormat::Yaml,
+                        },
                         format!("{}: {}", key, value),
                         span,
                         chunks.len(),
-                    ).with_metadata(serde_json::json!({
+                    )
+                    .with_metadata(serde_json::json!({
                         "key": key,
                         "value": value,
                         "config_type": "yaml"
                     }));
-                    
+
                     chunks.push(chunk);
                 }
             }
         }
-        
+
         Ok(chunks)
     }
-    
+
     /// Parse TOML configuration (simplified)
     fn parse_toml(&self, file_path: &Path, content: &str) -> Result<Vec<ContentChunk>> {
         // Similar to YAML but with different syntax
         let mut chunks = Vec::new();
         let lines: Vec<&str> = content.lines().collect();
-        
+
         for (line_idx, line) in lines.iter().enumerate() {
             let trimmed = line.trim();
             if trimmed.is_empty() || trimmed.starts_with('#') {
                 continue;
             }
-            
+
             // Handle sections
             if trimmed.starts_with('[') && trimmed.ends_with(']') {
-                let section = &trimmed[1..trimmed.len()-1];
+                let section = &trimmed[1..trimmed.len() - 1];
                 let span = self.calculate_line_span(line_idx, line, content);
                 let chunk = ContentChunk::new(
                     file_path.to_path_buf(),
-                    ContentType::Configuration { format: ConfigFormat::Toml },
+                    ContentType::Configuration {
+                        format: ConfigFormat::Toml,
+                    },
                     section.to_string(),
                     span,
                     chunks.len(),
-                ).with_metadata(serde_json::json!({
+                )
+                .with_metadata(serde_json::json!({
                     "element_type": "section",
                     "section_name": section,
                     "config_type": "toml"
                 }));
-                
+
                 chunks.push(chunk);
                 continue;
             }
-            
+
             // Handle key-value pairs
             if let Some(eq_pos) = trimmed.find('=') {
                 let key = trimmed[..eq_pos].trim();
                 let value = trimmed[eq_pos + 1..].trim();
-                
+
                 let span = self.calculate_line_span(line_idx, line, content);
                 let chunk = ContentChunk::new(
                     file_path.to_path_buf(),
-                    ContentType::Configuration { format: ConfigFormat::Toml },
+                    ContentType::Configuration {
+                        format: ConfigFormat::Toml,
+                    },
                     format!("{} = {}", key, value),
                     span,
                     chunks.len(),
-                ).with_metadata(serde_json::json!({
+                )
+                .with_metadata(serde_json::json!({
                     "key": key,
                     "value": value,
                     "config_type": "toml"
                 }));
-                
+
                 chunks.push(chunk);
             }
         }
-        
+
         Ok(chunks)
     }
-    
+
     /// Parse INI configuration
     fn parse_ini(&self, file_path: &Path, content: &str) -> Result<Vec<ContentChunk>> {
         // Similar pattern to TOML
         self.parse_key_value_format(file_path, content, ConfigFormat::Ini, "ini")
     }
-    
+
     /// Parse properties configuration
     fn parse_properties(&self, file_path: &Path, content: &str) -> Result<Vec<ContentChunk>> {
         self.parse_key_value_format(file_path, content, ConfigFormat::Properties, "properties")
     }
-    
+
     /// Parse environment file
     fn parse_env(&self, file_path: &Path, content: &str) -> Result<Vec<ContentChunk>> {
         self.parse_key_value_format(file_path, content, ConfigFormat::Env, "env")
     }
-    
+
     /// Parse XML configuration (simplified)
     fn parse_xml(&self, file_path: &Path, content: &str) -> Result<Vec<ContentChunk>> {
         // Simple XML tag extraction without backreferences
         let tag_regex = Regex::new(r"<([^/>]+)>([^<]+)</[^>]+>").unwrap();
         let mut chunks = Vec::new();
-        
+
         for (idx, captures) in tag_regex.captures_iter(content).enumerate() {
             let tag_name = captures.get(1).unwrap().as_str();
             let tag_content = captures.get(2).unwrap().as_str().trim();
-            
+
             if !tag_content.is_empty() {
                 let full_match = captures.get(0).unwrap();
                 let span = self.calculate_match_span(&full_match, content);
-                
+
                 let chunk = ContentChunk::new(
                     file_path.to_path_buf(),
-                    ContentType::Configuration { format: ConfigFormat::Xml },
+                    ContentType::Configuration {
+                        format: ConfigFormat::Xml,
+                    },
                     tag_content.to_string(),
                     span,
                     idx,
-                ).with_metadata(serde_json::json!({
+                )
+                .with_metadata(serde_json::json!({
                     "tag_name": tag_name,
                     "config_type": "xml"
                 }));
-                
+
                 chunks.push(chunk);
             }
         }
-        
+
         Ok(chunks)
     }
-    
+
     /// Generic key-value format parser
-    fn parse_key_value_format(&self, file_path: &Path, content: &str, format: ConfigFormat, format_name: &str) -> Result<Vec<ContentChunk>> {
+    fn parse_key_value_format(
+        &self,
+        file_path: &Path,
+        content: &str,
+        format: ConfigFormat,
+        format_name: &str,
+    ) -> Result<Vec<ContentChunk>> {
         let mut chunks = Vec::new();
         let lines: Vec<&str> = content.lines().collect();
-        
+
         for (line_idx, line) in lines.iter().enumerate() {
             let trimmed = line.trim();
             if trimmed.is_empty() || trimmed.starts_with('#') || trimmed.starts_with(';') {
                 continue;
             }
-            
+
             // Look for key=value pattern
             if let Some(eq_pos) = trimmed.find('=') {
                 let key = trimmed[..eq_pos].trim();
                 let value = trimmed[eq_pos + 1..].trim();
-                
+
                 let span = self.calculate_line_span(line_idx, line, content);
                 let chunk = ContentChunk::new(
                     file_path.to_path_buf(),
-                    ContentType::Configuration { format: format.clone() },
+                    ContentType::Configuration {
+                        format: format.clone(),
+                    },
                     format!("{}={}", key, value),
                     span,
                     chunks.len(),
-                ).with_metadata(serde_json::json!({
+                )
+                .with_metadata(serde_json::json!({
                     "key": key,
                     "value": value,
                     "config_type": format_name
                 }));
-                
+
                 chunks.push(chunk);
             }
         }
-        
+
         Ok(chunks)
     }
-    
+
     /// Calculate span for a line
     fn calculate_line_span(&self, line_idx: usize, line: &str, content: &str) -> Span {
         let lines_before: usize = content.lines().take(line_idx).map(|l| l.len() + 1).sum();
         let start_byte = lines_before;
         let end_byte = start_byte + line.len();
-        
+
         Span::new(
             start_byte,
             end_byte,
@@ -655,16 +745,16 @@ impl ConfigParser {
             line.len() + 1,
         )
     }
-    
+
     /// Calculate span for a regex match
     fn calculate_match_span(&self, match_obj: &regex::Match, content: &str) -> Span {
         let start_byte = match_obj.start();
         let end_byte = match_obj.end();
-        
+
         let content_before = &content[..start_byte];
         let start_line = content_before.lines().count();
         let start_column = content_before.lines().last().map(|l| l.len()).unwrap_or(0) + 1;
-        
+
         let match_content = match_obj.as_str();
         let lines_in_match = match_content.lines().count();
         let end_line = start_line + lines_in_match.saturating_sub(1);
@@ -673,7 +763,7 @@ impl ConfigParser {
         } else {
             start_column + match_content.len()
         };
-        
+
         Span::new(
             start_byte,
             end_byte,
@@ -699,77 +789,95 @@ impl TextParser {
     pub fn new() -> Self {
         Self
     }
-    
+
     /// Parse plain text into chunks (paragraph-based)
-    pub fn parse(&self, file_path: &Path, content: &str, format: DocumentFormat) -> Result<Vec<ContentChunk>> {
+    pub fn parse(
+        &self,
+        file_path: &Path,
+        content: &str,
+        format: DocumentFormat,
+    ) -> Result<Vec<ContentChunk>> {
         let mut chunks = Vec::new();
         let lines: Vec<&str> = content.lines().collect();
-        
+
         let mut paragraph_start = 0;
         let mut paragraph_lines = Vec::new();
         let mut chunk_index = 0;
-        
+
         for (line_idx, line) in lines.iter().enumerate() {
             let trimmed = line.trim();
-            
+
             if trimmed.is_empty() {
                 // End current paragraph
                 if !paragraph_lines.is_empty() {
                     let paragraph_text = paragraph_lines.join("\n");
                     let span = self.calculate_paragraph_span(paragraph_start, line_idx - 1, &lines);
-                    
+
                     let chunk = ContentChunk::new(
                         file_path.to_path_buf(),
-                        ContentType::Documentation { format: format.clone() },
+                        ContentType::Documentation {
+                            format: format.clone(),
+                        },
                         paragraph_text,
                         span,
                         chunk_index,
-                    ).with_metadata(serde_json::json!({
+                    )
+                    .with_metadata(serde_json::json!({
                         "element_type": "paragraph",
                         "line_count": paragraph_lines.len()
                     }));
-                    
+
                     chunks.push(chunk);
                     chunk_index += 1;
                     paragraph_lines.clear();
                 }
                 continue;
             }
-            
+
             // Start new paragraph or continue existing one
             if paragraph_lines.is_empty() {
                 paragraph_start = line_idx;
             }
             paragraph_lines.push(trimmed);
         }
-        
+
         // Handle final paragraph
         if !paragraph_lines.is_empty() {
             let paragraph_text = paragraph_lines.join("\n");
             let span = self.calculate_paragraph_span(paragraph_start, lines.len() - 1, &lines);
-            
+
             let chunk = ContentChunk::new(
                 file_path.to_path_buf(),
                 ContentType::Documentation { format },
                 paragraph_text,
                 span,
                 chunk_index,
-            ).with_metadata(serde_json::json!({
+            )
+            .with_metadata(serde_json::json!({
                 "element_type": "paragraph",
                 "line_count": paragraph_lines.len()
             }));
-            
+
             chunks.push(chunk);
         }
-        
+
         Ok(chunks)
     }
-    
+
     /// Calculate span for a paragraph
     fn calculate_paragraph_span(&self, start_line: usize, end_line: usize, lines: &[&str]) -> Span {
-        let start_byte: usize = lines.iter().take(start_line).map(|l| l.len() + 1).sum::<usize>();
-        let end_byte: usize = lines.iter().take(end_line + 1).map(|l| l.len() + 1).sum::<usize>() - 1;
-        
+        let start_byte: usize = lines
+            .iter()
+            .take(start_line)
+            .map(|l| l.len() + 1)
+            .sum::<usize>();
+        let end_byte: usize = lines
+            .iter()
+            .take(end_line + 1)
+            .map(|l| l.len() + 1)
+            .sum::<usize>()
+            - 1;
+
         Span::new(
             start_byte,
             end_byte,
@@ -790,8 +898,8 @@ impl Default for TextParser {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::NamedTempFile;
-    use std::io::Write;
+
+
 
     #[test]
     fn test_document_parser_creation() {
@@ -803,22 +911,92 @@ mod tests {
     #[test]
     fn test_content_type_detection() {
         let parser = DocumentParser::new();
-        
+
         let test_cases = vec![
-            ("test.md", ContentType::Documentation { format: DocumentFormat::Markdown }),
-            ("README.markdown", ContentType::Documentation { format: DocumentFormat::Markdown }),
-            ("doc.rst", ContentType::Documentation { format: DocumentFormat::RestructuredText }),
-            ("manual.adoc", ContentType::Documentation { format: DocumentFormat::AsciiDoc }),
-            ("page.html", ContentType::Documentation { format: DocumentFormat::Html }),
-            ("notes.txt", ContentType::Documentation { format: DocumentFormat::PlainText }),
-            ("config.json", ContentType::Configuration { format: ConfigFormat::Json }),
-            ("config.yaml", ContentType::Configuration { format: ConfigFormat::Yaml }),
-            ("config.yml", ContentType::Configuration { format: ConfigFormat::Yaml }),
-            ("Cargo.toml", ContentType::Configuration { format: ConfigFormat::Toml }),
-            ("settings.ini", ContentType::Configuration { format: ConfigFormat::Ini }),
-            ("app.properties", ContentType::Configuration { format: ConfigFormat::Properties }),
-            (".env", ContentType::Configuration { format: ConfigFormat::Env }),
-            ("config.xml", ContentType::Configuration { format: ConfigFormat::Xml }),
+            (
+                "test.md",
+                ContentType::Documentation {
+                    format: DocumentFormat::Markdown,
+                },
+            ),
+            (
+                "README.markdown",
+                ContentType::Documentation {
+                    format: DocumentFormat::Markdown,
+                },
+            ),
+            (
+                "doc.rst",
+                ContentType::Documentation {
+                    format: DocumentFormat::RestructuredText,
+                },
+            ),
+            (
+                "manual.adoc",
+                ContentType::Documentation {
+                    format: DocumentFormat::AsciiDoc,
+                },
+            ),
+            (
+                "page.html",
+                ContentType::Documentation {
+                    format: DocumentFormat::Html,
+                },
+            ),
+            (
+                "notes.txt",
+                ContentType::Documentation {
+                    format: DocumentFormat::PlainText,
+                },
+            ),
+            (
+                "config.json",
+                ContentType::Configuration {
+                    format: ConfigFormat::Json,
+                },
+            ),
+            (
+                "config.yaml",
+                ContentType::Configuration {
+                    format: ConfigFormat::Yaml,
+                },
+            ),
+            (
+                "config.yml",
+                ContentType::Configuration {
+                    format: ConfigFormat::Yaml,
+                },
+            ),
+            (
+                "Cargo.toml",
+                ContentType::Configuration {
+                    format: ConfigFormat::Toml,
+                },
+            ),
+            (
+                "settings.ini",
+                ContentType::Configuration {
+                    format: ConfigFormat::Ini,
+                },
+            ),
+            (
+                "app.properties",
+                ContentType::Configuration {
+                    format: ConfigFormat::Properties,
+                },
+            ),
+            (
+                ".env",
+                ContentType::Configuration {
+                    format: ConfigFormat::Env,
+                },
+            ),
+            (
+                "config.xml",
+                ContentType::Configuration {
+                    format: ConfigFormat::Xml,
+                },
+            ),
             ("unknown.xyz", ContentType::PlainText),
         ];
 
@@ -856,9 +1034,10 @@ Content at level 5.
 Content at level 6."#;
 
         let chunks = parser.parse(Path::new("test.md"), content).unwrap();
-        
+
         // Should extract all headers
-        let headers: Vec<_> = chunks.iter()
+        let headers: Vec<_> = chunks
+            .iter()
             .filter(|chunk| {
                 if let Some(metadata) = chunk.metadata.as_object() {
                     metadata.get("element_type").and_then(|v| v.as_str()) == Some("header")
@@ -869,11 +1048,14 @@ Content at level 6."#;
             .collect();
 
         assert_eq!(headers.len(), 6, "Should find 6 headers");
-        
+
         // Test header levels
-        let header_levels: Vec<_> = headers.iter()
+        let header_levels: Vec<_> = headers
+            .iter()
             .filter_map(|chunk| {
-                chunk.metadata.as_object()
+                chunk
+                    .metadata
+                    .as_object()
                     .and_then(|m| m.get("header_level"))
                     .and_then(|v| v.as_u64())
             })
@@ -912,8 +1094,9 @@ no language specified
 ```"#;
 
         let chunks = parser.parse(Path::new("test.md"), content).unwrap();
-        
-        let code_blocks: Vec<_> = chunks.iter()
+
+        let code_blocks: Vec<_> = chunks
+            .iter()
             .filter(|chunk| {
                 if let Some(metadata) = chunk.metadata.as_object() {
                     metadata.get("element_type").and_then(|v| v.as_str()) == Some("code_block")
@@ -928,20 +1111,38 @@ no language specified
         // Test Python code block
         assert!(code_blocks[0].content.contains("def hello_world"));
         assert!(code_blocks[0].content.contains("print(\"Hello, World!\")"));
-        let python_lang = code_blocks[0].metadata.as_object().unwrap()
-            .get("language").unwrap().as_str().unwrap();
+        let python_lang = code_blocks[0]
+            .metadata
+            .as_object()
+            .unwrap()
+            .get("language")
+            .unwrap()
+            .as_str()
+            .unwrap();
         assert_eq!(python_lang, "python");
 
         // Test JavaScript code block
         assert!(code_blocks[1].content.contains("function greet"));
-        let js_lang = code_blocks[1].metadata.as_object().unwrap()
-            .get("language").unwrap().as_str().unwrap();
+        let js_lang = code_blocks[1]
+            .metadata
+            .as_object()
+            .unwrap()
+            .get("language")
+            .unwrap()
+            .as_str()
+            .unwrap();
         assert_eq!(js_lang, "javascript");
 
         // Test generic code block
         assert!(code_blocks[2].content.contains("generic code here"));
-        let generic_lang = code_blocks[2].metadata.as_object().unwrap()
-            .get("language").unwrap().as_str().unwrap();
+        let generic_lang = code_blocks[2]
+            .metadata
+            .as_object()
+            .unwrap()
+            .get("language")
+            .unwrap()
+            .as_str()
+            .unwrap();
         assert_eq!(generic_lang, "text");
     }
 
@@ -960,8 +1161,9 @@ This is a paragraph after a header.
 Another paragraph here."#;
 
         let chunks = parser.parse(Path::new("test.md"), content).unwrap();
-        
-        let paragraphs: Vec<_> = chunks.iter()
+
+        let paragraphs: Vec<_> = chunks
+            .iter()
             .filter(|chunk| {
                 if let Some(metadata) = chunk.metadata.as_object() {
                     metadata.get("element_type").and_then(|v| v.as_str()) == Some("paragraph")
@@ -990,12 +1192,15 @@ Another paragraph here."#;
   "version": "1.0.0"
 }"#;
 
-        let chunks = parser.parse(Path::new("config.json"), content, ConfigFormat::Json).unwrap();
-        
+        let chunks = parser
+            .parse(Path::new("config.json"), content, ConfigFormat::Json)
+            .unwrap();
+
         assert!(!chunks.is_empty(), "Should extract chunks from JSON");
-        
+
         // Should find various value types
-        let string_chunks: Vec<_> = chunks.iter()
+        let string_chunks: Vec<_> = chunks
+            .iter()
             .filter(|chunk| {
                 if let Some(metadata) = chunk.metadata.as_object() {
                     metadata.get("value_type").and_then(|v| v.as_str()) == Some("string")
@@ -1005,7 +1210,8 @@ Another paragraph here."#;
             })
             .collect();
 
-        let boolean_chunks: Vec<_> = chunks.iter()
+        let boolean_chunks: Vec<_> = chunks
+            .iter()
             .filter(|chunk| {
                 if let Some(metadata) = chunk.metadata.as_object() {
                     metadata.get("value_type").and_then(|v| v.as_str()) == Some("boolean")
@@ -1036,14 +1242,20 @@ debug: true
 version: "1.0.0"
 "#;
 
-        let chunks = parser.parse(Path::new("config.yaml"), content, ConfigFormat::Yaml).unwrap();
-        
+        let chunks = parser
+            .parse(Path::new("config.yaml"), content, ConfigFormat::Yaml)
+            .unwrap();
+
         assert!(!chunks.is_empty(), "Should extract chunks from YAML");
-        
+
         // Should find key-value pairs
-        let has_database = chunks.iter().any(|chunk| chunk.content.contains("host: localhost"));
-        let has_debug = chunks.iter().any(|chunk| chunk.content.contains("debug: true"));
-        
+        let has_database = chunks
+            .iter()
+            .any(|chunk| chunk.content.contains("host: localhost"));
+        let has_debug = chunks
+            .iter()
+            .any(|chunk| chunk.content.contains("debug: true"));
+
         assert!(has_database, "Should find database configuration");
         assert!(has_debug, "Should find debug setting");
     }
@@ -1065,12 +1277,15 @@ debug = true
 version = "1.0.0"
 "#;
 
-        let chunks = parser.parse(Path::new("Cargo.toml"), content, ConfigFormat::Toml).unwrap();
-        
+        let chunks = parser
+            .parse(Path::new("Cargo.toml"), content, ConfigFormat::Toml)
+            .unwrap();
+
         assert!(!chunks.is_empty(), "Should extract chunks from TOML");
-        
+
         // Should find sections and key-value pairs
-        let sections: Vec<_> = chunks.iter()
+        let sections: Vec<_> = chunks
+            .iter()
             .filter(|chunk| {
                 if let Some(metadata) = chunk.metadata.as_object() {
                     metadata.get("element_type").and_then(|v| v.as_str()) == Some("section")
@@ -1083,11 +1298,12 @@ version = "1.0.0"
         assert!(sections.len() >= 2, "Should find at least 2 sections");
         assert!(sections.iter().any(|s| s.content == "database"));
         assert!(sections.iter().any(|s| s.content == "features"));
-        
-        let key_values: Vec<_> = chunks.iter()
+
+        let key_values: Vec<_> = chunks
+            .iter()
             .filter(|chunk| chunk.content.contains(" = "))
             .collect();
-        
+
         assert!(!key_values.is_empty(), "Should find key-value pairs");
     }
 
@@ -1106,17 +1322,27 @@ file=/var/log/app.log
 debug=true
 "#;
 
-        let chunks = parser.parse(Path::new("config.ini"), content, ConfigFormat::Ini).unwrap();
-        
+        let chunks = parser
+            .parse(Path::new("config.ini"), content, ConfigFormat::Ini)
+            .unwrap();
+
         assert!(!chunks.is_empty(), "Should extract chunks from INI");
-        
-        let key_values: Vec<_> = chunks.iter()
+
+        let key_values: Vec<_> = chunks
+            .iter()
             .filter(|chunk| chunk.content.contains("="))
             .collect();
-        
-        assert!(key_values.len() >= 5, "Should find multiple key-value pairs");
-        assert!(key_values.iter().any(|kv| kv.content.contains("host=localhost")));
-        assert!(key_values.iter().any(|kv| kv.content.contains("level=info")));
+
+        assert!(
+            key_values.len() >= 5,
+            "Should find multiple key-value pairs"
+        );
+        assert!(key_values
+            .iter()
+            .any(|kv| kv.content.contains("host=localhost")));
+        assert!(key_values
+            .iter()
+            .any(|kv| kv.content.contains("level=info")));
     }
 
     #[test]
@@ -1134,17 +1360,28 @@ logging.file=/var/log/app.log
 debug=true
 "#;
 
-        let chunks = parser.parse(Path::new("app.properties"), content, ConfigFormat::Properties).unwrap();
-        
+        let chunks = parser
+            .parse(
+                Path::new("app.properties"),
+                content,
+                ConfigFormat::Properties,
+            )
+            .unwrap();
+
         assert!(!chunks.is_empty(), "Should extract chunks from properties");
-        
-        let properties: Vec<_> = chunks.iter()
+
+        let properties: Vec<_> = chunks
+            .iter()
             .filter(|chunk| chunk.content.contains("="))
             .collect();
-        
+
         assert!(properties.len() >= 5, "Should find multiple properties");
-        assert!(properties.iter().any(|p| p.content.contains("database.host=localhost")));
-        assert!(properties.iter().any(|p| p.content.contains("logging.level=info")));
+        assert!(properties
+            .iter()
+            .any(|p| p.content.contains("database.host=localhost")));
+        assert!(properties
+            .iter()
+            .any(|p| p.content.contains("logging.level=info")));
     }
 
     #[test]
@@ -1157,17 +1394,24 @@ DEBUG=true
 SECRET_KEY=abc123xyz
 "#;
 
-        let chunks = parser.parse(Path::new(".env"), content, ConfigFormat::Env).unwrap();
-        
+        let chunks = parser
+            .parse(Path::new(".env"), content, ConfigFormat::Env)
+            .unwrap();
+
         assert!(!chunks.is_empty(), "Should extract chunks from env file");
-        
-        let env_vars: Vec<_> = chunks.iter()
+
+        let env_vars: Vec<_> = chunks
+            .iter()
             .filter(|chunk| chunk.content.contains("="))
             .collect();
-        
+
         assert_eq!(env_vars.len(), 5, "Should find 5 environment variables");
-        assert!(env_vars.iter().any(|var| var.content.contains("DATABASE_HOST=localhost")));
-        assert!(env_vars.iter().any(|var| var.content.contains("DEBUG=true")));
+        assert!(env_vars
+            .iter()
+            .any(|var| var.content.contains("DATABASE_HOST=localhost")));
+        assert!(env_vars
+            .iter()
+            .any(|var| var.content.contains("DEBUG=true")));
     }
 
     #[test]
@@ -1186,15 +1430,18 @@ SECRET_KEY=abc123xyz
   <debug>true</debug>
 </configuration>"#;
 
-        let chunks = parser.parse(Path::new("config.xml"), content, ConfigFormat::Xml).unwrap();
-        
+        let chunks = parser
+            .parse(Path::new("config.xml"), content, ConfigFormat::Xml)
+            .unwrap();
+
         assert!(!chunks.is_empty(), "Should extract chunks from XML");
-        
+
         // Should find tag contents
-        let tag_contents: Vec<_> = chunks.iter()
+        let tag_contents: Vec<_> = chunks
+            .iter()
             .filter(|chunk| !chunk.content.trim().is_empty())
             .collect();
-        
+
         assert!(!tag_contents.is_empty(), "Should find tag contents");
         assert!(tag_contents.iter().any(|tag| tag.content == "localhost"));
         assert!(tag_contents.iter().any(|tag| tag.content == "5432"));
@@ -1213,18 +1460,27 @@ This is the third paragraph.
 It also has multiple lines.
 And even more lines."#;
 
-        let chunks = parser.parse(Path::new("document.txt"), content, DocumentFormat::PlainText).unwrap();
-        
+        let chunks = parser
+            .parse(
+                Path::new("document.txt"),
+                content,
+                DocumentFormat::PlainText,
+            )
+            .unwrap();
+
         assert_eq!(chunks.len(), 3, "Should find 3 paragraphs");
-        
+
         assert!(chunks[0].content.contains("first paragraph"));
         assert!(chunks[1].content.contains("second paragraph"));
         assert!(chunks[2].content.contains("third paragraph"));
-        
+
         // Check metadata
         for chunk in &chunks {
             let metadata = chunk.metadata.as_object().unwrap();
-            assert_eq!(metadata.get("element_type").unwrap().as_str().unwrap(), "paragraph");
+            assert_eq!(
+                metadata.get("element_type").unwrap().as_str().unwrap(),
+                "paragraph"
+            );
             assert!(metadata.get("line_count").unwrap().as_u64().unwrap() >= 1);
         }
     }
@@ -1234,44 +1490,65 @@ And even more lines."#;
         let parser = ConfigParser::new();
         let invalid_json = r#"{ invalid json content here"#;
 
-        let chunks = parser.parse(Path::new("bad.json"), invalid_json, ConfigFormat::Json).unwrap();
-        
-        assert_eq!(chunks.len(), 1, "Should create a single chunk for invalid JSON");
+        let chunks = parser
+            .parse(Path::new("bad.json"), invalid_json, ConfigFormat::Json)
+            .unwrap();
+
+        assert_eq!(
+            chunks.len(),
+            1,
+            "Should create a single chunk for invalid JSON"
+        );
         assert_eq!(chunks[0].content, invalid_json);
-        
+
         let metadata = chunks[0].metadata.as_object().unwrap();
-        assert_eq!(metadata.get("parse_error").unwrap().as_bool().unwrap(), true);
-        assert_eq!(metadata.get("config_type").unwrap().as_str().unwrap(), "json");
+        assert_eq!(
+            metadata.get("parse_error").unwrap().as_bool().unwrap(),
+            true
+        );
+        assert_eq!(
+            metadata.get("config_type").unwrap().as_str().unwrap(),
+            "json"
+        );
     }
 
     #[test]
     fn test_empty_content_handling() {
         let parser = DocumentParser::new();
-        
+
         let empty_md = "";
         let node = parser.parse_file(Path::new("empty.md"), empty_md).unwrap();
-        
-        assert_eq!(node.chunks.len(), 0, "Empty content should produce no chunks");
+
+        assert_eq!(
+            node.chunks.len(),
+            0,
+            "Empty content should produce no chunks"
+        );
         assert_eq!(node.file_size, 0);
     }
 
     #[test]
     fn test_large_content_handling() {
         let parser = DocumentParser::new();
-        
+
         // Create a large markdown document
         let mut content = String::new();
         for i in 0..100 {
-            content.push_str(&format!("# Header {}\n\nThis is paragraph {} with some content.\n\n", i, i));
+            content.push_str(&format!(
+                "# Header {}\n\nThis is paragraph {} with some content.\n\n",
+                i, i
+            ));
         }
 
         let node = parser.parse_file(Path::new("large.md"), &content).unwrap();
-        
+
         assert!(node.chunks.len() >= 100, "Should handle large content");
         assert_eq!(node.file_size, content.len());
-        
+
         // Should find headers and paragraphs
-        let headers = node.chunks.iter()
+        let headers = node
+            .chunks
+            .iter()
             .filter(|chunk| {
                 if let Some(metadata) = chunk.metadata.as_object() {
                     metadata.get("element_type").and_then(|v| v.as_str()) == Some("header")
@@ -1280,7 +1557,7 @@ And even more lines."#;
                 }
             })
             .count();
-        
+
         assert!(headers >= 100, "Should find many headers");
     }
 
@@ -1288,14 +1565,23 @@ And even more lines."#;
     fn test_content_span_calculation() {
         let parser = MarkdownParser::new();
         let content = "# Title\nSome content.";
-        
+
         let chunks = parser.parse(Path::new("test.md"), content).unwrap();
-        
+
         for chunk in chunks {
-            assert!(chunk.span.start_byte < chunk.span.end_byte, "Start should be before end");
-            assert!(chunk.span.start_line <= chunk.span.end_line, "Start line should be <= end line");
+            assert!(
+                chunk.span.start_byte < chunk.span.end_byte,
+                "Start should be before end"
+            );
+            assert!(
+                chunk.span.start_line <= chunk.span.end_line,
+                "Start line should be <= end line"
+            );
             assert!(chunk.span.start_column >= 1, "Column should be 1-indexed");
-            assert!(chunk.span.end_byte <= content.len(), "End should not exceed content length");
+            assert!(
+                chunk.span.end_byte <= content.len(),
+                "End should not exceed content length"
+            );
         }
     }
-} 
+}

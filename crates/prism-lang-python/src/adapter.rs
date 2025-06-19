@@ -1,6 +1,6 @@
 //! Adapter to integrate Python parser with prism
 
-use crate::parser::{PythonParser, ParseContext as PyParseContext};
+use crate::parser::{ParseContext as PyParseContext, PythonParser};
 use crate::types as py_types;
 
 /// Adapter that implements prism's LanguageParser trait
@@ -58,4 +58,4 @@ pub fn parse_file(
     let result = parser.parse(&context)?;
 
     Ok((result.tree, result.nodes, result.edges))
-} 
+}

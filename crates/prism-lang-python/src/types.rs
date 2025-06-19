@@ -222,4 +222,4 @@ impl Edge {
             kind,
         }
     }
-} 
+}

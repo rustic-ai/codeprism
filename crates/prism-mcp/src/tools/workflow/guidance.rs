@@ -1,16 +1,16 @@
 //! Workflow guidance and analysis planning
-//! 
+//!
 //! Provides intelligent workflow recommendations based on user goals,
 //! current context, and optimal tool sequencing strategies.
 
 use anyhow::Result;
 use serde_json::{json, Value};
 
-use crate::tools::{Tool, CallToolParams, CallToolResult, ToolContent};
-use crate::context::{SessionManager, WorkflowContext, ToolSuggestion};
+use crate::context::session::WorkflowStage;
 use crate::context::session::{SessionId, SessionState};
 use crate::context::workflow::ConfidenceLevel;
-use crate::context::session::WorkflowStage;
+use crate::context::{SessionManager, ToolSuggestion, WorkflowContext};
+use crate::tools::{CallToolParams, CallToolResult, Tool, ToolContent};
 use crate::PrismMcpServer;
 
 /// Create the suggest_analysis_workflow tool
@@ -73,37 +73,41 @@ pub fn create_suggest_analysis_workflow_tool() -> Tool {
 /// Generate workflow recommendations based on user goals
 pub async fn suggest_analysis_workflow(
     server: &PrismMcpServer,
-    arguments: Option<&Value>
+    arguments: Option<&Value>,
 ) -> Result<CallToolResult> {
     let args = arguments.ok_or_else(|| anyhow::anyhow!("Missing arguments"))?;
-    
-    let goal = args.get("goal")
+
+    let goal = args
+        .get("goal")
         .and_then(|v| v.as_str())
         .ok_or_else(|| anyhow::anyhow!("Missing or invalid goal parameter"))?;
-    
-    let session_id = args.get("session_id")
+
+    let session_id = args
+        .get("session_id")
         .and_then(|v| v.as_str())
         .map(|s| SessionId(s.to_string()));
-    
-    let complexity = args.get("complexity_preference")
+
+    let complexity = args
+        .get("complexity_preference")
         .and_then(|v| v.as_str())
         .unwrap_or("standard");
-    
-    let time_budget = args.get("time_constraints")
+
+    let time_budget = args
+        .get("time_constraints")
         .and_then(|v| v.as_u64())
         .map(|t| t as u32);
-    
+
     let current_context = args.get("current_context");
-    
+
     // Generate workflow recommendation based on goal
     let workflow = generate_workflow_for_goal(
         goal,
         complexity,
         time_budget,
         current_context,
-        session_id.as_ref()
+        session_id.as_ref(),
     )?;
-    
+
     // Create comprehensive workflow plan
     let mut result = json!({
         "workflow_plan": {
@@ -127,7 +131,7 @@ pub async fn suggest_analysis_workflow(
             "alternative_approaches": workflow.alternative_approaches
         }
     });
-    
+
     // Add session-specific recommendations if session provided
     if let Some(session_id) = session_id {
         if let Ok(session_context) = get_session_context(session_id) {
@@ -139,7 +143,7 @@ pub async fn suggest_analysis_workflow(
             });
         }
     }
-    
+
     Ok(CallToolResult {
         content: vec![ToolContent::Text {
             text: serde_json::to_string_pretty(&result)?,
@@ -210,7 +214,7 @@ fn generate_workflow_for_goal(
     complexity: &str,
     time_budget: Option<u32>,
     _current_context: Option<&Value>,
-    _session_id: Option<&SessionId>
+    _session_id: Option<&SessionId>,
 ) -> Result<WorkflowRecommendation> {
     match goal {
         "understand_codebase" => generate_codebase_understanding_workflow(complexity, time_budget),
@@ -220,14 +224,14 @@ fn generate_workflow_for_goal(
         "analyze_architecture" => generate_architecture_analysis_workflow(complexity, time_budget),
         "debug_issue" => generate_debugging_workflow(complexity, time_budget),
         "refactor_preparation" => generate_refactoring_workflow(complexity, time_budget),
-        _ => Err(anyhow::anyhow!("Unknown analysis goal: {}", goal))
+        _ => Err(anyhow::anyhow!("Unknown analysis goal: {}", goal)),
     }
 }
 
 /// Generate codebase understanding workflow
 fn generate_codebase_understanding_workflow(
     complexity: &str,
-    time_budget: Option<u32>
+    time_budget: Option<u32>,
 ) -> Result<WorkflowRecommendation> {
     let (tools, duration) = match complexity {
         "quick" => (
@@ -236,8 +240,10 @@ fn generate_codebase_understanding_workflow(
                     step: 1,
                     tool_name: "repository_stats".to_string(),
                     parameters: json!({}),
-                    reasoning: "Get high-level overview of repository structure and metrics".to_string(),
-                    expected_outcome: "Understanding of codebase size, languages, and organization".to_string(),
+                    reasoning: "Get high-level overview of repository structure and metrics"
+                        .to_string(),
+                    expected_outcome: "Understanding of codebase size, languages, and organization"
+                        .to_string(),
                     estimated_time_minutes: 2,
                     priority: "high".to_string(),
                     optional: false,
@@ -251,9 +257,9 @@ fn generate_codebase_understanding_workflow(
                     estimated_time_minutes: 3,
                     priority: "high".to_string(),
                     optional: false,
-                }
+                },
             ],
-            10
+            10,
         ),
         "comprehensive" => (
             vec![
@@ -261,7 +267,8 @@ fn generate_codebase_understanding_workflow(
                     step: 1,
                     tool_name: "repository_stats".to_string(),
                     parameters: json!({}),
-                    reasoning: "Get comprehensive repository metrics and structure analysis".to_string(),
+                    reasoning: "Get comprehensive repository metrics and structure analysis"
+                        .to_string(),
                     expected_outcome: "Detailed understanding of codebase organization".to_string(),
                     estimated_time_minutes: 3,
                     priority: "high".to_string(),
@@ -282,7 +289,8 @@ fn generate_codebase_understanding_workflow(
                     tool_name: "detect_patterns".to_string(),
                     parameters: json!({"pattern_types": ["architectural", "design"]}),
                     reasoning: "Identify architectural and design patterns in use".to_string(),
-                    expected_outcome: "Understanding of architectural patterns and design principles".to_string(),
+                    expected_outcome:
+                        "Understanding of architectural patterns and design principles".to_string(),
                     estimated_time_minutes: 8,
                     priority: "medium".to_string(),
                     optional: false,
@@ -296,18 +304,20 @@ fn generate_codebase_understanding_workflow(
                     estimated_time_minutes: 10,
                     priority: "medium".to_string(),
                     optional: true,
-                }
+                },
             ],
-            30
+            30,
         ),
-        _ => ( // standard
+        _ => (
+            // standard
             vec![
                 ToolStep {
                     step: 1,
                     tool_name: "repository_stats".to_string(),
                     parameters: json!({}),
                     reasoning: "Get overview of repository structure and basic metrics".to_string(),
-                    expected_outcome: "Understanding of codebase scope and organization".to_string(),
+                    expected_outcome: "Understanding of codebase scope and organization"
+                        .to_string(),
                     estimated_time_minutes: 2,
                     priority: "high".to_string(),
                     optional: false,
@@ -331,14 +341,14 @@ fn generate_codebase_understanding_workflow(
                     estimated_time_minutes: 6,
                     priority: "medium".to_string(),
                     optional: false,
-                }
+                },
             ],
-            20
-        )
+            20,
+        ),
     };
-    
+
     let adjusted_duration = time_budget.unwrap_or(duration).min(duration);
-    
+
     Ok(WorkflowRecommendation {
         goal: "understand_codebase".to_string(),
         estimated_duration: adjusted_duration,
@@ -391,217 +401,212 @@ fn generate_codebase_understanding_workflow(
 /// Generate security analysis workflow (simplified implementation)
 fn generate_security_analysis_workflow(
     complexity: &str,
-    time_budget: Option<u32>
+    time_budget: Option<u32>,
 ) -> Result<WorkflowRecommendation> {
     let base_duration = match complexity {
         "quick" => 15,
         "comprehensive" => 45,
         _ => 25,
     };
-    
+
     Ok(WorkflowRecommendation {
         goal: "find_security_issues".to_string(),
         estimated_duration: time_budget.unwrap_or(base_duration),
-        tool_sequence: vec![
-            ToolStep {
-                step: 1,
-                tool_name: "analyze_security".to_string(),
-                parameters: json!({"include_all_severities": true}),
-                reasoning: "Comprehensive security vulnerability scan".to_string(),
-                expected_outcome: "Identification of potential security issues".to_string(),
-                estimated_time_minutes: base_duration,
-                priority: "high".to_string(),
-                optional: false,
-            }
-        ],
-        stages: vec![
-            WorkflowStageInfo {
-                stage: "Security Analysis".to_string(),
-                description: "Comprehensive security vulnerability assessment".to_string(),
-                tools: vec!["analyze_security".to_string()],
-                success_indicators: vec!["Security issues identified and prioritized".to_string()],
-            }
-        ],
+        tool_sequence: vec![ToolStep {
+            step: 1,
+            tool_name: "analyze_security".to_string(),
+            parameters: json!({"include_all_severities": true}),
+            reasoning: "Comprehensive security vulnerability scan".to_string(),
+            expected_outcome: "Identification of potential security issues".to_string(),
+            estimated_time_minutes: base_duration,
+            priority: "high".to_string(),
+            optional: false,
+        }],
+        stages: vec![WorkflowStageInfo {
+            stage: "Security Analysis".to_string(),
+            description: "Comprehensive security vulnerability assessment".to_string(),
+            tools: vec!["analyze_security".to_string()],
+            success_indicators: vec!["Security issues identified and prioritized".to_string()],
+        }],
         execution_type: "sequential".to_string(),
         parallel_groups: vec![],
         dependencies: vec![],
         success_criteria: vec!["Security vulnerabilities identified and assessed".to_string()],
-        getting_started_guidance: "Run comprehensive security analysis to identify potential vulnerabilities".to_string(),
+        getting_started_guidance:
+            "Run comprehensive security analysis to identify potential vulnerabilities".to_string(),
         optimization_tips: vec!["Focus on high-severity issues first".to_string()],
         common_pitfalls: vec!["Don't ignore low-severity issues in production code".to_string()],
-        alternative_approaches: vec!["Combine with code pattern analysis for better context".to_string()],
+        alternative_approaches: vec![
+            "Combine with code pattern analysis for better context".to_string()
+        ],
     })
 }
 
 /// Generate performance analysis workflow (simplified implementation)
 fn generate_performance_analysis_workflow(
     complexity: &str,
-    time_budget: Option<u32>
+    time_budget: Option<u32>,
 ) -> Result<WorkflowRecommendation> {
     let base_duration = match complexity {
         "quick" => 10,
         "comprehensive" => 30,
         _ => 20,
     };
-    
+
     Ok(WorkflowRecommendation {
         goal: "analyze_performance".to_string(),
         estimated_duration: time_budget.unwrap_or(base_duration),
-        tool_sequence: vec![
-            ToolStep {
-                step: 1,
-                tool_name: "analyze_performance".to_string(),
-                parameters: json!({}),
-                reasoning: "Analyze performance characteristics and bottlenecks".to_string(),
-                expected_outcome: "Performance issues and optimization opportunities identified".to_string(),
-                estimated_time_minutes: base_duration,
-                priority: "high".to_string(),
-                optional: false,
-            }
-        ],
-        stages: vec![
-            WorkflowStageInfo {
-                stage: "Performance Analysis".to_string(),
-                description: "Performance bottleneck identification and optimization".to_string(),
-                tools: vec!["analyze_performance".to_string()],
-                success_indicators: vec!["Performance issues identified".to_string()],
-            }
-        ],
+        tool_sequence: vec![ToolStep {
+            step: 1,
+            tool_name: "analyze_performance".to_string(),
+            parameters: json!({}),
+            reasoning: "Analyze performance characteristics and bottlenecks".to_string(),
+            expected_outcome: "Performance issues and optimization opportunities identified"
+                .to_string(),
+            estimated_time_minutes: base_duration,
+            priority: "high".to_string(),
+            optional: false,
+        }],
+        stages: vec![WorkflowStageInfo {
+            stage: "Performance Analysis".to_string(),
+            description: "Performance bottleneck identification and optimization".to_string(),
+            tools: vec!["analyze_performance".to_string()],
+            success_indicators: vec!["Performance issues identified".to_string()],
+        }],
         execution_type: "sequential".to_string(),
         parallel_groups: vec![],
         dependencies: vec![],
         success_criteria: vec!["Performance bottlenecks identified and prioritized".to_string()],
-        getting_started_guidance: "Analyze performance characteristics to identify optimization opportunities".to_string(),
+        getting_started_guidance:
+            "Analyze performance characteristics to identify optimization opportunities".to_string(),
         optimization_tips: vec!["Focus on high-impact performance improvements".to_string()],
         common_pitfalls: vec!["Don't optimize without measuring impact".to_string()],
-        alternative_approaches: vec!["Combine with complexity analysis for comprehensive assessment".to_string()],
+        alternative_approaches: vec![
+            "Combine with complexity analysis for comprehensive assessment".to_string(),
+        ],
     })
 }
 
 /// Generate data flow analysis workflow (simplified implementation)
 fn generate_data_flow_analysis_workflow(
     complexity: &str,
-    time_budget: Option<u32>
+    time_budget: Option<u32>,
 ) -> Result<WorkflowRecommendation> {
     let base_duration = match complexity {
         "quick" => 12,
         "comprehensive" => 35,
         _ => 22,
     };
-    
+
     Ok(WorkflowRecommendation {
         goal: "trace_data_flow".to_string(),
         estimated_duration: time_budget.unwrap_or(base_duration),
-        tool_sequence: vec![
-            ToolStep {
-                step: 1,
-                tool_name: "trace_data_flow".to_string(),
-                parameters: json!({"include_transformations": true}),
-                reasoning: "Trace data flow and transformations through the system".to_string(),
-                expected_outcome: "Understanding of data flow patterns and transformations".to_string(),
-                estimated_time_minutes: base_duration,
-                priority: "high".to_string(),
-                optional: false,
-            }
-        ],
-        stages: vec![
-            WorkflowStageInfo {
-                stage: "Data Flow Analysis".to_string(),
-                description: "Comprehensive data flow tracing and analysis".to_string(),
-                tools: vec!["trace_data_flow".to_string()],
-                success_indicators: vec!["Data flow patterns identified".to_string()],
-            }
-        ],
+        tool_sequence: vec![ToolStep {
+            step: 1,
+            tool_name: "trace_data_flow".to_string(),
+            parameters: json!({"include_transformations": true}),
+            reasoning: "Trace data flow and transformations through the system".to_string(),
+            expected_outcome: "Understanding of data flow patterns and transformations".to_string(),
+            estimated_time_minutes: base_duration,
+            priority: "high".to_string(),
+            optional: false,
+        }],
+        stages: vec![WorkflowStageInfo {
+            stage: "Data Flow Analysis".to_string(),
+            description: "Comprehensive data flow tracing and analysis".to_string(),
+            tools: vec!["trace_data_flow".to_string()],
+            success_indicators: vec!["Data flow patterns identified".to_string()],
+        }],
         execution_type: "sequential".to_string(),
         parallel_groups: vec![],
         dependencies: vec![],
         success_criteria: vec!["Data flow and transformations mapped".to_string()],
-        getting_started_guidance: "Trace data flow to understand system data processing".to_string(),
+        getting_started_guidance: "Trace data flow to understand system data processing"
+            .to_string(),
         optimization_tips: vec!["Focus on critical data paths first".to_string()],
         common_pitfalls: vec!["Don't ignore error handling in data flow".to_string()],
-        alternative_approaches: vec!["Use symbol analysis to understand data structures first".to_string()],
+        alternative_approaches: vec![
+            "Use symbol analysis to understand data structures first".to_string()
+        ],
     })
 }
 
 /// Generate architecture analysis workflow (simplified implementation)
 fn generate_architecture_analysis_workflow(
     complexity: &str,
-    time_budget: Option<u32>
+    time_budget: Option<u32>,
 ) -> Result<WorkflowRecommendation> {
     let base_duration = match complexity {
         "quick" => 15,
         "comprehensive" => 40,
         _ => 25,
     };
-    
+
     Ok(WorkflowRecommendation {
         goal: "analyze_architecture".to_string(),
         estimated_duration: time_budget.unwrap_or(base_duration),
-        tool_sequence: vec![
-            ToolStep {
-                step: 1,
-                tool_name: "detect_patterns".to_string(),
-                parameters: json!({"pattern_types": ["architectural", "design"]}),
-                reasoning: "Identify architectural and design patterns".to_string(),
-                expected_outcome: "Architecture patterns and design principles understood".to_string(),
-                estimated_time_minutes: base_duration,
-                priority: "high".to_string(),
-                optional: false,
-            }
-        ],
-        stages: vec![
-            WorkflowStageInfo {
-                stage: "Architecture Analysis".to_string(),
-                description: "Architectural pattern identification and analysis".to_string(),
-                tools: vec!["detect_patterns".to_string()],
-                success_indicators: vec!["Architecture patterns identified".to_string()],
-            }
-        ],
+        tool_sequence: vec![ToolStep {
+            step: 1,
+            tool_name: "detect_patterns".to_string(),
+            parameters: json!({"pattern_types": ["architectural", "design"]}),
+            reasoning: "Identify architectural and design patterns".to_string(),
+            expected_outcome: "Architecture patterns and design principles understood".to_string(),
+            estimated_time_minutes: base_duration,
+            priority: "high".to_string(),
+            optional: false,
+        }],
+        stages: vec![WorkflowStageInfo {
+            stage: "Architecture Analysis".to_string(),
+            description: "Architectural pattern identification and analysis".to_string(),
+            tools: vec!["detect_patterns".to_string()],
+            success_indicators: vec!["Architecture patterns identified".to_string()],
+        }],
         execution_type: "sequential".to_string(),
         parallel_groups: vec![],
         dependencies: vec![],
         success_criteria: vec!["Architectural patterns and principles identified".to_string()],
-        getting_started_guidance: "Analyze architectural patterns to understand system design".to_string(),
+        getting_started_guidance: "Analyze architectural patterns to understand system design"
+            .to_string(),
         optimization_tips: vec!["Focus on main architectural patterns first".to_string()],
-        common_pitfalls: vec!["Don't confuse implementation patterns with architectural patterns".to_string()],
-        alternative_approaches: vec!["Use dependency analysis to understand component relationships".to_string()],
+        common_pitfalls: vec![
+            "Don't confuse implementation patterns with architectural patterns".to_string(),
+        ],
+        alternative_approaches: vec![
+            "Use dependency analysis to understand component relationships".to_string(),
+        ],
     })
 }
 
 /// Generate debugging workflow (simplified implementation)
 fn generate_debugging_workflow(
     complexity: &str,
-    time_budget: Option<u32>
+    time_budget: Option<u32>,
 ) -> Result<WorkflowRecommendation> {
     let base_duration = match complexity {
         "quick" => 18,
         "comprehensive" => 50,
         _ => 30,
     };
-    
+
     Ok(WorkflowRecommendation {
         goal: "debug_issue".to_string(),
         estimated_duration: time_budget.unwrap_or(base_duration),
-        tool_sequence: vec![
-            ToolStep {
-                step: 1,
-                tool_name: "search_symbols".to_string(),
-                parameters: json!({"pattern": ".*"}),
-                reasoning: "Find relevant symbols related to the issue".to_string(),
-                expected_outcome: "Relevant code components identified".to_string(),
-                estimated_time_minutes: base_duration,
-                priority: "high".to_string(),
-                optional: false,
-            }
-        ],
-        stages: vec![
-            WorkflowStageInfo {
-                stage: "Issue Investigation".to_string(),
-                description: "Systematic debugging and issue analysis".to_string(),
-                tools: vec!["search_symbols".to_string()],
-                success_indicators: vec!["Issue-related code identified".to_string()],
-            }
-        ],
+        tool_sequence: vec![ToolStep {
+            step: 1,
+            tool_name: "search_symbols".to_string(),
+            parameters: json!({"pattern": ".*"}),
+            reasoning: "Find relevant symbols related to the issue".to_string(),
+            expected_outcome: "Relevant code components identified".to_string(),
+            estimated_time_minutes: base_duration,
+            priority: "high".to_string(),
+            optional: false,
+        }],
+        stages: vec![WorkflowStageInfo {
+            stage: "Issue Investigation".to_string(),
+            description: "Systematic debugging and issue analysis".to_string(),
+            tools: vec!["search_symbols".to_string()],
+            success_indicators: vec!["Issue-related code identified".to_string()],
+        }],
         execution_type: "sequential".to_string(),
         parallel_groups: vec![],
         dependencies: vec![],
@@ -616,45 +621,44 @@ fn generate_debugging_workflow(
 /// Generate refactoring workflow (simplified implementation)
 fn generate_refactoring_workflow(
     complexity: &str,
-    time_budget: Option<u32>
+    time_budget: Option<u32>,
 ) -> Result<WorkflowRecommendation> {
     let base_duration = match complexity {
         "quick" => 20,
         "comprehensive" => 60,
         _ => 35,
     };
-    
+
     Ok(WorkflowRecommendation {
         goal: "refactor_preparation".to_string(),
         estimated_duration: time_budget.unwrap_or(base_duration),
-        tool_sequence: vec![
-            ToolStep {
-                step: 1,
-                tool_name: "analyze_complexity".to_string(),
-                parameters: json!({}),
-                reasoning: "Identify complex code that needs refactoring".to_string(),
-                expected_outcome: "Complex code areas identified for refactoring".to_string(),
-                estimated_time_minutes: base_duration,
-                priority: "high".to_string(),
-                optional: false,
-            }
-        ],
-        stages: vec![
-            WorkflowStageInfo {
-                stage: "Refactoring Analysis".to_string(),
-                description: "Code complexity analysis for refactoring planning".to_string(),
-                tools: vec!["analyze_complexity".to_string()],
-                success_indicators: vec!["Refactoring targets identified".to_string()],
-            }
-        ],
+        tool_sequence: vec![ToolStep {
+            step: 1,
+            tool_name: "analyze_complexity".to_string(),
+            parameters: json!({}),
+            reasoning: "Identify complex code that needs refactoring".to_string(),
+            expected_outcome: "Complex code areas identified for refactoring".to_string(),
+            estimated_time_minutes: base_duration,
+            priority: "high".to_string(),
+            optional: false,
+        }],
+        stages: vec![WorkflowStageInfo {
+            stage: "Refactoring Analysis".to_string(),
+            description: "Code complexity analysis for refactoring planning".to_string(),
+            tools: vec!["analyze_complexity".to_string()],
+            success_indicators: vec!["Refactoring targets identified".to_string()],
+        }],
         execution_type: "sequential".to_string(),
         parallel_groups: vec![],
         dependencies: vec![],
         success_criteria: vec!["Refactoring opportunities identified and prioritized".to_string()],
-        getting_started_guidance: "Analyze code complexity to identify refactoring opportunities".to_string(),
+        getting_started_guidance: "Analyze code complexity to identify refactoring opportunities"
+            .to_string(),
         optimization_tips: vec!["Focus on high-complexity, high-impact areas".to_string()],
         common_pitfalls: vec!["Don't refactor without understanding current behavior".to_string()],
-        alternative_approaches: vec!["Use duplicate detection to find refactoring opportunities".to_string()],
+        alternative_approaches: vec![
+            "Use duplicate detection to find refactoring opportunities".to_string()
+        ],
     })
 }
 
@@ -667,4 +671,4 @@ fn get_session_context(_session_id: SessionId) -> Result<SessionContext> {
         recommendations: vec!["Start with repository overview".to_string()],
         progress_assessment: "Beginning analysis".to_string(),
     })
-} 
+}

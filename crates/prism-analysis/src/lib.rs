@@ -1,17 +1,17 @@
 //! Language-agnostic code analysis tools for Prism
 
+pub mod api_surface;
 pub mod complexity;
 pub mod duplicates;
-pub mod security;
 pub mod performance;
-pub mod api_surface;
+pub mod security;
 pub mod semantic;
 
+pub use api_surface::ApiSurfaceAnalyzer;
 pub use complexity::ComplexityAnalyzer;
 pub use duplicates::DuplicateAnalyzer;
-pub use security::SecurityAnalyzer;
 pub use performance::PerformanceAnalyzer;
-pub use api_surface::ApiSurfaceAnalyzer;
+pub use security::SecurityAnalyzer;
 
 use anyhow::Result;
 use serde_json::Value;
@@ -41,4 +41,4 @@ impl Default for CodeAnalyzer {
     fn default() -> Self {
         Self::new()
     }
-} 
+}

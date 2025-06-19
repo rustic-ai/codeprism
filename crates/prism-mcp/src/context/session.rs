@@ -1,5 +1,5 @@
 //! Session management for MCP tools
-//! 
+//!
 //! Provides session state tracking, analysis history, and workflow stage detection
 //! to enable intelligent tool guidance and reduce redundant analysis.
 
@@ -50,25 +50,23 @@ impl WorkflowStage {
         match self {
             WorkflowStage::Discovery => vec![
                 "repository_stats",
-                "search_content", 
+                "search_content",
                 "find_files",
-                "content_stats"
+                "content_stats",
             ],
             WorkflowStage::Mapping => vec![
                 "search_symbols",
-                "find_dependencies", 
+                "find_dependencies",
                 "detect_patterns",
-                "trace_path"
+                "trace_path",
             ],
             WorkflowStage::DeepDive => vec![
                 "explain_symbol",
                 "trace_inheritance",
                 "analyze_decorators",
-                "find_references"
+                "find_references",
             ],
-            WorkflowStage::Synthesis => vec![
-                "analyze_complexity"
-            ],
+            WorkflowStage::Synthesis => vec!["analyze_complexity"],
         }
     }
 
@@ -154,11 +152,11 @@ impl AnalysisHistory {
         let cutoff_time = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap_or(Duration::from_secs(0))
-            .as_secs() - (within_minutes * 60);
+            .as_secs()
+            - (within_minutes * 60);
 
         self.records.iter().any(|record| {
-            record.timestamp > cutoff_time && 
-            record.symbols_analyzed.contains(&symbol.to_string())
+            record.timestamp > cutoff_time && record.symbols_analyzed.contains(&symbol.to_string())
         })
     }
 
@@ -167,7 +165,8 @@ impl AnalysisHistory {
         let cutoff_time = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap_or(Duration::from_secs(0))
-            .as_secs() - (within_minutes * 60);
+            .as_secs()
+            - (within_minutes * 60);
 
         self.records
             .iter()
@@ -181,17 +180,44 @@ impl AnalysisHistory {
     /// Detect current workflow stage based on recent activity
     pub fn detect_workflow_stage(&self) -> WorkflowStage {
         let recent_tools = self.recent_tools(30); // Last 30 minutes
-        
+
         // Count tools by category
-        let discovery_tools = ["repository_stats", "search_content", "find_files", "content_stats"];
-        let mapping_tools = ["search_symbols", "find_dependencies", "detect_patterns", "trace_path"];
-        let deepdive_tools = ["explain_symbol", "trace_inheritance", "analyze_decorators", "find_references"];
+        let discovery_tools = [
+            "repository_stats",
+            "search_content",
+            "find_files",
+            "content_stats",
+        ];
+        let mapping_tools = [
+            "search_symbols",
+            "find_dependencies",
+            "detect_patterns",
+            "trace_path",
+        ];
+        let deepdive_tools = [
+            "explain_symbol",
+            "trace_inheritance",
+            "analyze_decorators",
+            "find_references",
+        ];
         let synthesis_tools = ["analyze_complexity"];
 
-        let discovery_count = recent_tools.iter().filter(|t| discovery_tools.contains(&t.as_str())).count();
-        let mapping_count = recent_tools.iter().filter(|t| mapping_tools.contains(&t.as_str())).count();
-        let deepdive_count = recent_tools.iter().filter(|t| deepdive_tools.contains(&t.as_str())).count();
-        let synthesis_count = recent_tools.iter().filter(|t| synthesis_tools.contains(&t.as_str())).count();
+        let discovery_count = recent_tools
+            .iter()
+            .filter(|t| discovery_tools.contains(&t.as_str()))
+            .count();
+        let mapping_count = recent_tools
+            .iter()
+            .filter(|t| mapping_tools.contains(&t.as_str()))
+            .count();
+        let deepdive_count = recent_tools
+            .iter()
+            .filter(|t| deepdive_tools.contains(&t.as_str()))
+            .count();
+        let synthesis_count = recent_tools
+            .iter()
+            .filter(|t| synthesis_tools.contains(&t.as_str()))
+            .count();
 
         // Determine stage based on dominant activity
         if synthesis_count > 0 {
@@ -279,7 +305,7 @@ impl SessionState {
             .duration_since(UNIX_EPOCH)
             .unwrap_or(Duration::from_secs(0))
             .as_secs();
-        
+
         now - self.last_activity > 3600 // 1 hour
     }
 }
@@ -309,11 +335,12 @@ impl SessionManager {
     pub fn create_session(&self) -> Result<SessionId> {
         let session = SessionState::new();
         let session_id = session.id.clone();
-        
-        let mut sessions = self.sessions.write().map_err(|_| {
-            anyhow::anyhow!("Failed to acquire write lock on sessions")
-        })?;
-        
+
+        let mut sessions = self
+            .sessions
+            .write()
+            .map_err(|_| anyhow::anyhow!("Failed to acquire write lock on sessions"))?;
+
         sessions.insert(session_id.clone(), session);
         Ok(session_id)
     }
@@ -322,10 +349,11 @@ impl SessionManager {
     pub fn get_or_create_session(&self, session_id: Option<SessionId>) -> Result<SessionId> {
         match session_id {
             Some(id) => {
-                let sessions = self.sessions.read().map_err(|_| {
-                    anyhow::anyhow!("Failed to acquire read lock on sessions")
-                })?;
-                
+                let sessions = self
+                    .sessions
+                    .read()
+                    .map_err(|_| anyhow::anyhow!("Failed to acquire read lock on sessions"))?;
+
                 if sessions.contains_key(&id) {
                     Ok(id)
                 } else {
@@ -333,16 +361,17 @@ impl SessionManager {
                     self.create_session()
                 }
             }
-            None => self.create_session()
+            None => self.create_session(),
         }
     }
 
     /// Get session state (readonly)
     pub fn get_session(&self, session_id: &SessionId) -> Result<Option<SessionState>> {
-        let sessions = self.sessions.read().map_err(|_| {
-            anyhow::anyhow!("Failed to acquire read lock on sessions")
-        })?;
-        
+        let sessions = self
+            .sessions
+            .read()
+            .map_err(|_| anyhow::anyhow!("Failed to acquire read lock on sessions"))?;
+
         Ok(sessions.get(session_id).cloned())
     }
 
@@ -356,35 +385,44 @@ impl SessionManager {
         result_summary: Option<String>,
         symbols_analyzed: Vec<String>,
     ) -> Result<()> {
-        let mut sessions = self.sessions.write().map_err(|_| {
-            anyhow::anyhow!("Failed to acquire write lock on sessions")
-        })?;
-        
+        let mut sessions = self
+            .sessions
+            .write()
+            .map_err(|_| anyhow::anyhow!("Failed to acquire write lock on sessions"))?;
+
         if let Some(session) = sessions.get_mut(session_id) {
-            session.record_analysis(tool_name, parameters, success, result_summary, symbols_analyzed);
+            session.record_analysis(
+                tool_name,
+                parameters,
+                success,
+                result_summary,
+                symbols_analyzed,
+            );
         }
-        
+
         Ok(())
     }
 
     /// Clean up expired sessions
     pub fn cleanup_expired_sessions(&self) -> Result<usize> {
-        let mut sessions = self.sessions.write().map_err(|_| {
-            anyhow::anyhow!("Failed to acquire write lock on sessions")
-        })?;
-        
+        let mut sessions = self
+            .sessions
+            .write()
+            .map_err(|_| anyhow::anyhow!("Failed to acquire write lock on sessions"))?;
+
         let initial_count = sessions.len();
         sessions.retain(|_, session| !session.is_expired());
-        
+
         Ok(initial_count - sessions.len())
     }
 
     /// Get active session count
     pub fn active_session_count(&self) -> Result<usize> {
-        let sessions = self.sessions.read().map_err(|_| {
-            anyhow::anyhow!("Failed to acquire read lock on sessions")
-        })?;
-        
+        let sessions = self
+            .sessions
+            .read()
+            .map_err(|_| anyhow::anyhow!("Failed to acquire read lock on sessions"))?;
+
         Ok(sessions.len())
     }
 }
@@ -409,9 +447,18 @@ mod tests {
 
     #[test]
     fn test_workflow_stage_progression() {
-        assert_eq!(WorkflowStage::Discovery.next_stage(), Some(WorkflowStage::Mapping));
-        assert_eq!(WorkflowStage::Mapping.next_stage(), Some(WorkflowStage::DeepDive));
-        assert_eq!(WorkflowStage::DeepDive.next_stage(), Some(WorkflowStage::Synthesis));
+        assert_eq!(
+            WorkflowStage::Discovery.next_stage(),
+            Some(WorkflowStage::Mapping)
+        );
+        assert_eq!(
+            WorkflowStage::Mapping.next_stage(),
+            Some(WorkflowStage::DeepDive)
+        );
+        assert_eq!(
+            WorkflowStage::DeepDive.next_stage(),
+            Some(WorkflowStage::Synthesis)
+        );
         assert_eq!(WorkflowStage::Synthesis.next_stage(), None);
     }
 
@@ -425,7 +472,7 @@ mod tests {
     #[test]
     fn test_analysis_history() {
         let mut history = AnalysisHistory::default();
-        
+
         let record = AnalysisRecord::new(
             "explain_symbol".to_string(),
             serde_json::json!({"symbol_id": "test123"}),
@@ -433,7 +480,7 @@ mod tests {
             Some("Symbol explained successfully".to_string()),
             vec!["test123".to_string()],
         );
-        
+
         history.add_record(record);
         assert_eq!(history.records.len(), 1);
         assert!(history.analyzed_symbols.contains("test123"));
@@ -449,24 +496,26 @@ mod tests {
     #[test]
     fn test_session_manager() {
         let manager = SessionManager::new();
-        
+
         // Create a session
         let session_id = manager.create_session().unwrap();
-        
+
         // Verify it exists
         let session = manager.get_session(&session_id).unwrap();
         assert!(session.is_some());
-        
+
         // Record an analysis
-        manager.record_analysis(
-            &session_id,
-            "test_tool".to_string(),
-            serde_json::json!({}),
-            true,
-            None,
-            vec![],
-        ).unwrap();
-        
+        manager
+            .record_analysis(
+                &session_id,
+                "test_tool".to_string(),
+                serde_json::json!({}),
+                true,
+                None,
+                vec![],
+            )
+            .unwrap();
+
         // Verify the record was added
         let updated_session = manager.get_session(&session_id).unwrap().unwrap();
         assert_eq!(updated_session.history.records.len(), 1);
@@ -475,7 +524,7 @@ mod tests {
     #[test]
     fn test_workflow_stage_detection() {
         let mut history = AnalysisHistory::default();
-        
+
         // Add some mapping stage tools
         for tool in ["search_symbols", "find_dependencies"] {
             history.add_record(AnalysisRecord::new(
@@ -486,8 +535,8 @@ mod tests {
                 vec![],
             ));
         }
-        
+
         let stage = history.detect_workflow_stage();
         assert_eq!(stage, WorkflowStage::Mapping);
     }
-} 
+}

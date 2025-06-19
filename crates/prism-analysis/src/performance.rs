@@ -1,9 +1,9 @@
 //! Performance analysis module
 
 use anyhow::Result;
+use regex::Regex;
 use serde_json::Value;
 use std::collections::HashMap;
-use regex::Regex;
 
 /// Performance issue information
 #[derive(Debug, Clone)]
@@ -48,7 +48,8 @@ impl PerformanceAnalyzer {
                 pattern: Regex::new(r"(?s)for\s+.*?for\s+.*?for\s+").unwrap(),
                 severity: "high".to_string(),
                 description: "Triple nested loop detected - O(n³) complexity".to_string(),
-                recommendation: "Consider algorithmic optimization or data structure changes".to_string(),
+                recommendation: "Consider algorithmic optimization or data structure changes"
+                    .to_string(),
                 complexity: "O(n³)".to_string(),
             },
             PerformancePattern {
@@ -56,7 +57,8 @@ impl PerformanceAnalyzer {
                 pattern: Regex::new(r"(?s)for\s+.*?for\s+").unwrap(),
                 severity: "medium".to_string(),
                 description: "Double nested loop detected - O(n²) complexity".to_string(),
-                recommendation: "Consider if this can be optimized to O(n log n) or O(n)".to_string(),
+                recommendation: "Consider if this can be optimized to O(n log n) or O(n)"
+                    .to_string(),
                 complexity: "O(n²)".to_string(),
             },
             PerformancePattern {
@@ -64,11 +66,13 @@ impl PerformanceAnalyzer {
                 pattern: Regex::new(r"(?i)(str|string)\s*\+=\s*").unwrap(),
                 severity: "medium".to_string(),
                 description: "String concatenation in loop can be inefficient".to_string(),
-                recommendation: "Use StringBuilder, list.join(), or similar efficient methods".to_string(),
+                recommendation: "Use StringBuilder, list.join(), or similar efficient methods"
+                    .to_string(),
                 complexity: "O(n²)".to_string(),
             },
         ];
-        self.patterns.insert("time_complexity".to_string(), time_patterns);
+        self.patterns
+            .insert("time_complexity".to_string(), time_patterns);
 
         // Memory usage patterns
         let memory_patterns = vec![
@@ -77,7 +81,8 @@ impl PerformanceAnalyzer {
                 pattern: Regex::new(r"(?s)for\s+.*?new\s+\w+\s*\(").unwrap(),
                 severity: "medium".to_string(),
                 description: "Object creation inside loop may cause memory pressure".to_string(),
-                recommendation: "Consider object pooling or moving creation outside loop".to_string(),
+                recommendation: "Consider object pooling or moving creation outside loop"
+                    .to_string(),
                 complexity: "O(n)".to_string(),
             },
             PerformancePattern {
@@ -89,13 +94,17 @@ impl PerformanceAnalyzer {
                 complexity: "O(n)".to_string(),
             },
         ];
-        self.patterns.insert("memory_usage".to_string(), memory_patterns);
+        self.patterns
+            .insert("memory_usage".to_string(), memory_patterns);
 
         // Hot spots patterns
         let hotspot_patterns = vec![
             PerformancePattern {
                 name: "Database Query in Loop".to_string(),
-                pattern: Regex::new(r"(?s)for\s+.*?(query|execute|select|insert|update|delete)\s*\(").unwrap(),
+                pattern: Regex::new(
+                    r"(?s)for\s+.*?(query|execute|select|insert|update|delete)\s*\(",
+                )
+                .unwrap(),
                 severity: "critical".to_string(),
                 description: "Database query inside loop - N+1 query problem".to_string(),
                 recommendation: "Use batch operations or optimize with joins".to_string(),
@@ -118,7 +127,8 @@ impl PerformanceAnalyzer {
                 complexity: "O(n)".to_string(),
             },
         ];
-        self.patterns.insert("hot_spots".to_string(), hotspot_patterns);
+        self.patterns
+            .insert("hot_spots".to_string(), hotspot_patterns);
 
         // Anti-patterns
         let antipattern_patterns = vec![
@@ -127,7 +137,8 @@ impl PerformanceAnalyzer {
                 pattern: Regex::new(r"(?i)(micro.?optimization|premature.?optimization)").unwrap(),
                 severity: "low".to_string(),
                 description: "Potential premature optimization detected".to_string(),
-                recommendation: "Profile first, then optimize based on actual bottlenecks".to_string(),
+                recommendation: "Profile first, then optimize based on actual bottlenecks"
+                    .to_string(),
                 complexity: "Variable".to_string(),
             },
             PerformancePattern {
@@ -139,7 +150,8 @@ impl PerformanceAnalyzer {
                 complexity: "O(n)".to_string(),
             },
         ];
-        self.patterns.insert("anti_patterns".to_string(), antipattern_patterns);
+        self.patterns
+            .insert("anti_patterns".to_string(), antipattern_patterns);
 
         // Scalability patterns
         let scalability_patterns = vec![
@@ -148,19 +160,22 @@ impl PerformanceAnalyzer {
                 pattern: Regex::new(r"(?i)(synchronous|blocking|wait|sleep)\s*\(").unwrap(),
                 severity: "medium".to_string(),
                 description: "Synchronous operations may not scale well".to_string(),
-                recommendation: "Consider asynchronous processing for better scalability".to_string(),
+                recommendation: "Consider asynchronous processing for better scalability"
+                    .to_string(),
                 complexity: "O(1)".to_string(),
             },
             PerformancePattern {
                 name: "Single-threaded Processing".to_string(),
-                pattern: Regex::new(r"(?s)for\s+.*?(process|compute|calculate)\s*\([^)]*\)").unwrap(),
+                pattern: Regex::new(r"(?s)for\s+.*?(process|compute|calculate)\s*\([^)]*\)")
+                    .unwrap(),
                 severity: "low".to_string(),
                 description: "Sequential processing of independent tasks".to_string(),
                 recommendation: "Consider parallel processing for CPU-intensive tasks".to_string(),
                 complexity: "O(n)".to_string(),
             },
         ];
-        self.patterns.insert("scalability".to_string(), scalability_patterns);
+        self.patterns
+            .insert("scalability".to_string(), scalability_patterns);
     }
 
     /// Analyze content for performance issues
@@ -171,7 +186,7 @@ impl PerformanceAnalyzer {
         complexity_threshold: &str,
     ) -> Result<Vec<PerformanceIssue>> {
         let mut issues = Vec::new();
-        
+
         let target_types = if analysis_types.contains(&"all".to_string()) {
             self.patterns.keys().cloned().collect::<Vec<_>>()
         } else {
@@ -206,7 +221,11 @@ impl PerformanceAnalyzer {
         match threshold {
             "low" => true, // Include all complexities
             "medium" => !complexity.contains("O(1)"),
-            "high" => complexity.contains("O(n²)") || complexity.contains("O(n³)") || complexity.contains("O(2^n)"),
+            "high" => {
+                complexity.contains("O(n²)")
+                    || complexity.contains("O(n³)")
+                    || complexity.contains("O(2^n)")
+            }
             _ => true,
         }
     }
@@ -214,9 +233,12 @@ impl PerformanceAnalyzer {
     /// Get performance recommendations
     pub fn get_performance_recommendations(&self, issues: &[PerformanceIssue]) -> Vec<String> {
         let mut recommendations = Vec::new();
-        
+
         if issues.is_empty() {
-            recommendations.push("No obvious performance issues detected. Continue monitoring with profiling tools.".to_string());
+            recommendations.push(
+                "No obvious performance issues detected. Continue monitoring with profiling tools."
+                    .to_string(),
+            );
             return recommendations;
         }
 
@@ -228,68 +250,95 @@ impl PerformanceAnalyzer {
 
         // General recommendations based on found issues
         if issue_counts.contains_key("Database Query in Loop") {
-            recommendations.push("Optimize database access patterns to avoid N+1 query problems.".to_string());
+            recommendations
+                .push("Optimize database access patterns to avoid N+1 query problems.".to_string());
         }
 
-        if issue_counts.contains_key("Nested Loop") || issue_counts.contains_key("Double Nested Loop") {
-            recommendations.push("Review algorithmic complexity and consider more efficient algorithms.".to_string());
+        if issue_counts.contains_key("Nested Loop")
+            || issue_counts.contains_key("Double Nested Loop")
+        {
+            recommendations.push(
+                "Review algorithmic complexity and consider more efficient algorithms.".to_string(),
+            );
         }
 
         if issue_counts.contains_key("Network Call in Loop") {
-            recommendations.push("Implement batch processing or async patterns for network operations.".to_string());
+            recommendations.push(
+                "Implement batch processing or async patterns for network operations.".to_string(),
+            );
         }
 
         if issue_counts.contains_key("Large Object Creation in Loop") {
-            recommendations.push("Consider object pooling or factory patterns to reduce allocation overhead.".to_string());
+            recommendations.push(
+                "Consider object pooling or factory patterns to reduce allocation overhead."
+                    .to_string(),
+            );
         }
 
-        recommendations.push("Use profiling tools to identify actual bottlenecks in production.".to_string());
+        recommendations
+            .push("Use profiling tools to identify actual bottlenecks in production.".to_string());
         recommendations.push("Implement performance monitoring and alerting.".to_string());
-        recommendations.push("Consider caching strategies for frequently accessed data.".to_string());
-        
+        recommendations
+            .push("Consider caching strategies for frequently accessed data.".to_string());
+
         recommendations
     }
 
     /// Analyze time complexity issues
     pub fn analyze_time_complexity(&self, content: &str) -> Result<Vec<Value>> {
         let issues = self.analyze_content(content, &["time_complexity".to_string()], "low")?;
-        
-        Ok(issues.into_iter().map(|i| serde_json::json!({
-            "type": i.issue_type,
-            "severity": i.severity,
-            "description": i.description,
-            "location": i.location,
-            "recommendation": i.recommendation,
-            "complexity": i.complexity_estimate
-        })).collect())
+
+        Ok(issues
+            .into_iter()
+            .map(|i| {
+                serde_json::json!({
+                    "type": i.issue_type,
+                    "severity": i.severity,
+                    "description": i.description,
+                    "location": i.location,
+                    "recommendation": i.recommendation,
+                    "complexity": i.complexity_estimate
+                })
+            })
+            .collect())
     }
 
     /// Analyze memory usage issues
     pub fn analyze_memory_usage(&self, content: &str) -> Result<Vec<Value>> {
         let issues = self.analyze_content(content, &["memory_usage".to_string()], "low")?;
-        
-        Ok(issues.into_iter().map(|i| serde_json::json!({
-            "type": i.issue_type,
-            "severity": i.severity,
-            "description": i.description,
-            "location": i.location,
-            "recommendation": i.recommendation,
-            "complexity": i.complexity_estimate
-        })).collect())
+
+        Ok(issues
+            .into_iter()
+            .map(|i| {
+                serde_json::json!({
+                    "type": i.issue_type,
+                    "severity": i.severity,
+                    "description": i.description,
+                    "location": i.location,
+                    "recommendation": i.recommendation,
+                    "complexity": i.complexity_estimate
+                })
+            })
+            .collect())
     }
 
     /// Detect performance hot spots
     pub fn detect_performance_hot_spots(&self, content: &str) -> Result<Vec<Value>> {
         let issues = self.analyze_content(content, &["hot_spots".to_string()], "low")?;
-        
-        Ok(issues.into_iter().map(|i| serde_json::json!({
-            "type": i.issue_type,
-            "severity": i.severity,
-            "description": i.description,
-            "location": i.location,
-            "recommendation": i.recommendation,
-            "complexity": i.complexity_estimate
-        })).collect())
+
+        Ok(issues
+            .into_iter()
+            .map(|i| {
+                serde_json::json!({
+                    "type": i.issue_type,
+                    "severity": i.severity,
+                    "description": i.description,
+                    "location": i.location,
+                    "recommendation": i.recommendation,
+                    "complexity": i.complexity_estimate
+                })
+            })
+            .collect())
     }
 }
 
@@ -306,10 +355,12 @@ mod tests {
     #[test]
     fn test_nested_loop_detection() {
         let analyzer = PerformanceAnalyzer::new();
-        
+
         let code = "for i in range(n): for j in range(n): for k in range(n): pass";
-        let issues = analyzer.analyze_content(code, &["time_complexity".to_string()], "low").unwrap();
-        
+        let issues = analyzer
+            .analyze_content(code, &["time_complexity".to_string()], "low")
+            .unwrap();
+
         assert!(!issues.is_empty());
         assert!(issues.iter().any(|i| i.issue_type == "Nested Loop"));
     }
@@ -317,29 +368,38 @@ mod tests {
     #[test]
     fn test_database_query_in_loop() {
         let analyzer = PerformanceAnalyzer::new();
-        
-        let code = "for user in users:\n    query(\"SELECT * FROM orders WHERE user_id = ?\", user.id)";
-        let issues = analyzer.analyze_content(code, &["hot_spots".to_string()], "low").unwrap();
-        
+
+        let code =
+            "for user in users:\n    query(\"SELECT * FROM orders WHERE user_id = ?\", user.id)";
+        let issues = analyzer
+            .analyze_content(code, &["hot_spots".to_string()], "low")
+            .unwrap();
+
         assert!(!issues.is_empty());
-        assert!(issues.iter().any(|i| i.issue_type == "Database Query in Loop"));
+        assert!(issues
+            .iter()
+            .any(|i| i.issue_type == "Database Query in Loop"));
     }
 
     #[test]
     fn test_string_concatenation() {
         let analyzer = PerformanceAnalyzer::new();
-        
+
         let code = "result = \"\"; str += item";
-        let issues = analyzer.analyze_content(code, &["time_complexity".to_string()], "low").unwrap();
-        
+        let issues = analyzer
+            .analyze_content(code, &["time_complexity".to_string()], "low")
+            .unwrap();
+
         assert!(!issues.is_empty());
-        assert!(issues.iter().any(|i| i.issue_type == "Inefficient String Concatenation"));
+        assert!(issues
+            .iter()
+            .any(|i| i.issue_type == "Inefficient String Concatenation"));
     }
 
     #[test]
     fn test_complexity_threshold() {
         let analyzer = PerformanceAnalyzer::new();
-        
+
         assert!(analyzer.meets_complexity_threshold("O(n²)", "medium"));
         assert!(!analyzer.meets_complexity_threshold("O(1)", "medium"));
         assert!(analyzer.meets_complexity_threshold("O(n³)", "high"));
@@ -348,19 +408,17 @@ mod tests {
     #[test]
     fn test_performance_recommendations() {
         let analyzer = PerformanceAnalyzer::new();
-        
-        let issues = vec![
-            PerformanceIssue {
-                issue_type: "Database Query in Loop".to_string(),
-                severity: "critical".to_string(),
-                description: "Test".to_string(),
-                location: None,
-                recommendation: "Test".to_string(),
-                complexity_estimate: Some("O(n)".to_string()),
-            }
-        ];
-        
+
+        let issues = vec![PerformanceIssue {
+            issue_type: "Database Query in Loop".to_string(),
+            severity: "critical".to_string(),
+            description: "Test".to_string(),
+            location: None,
+            recommendation: "Test".to_string(),
+            complexity_estimate: Some("O(n)".to_string()),
+        }];
+
         let recommendations = analyzer.get_performance_recommendations(&issues);
         assert!(!recommendations.is_empty());
     }
-} 
+}

@@ -1,23 +1,21 @@
 //! Repository statistics and information tools
 
+use crate::tools_legacy::{CallToolParams, CallToolResult, Tool, ToolContent};
+use crate::PrismMcpServer;
 use anyhow::Result;
 use serde_json::Value;
-use crate::tools_legacy::{Tool, CallToolParams, CallToolResult, ToolContent};
-use crate::PrismMcpServer;
 
 /// List repository tools
 pub fn list_tools() -> Vec<Tool> {
-    vec![
-        Tool {
-            name: "repository_stats".to_string(),
-            title: Some("Repository Statistics".to_string()),
-            description: "Get comprehensive statistics about the repository".to_string(),
-            input_schema: serde_json::json!({
-                "type": "object",
-                "properties": {}
-            }),
-        }
-    ]
+    vec![Tool {
+        name: "repository_stats".to_string(),
+        title: Some("Repository Statistics".to_string()),
+        description: "Get comprehensive statistics about the repository".to_string(),
+        input_schema: serde_json::json!({
+            "type": "object",
+            "properties": {}
+        }),
+    }]
 }
 
 /// Route repository tool calls
@@ -31,7 +29,9 @@ pub async fn call_tool(server: &PrismMcpServer, params: &CallToolParams) -> Resu
 /// Get repository statistics
 async fn repository_stats(server: &PrismMcpServer) -> Result<CallToolResult> {
     let result = if let Some(repo_path) = server.repository_path() {
-        let file_count = server.scanner().discover_files(repo_path)
+        let file_count = server
+            .scanner()
+            .discover_files(repo_path)
             .map(|files| files.len())
             .unwrap_or(0);
 
@@ -57,4 +57,4 @@ async fn repository_stats(server: &PrismMcpServer) -> Result<CallToolResult> {
         }],
         is_error: Some(false),
     })
-} 
+}

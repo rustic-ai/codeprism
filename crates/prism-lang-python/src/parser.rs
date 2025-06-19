@@ -214,7 +214,7 @@ mod tests {
 
         // Should have a module and two functions
         assert!(result.nodes.len() >= 3);
-        
+
         let func_nodes: Vec<_> = result
             .nodes
             .iter()
@@ -247,4 +247,4 @@ mod tests {
         // Should have at least one import node
         assert!(!import_nodes.is_empty());
     }
-} 
+}

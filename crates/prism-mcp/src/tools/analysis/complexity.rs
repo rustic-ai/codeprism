@@ -1,14 +1,14 @@
 //! Complexity analysis tools
 
+use crate::tools_legacy::{CallToolParams, CallToolResult, Tool, ToolContent};
+use crate::PrismMcpServer;
 use anyhow::Result;
 use serde_json::Value;
-use crate::tools_legacy::{Tool, CallToolParams, CallToolResult, ToolContent};
-use crate::PrismMcpServer;
 
 /// Analyze complexity for a specific file
 fn analyze_file_complexity(file_path: &str, metrics: &[String], threshold_warnings: bool) -> Value {
     let path = std::path::Path::new(file_path);
-    
+
     if !path.exists() {
         return serde_json::json!({
             "target": file_path,
@@ -16,16 +16,16 @@ fn analyze_file_complexity(file_path: &str, metrics: &[String], threshold_warnin
             "file_exists": false
         });
     }
-    
+
     // Read file and calculate basic metrics
     if let Ok(content) = std::fs::read_to_string(path) {
         let line_count = content.lines().count();
         let char_count = content.chars().count();
         let word_count = content.split_whitespace().count();
-        
+
         // Basic complexity estimation based on file content
         let estimated_complexity = calculate_basic_complexity(&content);
-        
+
         let mut result = serde_json::json!({
             "target": file_path,
             "file_analysis": {
@@ -37,7 +37,7 @@ fn analyze_file_complexity(file_path: &str, metrics: &[String], threshold_warnin
             },
             "metrics": {}
         });
-        
+
         // Add requested metrics
         for metric in metrics {
             match metric.as_str() {
@@ -62,13 +62,14 @@ fn analyze_file_complexity(file_path: &str, metrics: &[String], threshold_warnin
                 }
             }
         }
-        
+
         if threshold_warnings && estimated_complexity > 10 {
-            result["warnings"] = serde_json::json!([
-                format!("High complexity detected: {} (recommended: < 10)", estimated_complexity)
-            ]);
+            result["warnings"] = serde_json::json!([format!(
+                "High complexity detected: {} (recommended: < 10)",
+                estimated_complexity
+            )]);
         }
-        
+
         result
     } else {
         serde_json::json!({
@@ -80,7 +81,11 @@ fn analyze_file_complexity(file_path: &str, metrics: &[String], threshold_warnin
 }
 
 /// Analyze complexity for a specific symbol/node
-fn analyze_symbol_complexity(node: &prism_core::Node, metrics: &[String], threshold_warnings: bool) -> Value {
+fn analyze_symbol_complexity(
+    node: &prism_core::Node,
+    metrics: &[String],
+    threshold_warnings: bool,
+) -> Value {
     let symbol_complexity = match node.kind {
         prism_core::NodeKind::Function | prism_core::NodeKind::Method => {
             // Functions typically have higher complexity
@@ -95,7 +100,7 @@ fn analyze_symbol_complexity(node: &prism_core::Node, metrics: &[String], thresh
             1
         }
     };
-    
+
     let mut result = serde_json::json!({
         "target": node.name,
         "symbol_analysis": {
@@ -111,7 +116,7 @@ fn analyze_symbol_complexity(node: &prism_core::Node, metrics: &[String], thresh
         },
         "metrics": {}
     });
-    
+
     // Add requested metrics
     for metric in metrics {
         match metric.as_str() {
@@ -135,20 +140,21 @@ fn analyze_symbol_complexity(node: &prism_core::Node, metrics: &[String], thresh
             }
         }
     }
-    
+
     if threshold_warnings && symbol_complexity > 5 {
-        result["warnings"] = serde_json::json!([
-            format!("High symbol complexity: {} (recommended: < 5)", symbol_complexity)
-        ]);
+        result["warnings"] = serde_json::json!([format!(
+            "High symbol complexity: {} (recommended: < 5)",
+            symbol_complexity
+        )]);
     }
-    
+
     result
 }
 
 /// Calculate basic complexity estimation from code content
 fn calculate_basic_complexity(content: &str) -> usize {
     let mut complexity = 1; // Base complexity
-    
+
     // Count control flow statements
     for line in content.lines() {
         let line = line.trim();
@@ -165,7 +171,7 @@ fn calculate_basic_complexity(content: &str) -> usize {
             complexity += 1;
         }
     }
-    
+
     complexity
 }
 
@@ -173,8 +179,11 @@ fn calculate_basic_complexity(content: &str) -> usize {
 fn calculate_maintainability_index(lines: usize, complexity: usize) -> f64 {
     // Simplified maintainability index calculation
     let halstead_volume = (lines as f64).log2() * 10.0; // Rough approximation
-    let mi = 171.0 - 5.2 * (halstead_volume).log2() - 0.23 * (complexity as f64) - 16.2 * (lines as f64).log2();
-    mi.max(0.0).min(100.0)
+    let mi = 171.0
+        - 5.2 * (halstead_volume).log2()
+        - 0.23 * (complexity as f64)
+        - 16.2 * (lines as f64).log2();
+    mi.clamp(0.0, 100.0)
 }
 
 /// List complexity analysis tools
@@ -216,21 +225,29 @@ pub fn list_tools() -> Vec<Tool> {
 pub async fn call_tool(server: &PrismMcpServer, params: &CallToolParams) -> Result<CallToolResult> {
     match params.name.as_str() {
         "analyze_complexity" => analyze_complexity(server, params.arguments.as_ref()).await,
-        _ => Err(anyhow::anyhow!("Unknown complexity analysis tool: {}", params.name)),
+        _ => Err(anyhow::anyhow!(
+            "Unknown complexity analysis tool: {}",
+            params.name
+        )),
     }
 }
 
 /// Analyze code complexity
-async fn analyze_complexity(server: &PrismMcpServer, arguments: Option<&Value>) -> Result<CallToolResult> {
+async fn analyze_complexity(
+    server: &PrismMcpServer,
+    arguments: Option<&Value>,
+) -> Result<CallToolResult> {
     let args = arguments.ok_or_else(|| anyhow::anyhow!("Missing arguments"))?;
-    
+
     // Support both "target" and "path" parameter names for backward compatibility
-    let target = args.get("target")
+    let target = args
+        .get("target")
         .or_else(|| args.get("path"))
         .and_then(|v| v.as_str())
         .ok_or_else(|| anyhow::anyhow!("Missing target parameter (or path)"))?;
-    
-    let metrics = args.get("metrics")
+
+    let metrics = args
+        .get("metrics")
         .and_then(|v| v.as_array())
         .map(|arr| {
             arr.iter()
@@ -240,7 +257,8 @@ async fn analyze_complexity(server: &PrismMcpServer, arguments: Option<&Value>) 
         })
         .unwrap_or_else(|| vec!["all".to_string()]);
 
-    let threshold_warnings = args.get("threshold_warnings")
+    let threshold_warnings = args
+        .get("threshold_warnings")
         .and_then(|v| v.as_bool())
         .unwrap_or(true);
 
@@ -275,4 +293,4 @@ async fn analyze_complexity(server: &PrismMcpServer, arguments: Option<&Value>) 
         }],
         is_error: Some(result.get("error").is_some()),
     })
-} 
+}

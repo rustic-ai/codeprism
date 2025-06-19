@@ -1,13 +1,13 @@
 //! MCP Prompts implementation
-//! 
+//!
 //! Prompts allow servers to provide structured messages and instructions for
 //! interacting with language models. Clients can discover available prompts,
 //! retrieve their contents, and provide arguments to customize them.
 
+use crate::PrismMcpServer;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use crate::PrismMcpServer;
 
 /// Prompt capabilities as defined by MCP
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -139,7 +139,7 @@ impl PromptManager {
                     },
                 ]),
             },
-            
+
             Prompt {
                 name: "code_analysis".to_string(),
                 title: Some("Code Analysis".to_string()),
@@ -446,24 +446,66 @@ impl PromptManager {
     /// Get a specific prompt
     pub async fn get_prompt(&self, params: GetPromptParams) -> Result<GetPromptResult> {
         let server = self.server.read().await;
-        
+
         match params.name.as_str() {
-            "repository_overview" => self.repository_overview_prompt(&server, params.arguments).await,
+            "repository_overview" => {
+                self.repository_overview_prompt(&server, params.arguments)
+                    .await
+            }
             "code_analysis" => self.code_analysis_prompt(&server, params.arguments).await,
-            "debug_assistance" => self.debug_assistance_prompt(&server, params.arguments).await,
+            "debug_assistance" => {
+                self.debug_assistance_prompt(&server, params.arguments)
+                    .await
+            }
             "debug_issue" => self.debug_issue_prompt(&server, params.arguments).await,
-            "refactoring_guidance" => self.refactoring_guidance_prompt(&server, params.arguments).await,
-            "architectural_analysis" => self.architectural_analysis_prompt(&server, params.arguments).await,
-            "pattern_assessment" => self.pattern_assessment_prompt(&server, params.arguments).await,
-            "dependency_analysis" => self.dependency_analysis_prompt(&server, params.arguments).await,
-            "new_developer_onboarding" => self.new_developer_onboarding_prompt(&server, params.arguments).await,
-            "feature_exploration" => self.feature_exploration_prompt(&server, params.arguments).await,
-            "learning_path_generator" => self.learning_path_generator_prompt(&server, params.arguments).await,
-            "technology_stack_analysis" => self.technology_stack_analysis_prompt(&server, params.arguments).await,
-            "codebase_health_check" => self.codebase_health_check_prompt(&server, params.arguments).await,
-            "documentation_generator" => self.documentation_generator_prompt(&server, params.arguments).await,
-            "testing_strategy_analysis" => self.testing_strategy_analysis_prompt(&server, params.arguments).await,
-            "migration_planning" => self.migration_planning_prompt(&server, params.arguments).await,
+            "refactoring_guidance" => {
+                self.refactoring_guidance_prompt(&server, params.arguments)
+                    .await
+            }
+            "architectural_analysis" => {
+                self.architectural_analysis_prompt(&server, params.arguments)
+                    .await
+            }
+            "pattern_assessment" => {
+                self.pattern_assessment_prompt(&server, params.arguments)
+                    .await
+            }
+            "dependency_analysis" => {
+                self.dependency_analysis_prompt(&server, params.arguments)
+                    .await
+            }
+            "new_developer_onboarding" => {
+                self.new_developer_onboarding_prompt(&server, params.arguments)
+                    .await
+            }
+            "feature_exploration" => {
+                self.feature_exploration_prompt(&server, params.arguments)
+                    .await
+            }
+            "learning_path_generator" => {
+                self.learning_path_generator_prompt(&server, params.arguments)
+                    .await
+            }
+            "technology_stack_analysis" => {
+                self.technology_stack_analysis_prompt(&server, params.arguments)
+                    .await
+            }
+            "codebase_health_check" => {
+                self.codebase_health_check_prompt(&server, params.arguments)
+                    .await
+            }
+            "documentation_generator" => {
+                self.documentation_generator_prompt(&server, params.arguments)
+                    .await
+            }
+            "testing_strategy_analysis" => {
+                self.testing_strategy_analysis_prompt(&server, params.arguments)
+                    .await
+            }
+            "migration_planning" => {
+                self.migration_planning_prompt(&server, params.arguments)
+                    .await
+            }
             _ => Err(anyhow::anyhow!("Unknown prompt: {}", params.name)),
         }
     }
@@ -481,7 +523,9 @@ impl PromptManager {
             .unwrap_or("general");
 
         let repo_context = if let Some(repo_path) = server.repository_path() {
-            let file_count = server.scanner().discover_files(repo_path)
+            let file_count = server
+                .scanner()
+                .discover_files(repo_path)
                 .map(|files| files.len())
                 .unwrap_or(0);
 
@@ -516,14 +560,10 @@ Use the repository resources and tools available to gather detailed information 
 
         Ok(GetPromptResult {
             description: Some("Repository overview and analysis prompt".to_string()),
-            messages: vec![
-                PromptMessage {
-                    role: "user".to_string(),
-                    content: PromptContent::Text {
-                        text: prompt_text,
-                    },
-                },
-            ],
+            messages: vec![PromptMessage {
+                role: "user".to_string(),
+                content: PromptContent::Text { text: prompt_text },
+            }],
         })
     }
 
@@ -573,14 +613,10 @@ Use the available tools to gather detailed information about the code structure 
 
         Ok(GetPromptResult {
             description: Some("Code analysis and quality assessment prompt".to_string()),
-            messages: vec![
-                PromptMessage {
-                    role: "user".to_string(),
-                    content: PromptContent::Text {
-                        text: prompt_text,
-                    },
-                },
-            ],
+            messages: vec![PromptMessage {
+                role: "user".to_string(),
+                content: PromptContent::Text { text: prompt_text },
+            }],
         })
     }
 
@@ -621,14 +657,10 @@ Use the repository tools to examine the relevant code and dependencies."#,
 
         Ok(GetPromptResult {
             description: Some("Debug assistance with repository context".to_string()),
-            messages: vec![
-                PromptMessage {
-                    role: "user".to_string(),
-                    content: PromptContent::Text {
-                        text: prompt_text,
-                    },
-                },
-            ],
+            messages: vec![PromptMessage {
+                role: "user".to_string(),
+                content: PromptContent::Text { text: prompt_text },
+            }],
         })
     }
 
@@ -667,14 +699,10 @@ Use the repository tools to understand the code and dependencies related to this
 
         Ok(GetPromptResult {
             description: Some("Debug issue analysis prompt".to_string()),
-            messages: vec![
-                PromptMessage {
-                    role: "user".to_string(),
-                    content: PromptContent::Text {
-                        text: prompt_text,
-                    },
-                },
-            ],
+            messages: vec![PromptMessage {
+                role: "user".to_string(),
+                content: PromptContent::Text { text: prompt_text },
+            }],
         })
     }
 
@@ -716,14 +744,10 @@ Use the repository tools to understand the current implementation and its depend
 
         Ok(GetPromptResult {
             description: Some("Refactoring guidance with repository analysis".to_string()),
-            messages: vec![
-                PromptMessage {
-                    role: "user".to_string(),
-                    content: PromptContent::Text {
-                        text: prompt_text,
-                    },
-                },
-            ],
+            messages: vec![PromptMessage {
+                role: "user".to_string(),
+                content: PromptContent::Text { text: prompt_text },
+            }],
         })
     }
 
@@ -758,14 +782,10 @@ Use the repository tools to understand the current implementation and its depend
 
         Ok(GetPromptResult {
             description: Some("Architectural analysis prompt".to_string()),
-            messages: vec![
-                PromptMessage {
-                    role: "user".to_string(),
-                    content: PromptContent::Text {
-                        text: prompt_text,
-                    },
-                },
-            ],
+            messages: vec![PromptMessage {
+                role: "user".to_string(),
+                content: PromptContent::Text { text: prompt_text },
+            }],
         })
     }
 
@@ -806,14 +826,10 @@ Use the repository tools to understand the current implementation and its depend
 
         Ok(GetPromptResult {
             description: Some("Design pattern assessment prompt".to_string()),
-            messages: vec![
-                PromptMessage {
-                    role: "user".to_string(),
-                    content: PromptContent::Text {
-                        text: prompt_text,
-                    },
-                },
-            ],
+            messages: vec![PromptMessage {
+                role: "user".to_string(),
+                content: PromptContent::Text { text: prompt_text },
+            }],
         })
     }
 
@@ -854,14 +870,10 @@ Use the repository tools to understand the current implementation and its depend
 
         Ok(GetPromptResult {
             description: Some("Dependency analysis prompt".to_string()),
-            messages: vec![
-                PromptMessage {
-                    role: "user".to_string(),
-                    content: PromptContent::Text {
-                        text: prompt_text,
-                    },
-                },
-            ],
+            messages: vec![PromptMessage {
+                role: "user".to_string(),
+                content: PromptContent::Text { text: prompt_text },
+            }],
         })
     }
 
@@ -895,8 +907,8 @@ Use the repository tools to understand the current implementation and its depend
             "No repository currently loaded".to_string()
         };
 
-                 let prompt_text = format!(
-             r#"Please create a comprehensive onboarding guide for a new {} developer joining this project:
+        let prompt_text = format!(
+            r#"Please create a comprehensive onboarding guide for a new {} developer joining this project:
 
 {}
 
@@ -924,23 +936,15 @@ Use repository analysis tools to gather detailed information about:
 - Documentation availability
 
 Tailor the guide to the developer's experience level and focus areas."#,
-             developer_experience,
-             repo_context,
-             developer_experience,
-             focus_areas,
-             timeline
-         );
+            developer_experience, repo_context, developer_experience, focus_areas, timeline
+        );
 
         Ok(GetPromptResult {
             description: Some("Comprehensive new developer onboarding guide".to_string()),
-            messages: vec![
-                PromptMessage {
-                    role: "user".to_string(),
-                    content: PromptContent::Text {
-                        text: prompt_text,
-                    },
-                },
-            ],
+            messages: vec![PromptMessage {
+                role: "user".to_string(),
+                content: PromptContent::Text { text: prompt_text },
+            }],
         })
     }
 
@@ -1038,21 +1042,19 @@ Provide specific file paths, function names, and code examples where relevant."#
             repo_context,
             exploration_depth,
             include_tests,
-            if include_tests == "true" { 
-                "\n7. **Test Coverage**:\n   - Existing test files and test cases\n   - Test coverage analysis\n   - Test quality and completeness\n   - Missing test scenarios" 
-            } else { "" }
+            if include_tests == "true" {
+                "\n7. **Test Coverage**:\n   - Existing test files and test cases\n   - Test coverage analysis\n   - Test quality and completeness\n   - Missing test scenarios"
+            } else {
+                ""
+            }
         );
 
         Ok(GetPromptResult {
             description: Some("Comprehensive feature exploration and analysis".to_string()),
-            messages: vec![
-                PromptMessage {
-                    role: "user".to_string(),
-                    content: PromptContent::Text {
-                        text: prompt_text,
-                    },
-                },
-            ],
+            messages: vec![PromptMessage {
+                role: "user".to_string(),
+                content: PromptContent::Text { text: prompt_text },
+            }],
         })
     }
 
@@ -1141,22 +1143,15 @@ Use repository analysis tools to:
 - Find examples and test cases
 
 Adjust the complexity and pace based on the current knowledge level and time constraints."#,
-            learning_goal,
-            current_knowledge,
-            time_constraint,
-            repo_context
+            learning_goal, current_knowledge, time_constraint, repo_context
         );
 
         Ok(GetPromptResult {
             description: Some("Personalized learning path through the codebase".to_string()),
-            messages: vec![
-                PromptMessage {
-                    role: "user".to_string(),
-                    content: PromptContent::Text {
-                        text: prompt_text,
-                    },
-                },
-            ],
+            messages: vec![PromptMessage {
+                role: "user".to_string(),
+                content: PromptContent::Text { text: prompt_text },
+            }],
         })
     }
 
@@ -1265,19 +1260,17 @@ Provide specific examples and file references where relevant."#,
             include_alternatives,
             if include_alternatives == "true" {
                 "\n8. **Alternative Technology Considerations**:\n   - Alternative frameworks or libraries\n   - Trade-offs and migration considerations\n   - Emerging technologies relevant to the project\n   - Cost-benefit analysis of alternatives"
-            } else { "" }
+            } else {
+                ""
+            }
         );
 
         Ok(GetPromptResult {
             description: Some("Comprehensive technology stack analysis".to_string()),
-            messages: vec![
-                PromptMessage {
-                    role: "user".to_string(),
-                    content: PromptContent::Text {
-                        text: prompt_text,
-                    },
-                },
-            ],
+            messages: vec![PromptMessage {
+                role: "user".to_string(),
+                content: PromptContent::Text { text: prompt_text },
+            }],
         })
     }
 
@@ -1384,22 +1377,15 @@ Use repository analysis tools to:
 
 Provide specific examples, file paths, and actionable recommendations.
 Focus on issues at or above the '{}' severity threshold."#,
-            repo_context,
-            health_aspects,
-            severity_threshold,
-            severity_threshold
+            repo_context, health_aspects, severity_threshold, severity_threshold
         );
 
         Ok(GetPromptResult {
             description: Some("Comprehensive codebase health assessment".to_string()),
-            messages: vec![
-                PromptMessage {
-                    role: "user".to_string(),
-                    content: PromptContent::Text {
-                        text: prompt_text,
-                    },
-                },
-            ],
+            messages: vec![PromptMessage {
+                role: "user".to_string(),
+                content: PromptContent::Text { text: prompt_text },
+            }],
         })
     }
 
@@ -1498,7 +1484,8 @@ Focus on issues at or above the '{}' severity threshold."#,
             )
         };
 
-        let sections_text = doc_sections.iter()
+        let sections_text = doc_sections
+            .iter()
             .enumerate()
             .map(|(i, section)| format!("{}. **{}**", i + 1, section))
             .collect::<Vec<_>>()
@@ -1559,15 +1546,14 @@ Ensure the documentation is:
         );
 
         Ok(GetPromptResult {
-            description: Some(format!("Generate {} documentation for {}", documentation_type, target_audience)),
-            messages: vec![
-                PromptMessage {
-                    role: "user".to_string(),
-                    content: PromptContent::Text {
-                        text: prompt_text,
-                    },
-                },
-            ],
+            description: Some(format!(
+                "Generate {} documentation for {}",
+                documentation_type, target_audience
+            )),
+            messages: vec![PromptMessage {
+                role: "user".to_string(),
+                content: PromptContent::Text { text: prompt_text },
+            }],
         })
     }
 
@@ -1674,22 +1660,17 @@ Use repository analysis tools to:
 - Assess test complexity and maintainability
 
 Provide specific examples, file paths, and actionable recommendations to reach the {}% coverage threshold."#,
-            repo_context,
-            test_types,
-            coverage_threshold,
-            coverage_threshold
+            repo_context, test_types, coverage_threshold, coverage_threshold
         );
 
         Ok(GetPromptResult {
-            description: Some("Comprehensive testing strategy analysis and recommendations".to_string()),
-            messages: vec![
-                PromptMessage {
-                    role: "user".to_string(),
-                    content: PromptContent::Text {
-                        text: prompt_text,
-                    },
-                },
-            ],
+            description: Some(
+                "Comprehensive testing strategy analysis and recommendations".to_string(),
+            ),
+            messages: vec![PromptMessage {
+                role: "user".to_string(),
+                content: PromptContent::Text { text: prompt_text },
+            }],
         })
     }
 
@@ -1726,20 +1707,20 @@ Provide specific examples, file paths, and actionable recommendations to reach t
         let (migration_focus, specific_considerations) = match migration_type {
             "framework_upgrade" => (
                 "Framework Version Upgrade",
-                "Focus on breaking changes, deprecated features, and compatibility issues."
+                "Focus on breaking changes, deprecated features, and compatibility issues.",
             ),
             "language_migration" => (
-                "Programming Language Migration", 
-                "Focus on language differences, ecosystem changes, and tooling requirements."
+                "Programming Language Migration",
+                "Focus on language differences, ecosystem changes, and tooling requirements.",
             ),
             "architecture_change" => (
                 "Architectural Transformation",
-                "Focus on structural changes, component redesign, and system interactions."
+                "Focus on structural changes, component redesign, and system interactions.",
             ),
             _ => (
                 "General Migration",
-                "Focus on identifying migration requirements and planning approach."
-            )
+                "Focus on identifying migration requirements and planning approach.",
+            ),
         };
 
         let prompt_text = format!(
@@ -1835,15 +1816,14 @@ Provide specific file references, code examples, and actionable steps."#,
         );
 
         Ok(GetPromptResult {
-            description: Some(format!("Comprehensive migration planning for {}", migration_type)),
-            messages: vec![
-                PromptMessage {
-                    role: "user".to_string(),
-                    content: PromptContent::Text {
-                        text: prompt_text,
-                    },
-                },
-            ],
+            description: Some(format!(
+                "Comprehensive migration planning for {}",
+                migration_type
+            )),
+            messages: vec![PromptMessage {
+                role: "user".to_string(),
+                content: PromptContent::Text { text: prompt_text },
+            }],
         })
     }
 }
@@ -1867,13 +1847,11 @@ mod tests {
             name: "test_prompt".to_string(),
             title: Some("Test Prompt".to_string()),
             description: "A test prompt".to_string(),
-            arguments: Some(vec![
-                PromptArgument {
-                    name: "test_arg".to_string(),
-                    description: "A test argument".to_string(),
-                    required: true,
-                },
-            ]),
+            arguments: Some(vec![PromptArgument {
+                name: "test_arg".to_string(),
+                description: "A test argument".to_string(),
+                required: true,
+            }]),
         };
 
         let json = serde_json::to_string(&prompt).unwrap();
@@ -1900,14 +1878,16 @@ mod tests {
     }
 
     async fn create_test_server() -> crate::PrismMcpServer {
-        use tempfile::TempDir;
         use std::fs;
-        
+        use tempfile::TempDir;
+
         let temp_dir = TempDir::new().expect("Failed to create temp dir");
         let repo_path = temp_dir.path();
-        
+
         // Create test files for prompt testing
-        fs::write(repo_path.join("main.py"), r#"
+        fs::write(
+            repo_path.join("main.py"),
+            r#"
 class UserService:
     """Service for managing users."""
     
@@ -1946,9 +1926,13 @@ class User:
         """Hash a password for storage."""
         import hashlib
         return hashlib.sha256(password.encode()).hexdigest()
-"#).unwrap();
+"#,
+        )
+        .unwrap();
 
-        fs::write(repo_path.join("database.py"), r#"
+        fs::write(
+            repo_path.join("database.py"),
+            r#"
 """Database interface for the application."""
 
 from typing import Optional, List
@@ -1998,15 +1982,19 @@ class Database:
             (user.username, user.email, user.password_hash)
         )
         self.connection.commit()
-"#).unwrap();
+"#,
+        )
+        .unwrap();
 
         let mut server = crate::PrismMcpServer::new().expect("Failed to create server");
-        server.initialize_with_repository(repo_path).await
+        server
+            .initialize_with_repository(repo_path)
+            .await
             .expect("Failed to initialize repository");
-        
+
         // Keep temp_dir alive
         std::mem::forget(temp_dir);
-        
+
         server
     }
 
@@ -2015,9 +2003,9 @@ class Database:
         let server = create_test_server().await;
         let server_arc = std::sync::Arc::new(tokio::sync::RwLock::new(server));
         let prompt_manager = PromptManager::new(server_arc);
-        
+
         // Prompt manager should be created successfully
-        assert!(true); // Just testing creation doesn't panic
+
     }
 
     #[tokio::test]
@@ -2025,27 +2013,33 @@ class Database:
         let server = create_test_server().await;
         let server_arc = std::sync::Arc::new(tokio::sync::RwLock::new(server));
         let prompt_manager = PromptManager::new(server_arc);
-        
-        let result = prompt_manager.list_prompts(ListPromptsParams { cursor: None }).await;
+
+        let result = prompt_manager
+            .list_prompts(ListPromptsParams { cursor: None })
+            .await;
         assert!(result.is_ok());
-        
+
         let prompts_result = result.unwrap();
         assert_eq!(prompts_result.prompts.len(), 16); // Original 8 + 8 new prompts for large codebase understanding
         assert!(prompts_result.next_cursor.is_none());
-        
+
         // Verify all expected prompts are present
-        let prompt_names: Vec<String> = prompts_result.prompts.iter().map(|p| p.name.clone()).collect();
+        let prompt_names: Vec<String> = prompts_result
+            .prompts
+            .iter()
+            .map(|p| p.name.clone())
+            .collect();
         assert!(prompt_names.contains(&"repository_overview".to_string()));
         assert!(prompt_names.contains(&"code_analysis".to_string()));
         assert!(prompt_names.contains(&"debug_assistance".to_string()));
         assert!(prompt_names.contains(&"debug_issue".to_string()));
         assert!(prompt_names.contains(&"refactoring_guidance".to_string()));
-        
+
         // Verify prompt structure
         for prompt in prompts_result.prompts {
             assert!(!prompt.name.is_empty());
             assert!(!prompt.description.is_empty());
-            
+
             // Check arguments structure
             if let Some(args) = prompt.arguments {
                 for arg in args {
@@ -2061,24 +2055,25 @@ class Database:
         let server = create_test_server().await;
         let server_arc = std::sync::Arc::new(tokio::sync::RwLock::new(server));
         let prompt_manager = PromptManager::new(server_arc);
-        
+
         let params = GetPromptParams {
             name: "repository_overview".to_string(),
-            arguments: Some(serde_json::Map::from_iter([
-                ("focus_area".to_string(), serde_json::Value::String("architecture".to_string())),
-            ])),
+            arguments: Some(serde_json::Map::from_iter([(
+                "focus_area".to_string(),
+                serde_json::Value::String("architecture".to_string()),
+            )])),
         };
-        
+
         let result = prompt_manager.get_prompt(params).await;
         assert!(result.is_ok());
-        
+
         let prompt_result = result.unwrap();
         assert!(prompt_result.description.is_some());
         assert_eq!(prompt_result.messages.len(), 1);
-        
+
         let message = &prompt_result.messages[0];
         assert_eq!(message.role, "user");
-        
+
         if let PromptContent::Text { text } = &message.content {
             assert!(text.contains("architecture"));
             assert!(text.contains("repository"));
@@ -2093,18 +2088,18 @@ class Database:
         let server = create_test_server().await;
         let server_arc = std::sync::Arc::new(tokio::sync::RwLock::new(server));
         let prompt_manager = PromptManager::new(server_arc);
-        
+
         let params = GetPromptParams {
             name: "repository_overview".to_string(),
             arguments: None, // Test default focus area
         };
-        
+
         let result = prompt_manager.get_prompt(params).await;
         assert!(result.is_ok());
-        
+
         let prompt_result = result.unwrap();
         assert_eq!(prompt_result.messages.len(), 1);
-        
+
         if let PromptContent::Text { text } = &prompt_result.messages[0].content {
             assert!(text.contains("general")); // Default focus area
         }
@@ -2115,21 +2110,27 @@ class Database:
         let server = create_test_server().await;
         let server_arc = std::sync::Arc::new(tokio::sync::RwLock::new(server));
         let prompt_manager = PromptManager::new(server_arc);
-        
+
         let params = GetPromptParams {
             name: "code_analysis".to_string(),
             arguments: Some(serde_json::Map::from_iter([
-                ("file_pattern".to_string(), serde_json::Value::String("*.py".to_string())),
-                ("analysis_type".to_string(), serde_json::Value::String("security".to_string())),
+                (
+                    "file_pattern".to_string(),
+                    serde_json::Value::String("*.py".to_string()),
+                ),
+                (
+                    "analysis_type".to_string(),
+                    serde_json::Value::String("security".to_string()),
+                ),
             ])),
         };
-        
+
         let result = prompt_manager.get_prompt(params).await;
         assert!(result.is_ok());
-        
+
         let prompt_result = result.unwrap();
         assert_eq!(prompt_result.messages.len(), 1);
-        
+
         if let PromptContent::Text { text } = &prompt_result.messages[0].content {
             assert!(text.contains("security"));
             assert!(text.contains("*.py"));
@@ -2142,21 +2143,29 @@ class Database:
         let server = create_test_server().await;
         let server_arc = std::sync::Arc::new(tokio::sync::RwLock::new(server));
         let prompt_manager = PromptManager::new(server_arc);
-        
+
         let params = GetPromptParams {
             name: "debug_assistance".to_string(),
             arguments: Some(serde_json::Map::from_iter([
-                ("issue_description".to_string(), serde_json::Value::String("Authentication is failing for some users".to_string())),
-                ("affected_files".to_string(), serde_json::Value::String("main.py, database.py".to_string())),
+                (
+                    "issue_description".to_string(),
+                    serde_json::Value::String(
+                        "Authentication is failing for some users".to_string(),
+                    ),
+                ),
+                (
+                    "affected_files".to_string(),
+                    serde_json::Value::String("main.py, database.py".to_string()),
+                ),
             ])),
         };
-        
+
         let result = prompt_manager.get_prompt(params).await;
         assert!(result.is_ok());
-        
+
         let prompt_result = result.unwrap();
         assert_eq!(prompt_result.messages.len(), 1);
-        
+
         if let PromptContent::Text { text } = &prompt_result.messages[0].content {
             assert!(text.contains("Authentication is failing"));
             assert!(text.contains("main.py, database.py"));
@@ -2169,18 +2178,21 @@ class Database:
         let server = create_test_server().await;
         let server_arc = std::sync::Arc::new(tokio::sync::RwLock::new(server));
         let prompt_manager = PromptManager::new(server_arc);
-        
+
         let params = GetPromptParams {
             name: "debug_assistance".to_string(),
             arguments: Some(serde_json::Map::from_iter([
-                ("affected_files".to_string(), serde_json::Value::String("main.py".to_string())),
+                (
+                    "affected_files".to_string(),
+                    serde_json::Value::String("main.py".to_string()),
+                ),
                 // Missing required issue_description
             ])),
         };
-        
+
         let result = prompt_manager.get_prompt(params).await;
         assert!(result.is_err());
-        
+
         let error = result.unwrap_err();
         assert!(error.to_string().contains("issue_description"));
         assert!(error.to_string().contains("required"));
@@ -2191,21 +2203,30 @@ class Database:
         let server = create_test_server().await;
         let server_arc = std::sync::Arc::new(tokio::sync::RwLock::new(server));
         let prompt_manager = PromptManager::new(server_arc);
-        
+
         let params = GetPromptParams {
             name: "debug_issue".to_string(),
             arguments: Some(serde_json::Map::from_iter([
-                ("error_location".to_string(), serde_json::Value::String("main.py:25".to_string())),
-                ("error_message".to_string(), serde_json::Value::String("AttributeError: 'NoneType' object has no attribute 'verify_password'".to_string())),
+                (
+                    "error_location".to_string(),
+                    serde_json::Value::String("main.py:25".to_string()),
+                ),
+                (
+                    "error_message".to_string(),
+                    serde_json::Value::String(
+                        "AttributeError: 'NoneType' object has no attribute 'verify_password'"
+                            .to_string(),
+                    ),
+                ),
             ])),
         };
-        
+
         let result = prompt_manager.get_prompt(params).await;
         assert!(result.is_ok());
-        
+
         let prompt_result = result.unwrap();
         assert_eq!(prompt_result.messages.len(), 1);
-        
+
         if let PromptContent::Text { text } = &prompt_result.messages[0].content {
             assert!(text.contains("main.py:25"));
             assert!(text.contains("AttributeError"));
@@ -2218,18 +2239,21 @@ class Database:
         let server = create_test_server().await;
         let server_arc = std::sync::Arc::new(tokio::sync::RwLock::new(server));
         let prompt_manager = PromptManager::new(server_arc);
-        
+
         let params = GetPromptParams {
             name: "debug_issue".to_string(),
             arguments: Some(serde_json::Map::from_iter([
-                ("error_message".to_string(), serde_json::Value::String("Some error".to_string())),
+                (
+                    "error_message".to_string(),
+                    serde_json::Value::String("Some error".to_string()),
+                ),
                 // Missing required error_location
             ])),
         };
-        
+
         let result = prompt_manager.get_prompt(params).await;
         assert!(result.is_err());
-        
+
         let error = result.unwrap_err();
         assert!(error.to_string().contains("error_location"));
         assert!(error.to_string().contains("required"));
@@ -2240,21 +2264,27 @@ class Database:
         let server = create_test_server().await;
         let server_arc = std::sync::Arc::new(tokio::sync::RwLock::new(server));
         let prompt_manager = PromptManager::new(server_arc);
-        
+
         let params = GetPromptParams {
             name: "refactoring_guidance".to_string(),
             arguments: Some(serde_json::Map::from_iter([
-                ("target_area".to_string(), serde_json::Value::String("UserService class".to_string())),
-                ("refactoring_goal".to_string(), serde_json::Value::String("improve testability".to_string())),
+                (
+                    "target_area".to_string(),
+                    serde_json::Value::String("UserService class".to_string()),
+                ),
+                (
+                    "refactoring_goal".to_string(),
+                    serde_json::Value::String("improve testability".to_string()),
+                ),
             ])),
         };
-        
+
         let result = prompt_manager.get_prompt(params).await;
         assert!(result.is_ok());
-        
+
         let prompt_result = result.unwrap();
         assert_eq!(prompt_result.messages.len(), 1);
-        
+
         if let PromptContent::Text { text } = &prompt_result.messages[0].content {
             assert!(text.contains("UserService class"));
             assert!(text.contains("improve testability"));
@@ -2267,18 +2297,21 @@ class Database:
         let server = create_test_server().await;
         let server_arc = std::sync::Arc::new(tokio::sync::RwLock::new(server));
         let prompt_manager = PromptManager::new(server_arc);
-        
+
         let params = GetPromptParams {
             name: "refactoring_guidance".to_string(),
             arguments: Some(serde_json::Map::from_iter([
-                ("refactoring_goal".to_string(), serde_json::Value::String("improve performance".to_string())),
+                (
+                    "refactoring_goal".to_string(),
+                    serde_json::Value::String("improve performance".to_string()),
+                ),
                 // Missing required target_area
             ])),
         };
-        
+
         let result = prompt_manager.get_prompt(params).await;
         assert!(result.is_err());
-        
+
         let error = result.unwrap_err();
         assert!(error.to_string().contains("target_area"));
         assert!(error.to_string().contains("required"));
@@ -2289,15 +2322,15 @@ class Database:
         let server = create_test_server().await;
         let server_arc = std::sync::Arc::new(tokio::sync::RwLock::new(server));
         let prompt_manager = PromptManager::new(server_arc);
-        
+
         let params = GetPromptParams {
             name: "unknown_prompt".to_string(),
             arguments: None,
         };
-        
+
         let result = prompt_manager.get_prompt(params).await;
         assert!(result.is_err());
-        
+
         let error = result.unwrap_err();
         assert!(error.to_string().contains("Unknown prompt"));
         assert!(error.to_string().contains("unknown_prompt"));
@@ -2311,13 +2344,14 @@ class Database:
                 text: "Test message".to_string(),
             },
         };
-        
+
         let json = serde_json::to_string(&message).unwrap();
         let deserialized: PromptMessage = serde_json::from_str(&json).unwrap();
-        
+
         assert_eq!(message.role, deserialized.role);
-        if let (PromptContent::Text { text: orig }, PromptContent::Text { text: deser }) = 
-            (&message.content, &deserialized.content) {
+        if let (PromptContent::Text { text: orig }, PromptContent::Text { text: deser }) =
+            (&message.content, &deserialized.content)
+        {
             assert_eq!(orig, deser);
         } else {
             panic!("Content type mismatch");
@@ -2330,10 +2364,10 @@ class Database:
             data: "base64encodeddata".to_string(),
             mime_type: "image/png".to_string(),
         };
-        
+
         let json = serde_json::to_string(&content).unwrap();
         let deserialized: PromptContent = serde_json::from_str(&json).unwrap();
-        
+
         if let PromptContent::Image { data, mime_type } = deserialized {
             assert_eq!(data, "base64encodeddata");
             assert_eq!(mime_type, "image/png");
@@ -2345,16 +2379,19 @@ class Database:
     #[test]
     fn test_get_prompt_params_serialization() {
         let mut arguments = serde_json::Map::new();
-        arguments.insert("key".to_string(), serde_json::Value::String("value".to_string()));
-        
+        arguments.insert(
+            "key".to_string(),
+            serde_json::Value::String("value".to_string()),
+        );
+
         let params = GetPromptParams {
             name: "test_prompt".to_string(),
             arguments: Some(arguments),
         };
-        
+
         let json = serde_json::to_string(&params).unwrap();
         let deserialized: GetPromptParams = serde_json::from_str(&json).unwrap();
-        
+
         assert_eq!(params.name, deserialized.name);
         assert_eq!(params.arguments, deserialized.arguments);
     }
@@ -2363,19 +2400,17 @@ class Database:
     fn test_get_prompt_result_serialization() {
         let result = GetPromptResult {
             description: Some("Test prompt result".to_string()),
-            messages: vec![
-                PromptMessage {
-                    role: "user".to_string(),
-                    content: PromptContent::Text {
-                        text: "Test content".to_string(),
-                    },
+            messages: vec![PromptMessage {
+                role: "user".to_string(),
+                content: PromptContent::Text {
+                    text: "Test content".to_string(),
                 },
-            ],
+            }],
         };
-        
+
         let json = serde_json::to_string(&result).unwrap();
         let deserialized: GetPromptResult = serde_json::from_str(&json).unwrap();
-        
+
         assert_eq!(result.description, deserialized.description);
         assert_eq!(result.messages.len(), deserialized.messages.len());
     }
@@ -2385,10 +2420,10 @@ class Database:
         let params = ListPromptsParams {
             cursor: Some("test_cursor".to_string()),
         };
-        
+
         let json = serde_json::to_string(&params).unwrap();
         let deserialized: ListPromptsParams = serde_json::from_str(&json).unwrap();
-        
+
         assert_eq!(params.cursor, deserialized.cursor);
     }
 
@@ -2414,8 +2449,9 @@ class Database:
     #[tokio::test]
     async fn test_architectural_analysis_prompt() {
         let server = create_test_server().await;
-        let prompt_manager = PromptManager::new(std::sync::Arc::new(tokio::sync::RwLock::new(server)));
-        
+        let prompt_manager =
+            PromptManager::new(std::sync::Arc::new(tokio::sync::RwLock::new(server)));
+
         let params = GetPromptParams {
             name: "architectural_analysis".to_string(),
             arguments: Some({
@@ -2425,15 +2461,15 @@ class Database:
                 args
             }),
         };
-        
+
         let result = prompt_manager.get_prompt(params).await;
         assert!(result.is_ok());
-        
+
         let prompt_result = result.unwrap();
         assert!(prompt_result.description.is_some());
         assert_eq!(prompt_result.messages.len(), 1);
         assert_eq!(prompt_result.messages[0].role, "user");
-        
+
         if let PromptContent::Text { text } = &prompt_result.messages[0].content {
             assert!(text.contains("architectural"));
             assert!(text.contains("layers"));
@@ -2443,8 +2479,9 @@ class Database:
     #[tokio::test]
     async fn test_pattern_assessment_prompt() {
         let server = create_test_server().await;
-        let prompt_manager = PromptManager::new(std::sync::Arc::new(tokio::sync::RwLock::new(server)));
-        
+        let prompt_manager =
+            PromptManager::new(std::sync::Arc::new(tokio::sync::RwLock::new(server)));
+
         let params = GetPromptParams {
             name: "pattern_assessment".to_string(),
             arguments: Some({
@@ -2454,13 +2491,13 @@ class Database:
                 args
             }),
         };
-        
+
         let result = prompt_manager.get_prompt(params).await;
         assert!(result.is_ok());
-        
+
         let prompt_result = result.unwrap();
         assert_eq!(prompt_result.messages.len(), 1);
-        
+
         if let PromptContent::Text { text } = &prompt_result.messages[0].content {
             assert!(text.contains("pattern"));
             assert!(text.contains("design_patterns"));
@@ -2470,8 +2507,9 @@ class Database:
     #[tokio::test]
     async fn test_dependency_analysis_prompt() {
         let server = create_test_server().await;
-        let prompt_manager = PromptManager::new(std::sync::Arc::new(tokio::sync::RwLock::new(server)));
-        
+        let prompt_manager =
+            PromptManager::new(std::sync::Arc::new(tokio::sync::RwLock::new(server)));
+
         let params = GetPromptParams {
             name: "dependency_analysis".to_string(),
             arguments: Some({
@@ -2481,13 +2519,13 @@ class Database:
                 args
             }),
         };
-        
+
         let result = prompt_manager.get_prompt(params).await;
         assert!(result.is_ok());
-        
+
         let prompt_result = result.unwrap();
         assert_eq!(prompt_result.messages.len(), 1);
-        
+
         if let PromptContent::Text { text } = &prompt_result.messages[0].content {
             assert!(text.contains("dependency"));
             assert!(text.contains("cycles"));
@@ -2497,20 +2535,21 @@ class Database:
     #[tokio::test]
     async fn test_new_prompts_in_list() {
         let server = create_test_server().await;
-        let prompt_manager = PromptManager::new(std::sync::Arc::new(tokio::sync::RwLock::new(server)));
-        
+        let prompt_manager =
+            PromptManager::new(std::sync::Arc::new(tokio::sync::RwLock::new(server)));
+
         let params = ListPromptsParams { cursor: None };
         let result = prompt_manager.list_prompts(params).await;
         assert!(result.is_ok());
-        
+
         let prompts_result = result.unwrap();
         let prompt_names: Vec<&String> = prompts_result.prompts.iter().map(|p| &p.name).collect();
-        
+
         // Check that our new architectural prompts are included
         assert!(prompt_names.contains(&&"architectural_analysis".to_string()));
         assert!(prompt_names.contains(&&"pattern_assessment".to_string()));
         assert!(prompt_names.contains(&&"dependency_analysis".to_string()));
-        
+
         // Should have all prompts including new ones
         assert!(prompts_result.prompts.len() >= 16); // All 16 prompts should be available
     }
@@ -2518,17 +2557,18 @@ class Database:
     #[tokio::test]
     async fn test_architectural_prompts_with_default_args() {
         let server = create_test_server().await;
-        let prompt_manager = PromptManager::new(std::sync::Arc::new(tokio::sync::RwLock::new(server)));
-        
+        let prompt_manager =
+            PromptManager::new(std::sync::Arc::new(tokio::sync::RwLock::new(server)));
+
         // Test architectural_analysis with no arguments (should use defaults)
         let params = GetPromptParams {
             name: "architectural_analysis".to_string(),
             arguments: None,
         };
-        
+
         let result = prompt_manager.get_prompt(params).await;
         assert!(result.is_ok());
-        
+
         let prompt_result = result.unwrap();
         if let PromptContent::Text { text } = &prompt_result.messages[0].content {
             assert!(text.contains("general")); // Should use default focus
@@ -2538,14 +2578,15 @@ class Database:
     #[tokio::test]
     async fn test_unknown_architectural_prompt() {
         let server = create_test_server().await;
-        let prompt_manager = PromptManager::new(std::sync::Arc::new(tokio::sync::RwLock::new(server)));
-        
+        let prompt_manager =
+            PromptManager::new(std::sync::Arc::new(tokio::sync::RwLock::new(server)));
+
         let params = GetPromptParams {
             name: "unknown_architectural_prompt".to_string(),
             arguments: None,
         };
-        
+
         let result = prompt_manager.get_prompt(params).await;
         assert!(result.is_err()); // Should return error for unknown prompt
     }
-} 
+}

@@ -167,7 +167,7 @@ impl BulkIndexer {
     ) -> Result<IndexingResult> {
         let start_time = Instant::now();
         let all_files = scan_result.all_files();
-        
+
         progress_reporter.report_progress(0, Some(all_files.len()));
 
         let mut indexing_result = IndexingResult::new(self.config.repo_id.clone());
@@ -175,31 +175,43 @@ impl BulkIndexer {
         let error_counter = Arc::new(AtomicUsize::new(0));
 
         // For very large repositories, use streaming mode
-        let use_streaming = all_files.len() > 10000 || 
-            self.config.memory_limit.map_or(false, |limit| limit < 2 * 1024 * 1024 * 1024); // < 2GB
+        let use_streaming = all_files.len() > 10000
+            || self
+                .config
+                .memory_limit
+                .map_or(false, |limit| limit < 2 * 1024 * 1024 * 1024); // < 2GB
 
         if use_streaming {
-            tracing::info!("Using streaming mode for large repository ({} files)", all_files.len());
-            return self.index_scan_result_streaming(scan_result, progress_reporter).await;
+            tracing::info!(
+                "Using streaming mode for large repository ({} files)",
+                all_files.len()
+            );
+            return self
+                .index_scan_result_streaming(scan_result, progress_reporter)
+                .await;
         }
 
         // Process files in batches
         for batch in all_files.chunks(self.config.batch_size) {
-            let batch_result = self.process_batch(
-                batch, 
-                &processed_counter,
-                &error_counter,
-                &progress_reporter,
-                all_files.len()
-            ).await?;
-            
+            let batch_result = self
+                .process_batch(
+                    batch,
+                    &processed_counter,
+                    &error_counter,
+                    &progress_reporter,
+                    all_files.len(),
+                )
+                .await?;
+
             indexing_result.merge(batch_result);
 
             // Check memory limit
             if let Some(limit) = self.config.memory_limit {
                 let current_memory = self.estimate_memory_usage(&indexing_result);
                 if current_memory > limit {
-                    return Err(Error::indexing("Memory limit exceeded during bulk indexing"));
+                    return Err(Error::indexing(
+                        "Memory limit exceeded during bulk indexing",
+                    ));
                 }
             }
         }
@@ -208,21 +220,19 @@ impl BulkIndexer {
         if self.config.enable_cross_file_linking {
             tracing::info!("Starting cross-file symbol resolution...");
             let linking_start = Instant::now();
-            
+
             let cross_file_edges = self.resolve_cross_file_symbols(&indexing_result)?;
-            
+
             if !cross_file_edges.is_empty() {
                 // Create a patch with the new cross-file edges
-                let cross_file_patch = PatchBuilder::new(
-                    self.config.repo_id.clone(),
-                    self.config.commit_sha.clone(),
-                )
-                .add_edges(cross_file_edges.clone())
-                .build();
-                
+                let cross_file_patch =
+                    PatchBuilder::new(self.config.repo_id.clone(), self.config.commit_sha.clone())
+                        .add_edges(cross_file_edges.clone())
+                        .build();
+
                 indexing_result.patches.push(cross_file_patch);
                 indexing_result.stats.edges_created += cross_file_edges.len();
-                
+
                 tracing::info!(
                     "Cross-file symbol resolution completed: {} edges created in {}ms",
                     cross_file_edges.len(),
@@ -234,7 +244,8 @@ impl BulkIndexer {
         // Finalize statistics
         indexing_result.stats.duration_ms = start_time.elapsed().as_millis() as u64;
         indexing_result.stats.throughput = if indexing_result.stats.duration_ms > 0 {
-            (indexing_result.stats.files_processed as f64 * 1000.0) / indexing_result.stats.duration_ms as f64
+            (indexing_result.stats.files_processed as f64 * 1000.0)
+                / indexing_result.stats.duration_ms as f64
         } else {
             0.0
         };
@@ -251,7 +262,7 @@ impl BulkIndexer {
     ) -> Result<IndexingResult> {
         let start_time = Instant::now();
         let all_files = scan_result.all_files();
-        
+
         progress_reporter.report_progress(0, Some(all_files.len()));
 
         let mut final_result = IndexingResult::new(self.config.repo_id.clone());
@@ -264,13 +275,15 @@ impl BulkIndexer {
 
         // Process files in smaller batches and clear intermediate results
         for batch in all_files.chunks(streaming_batch_size) {
-            let mut batch_result = self.process_batch(
-                batch, 
-                &processed_counter,
-                &error_counter,
-                &progress_reporter,
-                all_files.len()
-            ).await?;
+            let batch_result = self
+                .process_batch(
+                    batch,
+                    &processed_counter,
+                    &error_counter,
+                    &progress_reporter,
+                    all_files.len(),
+                )
+                .await?;
 
             // Update statistics but don't accumulate all patches
             final_result.stats.files_processed += batch_result.stats.files_processed;
@@ -285,9 +298,14 @@ impl BulkIndexer {
                 // Keep only the most recent patches
                 let keep_count = max_patches_in_memory / 2;
                 if final_result.patches.len() > keep_count {
-                    final_result.patches.drain(0..final_result.patches.len() - keep_count);
+                    final_result
+                        .patches
+                        .drain(0..final_result.patches.len() - keep_count);
                 }
-                tracing::debug!("Cleared old patches to manage memory, keeping {} recent patches", keep_count);
+                tracing::debug!(
+                    "Cleared old patches to manage memory, keeping {} recent patches",
+                    keep_count
+                );
             }
 
             final_result.patches.extend(batch_result.patches);
@@ -296,7 +314,9 @@ impl BulkIndexer {
             if let Some(limit) = self.config.memory_limit {
                 let current_memory = self.estimate_memory_usage(&final_result);
                 if current_memory > limit {
-                    tracing::warn!("Memory limit reached in streaming mode, clearing intermediate results");
+                    tracing::warn!(
+                        "Memory limit reached in streaming mode, clearing intermediate results"
+                    );
                     // Clear old patches but keep statistics
                     final_result.patches.clear();
                 }
@@ -311,17 +331,20 @@ impl BulkIndexer {
         // Finalize statistics
         final_result.stats.duration_ms = start_time.elapsed().as_millis() as u64;
         final_result.stats.throughput = if final_result.stats.duration_ms > 0 {
-            (final_result.stats.files_processed as f64 * 1000.0) / final_result.stats.duration_ms as f64
+            (final_result.stats.files_processed as f64 * 1000.0)
+                / final_result.stats.duration_ms as f64
         } else {
             0.0
         };
 
         progress_reporter.report_progress(all_files.len(), Some(all_files.len()));
-        tracing::info!("Streaming indexing completed: {} files, {} nodes, {} edges", 
+        tracing::info!(
+            "Streaming indexing completed: {} files, {} nodes, {} edges",
             final_result.stats.files_processed,
             final_result.stats.nodes_created,
-            final_result.stats.edges_created);
-        
+            final_result.stats.edges_created
+        );
+
         Ok(final_result)
     }
 
@@ -341,7 +364,7 @@ impl BulkIndexer {
             .par_iter()
             .map(|discovered_file| {
                 let processed = processed_counter.fetch_add(1, Ordering::Relaxed) + 1;
-                
+
                 // Report progress periodically
                 if processed % 10 == 0 {
                     progress_reporter.report_progress(processed, Some(total_files));
@@ -367,11 +390,11 @@ impl BulkIndexer {
                 Err(e) => {
                     error_counter.fetch_add(1, Ordering::Relaxed);
                     batch_result.stats.error_count += 1;
-                    
+
                     if !self.config.continue_on_error {
                         return Err(e);
                     }
-                    
+
                     progress_reporter.report_error(&e);
                 }
             }
@@ -383,12 +406,13 @@ impl BulkIndexer {
     /// Process a single discovered file
     fn process_single_file(&self, discovered_file: &DiscoveredFile) -> Result<Option<AstPatch>> {
         // Read file content
-        let content = std::fs::read_to_string(&discovered_file.path)
-            .map_err(|e| Error::io(format!(
-                "Failed to read file {}: {}", 
-                discovered_file.path.display(), 
+        let content = std::fs::read_to_string(&discovered_file.path).map_err(|e| {
+            Error::io(format!(
+                "Failed to read file {}: {}",
+                discovered_file.path.display(),
                 e
-            )))?;
+            ))
+        })?;
 
         // Skip empty files
         if content.trim().is_empty() {
@@ -406,10 +430,8 @@ impl BulkIndexer {
         let parse_result = self.parser_engine.parse_file(context)?;
 
         // Create patch from parse result
-        let mut patch_builder = PatchBuilder::new(
-            self.config.repo_id.clone(),
-            self.config.commit_sha.clone(),
-        );
+        let mut patch_builder =
+            PatchBuilder::new(self.config.repo_id.clone(), self.config.commit_sha.clone());
 
         // Add all nodes
         patch_builder = patch_builder.add_nodes(parse_result.nodes);
@@ -451,7 +473,7 @@ impl BulkIndexer {
     fn resolve_cross_file_symbols(&self, indexing_result: &IndexingResult) -> Result<Vec<Edge>> {
         // Build a temporary graph store with all the nodes and edges from patches
         let temp_graph = Arc::new(GraphStore::new());
-        
+
         // Add all nodes and edges from patches to the temporary graph
         for patch in &indexing_result.patches {
             for node in &patch.nodes_add {
@@ -461,7 +483,7 @@ impl BulkIndexer {
                 temp_graph.add_edge(edge.clone());
             }
         }
-        
+
         // Create symbol resolver and resolve cross-file relationships
         let mut resolver = SymbolResolver::new(temp_graph);
         resolver.resolve_all()
@@ -494,13 +516,16 @@ impl ProgressReporter for IndexingProgressReporter {
     fn report_progress(&self, current: usize, total: Option<usize>) {
         if let Ok(mut last_report) = self.last_report.try_lock() {
             let now = Instant::now();
-            
+
             // Rate limit progress reports to avoid spam
             if now.duration_since(*last_report).as_millis() > 500 {
                 match total {
                     Some(total) => {
                         let percent = (current as f64 / total as f64) * 100.0;
-                        println!("Indexing progress: {}/{} files ({:.1}%)", current, total, percent);
+                        println!(
+                            "Indexing progress: {}/{} files ({:.1}%)",
+                            current, total, percent
+                        );
                     }
                     None => {
                         println!("Indexing progress: {} files processed", current);
@@ -532,16 +557,13 @@ mod tests {
 
     fn create_test_indexer() -> (BulkIndexer, TempDir) {
         let temp_dir = TempDir::new().unwrap();
-        
-        let config = IndexingConfig::new(
-            "test_repo".to_string(),
-            "abc123".to_string(),
-        );
-        
+
+        let config = IndexingConfig::new("test_repo".to_string(), "abc123".to_string());
+
         let registry = Arc::new(LanguageRegistry::new());
         let parser_engine = Arc::new(ParserEngine::new(registry));
         let indexer = BulkIndexer::new(config, parser_engine);
-        
+
         (indexer, temp_dir)
     }
 
@@ -568,7 +590,7 @@ mod tests {
         assert_eq!(result.repo_id, "test_repo");
         assert_eq!(result.patch_count(), 0);
         assert_eq!(result.total_operations(), 0);
-        
+
         // Test merge
         let other = IndexingResult::new("test_repo".to_string());
         result.merge(other);
@@ -578,17 +600,17 @@ mod tests {
     #[tokio::test]
     async fn test_process_single_file() {
         let (indexer, temp_dir) = create_test_indexer();
-        
+
         // Create a test file
         let test_file = temp_dir.path().join("test.js");
         std::fs::write(&test_file, "console.log('hello');").unwrap();
-        
+
         let discovered_file = create_test_discovered_file(test_file, Language::JavaScript);
-        
+
         // This will fail because we don't have a JavaScript parser registered
         // but it tests the file reading logic
         let result = indexer.process_single_file(&discovered_file);
-        
+
         // Should return error because no JS parser is registered
         assert!(result.is_err());
     }
@@ -597,7 +619,7 @@ mod tests {
     fn test_memory_estimation() {
         let (indexer, _temp_dir) = create_test_indexer();
         let result = IndexingResult::new("test".to_string());
-        
+
         let memory = indexer.estimate_memory_usage(&result);
         assert!(memory >= 0); // Should not panic
     }
@@ -613,7 +635,7 @@ mod tests {
             error_count: 2,
             memory_stats: MemoryStats::default(),
         };
-        
+
         assert_eq!(stats.files_processed, 100);
         assert_eq!(stats.throughput, 100.0);
     }
@@ -621,11 +643,11 @@ mod tests {
     #[test]
     fn test_progress_reporter() {
         let reporter = IndexingProgressReporter::new(true);
-        
+
         // These should not panic
         reporter.report_progress(50, Some(100));
         reporter.report_progress(100, None);
-        
+
         let error = Error::indexing("test error");
         reporter.report_error(&error);
     }

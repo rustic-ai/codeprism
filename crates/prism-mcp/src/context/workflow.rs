@@ -1,5 +1,5 @@
 //! Workflow context and guidance system
-//! 
+//!
 //! Provides intelligent tool suggestions and workflow guidance based on
 //! current analysis state, session history, and detected patterns.
 
@@ -105,19 +105,23 @@ impl WorkflowSuggestion {
         match stage {
             WorkflowStage::Discovery => {
                 "Focus on understanding the overall structure and scope of the codebase. \
-                Start with repository statistics and content exploration.".to_string()
+                Start with repository statistics and content exploration."
+                    .to_string()
             }
             WorkflowStage::Mapping => {
                 "Map out the relationships between components. Use symbol search and \
-                dependency analysis to understand the architecture.".to_string()
+                dependency analysis to understand the architecture."
+                    .to_string()
             }
             WorkflowStage::DeepDive => {
                 "Dive deep into specific areas of interest. Explain individual symbols \
-                and analyze complex patterns like inheritance hierarchies.".to_string()
+                and analyze complex patterns like inheritance hierarchies."
+                    .to_string()
             }
             WorkflowStage::Synthesis => {
                 "Synthesize your findings with quality analysis. Look for complexity issues, \
-                security concerns, and opportunities for improvement.".to_string()
+                security concerns, and opportunities for improvement."
+                    .to_string()
             }
         }
     }
@@ -177,50 +181,50 @@ impl WorkflowContext {
     pub fn generate_suggestions(&self) -> Result<WorkflowSuggestion> {
         let stage = &self.session_state.current_stage;
         let workflow_guidance = match stage {
-            WorkflowStage::Discovery => "Focus on understanding the overall structure and scope of the codebase.",
-            WorkflowStage::Mapping => "Map relationships between components and understand architecture.",
-            WorkflowStage::DeepDive => "Dive deep into specific areas of interest and analyze patterns.",
-            WorkflowStage::Synthesis => "Synthesize findings with quality analysis and security review.",
+            WorkflowStage::Discovery => {
+                "Focus on understanding the overall structure and scope of the codebase."
+            }
+            WorkflowStage::Mapping => {
+                "Map relationships between components and understand architecture."
+            }
+            WorkflowStage::DeepDive => {
+                "Dive deep into specific areas of interest and analyze patterns."
+            }
+            WorkflowStage::Synthesis => {
+                "Synthesize findings with quality analysis and security review."
+            }
         };
 
         // Generate basic suggestions based on the workflow stage
         let immediate_suggestions = match stage {
-            WorkflowStage::Discovery => vec![
-                ToolSuggestion::new(
-                    "repository_stats".to_string(),
-                    ConfidenceLevel::High,
-                    "Get an overview of the repository structure".to_string(),
-                    "Understanding of codebase size and organization".to_string(),
-                    1,
-                ),
-            ],
-            WorkflowStage::Mapping => vec![
-                ToolSuggestion::new(
-                    "search_symbols".to_string(),
-                    ConfidenceLevel::High,
-                    "Find key symbols in the codebase".to_string(),
-                    "Discovery of main classes and functions".to_string(),
-                    1,
-                ),
-            ],
-            WorkflowStage::DeepDive => vec![
-                ToolSuggestion::new(
-                    "explain_symbol".to_string(),
-                    ConfidenceLevel::High,
-                    "Analyze specific symbols in detail".to_string(),
-                    "Deep understanding of symbol implementation".to_string(),
-                    1,
-                ),
-            ],
-            WorkflowStage::Synthesis => vec![
-                ToolSuggestion::new(
-                    "analyze_complexity".to_string(),
-                    ConfidenceLevel::High,
-                    "Evaluate code complexity and quality".to_string(),
-                    "Assessment of code maintainability".to_string(),
-                    1,
-                ),
-            ],
+            WorkflowStage::Discovery => vec![ToolSuggestion::new(
+                "repository_stats".to_string(),
+                ConfidenceLevel::High,
+                "Get an overview of the repository structure".to_string(),
+                "Understanding of codebase size and organization".to_string(),
+                1,
+            )],
+            WorkflowStage::Mapping => vec![ToolSuggestion::new(
+                "search_symbols".to_string(),
+                ConfidenceLevel::High,
+                "Find key symbols in the codebase".to_string(),
+                "Discovery of main classes and functions".to_string(),
+                1,
+            )],
+            WorkflowStage::DeepDive => vec![ToolSuggestion::new(
+                "explain_symbol".to_string(),
+                ConfidenceLevel::High,
+                "Analyze specific symbols in detail".to_string(),
+                "Deep understanding of symbol implementation".to_string(),
+                1,
+            )],
+            WorkflowStage::Synthesis => vec![ToolSuggestion::new(
+                "analyze_complexity".to_string(),
+                ConfidenceLevel::High,
+                "Evaluate code complexity and quality".to_string(),
+                "Assessment of code maintainability".to_string(),
+                1,
+            )],
         };
 
         Ok(WorkflowSuggestion {
@@ -245,9 +249,16 @@ impl WorkflowContext {
                 format!("Get detailed explanation of symbol {}", symbol_id),
                 "Complete understanding of symbol implementation and context".to_string(),
                 1,
-            ).with_parameter("symbol_id".to_string(), serde_json::Value::String(symbol_id.to_string()))
-             .with_parameter("include_dependencies".to_string(), serde_json::Value::Bool(true))
-             .with_parameter("include_usages".to_string(), serde_json::Value::Bool(true))
+            )
+            .with_parameter(
+                "symbol_id".to_string(),
+                serde_json::Value::String(symbol_id.to_string()),
+            )
+            .with_parameter(
+                "include_dependencies".to_string(),
+                serde_json::Value::Bool(true),
+            )
+            .with_parameter("include_usages".to_string(), serde_json::Value::Bool(true)),
         );
 
         // Suggest finding references
@@ -258,7 +269,11 @@ impl WorkflowContext {
                 format!("Find all references to symbol {}", symbol_id),
                 "Understanding of how and where the symbol is used".to_string(),
                 2,
-            ).with_parameter("symbol_id".to_string(), serde_json::Value::String(symbol_id.to_string()))
+            )
+            .with_parameter(
+                "symbol_id".to_string(),
+                serde_json::Value::String(symbol_id.to_string()),
+            ),
         );
 
         // Suggest dependency analysis
@@ -269,7 +284,11 @@ impl WorkflowContext {
                 format!("Analyze dependencies for symbol {}", symbol_id),
                 "Understanding of what the symbol depends on".to_string(),
                 3,
-            ).with_parameter("target".to_string(), serde_json::Value::String(symbol_id.to_string()))
+            )
+            .with_parameter(
+                "target".to_string(),
+                serde_json::Value::String(symbol_id.to_string()),
+            ),
         );
 
         Ok(suggestions)
@@ -278,51 +297,43 @@ impl WorkflowContext {
     /// Get alternative workflow approaches
     pub fn suggest_alternatives(&self) -> Result<Vec<ToolSuggestion>> {
         let current_stage = &self.session_state.current_stage;
-        
+
         match current_stage {
-            WorkflowStage::Discovery => Ok(vec![
-                ToolSuggestion::new(
-                    "search_content".to_string(),
-                    ConfidenceLevel::Medium,
-                    "Search for specific terms or concepts in the codebase".to_string(),
-                    "Targeted discovery of relevant code sections".to_string(),
-                    1,
-                ),
-            ]),
-            WorkflowStage::Mapping => Ok(vec![
-                ToolSuggestion::new(
-                    "trace_path".to_string(),
-                    ConfidenceLevel::Medium,
-                    "Find connections between discovered symbols".to_string(),
-                    "Understanding of execution paths and symbol relationships".to_string(),
-                    1,
-                ),
-            ]),
-            WorkflowStage::DeepDive => Ok(vec![
-                ToolSuggestion::new(
-                    "analyze_transitive_dependencies".to_string(),
-                    ConfidenceLevel::Medium,
-                    "Analyze complex dependency chains".to_string(),
-                    "Understanding of indirect dependencies and potential cycles".to_string(),
-                    1,
-                ),
-            ]),
-            WorkflowStage::Synthesis => Ok(vec![
-                ToolSuggestion::new(
-                    "analyze_performance".to_string(),
-                    ConfidenceLevel::Medium,
-                    "Evaluate performance characteristics of the code".to_string(),
-                    "Performance assessment and optimization opportunities".to_string(),
-                    1,
-                ),
-            ]),
+            WorkflowStage::Discovery => Ok(vec![ToolSuggestion::new(
+                "search_content".to_string(),
+                ConfidenceLevel::Medium,
+                "Search for specific terms or concepts in the codebase".to_string(),
+                "Targeted discovery of relevant code sections".to_string(),
+                1,
+            )]),
+            WorkflowStage::Mapping => Ok(vec![ToolSuggestion::new(
+                "trace_path".to_string(),
+                ConfidenceLevel::Medium,
+                "Find connections between discovered symbols".to_string(),
+                "Understanding of execution paths and symbol relationships".to_string(),
+                1,
+            )]),
+            WorkflowStage::DeepDive => Ok(vec![ToolSuggestion::new(
+                "analyze_transitive_dependencies".to_string(),
+                ConfidenceLevel::Medium,
+                "Analyze complex dependency chains".to_string(),
+                "Understanding of indirect dependencies and potential cycles".to_string(),
+                1,
+            )]),
+            WorkflowStage::Synthesis => Ok(vec![ToolSuggestion::new(
+                "analyze_performance".to_string(),
+                ConfidenceLevel::Medium,
+                "Evaluate performance characteristics of the code".to_string(),
+                "Performance assessment and optimization opportunities".to_string(),
+                1,
+            )]),
         }
     }
 
     /// Suggest batch analysis for current workflow stage
     pub fn suggest_batch_analysis(&self) -> Result<Vec<String>> {
         let current_stage = &self.session_state.current_stage;
-        
+
         match current_stage {
             WorkflowStage::Discovery => Ok(vec![
                 "repository_stats".to_string(),
@@ -351,22 +362,28 @@ impl WorkflowContext {
     pub fn assess_stage_completion(&self) -> Result<WorkflowStageAssessment> {
         let current_stage = &self.session_state.current_stage;
         let completed_tools = &self.session_state.history;
-        
+
         // Count relevant tools completed for current stage
         let stage_tools = self.suggest_batch_analysis()?;
-        let completed_stage_tools = completed_tools.records.iter()
+        let completed_stage_tools = completed_tools
+            .records
+            .iter()
             .filter(|entry| stage_tools.contains(&entry.tool_name) && entry.success)
             .count();
-        
+
         let completion_percentage = if stage_tools.is_empty() {
             100.0
         } else {
             (completed_stage_tools as f64 / stage_tools.len() as f64) * 100.0
         };
-        
+
         let is_ready_for_next = completion_percentage >= 60.0;
-        let next_stage = if is_ready_for_next { current_stage.next_stage() } else { None };
-        
+        let next_stage = if is_ready_for_next {
+            current_stage.next_stage()
+        } else {
+            None
+        };
+
         Ok(WorkflowStageAssessment {
             current_stage: current_stage.clone(),
             completion_percentage,
@@ -374,8 +391,14 @@ impl WorkflowContext {
             total_stage_tools: stage_tools.len(),
             is_ready_for_next_stage: is_ready_for_next,
             next_stage,
-            missing_tools: stage_tools.into_iter()
-                .filter(|tool| !completed_tools.records.iter().any(|entry| &entry.tool_name == tool && entry.success))
+            missing_tools: stage_tools
+                .into_iter()
+                .filter(|tool| {
+                    !completed_tools
+                        .records
+                        .iter()
+                        .any(|entry| &entry.tool_name == tool && entry.success)
+                })
                 .collect(),
             recommendations: generate_stage_recommendations(current_stage, completion_percentage),
         })
@@ -385,40 +408,54 @@ impl WorkflowContext {
     pub fn suggest_workflow_optimizations(&self) -> Result<Vec<WorkflowOptimization>> {
         let analysis_history = &self.session_state.history;
         let mut optimizations = Vec::new();
-        
+
         // Check for potential parallelization
-        let analysis_tools = analysis_history.records.iter()
-            .filter(|entry| ["analyze_complexity", "analyze_security", "analyze_performance"].contains(&entry.tool_name.as_str()))
+        let analysis_tools = analysis_history
+            .records
+            .iter()
+            .filter(|entry| {
+                [
+                    "analyze_complexity",
+                    "analyze_security",
+                    "analyze_performance",
+                ]
+                .contains(&entry.tool_name.as_str())
+            })
             .collect::<Vec<_>>();
-        
+
         if analysis_tools.len() > 1 {
             optimizations.push(WorkflowOptimization {
                 optimization_type: "parallelization".to_string(),
-                description: "Analysis tools can be run in parallel for better performance".to_string(),
+                description: "Analysis tools can be run in parallel for better performance"
+                    .to_string(),
                 affected_tools: analysis_tools.iter().map(|e| e.tool_name.clone()).collect(),
                 estimated_time_savings: 30.0,
-                implementation: "Use batch_analysis tool with parallel execution strategy".to_string(),
+                implementation: "Use batch_analysis tool with parallel execution strategy"
+                    .to_string(),
             });
         }
-        
+
         // Check for redundant tool calls
         let mut tool_counts = std::collections::HashMap::new();
         for entry in &analysis_history.records {
             *tool_counts.entry(&entry.tool_name).or_insert(0) += 1;
         }
-        
+
         for (tool_name, count) in tool_counts {
             if count > 2 {
                 optimizations.push(WorkflowOptimization {
                     optimization_type: "deduplication".to_string(),
-                    description: format!("{} has been called {} times - consider caching results", tool_name, count),
+                    description: format!(
+                        "{} has been called {} times - consider caching results",
+                        tool_name, count
+                    ),
                     affected_tools: vec![tool_name.clone()],
                     estimated_time_savings: 15.0,
                     implementation: "Enable result caching to avoid redundant analysis".to_string(),
                 });
             }
         }
-        
+
         Ok(optimizations)
     }
 }
@@ -460,9 +497,12 @@ pub struct WorkflowOptimization {
 }
 
 /// Generate stage-specific recommendations
-fn generate_stage_recommendations(stage: &WorkflowStage, completion_percentage: f64) -> Vec<String> {
+fn generate_stage_recommendations(
+    stage: &WorkflowStage,
+    completion_percentage: f64,
+) -> Vec<String> {
     let mut recommendations = Vec::new();
-    
+
     match stage {
         WorkflowStage::Discovery => {
             if completion_percentage < 50.0 {
@@ -471,15 +511,16 @@ fn generate_stage_recommendations(stage: &WorkflowStage, completion_percentage: 
             } else {
                 recommendations.push("Consider moving to Mapping stage".to_string());
             }
-        },
+        }
         WorkflowStage::Mapping => {
             if completion_percentage < 50.0 {
                 recommendations.push("Use trace_path to understand relationships".to_string());
-                recommendations.push("Run detect_patterns to identify architectural patterns".to_string());
+                recommendations
+                    .push("Run detect_patterns to identify architectural patterns".to_string());
             } else {
                 recommendations.push("Ready for detailed analysis in DeepDive stage".to_string());
             }
-        },
+        }
         WorkflowStage::DeepDive => {
             if completion_percentage < 50.0 {
                 recommendations.push("Use explain_symbol for detailed understanding".to_string());
@@ -487,7 +528,7 @@ fn generate_stage_recommendations(stage: &WorkflowStage, completion_percentage: 
             } else {
                 recommendations.push("Consider quality analysis in Synthesis stage".to_string());
             }
-        },
+        }
         WorkflowStage::Synthesis => {
             if completion_percentage < 50.0 {
                 recommendations.push("Run quality analysis tools".to_string());
@@ -495,9 +536,9 @@ fn generate_stage_recommendations(stage: &WorkflowStage, completion_percentage: 
             } else {
                 recommendations.push("Analysis complete - review findings".to_string());
             }
-        },
+        }
     }
-    
+
     recommendations
 }
 
@@ -514,7 +555,11 @@ mod tests {
             "Test reasoning".to_string(),
             "Test outcome".to_string(),
             1,
-        ).with_parameter("param1".to_string(), serde_json::Value::String("value1".to_string()));
+        )
+        .with_parameter(
+            "param1".to_string(),
+            serde_json::Value::String("value1".to_string()),
+        );
 
         assert_eq!(suggestion.tool_name, "test_tool");
         assert_eq!(suggestion.confidence, ConfidenceLevel::High);
@@ -534,7 +579,7 @@ mod tests {
     fn test_workflow_context() {
         let session = SessionState::new();
         let context = WorkflowContext::new(session);
-        
+
         let suggestions = context.generate_suggestions().unwrap();
         assert_eq!(suggestions.current_stage, WorkflowStage::Discovery);
         assert!(!suggestions.immediate_suggestions.is_empty());
@@ -544,7 +589,7 @@ mod tests {
     fn test_symbol_suggestions() {
         let session = SessionState::new();
         let context = WorkflowContext::new(session);
-        
+
         let suggestions = context.suggest_for_symbol("test_symbol").unwrap();
         assert!(!suggestions.is_empty());
         assert!(suggestions.iter().any(|s| s.tool_name == "explain_symbol"));
@@ -555,4 +600,4 @@ mod tests {
         assert!(ConfidenceLevel::High > ConfidenceLevel::Medium);
         assert!(ConfidenceLevel::Medium > ConfidenceLevel::Low);
     }
-} 
+}

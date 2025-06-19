@@ -1,5 +1,5 @@
 //! MCP Resources implementation
-//! 
+//!
 //! Resources allow servers to share data that provides context to language models,
 //! such as files, database schemas, or application-specific information.
 //! Each resource is uniquely identified by a URI.
@@ -101,7 +101,12 @@ impl ResourceManager {
     }
 
     /// Extract source context around a line number from a file
-    fn extract_source_context(&self, file_path: &std::path::Path, line_number: usize, context_lines: usize) -> Option<serde_json::Value> {
+    fn extract_source_context(
+        &self,
+        file_path: &std::path::Path,
+        line_number: usize,
+        context_lines: usize,
+    ) -> Option<serde_json::Value> {
         // Read the file content
         let content = match std::fs::read_to_string(file_path) {
             Ok(content) => content,
@@ -110,21 +115,21 @@ impl ResourceManager {
 
         let lines: Vec<&str> = content.lines().collect();
         let total_lines = lines.len();
-        
+
         if line_number == 0 || line_number > total_lines {
             return None;
         }
 
         // Convert to 0-based indexing
         let target_line_idx = line_number - 1;
-        
+
         // Calculate context range (with bounds checking)
         let start_idx = target_line_idx.saturating_sub(context_lines);
         let end_idx = std::cmp::min(target_line_idx + context_lines, total_lines - 1);
-        
+
         // Extract context lines with line numbers
         let mut context_lines_with_numbers = Vec::new();
-        for i in start_idx..=end_idx {
+        for (i, _) in lines.iter().enumerate().take(end_idx + 1).skip(start_idx) {
             context_lines_with_numbers.push(serde_json::json!({
                 "line_number": i + 1,
                 "content": lines[i],
@@ -143,7 +148,11 @@ impl ResourceManager {
     }
 
     /// Create enhanced node information with source context
-    fn create_node_info_with_context(&self, node: &prism_core::Node, context_lines: usize) -> serde_json::Value {
+    fn create_node_info_with_context(
+        &self,
+        node: &prism_core::Node,
+        context_lines: usize,
+    ) -> serde_json::Value {
         let mut node_info = serde_json::json!({
             "id": node.id.to_hex(),
             "name": node.name,
@@ -160,7 +169,9 @@ impl ResourceManager {
         });
 
         // Add source context around the symbol location
-        if let Some(context) = self.extract_source_context(&node.file, node.span.start_line, context_lines) {
+        if let Some(context) =
+            self.extract_source_context(&node.file, node.span.start_line, context_lines)
+        {
             node_info["source_context"] = context;
         }
 
@@ -168,16 +179,19 @@ impl ResourceManager {
     }
 
     /// List available resources
-    pub async fn list_resources(&self, _params: ListResourcesParams) -> Result<ListResourcesResult> {
+    pub async fn list_resources(
+        &self,
+        _params: ListResourcesParams,
+    ) -> Result<ListResourcesResult> {
         let server = self.server.read().await;
-        
+
         let mut resources = Vec::new();
-        
+
         // Add repository-level resources
         if let Some(repo_path) = server.repository_path() {
             // Repository root resource
             resources.push(Resource {
-                uri: format!("prism://repository/"),
+                uri: "prism://repository/".to_string(),
                 name: Some("Repository Root".to_string()),
                 description: Some("Root directory of the indexed repository".to_string()),
                 mime_type: Some("application/vnd.prism.directory".to_string()),
@@ -185,7 +199,7 @@ impl ResourceManager {
 
             // Repository stats resource
             resources.push(Resource {
-                uri: format!("prism://repository/stats"),
+                uri: "prism://repository/stats".to_string(),
                 name: Some("Repository Statistics".to_string()),
                 description: Some("Statistical information about the repository".to_string()),
                 mime_type: Some("application/json".to_string()),
@@ -193,7 +207,7 @@ impl ResourceManager {
 
             // Repository configuration resource
             resources.push(Resource {
-                uri: format!("prism://repository/config"),
+                uri: "prism://repository/config".to_string(),
                 name: Some("Repository Configuration".to_string()),
                 description: Some("Configuration and metadata for the repository".to_string()),
                 mime_type: Some("application/json".to_string()),
@@ -201,7 +215,7 @@ impl ResourceManager {
 
             // File tree resource
             resources.push(Resource {
-                uri: format!("prism://repository/tree"),
+                uri: "prism://repository/tree".to_string(),
                 name: Some("File Tree".to_string()),
                 description: Some("Complete file tree structure of the repository".to_string()),
                 mime_type: Some("application/json".to_string()),
@@ -209,7 +223,7 @@ impl ResourceManager {
 
             // Graph resource
             resources.push(Resource {
-                uri: format!("prism://graph/repository"),
+                uri: "prism://graph/repository".to_string(),
                 name: Some("Repository Graph".to_string()),
                 description: Some("Graph structure and statistics for the repository".to_string()),
                 mime_type: Some("application/json".to_string()),
@@ -217,28 +231,28 @@ impl ResourceManager {
 
             // Symbol resources by type
             resources.push(Resource {
-                uri: format!("prism://symbols/functions"),
+                uri: "prism://symbols/functions".to_string(),
                 name: Some("Functions".to_string()),
                 description: Some("All function symbols in the repository".to_string()),
                 mime_type: Some("application/json".to_string()),
             });
 
             resources.push(Resource {
-                uri: format!("prism://symbols/classes"),
+                uri: "prism://symbols/classes".to_string(),
                 name: Some("Classes".to_string()),
                 description: Some("All class symbols in the repository".to_string()),
                 mime_type: Some("application/json".to_string()),
             });
 
             resources.push(Resource {
-                uri: format!("prism://symbols/variables"),
+                uri: "prism://symbols/variables".to_string(),
                 name: Some("Variables".to_string()),
                 description: Some("All variable symbols in the repository".to_string()),
                 mime_type: Some("application/json".to_string()),
             });
 
             resources.push(Resource {
-                uri: format!("prism://symbols/modules"),
+                uri: "prism://symbols/modules".to_string(),
                 name: Some("Modules".to_string()),
                 description: Some("All module symbols in the repository".to_string()),
                 mime_type: Some("application/json".to_string()),
@@ -246,46 +260,57 @@ impl ResourceManager {
 
             // Add quality metrics dashboard resource
             resources.push(Resource {
-                uri: format!("prism://metrics/quality_dashboard"),
+                uri: "prism://metrics/quality_dashboard".to_string(),
                 name: Some("Quality Dashboard".to_string()),
-                description: Some("Code quality metrics, complexity analysis, and technical debt assessment".to_string()),
+                description: Some(
+                    "Code quality metrics, complexity analysis, and technical debt assessment"
+                        .to_string(),
+                ),
                 mime_type: Some("application/json".to_string()),
             });
 
             // Add architectural overview resources
             resources.push(Resource {
-                uri: format!("prism://architecture/layers"),
+                uri: "prism://architecture/layers".to_string(),
                 name: Some("Architectural Layers".to_string()),
-                description: Some("Layer structure identification and architectural organization".to_string()),
+                description: Some(
+                    "Layer structure identification and architectural organization".to_string(),
+                ),
                 mime_type: Some("application/json".to_string()),
             });
 
             resources.push(Resource {
-                uri: format!("prism://architecture/patterns"),
+                uri: "prism://architecture/patterns".to_string(),
                 name: Some("Architectural Patterns".to_string()),
-                description: Some("Detected design patterns and architectural structures".to_string()),
+                description: Some(
+                    "Detected design patterns and architectural structures".to_string(),
+                ),
                 mime_type: Some("application/json".to_string()),
             });
 
             resources.push(Resource {
-                uri: format!("prism://architecture/dependencies"),
+                uri: "prism://architecture/dependencies".to_string(),
                 name: Some("Architectural Dependencies".to_string()),
-                description: Some("High-level dependency analysis and architectural dependency graph".to_string()),
+                description: Some(
+                    "High-level dependency analysis and architectural dependency graph".to_string(),
+                ),
                 mime_type: Some("application/json".to_string()),
             });
 
             // Add individual file resources from the repository
             if let Ok(scan_result) = server.scanner().discover_files(repo_path) {
-                for file_path in scan_result.iter().take(100) { // Limit to first 100 files
+                for file_path in scan_result.iter().take(100) {
+                    // Limit to first 100 files
                     if let Ok(relative_path) = file_path.strip_prefix(repo_path) {
                         let uri = format!("prism://repository/file/{}", relative_path.display());
-                        let name = file_path.file_name()
+                        let name = file_path
+                            .file_name()
                             .and_then(|n| n.to_str())
                             .unwrap_or("unknown")
                             .to_string();
-                        
+
                         let mime_type = detect_mime_type(file_path);
-                        
+
                         resources.push(Resource {
                             uri,
                             name: Some(name),
@@ -306,13 +331,15 @@ impl ResourceManager {
     /// Read a specific resource
     pub async fn read_resource(&self, params: ReadResourceParams) -> Result<ReadResourceResult> {
         let server = self.server.read().await;
-        
-        let content = if params.uri.starts_with("prism://repository/") 
-            || params.uri.starts_with("prism://graph/") 
+
+        let content = if params.uri.starts_with("prism://repository/")
+            || params.uri.starts_with("prism://graph/")
             || params.uri.starts_with("prism://symbols/")
             || params.uri.starts_with("prism://metrics/")
-            || params.uri.starts_with("prism://architecture/") {
-            self.handle_repository_resource(&server, &params.uri).await?
+            || params.uri.starts_with("prism://architecture/")
+        {
+            self.handle_repository_resource(&server, &params.uri)
+                .await?
         } else {
             return Err(anyhow::anyhow!("Unsupported resource URI: {}", params.uri));
         };
@@ -328,7 +355,8 @@ impl ResourceManager {
         server: &PrismMcpServer,
         uri: &str,
     ) -> Result<ResourceContent> {
-        let repo_path = server.repository_path()
+        let repo_path = server
+            .repository_path()
             .ok_or_else(|| anyhow::anyhow!("No repository initialized"))?;
 
         match uri {
@@ -347,7 +375,7 @@ impl ResourceManager {
                     blob: None,
                 })
             }
-            
+
             "prism://repository/stats" => {
                 // Repository statistics
                 let stats = server.repository_manager().get_total_stats();
@@ -387,7 +415,8 @@ impl ResourceManager {
             "prism://repository/tree" => {
                 // File tree structure
                 let files = server.scanner().discover_files(repo_path)?;
-                let tree = files.iter()
+                let tree = files
+                    .iter()
                     .filter_map(|path| path.strip_prefix(repo_path).ok())
                     .map(|path| path.display().to_string())
                     .collect::<Vec<_>>();
@@ -429,12 +458,13 @@ impl ResourceManager {
 
             "prism://symbols/functions" => {
                 // All function symbols
-                let functions = server.graph_store().get_nodes_by_kind(prism_core::NodeKind::Function);
-                let functions_json = serde_json::json!(
-                    functions.iter().map(|node| {
-                        self.create_node_info_with_context(node, 5)
-                    }).collect::<Vec<_>>()
-                );
+                let functions = server
+                    .graph_store()
+                    .get_nodes_by_kind(prism_core::NodeKind::Function);
+                let functions_json = serde_json::json!(functions
+                    .iter()
+                    .map(|node| { self.create_node_info_with_context(node, 5) })
+                    .collect::<Vec<_>>());
 
                 Ok(ResourceContent {
                     uri: uri.to_string(),
@@ -446,12 +476,13 @@ impl ResourceManager {
 
             "prism://symbols/classes" => {
                 // All class symbols
-                let classes = server.graph_store().get_nodes_by_kind(prism_core::NodeKind::Class);
-                let classes_json = serde_json::json!(
-                    classes.iter().map(|node| {
-                        self.create_node_info_with_context(node, 5)
-                    }).collect::<Vec<_>>()
-                );
+                let classes = server
+                    .graph_store()
+                    .get_nodes_by_kind(prism_core::NodeKind::Class);
+                let classes_json = serde_json::json!(classes
+                    .iter()
+                    .map(|node| { self.create_node_info_with_context(node, 5) })
+                    .collect::<Vec<_>>());
 
                 Ok(ResourceContent {
                     uri: uri.to_string(),
@@ -463,12 +494,13 @@ impl ResourceManager {
 
             "prism://symbols/variables" => {
                 // All variable symbols
-                let variables = server.graph_store().get_nodes_by_kind(prism_core::NodeKind::Variable);
-                let variables_json = serde_json::json!(
-                    variables.iter().map(|node| {
-                        self.create_node_info_with_context(node, 5)
-                    }).collect::<Vec<_>>()
-                );
+                let variables = server
+                    .graph_store()
+                    .get_nodes_by_kind(prism_core::NodeKind::Variable);
+                let variables_json = serde_json::json!(variables
+                    .iter()
+                    .map(|node| { self.create_node_info_with_context(node, 5) })
+                    .collect::<Vec<_>>());
 
                 Ok(ResourceContent {
                     uri: uri.to_string(),
@@ -480,12 +512,13 @@ impl ResourceManager {
 
             "prism://symbols/modules" => {
                 // All module symbols
-                let modules = server.graph_store().get_nodes_by_kind(prism_core::NodeKind::Module);
-                let modules_json = serde_json::json!(
-                    modules.iter().map(|node| {
-                        self.create_node_info_with_context(node, 5)
-                    }).collect::<Vec<_>>()
-                );
+                let modules = server
+                    .graph_store()
+                    .get_nodes_by_kind(prism_core::NodeKind::Module);
+                let modules_json = serde_json::json!(modules
+                    .iter()
+                    .map(|node| { self.create_node_info_with_context(node, 5) })
+                    .collect::<Vec<_>>());
 
                 Ok(ResourceContent {
                     uri: uri.to_string(),
@@ -498,9 +531,13 @@ impl ResourceManager {
             "prism://metrics/quality_dashboard" => {
                 // Quality metrics dashboard
                 let graph_stats = server.graph_store().get_stats();
-                let functions = server.graph_store().get_nodes_by_kind(prism_core::NodeKind::Function);
-                let classes = server.graph_store().get_nodes_by_kind(prism_core::NodeKind::Class);
-                
+                let functions = server
+                    .graph_store()
+                    .get_nodes_by_kind(prism_core::NodeKind::Function);
+                let classes = server
+                    .graph_store()
+                    .get_nodes_by_kind(prism_core::NodeKind::Class);
+
                 // Calculate basic quality metrics
                 let total_functions = functions.len();
                 let total_classes = classes.len();
@@ -529,9 +566,14 @@ impl ResourceManager {
 
                 // Overall quality score (simplified calculation)
                 let maintainability_score = if total_functions > 0 {
-                    let large_function_ratio = technical_debt["large_functions"].as_u64().unwrap_or(0) as f64 / total_functions as f64;
-                    let complex_class_ratio = technical_debt["complex_classes"].as_u64().unwrap_or(0) as f64 / total_classes.max(1) as f64;
-                    ((1.0 - large_function_ratio * 0.5 - complex_class_ratio * 0.3) * 100.0).max(0.0)
+                    let large_function_ratio =
+                        technical_debt["large_functions"].as_u64().unwrap_or(0) as f64
+                            / total_functions as f64;
+                    let complex_class_ratio =
+                        technical_debt["complex_classes"].as_u64().unwrap_or(0) as f64
+                            / total_classes.max(1) as f64;
+                    ((1.0 - large_function_ratio * 0.5 - complex_class_ratio * 0.3) * 100.0)
+                        .max(0.0)
                 } else {
                     100.0
                 };
@@ -552,7 +594,7 @@ impl ResourceManager {
                     "complexity_distribution": complexity_distribution,
                     "technical_debt": technical_debt,
                     "quality_scores": {
-                        "overall": ((maintainability_score + 70.0) / 2.0).min(100.0).max(0.0),
+                        "overall": ((maintainability_score + 70.0) / 2.0).clamp(0.0, 100.0),
                         "maintainability": maintainability_score,
                         "readability": 75.0
                     },
@@ -574,60 +616,88 @@ impl ResourceManager {
 
             "prism://architecture/layers" => {
                 // Architectural layer analysis
-                let classes = server.graph_store().get_nodes_by_kind(prism_core::NodeKind::Class);
-                let functions = server.graph_store().get_nodes_by_kind(prism_core::NodeKind::Function);
-                
+                let classes = server
+                    .graph_store()
+                    .get_nodes_by_kind(prism_core::NodeKind::Class);
+                let functions = server
+                    .graph_store()
+                    .get_nodes_by_kind(prism_core::NodeKind::Function);
+
                 // Identify potential layers based on naming conventions and structure
                 let mut layers = std::collections::HashMap::new();
-                
+
                 // Presentation layer
-                let presentation_classes = classes.iter().filter(|c| {
-                    let name_lower = c.name.to_lowercase();
-                    name_lower.contains("controller") || name_lower.contains("view") || 
-                    name_lower.contains("ui") || name_lower.contains("component") ||
-                    c.file.to_string_lossy().contains("view") || c.file.to_string_lossy().contains("ui")
-                }).count();
-                
+                let presentation_classes = classes
+                    .iter()
+                    .filter(|c| {
+                        let name_lower = c.name.to_lowercase();
+                        name_lower.contains("controller")
+                            || name_lower.contains("view")
+                            || name_lower.contains("ui")
+                            || name_lower.contains("component")
+                            || c.file.to_string_lossy().contains("view")
+                            || c.file.to_string_lossy().contains("ui")
+                    })
+                    .count();
+
                 // Business/Service layer
-                let business_classes = classes.iter().filter(|c| {
-                    let name_lower = c.name.to_lowercase();
-                    name_lower.contains("service") || name_lower.contains("business") || 
-                    name_lower.contains("logic") || name_lower.contains("manager") ||
-                    c.file.to_string_lossy().contains("service") || c.file.to_string_lossy().contains("business")
-                }).count();
-                
+                let business_classes = classes
+                    .iter()
+                    .filter(|c| {
+                        let name_lower = c.name.to_lowercase();
+                        name_lower.contains("service")
+                            || name_lower.contains("business")
+                            || name_lower.contains("logic")
+                            || name_lower.contains("manager")
+                            || c.file.to_string_lossy().contains("service")
+                            || c.file.to_string_lossy().contains("business")
+                    })
+                    .count();
+
                 // Data access layer
-                let data_classes = classes.iter().filter(|c| {
-                    let name_lower = c.name.to_lowercase();
-                    name_lower.contains("repository") || name_lower.contains("dao") || 
-                    name_lower.contains("data") || name_lower.contains("model") ||
-                    c.file.to_string_lossy().contains("repository") || c.file.to_string_lossy().contains("model")
-                }).count();
-                
+                let data_classes = classes
+                    .iter()
+                    .filter(|c| {
+                        let name_lower = c.name.to_lowercase();
+                        name_lower.contains("repository")
+                            || name_lower.contains("dao")
+                            || name_lower.contains("data")
+                            || name_lower.contains("model")
+                            || c.file.to_string_lossy().contains("repository")
+                            || c.file.to_string_lossy().contains("model")
+                    })
+                    .count();
+
                 // Infrastructure layer
-                let infrastructure_classes = classes.iter().filter(|c| {
-                    let name_lower = c.name.to_lowercase();
-                    name_lower.contains("config") || name_lower.contains("util") || 
-                    name_lower.contains("helper") || name_lower.contains("infrastructure") ||
-                    c.file.to_string_lossy().contains("config") || c.file.to_string_lossy().contains("util")
-                }).count();
-                
+                let infrastructure_classes = classes
+                    .iter()
+                    .filter(|c| {
+                        let name_lower = c.name.to_lowercase();
+                        name_lower.contains("config")
+                            || name_lower.contains("util")
+                            || name_lower.contains("helper")
+                            || name_lower.contains("infrastructure")
+                            || c.file.to_string_lossy().contains("config")
+                            || c.file.to_string_lossy().contains("util")
+                    })
+                    .count();
+
                 layers.insert("presentation", presentation_classes);
                 layers.insert("business", business_classes);
                 layers.insert("data", data_classes);
                 layers.insert("infrastructure", infrastructure_classes);
-                
+
                 // Directory structure analysis
                 let all_files = server.graph_store().get_all_files();
                 let mut directory_layers = std::collections::HashMap::new();
-                
+
                 for file in &all_files {
                     if let Some(parent) = file.parent() {
                         let dir_name = parent.file_name().and_then(|n| n.to_str()).unwrap_or("");
                         *directory_layers.entry(dir_name.to_string()).or_insert(0) += 1;
                     }
                 }
-                
+
                 let layers_json = serde_json::json!({
                     "layer_analysis": {
                         "presentation_layer": {
@@ -671,21 +741,23 @@ impl ResourceManager {
 
             "prism://architecture/patterns" => {
                 // Design pattern detection (simplified version for resource)
-                let classes = server.graph_store().get_nodes_by_kind(prism_core::NodeKind::Class);
+                let classes = server
+                    .graph_store()
+                    .get_nodes_by_kind(prism_core::NodeKind::Class);
                 let mut detected_patterns = Vec::new();
-                
+
                 // Singleton pattern detection
                 for class in &classes {
                     let methods = server.graph_store().get_outgoing_edges(&class.id);
                     let has_get_instance = methods.iter().any(|edge| {
                         if let Some(target_node) = server.graph_store().get_node(&edge.target) {
-                            target_node.name.to_lowercase().contains("getinstance") ||
-                            target_node.name.to_lowercase().contains("get_instance")
+                            target_node.name.to_lowercase().contains("getinstance")
+                                || target_node.name.to_lowercase().contains("get_instance")
                         } else {
                             false
                         }
                     });
-                    
+
                     if has_get_instance {
                         detected_patterns.push(serde_json::json!({
                             "pattern": "Singleton",
@@ -695,24 +767,37 @@ impl ResourceManager {
                         }));
                     }
                 }
-                
+
                 // Factory pattern detection
-                let factory_classes = classes.iter().filter(|c| {
-                    c.name.to_lowercase().contains("factory")
-                }).map(|c| serde_json::json!({
-                    "pattern": "Factory",
-                    "class": c.name,
-                    "file": c.file.display().to_string(),
-                    "confidence": "high"
-                })).collect::<Vec<_>>();
-                
+                let factory_classes = classes
+                    .iter()
+                    .filter(|c| c.name.to_lowercase().contains("factory"))
+                    .map(|c| {
+                        serde_json::json!({
+                            "pattern": "Factory",
+                            "class": c.name,
+                            "file": c.file.display().to_string(),
+                            "confidence": "high"
+                        })
+                    })
+                    .collect::<Vec<_>>();
+
                 detected_patterns.extend(factory_classes);
-                
+
                 // MVC pattern detection
-                let controllers = classes.iter().filter(|c| c.name.to_lowercase().contains("controller")).count();
-                let models = classes.iter().filter(|c| c.name.to_lowercase().contains("model")).count();
-                let views = classes.iter().filter(|c| c.name.to_lowercase().contains("view")).count();
-                
+                let controllers = classes
+                    .iter()
+                    .filter(|c| c.name.to_lowercase().contains("controller"))
+                    .count();
+                let models = classes
+                    .iter()
+                    .filter(|c| c.name.to_lowercase().contains("model"))
+                    .count();
+                let views = classes
+                    .iter()
+                    .filter(|c| c.name.to_lowercase().contains("view"))
+                    .count();
+
                 if controllers > 0 && models > 0 && views > 0 {
                     detected_patterns.push(serde_json::json!({
                         "pattern": "MVC (Model-View-Controller)",
@@ -724,12 +809,12 @@ impl ResourceManager {
                         "confidence": "high"
                     }));
                 }
-                
+
                 let patterns_json = serde_json::json!({
                     "detected_patterns": detected_patterns,
                     "pattern_summary": {
                         "total_patterns": detected_patterns.len(),
-                        "design_patterns": detected_patterns.iter().filter(|p| 
+                        "design_patterns": detected_patterns.iter().filter(|p|
                             p["pattern"].as_str().unwrap_or("") != "MVC (Model-View-Controller)"
                         ).count(),
                         "architectural_patterns": if controllers > 0 && models > 0 && views > 0 { 1 } else { 0 }
@@ -753,41 +838,44 @@ impl ResourceManager {
                 // High-level dependency analysis
                 let graph_stats = server.graph_store().get_stats();
                 let files = server.graph_store().get_all_files();
-                
+
                 // Calculate dependency metrics
                 let mut file_dependencies = std::collections::HashMap::new();
                 let mut total_dependencies = 0;
-                
+
                 for file in &files {
                     let nodes = server.graph_store().get_nodes_in_file(file);
                     let mut file_dep_count = 0;
-                    
+
                     for node in nodes {
                         let outgoing = server.graph_store().get_outgoing_edges(&node.id);
                         file_dep_count += outgoing.len();
                         total_dependencies += outgoing.len();
                     }
-                    
+
                     if let Some(file_name) = file.file_name().and_then(|n| n.to_str()) {
                         file_dependencies.insert(file_name.to_string(), file_dep_count);
                     }
                 }
-                
+
                 // Find highly coupled files
-                let average_dependencies = if files.len() > 0 {
+                let average_dependencies = if !files.is_empty() {
                     total_dependencies as f64 / files.len() as f64
                 } else {
                     0.0
                 };
-                
-                let highly_coupled_files: Vec<_> = file_dependencies.iter()
+
+                let highly_coupled_files: Vec<_> = file_dependencies
+                    .iter()
                     .filter(|(_, &count)| count as f64 > average_dependencies * 1.5)
-                    .map(|(name, count)| serde_json::json!({
-                        "file": name,
-                        "dependencies": count
-                    }))
+                    .map(|(name, count)| {
+                        serde_json::json!({
+                            "file": name,
+                            "dependencies": count
+                        })
+                    })
                     .collect();
-                
+
                 // Identify potential dependency cycles (simplified)
                 let import_edges = graph_stats.total_edges; // Simplified - would need more detailed analysis
                 let potential_cycles = if import_edges > graph_stats.total_nodes {
@@ -795,7 +883,7 @@ impl ResourceManager {
                 } else {
                     0
                 };
-                
+
                 let dependencies_json = serde_json::json!({
                     "dependency_overview": {
                         "total_files": files.len(),
@@ -877,8 +965,8 @@ fn detect_mime_type(path: &Path) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::TempDir;
     use std::fs;
+    use tempfile::TempDir;
 
     #[tokio::test]
     async fn test_resource_capabilities() {
@@ -911,18 +999,26 @@ mod tests {
 
     #[test]
     fn test_mime_type_detection() {
-        assert_eq!(detect_mime_type(Path::new("test.js")), "application/javascript");
+        assert_eq!(
+            detect_mime_type(Path::new("test.js")),
+            "application/javascript"
+        );
         assert_eq!(detect_mime_type(Path::new("test.py")), "text/x-python");
-        assert_eq!(detect_mime_type(Path::new("test.java")), "text/x-java-source");
+        assert_eq!(
+            detect_mime_type(Path::new("test.java")),
+            "text/x-java-source"
+        );
         assert_eq!(detect_mime_type(Path::new("test.unknown")), "text/plain");
     }
 
     async fn create_test_server() -> crate::PrismMcpServer {
         let temp_dir = TempDir::new().expect("Failed to create temp dir");
         let repo_path = temp_dir.path();
-        
+
         // Create test files for comprehensive resource testing
-        fs::write(repo_path.join("main.py"), r#"
+        fs::write(
+            repo_path.join("main.py"),
+            r#"
 class Application:
     """Main application class."""
     
@@ -959,9 +1055,13 @@ if __name__ == "__main__":
     user = User("alice", "alice@example.com")
     app.add_user(user)
     app.run()
-"#).unwrap();
+"#,
+        )
+        .unwrap();
 
-        fs::write(repo_path.join("utils.py"), r#"
+        fs::write(
+            repo_path.join("utils.py"),
+            r#"
 """Utility functions for the application."""
 
 import os
@@ -1001,9 +1101,13 @@ class ConfigManager:
     def set(self, key: str, value: Any) -> None:
         """Set a configuration value."""
         self.config[key] = value
-"#).unwrap();
+"#,
+        )
+        .unwrap();
 
-        fs::write(repo_path.join("constants.py"), r#"
+        fs::write(
+            repo_path.join("constants.py"),
+            r#"
 """Application constants."""
 
 # Database configuration
@@ -1023,15 +1127,19 @@ DEBUG = False
 ENABLE_LOGGING = True
 ENABLE_METRICS = False
 ENABLE_CACHE = True
-"#).unwrap();
+"#,
+        )
+        .unwrap();
 
         let mut server = crate::PrismMcpServer::new().expect("Failed to create server");
-        server.initialize_with_repository(repo_path).await
+        server
+            .initialize_with_repository(repo_path)
+            .await
             .expect("Failed to initialize repository");
-        
+
         // Keep temp_dir alive
         std::mem::forget(temp_dir);
-        
+
         server
     }
 
@@ -1039,10 +1147,9 @@ ENABLE_CACHE = True
     async fn test_resource_manager_creation() {
         let server = create_test_server().await;
         let server_arc = std::sync::Arc::new(tokio::sync::RwLock::new(server));
-        let resource_manager = ResourceManager::new(server_arc);
-        
+        let _resource_manager = ResourceManager::new(server_arc);
+
         // Resource manager should be created successfully
-        assert!(true); // Just testing creation doesn't panic
     }
 
     #[tokio::test]
@@ -1050,33 +1157,53 @@ ENABLE_CACHE = True
         let server = create_test_server().await;
         let server_arc = std::sync::Arc::new(tokio::sync::RwLock::new(server));
         let resource_manager = ResourceManager::new(server_arc);
-        
+
         let params = ListResourcesParams { cursor: None };
         let result = resource_manager.list_resources(params).await;
         assert!(result.is_ok());
-        
+
         let resources_result = result.unwrap();
         assert!(!resources_result.resources.is_empty());
         assert!(resources_result.next_cursor.is_none());
-        
+
         // Verify we have the expected resource types
-        let resource_uris: Vec<String> = resources_result.resources.iter().map(|r| r.uri.clone()).collect();
-        
+        let resource_uris: Vec<String> = resources_result
+            .resources
+            .iter()
+            .map(|r| r.uri.clone())
+            .collect();
+
         // Should have repository resources
         assert!(resource_uris.iter().any(|uri| uri == "prism://repository/"));
-        assert!(resource_uris.iter().any(|uri| uri == "prism://repository/stats"));
-        assert!(resource_uris.iter().any(|uri| uri == "prism://repository/config"));
-        assert!(resource_uris.iter().any(|uri| uri == "prism://repository/tree"));
-        
+        assert!(resource_uris
+            .iter()
+            .any(|uri| uri == "prism://repository/stats"));
+        assert!(resource_uris
+            .iter()
+            .any(|uri| uri == "prism://repository/config"));
+        assert!(resource_uris
+            .iter()
+            .any(|uri| uri == "prism://repository/tree"));
+
         // Should have graph resources
-        assert!(resource_uris.iter().any(|uri| uri == "prism://graph/repository"));
-        
+        assert!(resource_uris
+            .iter()
+            .any(|uri| uri == "prism://graph/repository"));
+
         // Should have symbol resources
-        assert!(resource_uris.iter().any(|uri| uri == "prism://symbols/functions"));
-        assert!(resource_uris.iter().any(|uri| uri == "prism://symbols/classes"));
-        assert!(resource_uris.iter().any(|uri| uri == "prism://symbols/variables"));
-        assert!(resource_uris.iter().any(|uri| uri == "prism://symbols/modules"));
-        
+        assert!(resource_uris
+            .iter()
+            .any(|uri| uri == "prism://symbols/functions"));
+        assert!(resource_uris
+            .iter()
+            .any(|uri| uri == "prism://symbols/classes"));
+        assert!(resource_uris
+            .iter()
+            .any(|uri| uri == "prism://symbols/variables"));
+        assert!(resource_uris
+            .iter()
+            .any(|uri| uri == "prism://symbols/modules"));
+
         // Should have file resources
         assert!(resource_uris.iter().any(|uri| uri.contains("main.py")));
         assert!(resource_uris.iter().any(|uri| uri.contains("utils.py")));
@@ -1088,22 +1215,22 @@ ENABLE_CACHE = True
         let server = create_test_server().await;
         let server_arc = std::sync::Arc::new(tokio::sync::RwLock::new(server));
         let resource_manager = ResourceManager::new(server_arc);
-        
+
         let params = ReadResourceParams {
             uri: "prism://repository/".to_string(),
         };
-        
+
         let result = resource_manager.read_resource(params).await;
         assert!(result.is_ok());
-        
+
         let read_result = result.unwrap();
         assert_eq!(read_result.contents.len(), 1);
-        
+
         let content = &read_result.contents[0];
         assert_eq!(content.uri, "prism://repository/");
         assert_eq!(content.mime_type, Some("application/json".to_string()));
         assert!(content.text.is_some());
-        
+
         let info: serde_json::Value = serde_json::from_str(content.text.as_ref().unwrap()).unwrap();
         assert!(info["path"].is_string());
         assert_eq!(info["type"].as_str().unwrap(), "repository_root");
@@ -1114,23 +1241,24 @@ ENABLE_CACHE = True
         let server = create_test_server().await;
         let server_arc = std::sync::Arc::new(tokio::sync::RwLock::new(server));
         let resource_manager = ResourceManager::new(server_arc);
-        
+
         let params = ReadResourceParams {
             uri: "prism://repository/stats".to_string(),
         };
-        
+
         let result = resource_manager.read_resource(params).await;
         assert!(result.is_ok());
-        
+
         let read_result = result.unwrap();
         assert_eq!(read_result.contents.len(), 1);
-        
+
         let content = &read_result.contents[0];
         assert_eq!(content.uri, "prism://repository/stats");
         assert_eq!(content.mime_type, Some("application/json".to_string()));
         assert!(content.text.is_some());
-        
-        let stats: serde_json::Value = serde_json::from_str(content.text.as_ref().unwrap()).unwrap();
+
+        let stats: serde_json::Value =
+            serde_json::from_str(content.text.as_ref().unwrap()).unwrap();
         assert!(stats["total_files"].is_number());
         assert!(stats["total_nodes"].is_number());
         assert!(stats["total_edges"].is_number());
@@ -1141,18 +1269,19 @@ ENABLE_CACHE = True
         let server = create_test_server().await;
         let server_arc = std::sync::Arc::new(tokio::sync::RwLock::new(server));
         let resource_manager = ResourceManager::new(server_arc);
-        
+
         let params = ReadResourceParams {
             uri: "prism://repository/config".to_string(),
         };
-        
+
         let result = resource_manager.read_resource(params).await;
         assert!(result.is_ok());
-        
+
         let read_result = result.unwrap();
         let content = &read_result.contents[0];
-        
-        let config: serde_json::Value = serde_json::from_str(content.text.as_ref().unwrap()).unwrap();
+
+        let config: serde_json::Value =
+            serde_json::from_str(content.text.as_ref().unwrap()).unwrap();
         assert!(config["path"].is_string());
         assert!(config["scanner_config"].is_object());
         assert!(config["scanner_config"]["supported_extensions"].is_array());
@@ -1163,24 +1292,28 @@ ENABLE_CACHE = True
         let server = create_test_server().await;
         let server_arc = std::sync::Arc::new(tokio::sync::RwLock::new(server));
         let resource_manager = ResourceManager::new(server_arc);
-        
+
         let params = ReadResourceParams {
             uri: "prism://repository/tree".to_string(),
         };
-        
+
         let result = resource_manager.read_resource(params).await;
         assert!(result.is_ok());
-        
+
         let read_result = result.unwrap();
         let content = &read_result.contents[0];
-        
+
         let tree: serde_json::Value = serde_json::from_str(content.text.as_ref().unwrap()).unwrap();
         assert!(tree["files"].is_array());
         assert!(tree["total_count"].is_number());
-        
+
         let files = tree["files"].as_array().unwrap();
-        assert!(files.iter().any(|f| f.as_str().unwrap().contains("main.py")));
-        assert!(files.iter().any(|f| f.as_str().unwrap().contains("utils.py")));
+        assert!(files
+            .iter()
+            .any(|f| f.as_str().unwrap().contains("main.py")));
+        assert!(files
+            .iter()
+            .any(|f| f.as_str().unwrap().contains("utils.py")));
     }
 
     #[tokio::test]
@@ -1188,18 +1321,19 @@ ENABLE_CACHE = True
         let server = create_test_server().await;
         let server_arc = std::sync::Arc::new(tokio::sync::RwLock::new(server));
         let resource_manager = ResourceManager::new(server_arc);
-        
+
         let params = ReadResourceParams {
             uri: "prism://graph/repository".to_string(),
         };
-        
+
         let result = resource_manager.read_resource(params).await;
         assert!(result.is_ok());
-        
+
         let read_result = result.unwrap();
         let content = &read_result.contents[0];
-        
-        let graph: serde_json::Value = serde_json::from_str(content.text.as_ref().unwrap()).unwrap();
+
+        let graph: serde_json::Value =
+            serde_json::from_str(content.text.as_ref().unwrap()).unwrap();
         assert!(graph["nodes"].is_number());
         assert!(graph["edges"].is_number());
         assert!(graph["files"].is_number());
@@ -1212,20 +1346,21 @@ ENABLE_CACHE = True
         let server = create_test_server().await;
         let server_arc = std::sync::Arc::new(tokio::sync::RwLock::new(server));
         let resource_manager = ResourceManager::new(server_arc);
-        
+
         let params = ReadResourceParams {
             uri: "prism://symbols/functions".to_string(),
         };
-        
+
         let result = resource_manager.read_resource(params).await;
         assert!(result.is_ok());
-        
+
         let read_result = result.unwrap();
         let content = &read_result.contents[0];
-        
-        let functions: serde_json::Value = serde_json::from_str(content.text.as_ref().unwrap()).unwrap();
+
+        let functions: serde_json::Value =
+            serde_json::from_str(content.text.as_ref().unwrap()).unwrap();
         assert!(functions.is_array());
-        
+
         // Check structure of function entries
         if let Some(first_function) = functions.as_array().unwrap().first() {
             assert!(first_function["id"].is_string());
@@ -1241,18 +1376,19 @@ ENABLE_CACHE = True
         let server = create_test_server().await;
         let server_arc = std::sync::Arc::new(tokio::sync::RwLock::new(server));
         let resource_manager = ResourceManager::new(server_arc);
-        
+
         let params = ReadResourceParams {
             uri: "prism://symbols/classes".to_string(),
         };
-        
+
         let result = resource_manager.read_resource(params).await;
         assert!(result.is_ok());
-        
+
         let read_result = result.unwrap();
         let content = &read_result.contents[0];
-        
-        let classes: serde_json::Value = serde_json::from_str(content.text.as_ref().unwrap()).unwrap();
+
+        let classes: serde_json::Value =
+            serde_json::from_str(content.text.as_ref().unwrap()).unwrap();
         assert!(classes.is_array());
     }
 
@@ -1261,21 +1397,21 @@ ENABLE_CACHE = True
         let server = create_test_server().await;
         let server_arc = std::sync::Arc::new(tokio::sync::RwLock::new(server));
         let resource_manager = ResourceManager::new(server_arc);
-        
+
         let params = ReadResourceParams {
             uri: "prism://repository/file/main.py".to_string(),
         };
-        
+
         let result = resource_manager.read_resource(params).await;
         assert!(result.is_ok());
-        
+
         let read_result = result.unwrap();
         let content = &read_result.contents[0];
-        
+
         assert_eq!(content.uri, "prism://repository/file/main.py");
         assert_eq!(content.mime_type, Some("text/x-python".to_string()));
         assert!(content.text.is_some());
-        
+
         let file_content = content.text.as_ref().unwrap();
         assert!(file_content.contains("class Application"));
         assert!(file_content.contains("class User"));
@@ -1287,14 +1423,14 @@ ENABLE_CACHE = True
         let server = create_test_server().await;
         let server_arc = std::sync::Arc::new(tokio::sync::RwLock::new(server));
         let resource_manager = ResourceManager::new(server_arc);
-        
+
         let params = ReadResourceParams {
             uri: "prism://repository/file/nonexistent.py".to_string(),
         };
-        
+
         let result = resource_manager.read_resource(params).await;
         assert!(result.is_err());
-        
+
         let error = result.unwrap_err();
         assert!(error.to_string().contains("File not found"));
     }
@@ -1304,14 +1440,14 @@ ENABLE_CACHE = True
         let server = create_test_server().await;
         let server_arc = std::sync::Arc::new(tokio::sync::RwLock::new(server));
         let resource_manager = ResourceManager::new(server_arc);
-        
+
         let params = ReadResourceParams {
             uri: "invalid://unsupported/resource".to_string(),
         };
-        
+
         let result = resource_manager.read_resource(params).await;
         assert!(result.is_err());
-        
+
         let error = result.unwrap_err();
         assert!(error.to_string().contains("Unsupported resource URI"));
     }
@@ -1321,14 +1457,14 @@ ENABLE_CACHE = True
         let server = create_test_server().await;
         let server_arc = std::sync::Arc::new(tokio::sync::RwLock::new(server));
         let resource_manager = ResourceManager::new(server_arc);
-        
+
         let params = ReadResourceParams {
             uri: "prism://repository/unknown_resource".to_string(),
         };
-        
+
         let result = resource_manager.read_resource(params).await;
         assert!(result.is_err());
-        
+
         let error = result.unwrap_err();
         assert!(error.to_string().contains("Unknown resource URI"));
     }
@@ -1341,10 +1477,10 @@ ENABLE_CACHE = True
             text: Some("{}".to_string()),
             blob: None,
         };
-        
+
         let json = serde_json::to_string(&content).unwrap();
         let deserialized: ResourceContent = serde_json::from_str(&json).unwrap();
-        
+
         assert_eq!(content.uri, deserialized.uri);
         assert_eq!(content.mime_type, deserialized.mime_type);
         assert_eq!(content.text, deserialized.text);
@@ -1356,10 +1492,10 @@ ENABLE_CACHE = True
         let params = ListResourcesParams {
             cursor: Some("test_cursor".to_string()),
         };
-        
+
         let json = serde_json::to_string(&params).unwrap();
         let deserialized: ListResourcesParams = serde_json::from_str(&json).unwrap();
-        
+
         assert_eq!(params.cursor, deserialized.cursor);
     }
 
@@ -1368,21 +1504,33 @@ ENABLE_CACHE = True
         let params = ReadResourceParams {
             uri: "prism://test".to_string(),
         };
-        
+
         let json = serde_json::to_string(&params).unwrap();
         let deserialized: ReadResourceParams = serde_json::from_str(&json).unwrap();
-        
+
         assert_eq!(params.uri, deserialized.uri);
     }
 
     #[test]
     fn test_additional_mime_types() {
-        assert_eq!(detect_mime_type(Path::new("config.json")), "application/json");
+        assert_eq!(
+            detect_mime_type(Path::new("config.json")),
+            "application/json"
+        );
         assert_eq!(detect_mime_type(Path::new("README.md")), "text/markdown");
         assert_eq!(detect_mime_type(Path::new("data.xml")), "application/xml");
-        assert_eq!(detect_mime_type(Path::new("config.yaml")), "application/yaml");
-        assert_eq!(detect_mime_type(Path::new("config.yml")), "application/yaml");
-        assert_eq!(detect_mime_type(Path::new("Cargo.toml")), "application/toml");
+        assert_eq!(
+            detect_mime_type(Path::new("config.yaml")),
+            "application/yaml"
+        );
+        assert_eq!(
+            detect_mime_type(Path::new("config.yml")),
+            "application/yaml"
+        );
+        assert_eq!(
+            detect_mime_type(Path::new("Cargo.toml")),
+            "application/toml"
+        );
         assert_eq!(detect_mime_type(Path::new("index.html")), "text/html");
         assert_eq!(detect_mime_type(Path::new("styles.css")), "text/css");
         assert_eq!(detect_mime_type(Path::new("notes.txt")), "text/plain");
@@ -1393,42 +1541,45 @@ ENABLE_CACHE = True
         let server = create_test_server().await;
         let server_arc = std::sync::Arc::new(tokio::sync::RwLock::new(server));
         let resource_manager = ResourceManager::new(server_arc.clone());
-        
+
         // Wait for indexing
         tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
-        
+
         // Test functions resource includes context
         let params = ReadResourceParams {
             uri: "prism://symbols/functions".to_string(),
         };
-        
+
         let result = resource_manager.read_resource(params).await;
         assert!(result.is_ok());
-        
+
         let read_result = result.unwrap();
         let content = &read_result.contents[0];
         assert!(content.text.is_some());
-        
-        let functions: serde_json::Value = serde_json::from_str(content.text.as_ref().unwrap()).unwrap();
-        
+
+        let functions: serde_json::Value =
+            serde_json::from_str(content.text.as_ref().unwrap()).unwrap();
+
         if let Some(functions_array) = functions.as_array() {
             if !functions_array.is_empty() {
                 let first_function = &functions_array[0];
-                
+
                 // Verify basic function info is present
                 assert!(first_function["id"].is_string());
                 assert!(first_function["name"].is_string());
                 assert!(first_function["kind"].is_string());
                 assert!(first_function["file"].is_string());
-                
+
                 // Verify source context is included
                 assert!(first_function["source_context"].is_object());
                 assert!(first_function["source_context"]["target_line"].is_number());
                 assert!(first_function["source_context"]["lines"].is_array());
-                
-                let lines = first_function["source_context"]["lines"].as_array().unwrap();
+
+                let lines = first_function["source_context"]["lines"]
+                    .as_array()
+                    .unwrap();
                 assert!(!lines.is_empty());
-                
+
                 // Verify target line is marked
                 let has_target = lines.iter().any(|line| line["is_target"] == true);
                 assert!(has_target);
@@ -1441,26 +1592,27 @@ ENABLE_CACHE = True
         let server = create_test_server().await;
         let server_arc = std::sync::Arc::new(tokio::sync::RwLock::new(server));
         let resource_manager = ResourceManager::new(server_arc);
-        
+
         // Wait for indexing
         tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
-        
+
         let params = ReadResourceParams {
             uri: "prism://symbols/classes".to_string(),
         };
-        
+
         let result = resource_manager.read_resource(params).await;
         assert!(result.is_ok());
-        
+
         let read_result = result.unwrap();
         let content = &read_result.contents[0];
-        
-        let classes: serde_json::Value = serde_json::from_str(content.text.as_ref().unwrap()).unwrap();
-        
+
+        let classes: serde_json::Value =
+            serde_json::from_str(content.text.as_ref().unwrap()).unwrap();
+
         if let Some(classes_array) = classes.as_array() {
             if !classes_array.is_empty() {
                 let first_class = &classes_array[0];
-                
+
                 // Verify source context is included for classes too
                 assert!(first_class["source_context"].is_object());
                 assert!(first_class["source_context"]["target_line"].is_number());
@@ -1471,29 +1623,34 @@ ENABLE_CACHE = True
 
     #[tokio::test]
     async fn test_context_extraction_in_resource_manager() {
-        use tempfile::TempDir;
         use std::fs;
-        
+        use tempfile::TempDir;
+
         let temp_dir = TempDir::new().unwrap();
         let test_file = temp_dir.path().join("test.py");
-        
+
         // Create a test file
-        fs::write(&test_file, r#"# Test file
+        fs::write(
+            &test_file,
+            r#"# Test file
 def example_function():
     """An example function."""
     return "hello"
-"#).unwrap();
-        
+"#,
+        )
+        .unwrap();
+
         let server = create_test_server().await;
-        let resource_manager = ResourceManager::new(std::sync::Arc::new(tokio::sync::RwLock::new(server)));
-        
+        let resource_manager =
+            ResourceManager::new(std::sync::Arc::new(tokio::sync::RwLock::new(server)));
+
         // Test context extraction
         let context = resource_manager.extract_source_context(&test_file, 2, 2);
         assert!(context.is_some());
-        
+
         let context_value = context.unwrap();
         assert_eq!(context_value["target_line"], 2);
-        
+
         let lines = context_value["lines"].as_array().unwrap();
         assert!(!lines.is_empty());
     }
@@ -1501,23 +1658,24 @@ def example_function():
     #[tokio::test]
     async fn test_architectural_layers_resource() {
         let server = create_test_server().await;
-        let resource_manager = ResourceManager::new(std::sync::Arc::new(tokio::sync::RwLock::new(server)));
-        
+        let resource_manager =
+            ResourceManager::new(std::sync::Arc::new(tokio::sync::RwLock::new(server)));
+
         let params = ReadResourceParams {
             uri: "prism://architecture/layers".to_string(),
         };
-        
+
         let result = resource_manager.read_resource(params).await;
         assert!(result.is_ok());
-        
+
         let resource_result = result.unwrap();
         assert_eq!(resource_result.contents.len(), 1);
-        
+
         let content = &resource_result.contents[0];
         assert_eq!(content.uri, "prism://architecture/layers");
         assert_eq!(content.mime_type, Some("application/json".to_string()));
         assert!(content.text.is_some());
-        
+
         // Verify the JSON structure
         let json_text = content.text.as_ref().unwrap();
         let parsed: serde_json::Value = serde_json::from_str(json_text).unwrap();
@@ -1529,22 +1687,23 @@ def example_function():
     #[tokio::test]
     async fn test_architectural_patterns_resource() {
         let server = create_test_server().await;
-        let resource_manager = ResourceManager::new(std::sync::Arc::new(tokio::sync::RwLock::new(server)));
-        
+        let resource_manager =
+            ResourceManager::new(std::sync::Arc::new(tokio::sync::RwLock::new(server)));
+
         let params = ReadResourceParams {
             uri: "prism://architecture/patterns".to_string(),
         };
-        
+
         let result = resource_manager.read_resource(params).await;
         assert!(result.is_ok());
-        
+
         let resource_result = result.unwrap();
         assert_eq!(resource_result.contents.len(), 1);
-        
+
         let content = &resource_result.contents[0];
         assert_eq!(content.uri, "prism://architecture/patterns");
         assert!(content.text.is_some());
-        
+
         // Verify the JSON structure
         let json_text = content.text.as_ref().unwrap();
         let parsed: serde_json::Value = serde_json::from_str(json_text).unwrap();
@@ -1556,22 +1715,23 @@ def example_function():
     #[tokio::test]
     async fn test_architectural_dependencies_resource() {
         let server = create_test_server().await;
-        let resource_manager = ResourceManager::new(std::sync::Arc::new(tokio::sync::RwLock::new(server)));
-        
+        let resource_manager =
+            ResourceManager::new(std::sync::Arc::new(tokio::sync::RwLock::new(server)));
+
         let params = ReadResourceParams {
             uri: "prism://architecture/dependencies".to_string(),
         };
-        
+
         let result = resource_manager.read_resource(params).await;
         assert!(result.is_ok());
-        
+
         let resource_result = result.unwrap();
         assert_eq!(resource_result.contents.len(), 1);
-        
+
         let content = &resource_result.contents[0];
         assert_eq!(content.uri, "prism://architecture/dependencies");
         assert!(content.text.is_some());
-        
+
         // Verify the JSON structure
         let json_text = content.text.as_ref().unwrap();
         let parsed: serde_json::Value = serde_json::from_str(json_text).unwrap();
@@ -1584,20 +1744,22 @@ def example_function():
     #[tokio::test]
     async fn test_architectural_resources_in_list() {
         let server = create_test_server().await;
-        let resource_manager = ResourceManager::new(std::sync::Arc::new(tokio::sync::RwLock::new(server)));
-        
+        let resource_manager =
+            ResourceManager::new(std::sync::Arc::new(tokio::sync::RwLock::new(server)));
+
         let params = ListResourcesParams { cursor: None };
         let result = resource_manager.list_resources(params).await;
         assert!(result.is_ok());
-        
+
         let resources_result = result.unwrap();
-        let resource_uris: Vec<&String> = resources_result.resources.iter().map(|r| &r.uri).collect();
-        
+        let resource_uris: Vec<&String> =
+            resources_result.resources.iter().map(|r| &r.uri).collect();
+
         // Check that our new architectural resources are included
         assert!(resource_uris.contains(&&"prism://architecture/layers".to_string()));
         assert!(resource_uris.contains(&&"prism://architecture/patterns".to_string()));
         assert!(resource_uris.contains(&&"prism://architecture/dependencies".to_string()));
-        
+
         // Should have all resources including architectural ones
         assert!(resources_result.resources.len() >= 12); // Original + Quality + Architectural
     }
@@ -1605,20 +1767,21 @@ def example_function():
     #[tokio::test]
     async fn test_enhanced_quality_dashboard() {
         let server = create_test_server().await;
-        let resource_manager = ResourceManager::new(std::sync::Arc::new(tokio::sync::RwLock::new(server)));
-        
+        let resource_manager =
+            ResourceManager::new(std::sync::Arc::new(tokio::sync::RwLock::new(server)));
+
         let params = ReadResourceParams {
             uri: "prism://metrics/quality_dashboard".to_string(),
         };
-        
+
         let result = resource_manager.read_resource(params).await;
         assert!(result.is_ok());
-        
+
         let resource_result = result.unwrap();
         let content = &resource_result.contents[0];
         let json_text = content.text.as_ref().unwrap();
         let parsed: serde_json::Value = serde_json::from_str(json_text).unwrap();
-        
+
         // Verify enhanced structure
         assert!(parsed["repository_overview"].is_object());
         assert!(parsed["code_structure"].is_object());
@@ -1626,7 +1789,7 @@ def example_function():
         assert!(parsed["technical_debt"].is_object());
         assert!(parsed["quality_scores"].is_object());
         assert!(parsed["recommendations"].is_array());
-        
+
         // Verify quality scores
         let quality_scores = &parsed["quality_scores"];
         assert!(quality_scores["overall"].is_number());
@@ -1637,14 +1800,15 @@ def example_function():
     #[tokio::test]
     async fn test_architectural_resource_error_handling() {
         let server = create_test_server().await;
-        let resource_manager = ResourceManager::new(std::sync::Arc::new(tokio::sync::RwLock::new(server)));
-        
+        let resource_manager =
+            ResourceManager::new(std::sync::Arc::new(tokio::sync::RwLock::new(server)));
+
         // Test with invalid architectural resource URI
         let params = ReadResourceParams {
             uri: "prism://architecture/invalid".to_string(),
         };
-        
+
         let result = resource_manager.read_resource(params).await;
         assert!(result.is_err()); // Should return error for unsupported URI
     }
-} 
+}

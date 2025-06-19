@@ -1,5 +1,5 @@
 //! Prism MCP Server Binary
-//! 
+//!
 //! This binary provides a command-line interface for running the Prism MCP server.
 //! It supports stdio transport for integration with MCP clients like Claude Desktop and Cursor.
 
@@ -7,7 +7,7 @@ use anyhow::Result;
 use clap::{Arg, Command};
 use std::path::PathBuf;
 use tracing::{error, info, warn};
-use tracing_subscriber;
+
 
 use prism_mcp::server::McpServer;
 
@@ -105,24 +105,32 @@ async fn main() -> Result<()> {
     info!("Starting Prism MCP Server");
 
     // Parse configuration options
-    let memory_limit_mb = matches.get_one::<String>("memory-limit")
+    let memory_limit_mb = matches
+        .get_one::<String>("memory-limit")
         .and_then(|s| s.parse::<usize>().ok())
         .unwrap_or(4096);
-    
-    let batch_size = matches.get_one::<String>("batch-size")
+
+    let batch_size = matches
+        .get_one::<String>("batch-size")
         .and_then(|s| s.parse::<usize>().ok())
         .unwrap_or(30);
-    
-    let max_file_size_mb = matches.get_one::<String>("max-file-size")
+
+    let max_file_size_mb = matches
+        .get_one::<String>("max-file-size")
         .and_then(|s| s.parse::<usize>().ok())
         .unwrap_or(10);
-    
+
     let disable_memory_limit = matches.get_flag("disable-memory-limit");
     let include_deps = matches.get_flag("include-deps");
     let smart_deps = matches.get_flag("smart-deps");
-    
-    let exclude_dirs = matches.get_one::<String>("exclude-dirs")
-        .map(|s| s.split(',').map(|s| s.trim().to_string()).collect::<Vec<_>>())
+
+    let exclude_dirs = matches
+        .get_one::<String>("exclude-dirs")
+        .map(|s| {
+            s.split(',')
+                .map(|s| s.trim().to_string())
+                .collect::<Vec<_>>()
+        })
         .unwrap_or_else(|| {
             let mut dirs = vec![
                 ".git".to_string(),
@@ -131,7 +139,7 @@ async fn main() -> Result<()> {
                 // IDE and editor directories
                 ".vscode".to_string(),
                 ".idea".to_string(),
-                // OS files  
+                // OS files
                 ".DS_Store".to_string(),
                 "Thumbs.db".to_string(),
             ];
@@ -172,38 +180,59 @@ async fn main() -> Result<()> {
 
             dirs
         });
-    
-    let include_extensions = matches.get_one::<String>("include-extensions")
-        .map(|s| s.split(',').map(|s| s.trim().to_string()).collect::<Vec<_>>())
-        .or_else(|| Some(vec![
-            // Default to common programming language extensions
-            "py".to_string(),
-            "js".to_string(), 
-            "ts".to_string(),
-            "jsx".to_string(),
-            "tsx".to_string(),
-            "rs".to_string(),
-            "java".to_string(),
-            "cpp".to_string(),
-            "c".to_string(),
-            "h".to_string(),
-            "hpp".to_string(),
-            "go".to_string(),
-            "php".to_string(),
-            "rb".to_string(),
-            "kt".to_string(),
-            "swift".to_string(),
-        ]));
+
+    let include_extensions = matches
+        .get_one::<String>("include-extensions")
+        .map(|s| {
+            s.split(',')
+                .map(|s| s.trim().to_string())
+                .collect::<Vec<_>>()
+        })
+        .or_else(|| {
+            Some(vec![
+                // Default to common programming language extensions
+                "py".to_string(),
+                "js".to_string(),
+                "ts".to_string(),
+                "jsx".to_string(),
+                "tsx".to_string(),
+                "rs".to_string(),
+                "java".to_string(),
+                "cpp".to_string(),
+                "c".to_string(),
+                "h".to_string(),
+                "hpp".to_string(),
+                "go".to_string(),
+                "php".to_string(),
+                "rb".to_string(),
+                "kt".to_string(),
+                "swift".to_string(),
+            ])
+        });
 
     // Log configuration
     info!("Configuration:");
-    info!("  Memory limit: {}MB{}", memory_limit_mb, if disable_memory_limit { " (disabled)" } else { "" });
+    info!(
+        "  Memory limit: {}MB{}",
+        memory_limit_mb,
+        if disable_memory_limit {
+            " (disabled)"
+        } else {
+            ""
+        }
+    );
     info!("  Batch size: {}", batch_size);
     info!("  Max file size: {}MB", max_file_size_mb);
-    info!("  Dependency scanning: {}", 
-        if include_deps { "Full (includes all dependencies)" }
-        else if smart_deps { "Smart (includes dependency APIs only)" }
-        else { "Minimal (excludes dependencies)" });
+    info!(
+        "  Dependency scanning: {}",
+        if include_deps {
+            "Full (includes all dependencies)"
+        } else if smart_deps {
+            "Smart (includes dependency APIs only)"
+        } else {
+            "Minimal (excludes dependencies)"
+        }
+    );
     info!("  Excluded directories: {:?}", exclude_dirs);
     if let Some(ref exts) = include_extensions {
         info!("  Included extensions: {:?}", exts);
@@ -217,23 +246,28 @@ async fn main() -> Result<()> {
         disable_memory_limit,
         exclude_dirs,
         include_extensions,
-        if include_deps { Some("include_all".to_string()) }
-        else if smart_deps { Some("smart".to_string()) }
-        else { Some("exclude".to_string()) },
+        if include_deps {
+            Some("include_all".to_string())
+        } else if smart_deps {
+            Some("smart".to_string())
+        } else {
+            Some("exclude".to_string())
+        },
     )
-        .map_err(|e| {
-            error!("Failed to create MCP server: {}", e);
-            e
-        })?;
+    .map_err(|e| {
+        error!("Failed to create MCP server: {}", e);
+        e
+    })?;
 
     // Initialize with repository if provided (check CLI args first, then environment variable)
-    let repo_path_str = matches.get_one::<String>("repository")
+    let repo_path_str = matches
+        .get_one::<String>("repository")
         .cloned()
         .or_else(|| std::env::var("REPOSITORY_PATH").ok());
-    
+
     if let Some(repo_path) = repo_path_str {
         let path = PathBuf::from(repo_path);
-        
+
         if !path.exists() {
             error!("Repository path does not exist: {}", path.display());
             std::process::exit(1);
@@ -245,19 +279,21 @@ async fn main() -> Result<()> {
         }
 
         info!("Initializing with repository: {}", path.display());
-        
+
         // Warn about large repositories
         if let Ok(_metadata) = std::fs::metadata(&path) {
             if let Ok(output) = std::process::Command::new("du")
-                .args(&["-sh", path.to_str().unwrap()])
+                .args(["-sh", path.to_str().unwrap()])
                 .output()
             {
                 if let Ok(size_str) = String::from_utf8(output.stdout) {
                     let size = size_str.split_whitespace().next().unwrap_or("unknown");
                     info!("Repository size: {}", size);
-                    
+
                     // Parse size and warn if large
-                    if size.contains('G') && size.chars().next().unwrap_or('0').to_digit(10).unwrap_or(0) > 1 {
+                    if size.contains('G')
+                        && size.chars().next().unwrap_or('0').to_digit(10).unwrap_or(0) > 1
+                    {
                         warn!("Large repository detected ({}). Consider using filtering options or increasing memory limit.", size);
                         warn!("Use --exclude-dirs to exclude directories like node_modules, target, .git");
                         warn!("Use --include-extensions to limit file types, e.g., --include-extensions py,js,ts");
@@ -266,8 +302,10 @@ async fn main() -> Result<()> {
                 }
             }
         }
-        
-        server.initialize_with_repository(&path).await
+
+        server
+            .initialize_with_repository(&path)
+            .await
             .map_err(|e| {
                 error!("Failed to initialize repository: {}", e);
                 e
@@ -279,11 +317,10 @@ async fn main() -> Result<()> {
 
     // Run the server with stdio transport
     info!("Starting MCP server with stdio transport");
-    server.run_stdio().await
-        .map_err(|e| {
-            error!("MCP server error: {}", e);
-            e
-        })?;
+    server.run_stdio().await.map_err(|e| {
+        error!("MCP server error: {}", e);
+        e
+    })?;
 
     info!("Prism MCP Server stopped");
     Ok(())
@@ -293,10 +330,10 @@ async fn main() -> Result<()> {
 mod tests {
     // Note: Integration tests for the binary would typically use external test harnesses
     // since testing stdio interaction requires careful setup of stdin/stdout mocking
-    
+
     #[test]
     fn test_binary_compilation() {
         // This test just ensures the binary compiles successfully
-        assert!(true);
+
     }
-} 
+}

@@ -1,9 +1,9 @@
 //! Quality analysis tools for code health and security
 
+use crate::tools_legacy::{CallToolParams, CallToolResult, Tool, ToolContent};
+use crate::PrismMcpServer;
 use anyhow::Result;
 use serde_json::Value;
-use crate::tools_legacy::{Tool, CallToolParams, CallToolResult, ToolContent};
-use crate::PrismMcpServer;
 
 /// List quality analysis tools
 pub fn list_tools() -> Vec<Tool> {
@@ -103,7 +103,8 @@ pub fn list_tools() -> Vec<Tool> {
         Tool {
             name: "analyze_performance".to_string(),
             title: Some("Analyze Performance Issues".to_string()),
-            description: "Identify performance bottlenecks and optimization opportunities".to_string(),
+            description: "Identify performance bottlenecks and optimization opportunities"
+                .to_string(),
             input_schema: serde_json::json!({
                 "type": "object",
                 "properties": {
@@ -172,25 +173,34 @@ pub async fn call_tool(server: &PrismMcpServer, params: &CallToolParams) -> Resu
         "analyze_security" => analyze_security(server, params.arguments.as_ref()).await,
         "analyze_performance" => analyze_performance(server, params.arguments.as_ref()).await,
         "analyze_api_surface" => analyze_api_surface(server, params.arguments.as_ref()).await,
-        _ => Err(anyhow::anyhow!("Unknown quality analysis tool: {}", params.name)),
+        _ => Err(anyhow::anyhow!(
+            "Unknown quality analysis tool: {}",
+            params.name
+        )),
     }
 }
 
 /// Find duplicate code patterns
-async fn find_duplicates(_server: &PrismMcpServer, arguments: Option<&Value>) -> Result<CallToolResult> {
+async fn find_duplicates(
+    _server: &PrismMcpServer,
+    arguments: Option<&Value>,
+) -> Result<CallToolResult> {
     let default_args = serde_json::json!({});
     let args = arguments.unwrap_or(&default_args);
-    
-    let similarity_threshold = args.get("similarity_threshold")
+
+    let similarity_threshold = args
+        .get("similarity_threshold")
         .and_then(|v| v.as_f64())
         .unwrap_or(0.8);
-    
-    let min_lines = args.get("min_lines")
+
+    let min_lines = args
+        .get("min_lines")
         .and_then(|v| v.as_u64())
         .map(|v| v as usize)
         .unwrap_or(3);
-    
-    let scope = args.get("scope")
+
+    let scope = args
+        .get("scope")
         .and_then(|v| v.as_str())
         .unwrap_or("repository");
 
@@ -214,15 +224,20 @@ async fn find_duplicates(_server: &PrismMcpServer, arguments: Option<&Value>) ->
 }
 
 /// Find unused code elements
-async fn find_unused_code(_server: &PrismMcpServer, arguments: Option<&Value>) -> Result<CallToolResult> {
+async fn find_unused_code(
+    _server: &PrismMcpServer,
+    arguments: Option<&Value>,
+) -> Result<CallToolResult> {
     let default_args = serde_json::json!({});
     let args = arguments.unwrap_or(&default_args);
-    
-    let scope = args.get("scope")
+
+    let scope = args
+        .get("scope")
         .and_then(|v| v.as_str())
         .unwrap_or("repository");
-        
-    let analyze_types = args.get("analyze_types")
+
+    let analyze_types = args
+        .get("analyze_types")
         .and_then(|v| v.as_array())
         .map(|arr| arr.iter().filter_map(|v| v.as_str()).collect::<Vec<_>>())
         .unwrap_or_else(|| vec!["functions", "classes", "variables", "imports"]);
@@ -249,15 +264,20 @@ async fn find_unused_code(_server: &PrismMcpServer, arguments: Option<&Value>) -
 }
 
 /// Analyze security vulnerabilities
-async fn analyze_security(_server: &PrismMcpServer, arguments: Option<&Value>) -> Result<CallToolResult> {
+async fn analyze_security(
+    _server: &PrismMcpServer,
+    arguments: Option<&Value>,
+) -> Result<CallToolResult> {
     let default_args = serde_json::json!({});
     let args = arguments.unwrap_or(&default_args);
-    
-    let scope = args.get("scope")
+
+    let scope = args
+        .get("scope")
         .and_then(|v| v.as_str())
         .unwrap_or("repository");
-        
-    let vulnerability_types = args.get("vulnerability_types")
+
+    let vulnerability_types = args
+        .get("vulnerability_types")
         .and_then(|v| v.as_array())
         .map(|arr| arr.iter().filter_map(|v| v.as_str()).collect::<Vec<_>>())
         .unwrap_or_else(|| vec!["injection", "authentication", "authorization"]);
@@ -280,15 +300,20 @@ async fn analyze_security(_server: &PrismMcpServer, arguments: Option<&Value>) -
 }
 
 /// Analyze performance issues
-async fn analyze_performance(_server: &PrismMcpServer, arguments: Option<&Value>) -> Result<CallToolResult> {
+async fn analyze_performance(
+    _server: &PrismMcpServer,
+    arguments: Option<&Value>,
+) -> Result<CallToolResult> {
     let default_args = serde_json::json!({});
     let args = arguments.unwrap_or(&default_args);
-    
-    let scope = args.get("scope")
+
+    let scope = args
+        .get("scope")
         .and_then(|v| v.as_str())
         .unwrap_or("repository");
-        
-    let analysis_types = args.get("analysis_types")
+
+    let analysis_types = args
+        .get("analysis_types")
         .and_then(|v| v.as_array())
         .map(|arr| arr.iter().filter_map(|v| v.as_str()).collect::<Vec<_>>())
         .unwrap_or_else(|| vec!["time_complexity", "memory_usage", "hot_spots"]);
@@ -311,15 +336,20 @@ async fn analyze_performance(_server: &PrismMcpServer, arguments: Option<&Value>
 }
 
 /// Analyze API surface
-async fn analyze_api_surface(_server: &PrismMcpServer, arguments: Option<&Value>) -> Result<CallToolResult> {
+async fn analyze_api_surface(
+    _server: &PrismMcpServer,
+    arguments: Option<&Value>,
+) -> Result<CallToolResult> {
     let default_args = serde_json::json!({});
     let args = arguments.unwrap_or(&default_args);
-    
-    let scope = args.get("scope")
+
+    let scope = args
+        .get("scope")
         .and_then(|v| v.as_str())
         .unwrap_or("repository");
-        
-    let analysis_types = args.get("analysis_types")
+
+    let analysis_types = args
+        .get("analysis_types")
         .and_then(|v| v.as_array())
         .map(|arr| arr.iter().filter_map(|v| v.as_str()).collect::<Vec<_>>())
         .unwrap_or_else(|| vec!["public_api", "versioning", "breaking_changes"]);
@@ -339,4 +369,4 @@ async fn analyze_api_surface(_server: &PrismMcpServer, arguments: Option<&Value>
         }],
         is_error: Some(false),
     })
-} 
+}

@@ -900,8 +900,6 @@ impl Default for TextParser {
 mod tests {
     use super::*;
 
-
-
     #[test]
     fn test_document_parser_creation() {
         let parser = DocumentParser::new();

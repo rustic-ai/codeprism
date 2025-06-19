@@ -8,7 +8,6 @@ use clap::{Arg, Command};
 use std::path::PathBuf;
 use tracing::{error, info, warn};
 
-
 use prism_mcp::server::McpServer;
 
 #[tokio::main]
@@ -334,6 +333,5 @@ mod tests {
     #[test]
     fn test_binary_compilation() {
         // This test just ensures the binary compiles successfully
-
     }
 }

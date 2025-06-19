@@ -2005,7 +2005,6 @@ class Database:
         let prompt_manager = PromptManager::new(server_arc);
 
         // Prompt manager should be created successfully
-
     }
 
     #[tokio::test]

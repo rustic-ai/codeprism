@@ -350,7 +350,9 @@ impl PythonAnalyzer {
     fn extract_metaclass(&self, bases_str: &str) -> Option<String> {
         let metaclass_pattern = Regex::new(r"metaclass\s*=\s*(\w+)").unwrap();
 
-        metaclass_pattern.captures(bases_str).map(|captures| captures.get(1).unwrap().as_str().to_string())
+        metaclass_pattern
+            .captures(bases_str)
+            .map(|captures| captures.get(1).unwrap().as_str().to_string())
     }
 
     /// Get Python-specific recommendations

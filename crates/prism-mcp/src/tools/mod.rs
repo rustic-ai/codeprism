@@ -66,9 +66,7 @@ impl ToolRegistry {
             "trace_path" | "find_dependencies" | "find_references" => {
                 core::navigation::call_tool(&server, &params).await
             }
-            "explain_symbol" | "search_symbols" => {
-                core::symbols::call_tool(&server, &params).await
-            }
+            "explain_symbol" | "search_symbols" => core::symbols::call_tool(&server, &params).await,
 
             // Search and discovery tools
             "search_content" | "find_files" | "content_stats" => {

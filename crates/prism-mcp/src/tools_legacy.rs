@@ -4895,8 +4895,8 @@ def process_data(input_data: str) -> str:
         // This test may need adjustment based on actual NodeId::from_hex implementation
         // For now, just test that it doesn't panic
         match result {
-            Ok(_) => {},
-            Err(_) => {}, // May fail if format is wrong, but shouldn't panic
+            Ok(_) => {}
+            Err(_) => {} // May fail if format is wrong, but shouldn't panic
         }
     }
 

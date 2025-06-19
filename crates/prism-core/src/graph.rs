@@ -59,10 +59,7 @@ impl GraphStore {
             .push(node_id);
 
         // Add to kind index
-        self.kind_index
-            .entry(node.kind)
-            .or_default()
-            .push(node_id);
+        self.kind_index.entry(node.kind).or_default().push(node_id);
 
         // Add the node
         self.nodes.insert(node_id, node);
@@ -897,8 +894,6 @@ pub struct InheritanceInfo {
     pub inheritance_chain: Vec<String>,
 }
 
-
-
 /// Represents an inheritance relationship
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct InheritanceRelation {
@@ -929,7 +924,6 @@ pub struct DynamicAttribute {
 mod tests {
     use super::*;
     use crate::ast::{Language, Span};
-
 
     fn create_test_node(name: &str, kind: NodeKind, file: &str) -> Node {
         Node::new(

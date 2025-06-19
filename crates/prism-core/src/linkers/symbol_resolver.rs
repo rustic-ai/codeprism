@@ -389,7 +389,6 @@ impl SymbolResolver {
 mod tests {
     use super::*;
 
-
     #[test]
     fn test_module_name_conversion() {
         let resolver = SymbolResolver::new(Arc::new(GraphStore::new()));

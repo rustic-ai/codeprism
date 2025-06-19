@@ -47,8 +47,6 @@ pub struct MemoryStats {
     pub graph_overhead_bytes: usize,
 }
 
-
-
 /// Bulk indexing result
 #[derive(Debug)]
 pub struct IndexingResult {

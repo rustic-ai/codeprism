@@ -398,7 +398,6 @@ mod tests {
     use super::*;
     use crate::ast::NodeKind;
 
-
     #[test]
     fn test_chunk_id_generation() {
         let file_path = PathBuf::from("test.md");

@@ -93,6 +93,14 @@ jobs:
           esac
           
           new_version="$major.$minor.$patch"
+          
+          # Check if this version already exists as a tag
+          if git tag -l | grep -q "^v$new_version$"; then
+            echo "Version v$new_version already exists, skipping release"
+            echo "should_release=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
           echo "new_version=$new_version" >> $GITHUB_OUTPUT
           echo "New version will be: $new_version"
           
@@ -242,6 +250,13 @@ jobs:
       - name: Create Git Tag
         run: |
           new_version="${{ needs.check-release.outputs.new_version }}"
+          
+          # Check if tag already exists
+          if git tag -l | grep -q "^v$new_version$"; then
+            echo "Tag v$new_version already exists, skipping tag creation"
+            exit 0
+          fi
+          
           git tag -a "v$new_version" -m "Release v$new_version
 
           🤖 AI-Generated Release v$new_version

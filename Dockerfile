@@ -32,10 +32,10 @@ RUN apt-get update && apt-get install -y \
     && useradd -r -s /bin/false codeprism
 
 # Copy the binary from builder stage
-COPY --from=builder /usr/src /codeprism/target/release/codeprism-mcp /usr/local/bin/codeprism-mcp
+COPY --from=builder /usr/src/codeprism/target/release/codeprism-mcp /usr/local/bin/codeprism-mcp
 
 # Create workspace directory
-RUN mkdir -p /workspace && chown codeprismcodeprism /workspace
+RUN mkdir -p /workspace && chown codeprism:codeprism /workspace
 
 # Switch to non-root user
 USER codeprism

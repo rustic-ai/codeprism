@@ -1,0 +1,89 @@
+---
+description: This rule provides essential guidance for executing GitHub CLI (gh) commands correctly when using the run_terminal_cmd tool. It covers the critical workaround for pager-related issues that cause gh commands to fail with "cannot open '|' for reading" errors. The rule documents why piping gh commands to cat (e.g., gh run list | cat) is necessary and provides templates for common GitHub workflow operations, issue management, and pull request commands. Essential for debugging GitHub Actions workflows and accessing repository information via CLI. This rule should be requested whenever: Working with GitHub CLI commands Debugging GitHub Actions workflows Encountering terminal/pager-related errors with gh commands Need to list workflow runs, view logs, or manage GitHub repository resources via CLI The rule is now saved and ready to be used by agents who need to execute GitHub CLI commands correctly.
+globs: 
+alwaysApply: false
+---
+# GitHub CLI (gh) Command Best Practices
+
+This rule documents the correct way to execute GitHub CLI (`gh`) commands when using the `run_terminal_cmd` tool to avoid common pager-related issues.
+
+## The Problem
+
+The `gh` CLI automatically detects when it's running in what it thinks is an interactive terminal and attempts to use a pager (like `less` or `more`) to display output. This causes issues with the `run_terminal_cmd` tool, resulting in errors like:
+
+```
+/usr/bin/head: cannot open '|' for reading: No such file or directory
+```
+
+## The Solution
+
+Always pipe `gh` command output to `cat` to prevent the pager from being invoked:
+
+### ✅ Correct Usage
+
+```bash
+gh run list --workflow=ci.yml --limit 5 | cat
+gh run view 12345 --log | cat
+gh run list --workflow=docker.yml --limit 1 --json databaseId --jq '.[0].databaseId' | cat
+```
+
+### ❌ Incorrect Usage
+
+```bash
+gh run list --workflow=ci.yml --limit 5
+gh run view 12345 --log
+gh run list --workflow=docker.yml --limit 1 --json databaseId --jq '.[0].databaseId'
+```
+
+## Common GitHub CLI Commands with Proper Piping
+
+### Listing Workflow Runs
+```bash
+gh run list --workflow=<workflow-name> --limit <number> | cat
+```
+
+### Viewing Run Logs
+```bash
+gh run view <run-id> --log | cat
+```
+
+### Getting Run Status
+```bash
+gh run list --workflow=<workflow-name> --limit 1 | cat
+```
+
+### JSON Output with jq
+```bash
+gh run list --workflow=<workflow-name> --limit 1 --json databaseId --jq '.[0].databaseId' | cat
+```
+
+### Listing Issues
+```bash
+gh issue list | cat
+```
+
+### Viewing Pull Requests
+```bash
+gh pr list | cat
+gh pr view <pr-number> | cat
+```
+
+## Why This Works
+
+- The `| cat` prevents `gh` from detecting an interactive terminal
+- This forces `gh` to output raw text instead of trying to use a pager
+- The `cat` command simply passes through the output unchanged
+- Other commands like `ls`, `git`, and `cargo` don't have this issue because they don't automatically invoke pagers
+
+## When This Rule Applies
+
+This rule specifically applies when:
+- Using the `run_terminal_cmd` tool
+- Executing any `gh` command that might produce multi-line output
+- The command would normally trigger a pager in an interactive terminal
+
+## Alternative Solutions
+
+If piping to `cat` is not suitable for your use case, you can also:
+- Set the `PAGER` environment variable to empty: `PAGER= gh run list`
+- Use the `--no-pager` flag if available for the specific `gh` command

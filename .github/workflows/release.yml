@@ -420,7 +420,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/rustic-ai /codeprism
+          images: ghcr.io/rustic-ai/codeprism
           tags: |
             type=semver,pattern={{version}},value=v${{ needs.check-release.outputs.new_version }}
             type=semver,pattern={{major}}.{{minor}},value=v${{ needs.check-release.outputs.new_version }}

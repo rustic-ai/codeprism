@@ -55,14 +55,4 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Update Docker Hub description
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
-        uses: peter-evans/dockerhub-description@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-          repository: rustic-ai /codeprism
-          short-description: "100% AI-generated code intelligence MCP server"
-          readme-filepath: ./README.md 
+          cache-to: type=gha,mode=max 

@@ -297,7 +297,7 @@ jobs:
             
             ### Docker
             ```bash
-            docker pull ghcr.io/rustic-ai /codeprism:v${{ needs.check-release.outputs.new_version }}
+            docker pull ghcr.io/rustic-ai/codeprism:v${{ needs.check-release.outputs.new_version }}
             ```
             
             ## 🚀 What's New
@@ -316,7 +316,7 @@ jobs:
             
             ---
             
-            **Full Changelog**: https://github.com/rustic-ai /codeprism/compare/v${{ needs.check-release.outputs.previous_version }}...v${{ needs.check-release.outputs.new_version }}
+            **Full Changelog**: https://github.com/rustic-ai/codeprism/compare/v${{ needs.check-release.outputs.previous_version }}...v${{ needs.check-release.outputs.new_version }}
           files: release-assets/*
           draft: false
           prerelease: false
@@ -463,8 +463,8 @@ jobs:
               
               ## Get the Update
               - **Cargo**: \`cargo install codeprism-mcp@${{ needs.check-release.outputs.new_version }}\`
-                          - **Docker**: \`docker pull ghcr.io/rustic-ai /codeprism:v${{ needs.check-release.outputs.new_version }}\`
-            - **Binaries**: Available on the [releases page](https://github.com/rustic-ai /codeprism/releases/latest)
+                          - **Docker**: \`docker pull ghcr.io/rustic-ai/codeprism:v${{ needs.check-release.outputs.new_version }}\`
+                          - **Binaries**: Available on the [releases page](https://github.com/rustic-ai/codeprism/releases/latest)
               
               ## AI Developer Message
               *"Thank you for your continued support! This release incorporates your feedback and represents my ongoing evolution as an AI software developer. Keep the bug reports and feature requests coming!"*

@@ -2,7 +2,7 @@
 
 use crate::context::session::SessionId;
 use crate::context::workflow::ConfidenceLevel;
-use crate::context::{SessionManager, SessionState, ToolSuggestion, WorkflowContext};
+use crate::context::ToolSuggestion;
 use crate::tools::{CallToolParams, CallToolResult, Tool, ToolContent};
 use crate::CodePrismMcpServer;
 use anyhow::Result;

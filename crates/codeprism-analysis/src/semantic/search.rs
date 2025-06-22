@@ -1,7 +1,7 @@
 //! Semantic search engine for concept-based code discovery
 
 use anyhow::Result;
-use codeprism_core::{GraphQuery, GraphStore, Node, NodeKind};
+use codeprism_core::{GraphQuery, GraphStore, Node};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 

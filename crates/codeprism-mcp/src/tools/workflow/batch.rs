@@ -5,7 +5,7 @@
 
 use anyhow::Result;
 use serde_json::{json, Value};
-use std::collections::HashMap;
+// HashMap import removed as unused
 
 use crate::tools::{CallToolResult, Tool, ToolContent};
 use crate::CodePrismMcpServer;

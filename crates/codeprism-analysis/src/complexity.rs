@@ -2,7 +2,7 @@
 
 use anyhow::Result;
 use serde_json::Value;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::path::Path;
 
 /// Complexity metrics for code analysis

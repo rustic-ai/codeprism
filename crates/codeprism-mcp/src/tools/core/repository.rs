@@ -3,7 +3,7 @@
 use crate::tools_legacy::{CallToolParams, CallToolResult, Tool, ToolContent};
 use crate::CodePrismMcpServer;
 use anyhow::Result;
-use serde_json::Value;
+// Removed unused serde_json::Value import
 
 /// List repository tools
 pub fn list_tools() -> Vec<Tool> {

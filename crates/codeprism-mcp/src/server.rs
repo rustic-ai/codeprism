@@ -16,7 +16,7 @@ use crate::{
         JsonRpcRequest, JsonRpcResponse, ServerInfo,
     },
     resources::{ListResourcesParams, ReadResourceParams, ResourceManager},
-    tools::{CallToolParams, ListToolsParams, ToolCapabilities, ToolRegistry},
+    tools::{CallToolParams, ListToolsParams, ToolRegistry},
     transport::{StdioTransport, Transport, TransportMessage},
     CodePrismMcpServer,
 };

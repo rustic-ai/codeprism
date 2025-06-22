@@ -2,7 +2,7 @@
 # Optimized for size and security
 
 # Build stage
-FROM rust:1.82-slim as builder
+FROM rust:1.82-slim AS builder
 
 # Install system dependencies for building
 RUN apt-get update && apt-get install -y \
@@ -62,5 +62,5 @@ LABEL org.opencontainers.image.title="CodePrism MCP Server"
 LABEL org.opencontainers.image.description="100% AI-generated code intelligence MCP server"
 LABEL org.opencontainers.image.vendor="The Rustic Initiative"
 LABEL org.opencontainers.image.licenses="MIT OR Apache-2.0"
-LABEL org.opencontainers.image.source="https://github.com/rustic-ai /codeprism"
-LABEL org.opencontainers.image.documentation="https://github.com/rustic-ai /codeprism/blob/main/README.md" 
+LABEL org.opencontainers.image.source="https://github.com/rustic-ai/codeprism"
+LABEL org.opencontainers.image.documentation="https://github.com/rustic-ai/codeprism/blob/main/README.md" 

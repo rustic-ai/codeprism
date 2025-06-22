@@ -13,8 +13,7 @@ pub use duplicates::DuplicateAnalyzer;
 pub use performance::PerformanceAnalyzer;
 pub use security::SecurityAnalyzer;
 
-use anyhow::Result;
-use serde_json::Value;
+// Remove unused imports
 
 /// Main analysis coordinator
 pub struct CodeAnalyzer {

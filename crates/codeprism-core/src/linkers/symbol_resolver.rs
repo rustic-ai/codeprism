@@ -7,7 +7,7 @@ use crate::ast::{Edge, EdgeKind, Node, NodeId, NodeKind};
 use crate::error::Result;
 use crate::graph::GraphStore;
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::Arc;
 
 /// Symbol resolver for cross-file linking

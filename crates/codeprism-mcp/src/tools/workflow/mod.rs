@@ -8,9 +8,9 @@ pub mod guidance;
 pub mod optimization;
 
 use anyhow::Result;
-use serde_json::{json, Value};
+use serde_json::Value;
 
-use crate::tools::{CallToolParams, CallToolResult, Tool, ToolContent};
+use crate::tools::{CallToolResult, Tool};
 use crate::CodePrismMcpServer;
 
 /// Register all workflow orchestration tools

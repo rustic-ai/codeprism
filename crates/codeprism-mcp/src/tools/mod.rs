@@ -15,7 +15,6 @@ pub use crate::tools_legacy::{
 
 use crate::CodePrismMcpServer;
 use anyhow::Result;
-use serde_json::Value;
 
 /// Tool registry that coordinates all modular tools
 pub struct ToolRegistry {

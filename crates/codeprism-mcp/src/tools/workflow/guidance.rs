@@ -7,10 +7,8 @@ use anyhow::Result;
 use serde_json::{json, Value};
 
 use crate::context::session::WorkflowStage;
-use crate::context::session::{SessionId, SessionState};
-use crate::context::workflow::ConfidenceLevel;
-use crate::context::{SessionManager, ToolSuggestion, WorkflowContext};
-use crate::tools::{CallToolParams, CallToolResult, Tool, ToolContent};
+use crate::context::session::SessionId;
+use crate::tools::{CallToolResult, Tool, ToolContent};
 use crate::CodePrismMcpServer;
 
 /// Create the suggest_analysis_workflow tool

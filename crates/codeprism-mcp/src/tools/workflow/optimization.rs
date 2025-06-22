@@ -8,8 +8,7 @@ use serde_json::{json, Value};
 use std::collections::HashMap;
 
 use crate::context::session::SessionId;
-use crate::context::SessionManager;
-use crate::tools::{CallToolParams, CallToolResult, Tool, ToolContent};
+use crate::tools::{CallToolResult, Tool, ToolContent};
 use crate::CodePrismMcpServer;
 
 /// Create the optimize_workflow tool

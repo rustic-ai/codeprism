@@ -3730,7 +3730,7 @@ impl ToolManager {
         // Analyze what the decorator function does
         let mut effects = Vec::new();
         let mut modifies_signature = false;
-        let mut adds_metadata = false;
+        let adds_metadata = false;
         let mut creates_wrapper = false;
         let mut registers_function = false;
 

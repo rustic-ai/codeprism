@@ -33,10 +33,10 @@ tokio-util = { version = "0.7", features = ["codec"] }
 futures = "0.3"
 
 # Internal dependencies
-codeprism-core = { version = "0.2.2", path = "../codeprism-core" }
-codeprism-analysis = { version = "0.2.2", path = "../codeprism-analysis" }
-codeprism-lang-python = { version = "0.2.2", path = "../codeprism-lang-python" }
-codeprism-lang-js = { version = "0.2.2", path = "../codeprism-lang-js" }
+codeprism-core = { version = "0.2.3", path = "../codeprism-core" }
+codeprism-analysis = { version = "0.2.3", path = "../codeprism-analysis" }
+codeprism-lang-python = { version = "0.2.3", path = "../codeprism-lang-python" }
+codeprism-lang-js = { version = "0.2.3", path = "../codeprism-lang-js" }
 
 [dev-dependencies]
 tokio-test = "0.4"

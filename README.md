@@ -8,6 +8,7 @@ A production-ready, high-performance code intelligence server implementing the M
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/License-MIT%20OR%20Apache--2.0-blue.svg)](https://opensource.org/licenses/)
 [![Crates.io](https://img.shields.io/crates/v/codeprism-mcp.svg)](https://crates.io/crates/codeprism-mcp)
 [![Downloads](https://img.shields.io/crates/d/codeprism-mcp.svg)](https://crates.io/crates/codeprism-mcp)
+[![Sponsor](https://img.shields.io/badge/Sponsor-❤️-ea4aaa?style=flat&logo=github)](https://github.com/sponsors/dragonscale-ai)
 
 ## 🤖 The AI-Only Development Experiment
 
@@ -27,6 +28,20 @@ A production-ready, high-performance code intelligence server implementing the M
 **✅ Multi-Language Support** - JavaScript/TypeScript + Python with advanced analysis  
 **✅ Semantic APIs** - User-friendly parameter names, no cryptic IDs required  
 **✅ Environment Integration** - Automatic repository detection via `REPOSITORY_PATH`  
+
+## 💝 Primary Sponsor
+
+<div align="center">
+  <a href="https://dragonscale.ai" target="_blank">
+    <img src="https://dragonscale.ai/logo.png" alt="Dragonscale Industries Inc" width="200" style="margin: 20px 0;"/>
+  </a>
+</div>
+
+**CodePrism is proudly sponsored by [Dragonscale Industries Inc](https://dragonscale.ai)**, pioneers in AI innovation and development tools.
+
+Dragonscale Industries Inc supports the development of cutting-edge AI-powered code intelligence, enabling CodePrism to remain open-source and freely available to the developer community. Their commitment to advancing AI technology makes projects like CodePrism possible.
+
+**[Become a sponsor →](https://github.com/sponsors/dragonscale-ai)** | **[Learn more about sponsorship →](docs/Sponsors.md)**
 
 ## 🌟 Key Features
 
@@ -199,7 +214,7 @@ export REPOSITORY_PATH=/path/to/your/repository
 
 ## 💝 Support the Project
 
-CodePrism is developed and maintained by Dragonscale Industries. If you find this project valuable, consider supporting our work:
+CodePrism is developed and maintained by **[Dragonscale Industries Inc](https://dragonscale.ai)**, our primary sponsor and pioneer in AI innovation. Join them in supporting this project:
 
 [![GitHub Sponsors](https://img.shields.io/badge/sponsor-dragonscale--ai-EA4AAA?logo=github-sponsors&logoColor=white)](https://github.com/sponsors/dragonscale-ai)
 
@@ -209,7 +224,7 @@ Your support helps us:
 - 📚 Expand language support and analysis capabilities
 - 🌟 Develop new features based on community feedback
 
-[**Become a sponsor →**](https://github.com/sponsors/dragonscale-ai)
+[**Become a sponsor →**](https://github.com/sponsors/dragonscale-ai) | [**View all sponsors →**](docs/Sponsors.md)
 
 ## 🎯 Use Cases
 
@@ -253,6 +268,7 @@ Your support helps us:
 - **[Getting Started Guide](docs/GETTING_STARTED.md)** - Complete setup instructions for all MCP clients
 - **[API Documentation](docs/API.md)** - Detailed tool and resource reference
 - **[Current Status](docs/CURRENT_STATUS.md)** - Implementation status and capabilities
+- **[Sponsors](docs/Sponsors.md)** - Our sponsors and how to support the project
 
 ### **Technical Documentation**
 - **[Architecture Overview](docs/ARCHITECTURE.md)** - System design and components

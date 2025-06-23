@@ -6,8 +6,8 @@
 use anyhow::Result;
 use serde_json::{json, Value};
 
-use crate::context::session::WorkflowStage;
 use crate::context::session::SessionId;
+use crate::context::session::WorkflowStage;
 use crate::tools::{CallToolResult, Tool, ToolContent};
 use crate::CodePrismMcpServer;
 

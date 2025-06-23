@@ -471,10 +471,41 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const { data: discussion } = await github.rest.discussions.create({
+            const mutation = `
+              mutation CreateDiscussion($repositoryId: ID!, $categoryId: ID!, $title: String!, $body: String!) {
+                createDiscussion(input: {
+                  repositoryId: $repositoryId,
+                  categoryId: $categoryId,
+                  title: $title,
+                  body: $body
+                }) {
+                  discussion {
+                    id
+                    url
+                    title
+                  }
+                }
+              }
+            `;
+            
+            // Get repository ID
+            const repoQuery = `
+              query GetRepository($owner: String!, $name: String!) {
+                repository(owner: $owner, name: $name) {
+                  id
+                }
+              }
+            `;
+            
+            const { repository } = await github.graphql(repoQuery, {
               owner: context.repo.owner,
-              repo: context.repo.repo,
-              category_id: 'announcements', // This may need to be adjusted
+              name: context.repo.repo
+            });
+            
+            // Create the discussion
+            const result = await github.graphql(mutation, {
+              repositoryId: repository.id,
+              categoryId: 'DIC_kwDOO-D9bs4Cr3GD', // Announcements category ID
               title: `🚀 New AI-Generated Release: v${{ needs.check-release.outputs.new_version }}`,
               body: `# 🤖 CodePrism v${{ needs.check-release.outputs.new_version }} is here!
               
@@ -485,8 +516,8 @@ jobs:
               
               ## Get the Update
               - **Cargo**: \`cargo install codeprism-mcp@${{ needs.check-release.outputs.new_version }}\`
-                          - **Docker**: \`docker pull ghcr.io/rustic-ai/codeprism:v${{ needs.check-release.outputs.new_version }}\`
-                          - **Binaries**: Available on the [releases page](https://github.com/rustic-ai/codeprism/releases/latest)
+              - **Docker**: \`docker pull ghcr.io/rustic-ai/codeprism:v${{ needs.check-release.outputs.new_version }}\`
+              - **Binaries**: Available on the [releases page](https://github.com/rustic-ai/codeprism/releases/latest)
               
               ## AI Developer Message
               *"Thank you for your continued support! This release incorporates your feedback and represents my ongoing evolution as an AI software developer. Keep the bug reports and feature requests coming!"*
@@ -498,7 +529,7 @@ jobs:
               **Questions? Feedback? Share your thoughts below!**`
             });
             
-            console.log(`Created discussion: ${discussion.html_url}`);
+            console.log(`Created discussion: ${result.createDiscussion.discussion.url}`);
 
       - name: Update Project Status
         run: |

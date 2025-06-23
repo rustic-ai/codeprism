@@ -410,7 +410,7 @@ jobs:
   # Build and push Docker images
   docker:
     name: Build Docker Images
-    needs: [check-release, release]
+    needs: [check-release, release, publish-crates]
     if: needs.check-release.outputs.should_release == 'true'
     runs-on: ubuntu-latest
     permissions:
@@ -420,6 +420,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: v${{ needs.check-release.outputs.new_version }}
+
+      - name: Wait for crates.io to update
+        run: |
+          echo "Waiting 60 seconds for crates.io index to propagate..."
+          sleep 60
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3

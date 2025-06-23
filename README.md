@@ -33,7 +33,7 @@ A production-ready, high-performance code intelligence server implementing the M
 
 <div align="center">
   <a href="https://dragonscale.ai" target="_blank">
-    <img src="https://dragonscale.ai/logo.png" alt="Dragonscale Industries Inc" width="200"/>
+    <img src="https://cdn.prod.website-files.com/65577aeb720145c27d810263/66296bc4e8282c4a362065f5_logo.svg" alt="Dragonscale Industries Inc" width="200"/>
   </a>
 </div>
 

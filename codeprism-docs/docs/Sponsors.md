@@ -8,7 +8,7 @@ We're grateful for the support of our sponsors who make CodePrism possible.
 
 <div align="center">
   <a href="https://dragonscale.ai" target="_blank">
-    <img src="https://dragonscale.ai/logo.png" alt="Dragonscale Industries Inc" width="300"/>
+    <img src="https://cdn.prod.website-files.com/65577aeb720145c27d810263/66296bc4e8282c4a362065f5_logo.svg" alt="Dragonscale Industries Inc" width="300"/>
   </a>
 </div>
 

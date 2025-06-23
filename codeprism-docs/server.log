@@ -1,0 +1,54 @@
+
+> codeprism-docs@0.0.0 start
+> docusaurus start --port 3002
+
+[INFO] Starting the development server...
+[ERROR] Loading of version failed for version current
+
+[ERROR] Error: Invalid sidebar file at "sidebars.ts".
+These sidebar document ids do not exist:
+- Getting_Started
+- Release_Process
+
+Available document ids are:
+- API
+- API_Reference
+- Architecture
+- BRANCH_STRATEGY
+- CURRENT_STATUS
+- Contributing
+- DEVELOPER
+- DOCUMENTATION_ORGANIZATION
+- Development_Practices
+- Future_Roadmap
+- GETTING_STARTED
+- Home
+- LANGUAGE_PARSERS
+- LARGE_REPOSITORY_GUIDE
+- MCP-DOCUMENTATION
+- PRISM-MCP-SERVER-DESCRIPTION
+- PYTHON_PARSER_SUMMARY
+- RELEASE_PROCESS
+- RUST_PARSER_IMPLEMENTATION
+- intro
+- tutorial-basics/congratulations
+- tutorial-basics/create-a-blog-post
+- tutorial-basics/create-a-document
+- tutorial-basics/create-a-page
+- tutorial-basics/deploy-your-site
+- tutorial-basics/markdown-features
+- tutorial-extras/manage-docs-versions
+- tutorial-extras/translate-your-site
+
+    at Object.checkSidebarsDocIds (/home/rohit/work/dragonscale/prism/codeprism-docs/node_modules/@docusaurus/plugin-content-docs/lib/sidebars/utils.js:245:19)
+    at doLoadVersion (/home/rohit/work/dragonscale/prism/codeprism-docs/node_modules/@docusaurus/plugin-content-docs/lib/versions/loadVersion.js:67:23)
+    at async loadVersion (/home/rohit/work/dragonscale/prism/codeprism-docs/node_modules/@docusaurus/plugin-content-docs/lib/versions/loadVersion.js:83:16)
+    at async Promise.all (index 0)
+    at async Object.loadContent (/home/rohit/work/dragonscale/prism/codeprism-docs/node_modules/@docusaurus/plugin-content-docs/lib/index.js:152:33)
+    at async /home/rohit/work/dragonscale/prism/codeprism-docs/node_modules/@docusaurus/core/lib/server/plugins/plugins.js:39:23
+    at async Promise.all (index 1)
+    at async /home/rohit/work/dragonscale/prism/codeprism-docs/node_modules/@docusaurus/core/lib/server/plugins/plugins.js:140:25
+    at async loadSite (/home/rohit/work/dragonscale/prism/codeprism-docs/node_modules/@docusaurus/core/lib/server/site.js:144:45)
+    at async createReloadableSite (/home/rohit/work/dragonscale/prism/codeprism-docs/node_modules/@docusaurus/core/lib/commands/start/utils.js:63:16)
+[INFO] Docusaurus version: 3.8.1
+Node version: v22.16.0

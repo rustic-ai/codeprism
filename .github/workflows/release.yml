@@ -333,17 +333,23 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           ref: main
+          fetch-depth: 0
 
       - name: Configure Git
         run: |
           git config user.name "Prism AI Developer"
           git config user.email "ai-developer@users.noreply.github.com"
 
-      - name: Pull Latest Changes
-        run: git pull origin main
-
-      - name: Push Version Changes
-        run: git push origin main
+      - name: Pull Latest Changes and Push Version Changes
+        run: |
+          git pull origin main
+          # Check if there are any changes to push
+          if git diff --quiet origin/main; then
+            echo "No changes to push"
+          else
+            echo "Pushing version changes..."
+            git push origin main
+          fi
 
   # Publish to crates.io
   publish-crates:
@@ -360,36 +366,45 @@ jobs:
       - uses: Swatinem/rust-cache@v2
 
       - name: Login to Crates.io
-        run: cargo login ${{ secrets.CRATES_IO_TOKEN }}
+        run: |
+          if [ -z "${{ secrets.CRATES_IO_TOKEN }}" ]; then
+            echo "Error: CRATES_IO_TOKEN secret is not set"
+            echo "Please add your crates.io API token as a repository secret named CRATES_IO_TOKEN"
+            exit 1
+          fi
+          cargo login ${{ secrets.CRATES_IO_TOKEN }}
 
       - name: Publish Crates (in dependency order)
         run: |
           # Publish in correct dependency order
-          echo "Publishing codeprism-core..."
-          cargo publish -p codeprism-core --allow-dirty || echo codeprism-core may already be published"
-          sleep 30
+          set -e
           
+          echo "Publishing independent crates first..."
           echo "Publishing codeprism-bus..."
-          cargo publish -p codeprism-bus --allow-dirty || echo codeprism-bus may already be published"
+          cargo publish -p codeprism-bus --allow-dirty || echo "codeprism-bus may already be published"
           sleep 30
           
           echo "Publishing codeprism-storage..."
-          cargo publish -p codeprism-storage --allow-dirty || echo codeprism-storage may already be published"
+          cargo publish -p codeprism-storage --allow-dirty || echo "codeprism-storage may already be published"
           sleep 30
           
-          echo "Publishing codeprism-analysis..."
-          cargo publish -p codeprism-analysis --allow-dirty || echo codeprism-analysis may already be published"
+          echo "Publishing language parsers (no dependencies)..."
+          cargo publish -p codeprism-lang-js --allow-dirty || echo "codeprism-lang-js may already be published"
+          sleep 30
+          cargo publish -p codeprism-lang-python --allow-dirty || echo "codeprism-lang-python may already be published"
+          sleep 30
+          cargo publish -p codeprism-lang-java --allow-dirty || echo "codeprism-lang-java may already be published"
           sleep 30
           
-          echo "Publishing language parsers..."
-          cargo publish -p codeprism-lang-js --allow-dirty || echo codeprism-lang-js may already be published"
-          sleep 30
-          cargo publish -p codeprism-lang-python --allow-dirty || echo codeprism-lang-python may already be published"
-          sleep 30
-          cargo publish -p codeprism-lang-java --allow-dirty || echo codeprism-lang-java may already be published"
+          echo "Publishing codeprism-core (depends on language parsers)..."
+          cargo publish -p codeprism-core --allow-dirty || echo "codeprism-core may already be published"
           sleep 30
           
-          echo "Publishing main MCP server..."
+          echo "Publishing codeprism-analysis (depends on core)..."
+          cargo publish -p codeprism-analysis --allow-dirty || echo "codeprism-analysis may already be published"
+          sleep 30
+          
+          echo "Publishing main MCP server (depends on all)..."
           cargo publish -p codeprism-mcp --allow-dirty || echo "codeprism-mcp may already be published"
 
   # Build and push Docker images

@@ -16,7 +16,7 @@ version = "0.2.2"
 edition = "2021"
 authors = ["The Rustic Initiative"]
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/rustic-ai /codeprism"
+repository = "https://github.com/rustic-ai/codeprism"
 rust-version = "1.82"
 
 [workspace.dependencies]

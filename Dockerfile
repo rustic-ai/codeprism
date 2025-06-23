@@ -1,5 +1,5 @@
 # Multi-stage Dockerfile for CodePrism MCP Server
-# Optimized for size and security - installs from crates.io
+# Supports both source builds (CI) and crates.io installs (releases)
 
 # Build stage
 FROM rust:1.82-slim AS builder
@@ -10,10 +10,21 @@ RUN apt-get update && apt-get install -y \
     libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install the published crate directly from crates.io
-# This is much faster and more consistent than building from source
+# Conditional build: either from source (CI) or from crates.io (releases)
 ARG CRATE_VERSION
-RUN cargo install codeprism-mcp --version ${CRATE_VERSION} --locked
+COPY . /tmp/source
+
+# If CRATE_VERSION is set, install from crates.io (release builds)
+# Otherwise, build from source (CI/development builds)
+RUN if [ -n "$CRATE_VERSION" ]; then \
+        echo "Building from crates.io version: $CRATE_VERSION" && \
+        cargo install codeprism-mcp --version ${CRATE_VERSION} --locked; \
+    else \
+        echo "Building from source (CI/development)" && \
+        cd /tmp/source && \
+        cargo build --release --bin codeprism-mcp && \
+        cp target/release/codeprism-mcp /usr/local/cargo/bin/; \
+    fi
 
 # Runtime stage
 FROM debian:bookworm-slim

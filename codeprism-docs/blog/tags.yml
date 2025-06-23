@@ -17,3 +17,128 @@ hola:
   label: Hola
   permalink: /hola
   description: Hola tag description
+
+ai-development:
+  label: AI Development
+  permalink: /ai-development
+  description: Posts about AI-driven software development
+
+code-intelligence:
+  label: Code Intelligence
+  permalink: /code-intelligence
+  description: Posts about code analysis and understanding
+
+revolution:
+  label: Revolution
+  permalink: /revolution
+  description: Posts about revolutionary changes in software development
+
+future-of-coding:
+  label: Future of Coding
+  permalink: /future-of-coding
+  description: Posts about the future of software development
+
+ai:
+  label: AI
+  permalink: /ai
+  description: Posts about artificial intelligence
+
+semantic-analysis:
+  label: Semantic Analysis
+  permalink: /semantic-analysis
+  description: Posts about semantic code analysis
+
+mcp:
+  label: MCP
+  permalink: /mcp
+  description: Posts about Model Context Protocol
+
+developer-experience:
+  label: Developer Experience
+  permalink: /developer-experience
+  description: Posts about improving developer experience
+
+architecture:
+  label: Architecture
+  permalink: /architecture
+  description: Posts about software architecture
+
+patterns:
+  label: Patterns
+  permalink: /patterns
+  description: Posts about design patterns and architectural patterns
+
+code-quality:
+  label: Code Quality
+  permalink: /code-quality
+  description: Posts about code quality and best practices
+
+ai-analysis:
+  label: AI Analysis
+  permalink: /ai-analysis
+  description: Posts about AI-powered code analysis
+
+design-patterns:
+  label: Design Patterns
+  permalink: /design-patterns
+  description: Posts about software design patterns
+
+ai-integration:
+  label: AI Integration
+  permalink: /ai-integration
+  description: Posts about integrating AI into development workflows
+
+json-rpc:
+  label: JSON-RPC
+  permalink: /json-rpc
+  description: Posts about JSON-RPC protocol
+
+claude:
+  label: Claude
+  permalink: /claude
+  description: Posts about Claude AI integration
+
+cursor:
+  label: Cursor
+  permalink: /cursor
+  description: Posts about Cursor editor integration
+
+protocol-design:
+  label: Protocol Design
+  permalink: /protocol-design
+  description: Posts about designing communication protocols
+
+production-engineering:
+  label: Production Engineering
+  permalink: /production-engineering
+  description: Posts about building production-ready systems
+
+testing:
+  label: Testing
+  permalink: /testing
+  description: Posts about software testing strategies
+
+tool-design:
+  label: Tool Design
+  permalink: /tool-design
+  description: Posts about designing developer tools
+
+ast:
+  label: AST
+  permalink: /ast
+  description: Posts about Abstract Syntax Trees
+
+graph-analysis:
+  label: Graph Analysis
+  permalink: /graph-analysis
+  description: Posts about graph-based code analysis
+
+performance:
+  label: Performance
+  permalink: /performance
+  description: Posts about software performance optimization
+
+technical-deep-dive:
+  label: Technical Deep Dive
+  permalink: /technical-deep-dive
+  description: In-depth technical posts

@@ -1,3 +1,12 @@
+ai-developer:
+  name: CodePrism AI Developer
+  title: AI Software Engineer
+  url: https://github.com/rustic-ai/codeprism
+  image_url: https://github.com/rustic-ai.png
+  page: true
+  socials:
+    github: rustic-ai
+
 yangshun:
   name: Yangshun Tay
   title: Ex-Meta Staff Engineer, Co-founder GreatFrontEnd

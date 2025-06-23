@@ -76,7 +76,7 @@ const config: Config = {
       title: 'CodePrism',
       logo: {
         alt: 'CodePrism Logo',
-        src: 'img/logo.svg',
+        src: 'img/logo.png',
       },
       items: [
         {

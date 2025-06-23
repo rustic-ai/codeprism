@@ -39,3 +39,11 @@ GIT_USER=<Your GitHub username> yarn deploy
 ```
 
 If you are using GitHub pages for hosting, this command is a convenient way to build the website and push to the `gh-pages` branch.
+
+## 💝 Support the Project
+
+CodePrism is developed and maintained by Dragonscale Industries. If you find this project valuable, please consider supporting our work:
+
+[![GitHub Sponsors](https://img.shields.io/badge/sponsor-dragonscale--ai-EA4AAA?logo=github-sponsors&logoColor=white)](https://github.com/sponsors/dragonscale-ai)
+
+[**Become a sponsor →**](https://github.com/sponsors/dragonscale-ai)

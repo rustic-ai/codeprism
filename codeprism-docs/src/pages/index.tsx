@@ -37,6 +37,12 @@ function HomepageHeader() {
             to="/docs/API_Reference">
             API Reference
           </Link>
+          <Link
+            className="button button--sponsor button--lg"
+            href="https://github.com/sponsors/dragonscale-ai"
+            style={{backgroundColor: '#EA4AAA', color: 'white', border: 'none'}}>
+            ❤️ Sponsor
+          </Link>
         </div>
         <div className={styles.quickStart}>
           <p>Quick Start:</p>

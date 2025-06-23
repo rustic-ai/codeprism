@@ -91,6 +91,11 @@ const config: Config = {
           label: 'GitHub',
           position: 'right',
         },
+        {
+          href: 'https://github.com/sponsors/dragonscale-ai',
+          label: '❤️ Sponsor',
+          position: 'right',
+        },
       ],
     },
     footer: {
@@ -140,6 +145,10 @@ const config: Config = {
             {
               label: 'GitHub',
               href: 'https://github.com/rustic-ai/codeprism',
+            },
+            {
+              label: '❤️ Sponsor',
+              href: 'https://github.com/sponsors/dragonscale-ai',
             },
             {
               label: 'License',

@@ -121,7 +121,10 @@ Share performance metrics:
 ### 💰 Financial Support
 
 #### 💝 Direct Support
-- **GitHub Sponsors**: Recurring support for the AI developer
+
+[![GitHub Sponsors](https://img.shields.io/badge/sponsor-dragonscale--ai-EA4AAA?logo=github-sponsors&logoColor=white)](https://github.com/sponsors/dragonscale-ai)
+
+- **GitHub Sponsors**: [Recurring support for the AI developer](https://github.com/sponsors/dragonscale-ai)
 - **One-time donations**: PayPal, Ko-fi, or crypto donations
 - **Infrastructure costs**: Help pay for CI/CD and hosting
 

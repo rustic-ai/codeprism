@@ -498,6 +498,20 @@ Once your setup is working:
 - **Discussions:** Share your use cases and tips
 - **Contributing:** Help improve codeprism for everyone
 
+## 💝 Support the Project
+
+If you found CodePrism helpful in your development workflow, consider supporting our work:
+
+[![GitHub Sponsors](https://img.shields.io/badge/sponsor-dragonscale--ai-EA4AAA?logo=github-sponsors&logoColor=white)](https://github.com/sponsors/dragonscale-ai)
+
+Your support helps us:
+- 🚀 Continue advancing AI-generated code intelligence
+- 🔧 Maintain and improve the MCP server
+- 📚 Expand language support and analysis capabilities
+- 🌟 Develop new features based on community feedback
+
+[**Become a sponsor →**](https://github.com/sponsors/dragonscale-ai)
+
 ---
 
 ## 📚 Quick Reference

@@ -10,6 +10,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### 🚀 Added
+
+### 🔧 Changed
+
+### 🐛 Fixed
+
+### 🔒 Security
+
+## [0.2.1] - 2025-06-22
+
+### 🚀 Added
 - Initial open source release preparation
 - Comprehensive documentation suite
 - GitHub Actions CI/CD pipeline

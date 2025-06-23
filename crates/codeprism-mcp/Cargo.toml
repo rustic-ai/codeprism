@@ -1,6 +1,6 @@
 [package]
 name = "codeprism-mcp"
-version = "0.1.1"
+version = "0.2.1"
 edition = "2021"
 authors.workspace = true
 license.workspace = true

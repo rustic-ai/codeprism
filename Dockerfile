@@ -1,5 +1,5 @@
 # Multi-stage Dockerfile for CodePrism MCP Server
-# Optimized for size and security
+# Optimized for size and security - installs from crates.io
 
 # Build stage
 FROM rust:1.82-slim AS builder
@@ -10,17 +10,10 @@ RUN apt-get update && apt-get install -y \
     libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Set working directory
-WORKDIR /usr/src/codeprism
-
-# Create app directory
-RUN mkdir -p /usr/src/codeprism
-
-# Copy manifests and all source code
-COPY . .
-
-# Build dependencies (this step is cached if dependencies don't change)
-RUN cargo build --release --bin codeprism-mcp
+# Install the published crate directly from crates.io
+# This is much faster and more consistent than building from source
+ARG CRATE_VERSION
+RUN cargo install codeprism-mcp --version ${CRATE_VERSION} --locked
 
 # Runtime stage
 FROM debian:bookworm-slim
@@ -31,8 +24,8 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/* \
     && useradd -r -s /bin/false codeprism
 
-# Copy the binary from builder stage
-COPY --from=builder /usr/src/codeprism/target/release/codeprism-mcp /usr/local/bin/codeprism-mcp
+# Copy the binary from cargo install location
+COPY --from=builder /usr/local/cargo/bin/codeprism-mcp /usr/local/bin/codeprism-mcp
 
 # Create workspace directory
 RUN mkdir -p /workspace && chown codeprism:codeprism /workspace

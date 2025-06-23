@@ -457,6 +457,8 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          build-args: |
+            CRATE_VERSION=${{ needs.check-release.outputs.new_version }}
 
   # Notify community
   notify:

@@ -1,0 +1,72 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="brainGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#ec4899;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f59e0b;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="dataGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00d4ff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:1" />
+    </linearGradient>
+    <radialGradient id="pulseGradient" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#00d4ff;stop-opacity:0.8" />
+      <stop offset="100%" style="stop-color:#00d4ff;stop-opacity:0" />
+    </radialGradient>
+  </defs>
+  
+  <!-- Background Pulse -->
+  <circle cx="100" cy="100" r="80" fill="url(#pulseGradient)">
+    <animate attributeName="r" values="70;85;70" dur="3s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.3;0.1;0.3" dur="3s" repeatCount="indefinite"/>
+  </circle>
+  
+  <!-- AI Brain Structure -->
+  <path d="M60 80 Q80 60 100 80 Q120 60 140 80 Q135 100 120 110 Q100 120 80 110 Q65 100 60 80" 
+        fill="url(#brainGradient)" opacity="0.8"/>
+  
+  <!-- Neural Pathways -->
+  <path d="M70 85 Q85 75 100 85 Q115 75 130 85" stroke="url(#dataGradient)" stroke-width="2" fill="none" opacity="0.7"/>
+  <path d="M75 95 Q90 85 105 95 Q120 85 125 95" stroke="url(#dataGradient)" stroke-width="2" fill="none" opacity="0.7"/>
+  
+  <!-- Data Nodes -->
+  <circle cx="70" cy="85" r="4" fill="url(#dataGradient)">
+    <animate attributeName="opacity" values="0.5;1;0.5" dur="2s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="100" cy="75" r="5" fill="url(#dataGradient)">
+    <animate attributeName="opacity" values="1;0.5;1" dur="2s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="130" cy="85" r="4" fill="url(#dataGradient)">
+    <animate attributeName="opacity" values="0.5;1;0.5" dur="2s" repeatCount="indefinite"/>
+  </circle>
+  
+  <!-- Analysis Rays -->
+  <g opacity="0.6">
+    <line x1="100" y1="30" x2="100" y2="50" stroke="url(#brainGradient)" stroke-width="2"/>
+    <line x1="140" y1="40" x2="130" y2="55" stroke="url(#brainGradient)" stroke-width="2"/>
+    <line x1="170" y1="100" x2="150" y2="100" stroke="url(#brainGradient)" stroke-width="2"/>
+    <line x1="140" y1="160" x2="130" y2="145" stroke="url(#brainGradient)" stroke-width="2"/>
+    <line x1="60" y1="160" x2="70" y2="145" stroke="url(#brainGradient)" stroke-width="2"/>
+    <line x1="30" y1="100" x2="50" y2="100" stroke="url(#brainGradient)" stroke-width="2"/>
+    <line x1="60" y1="40" x2="70" y2="55" stroke="url(#brainGradient)" stroke-width="2"/>
+  </g>
+  
+  <!-- Insight Sparkles -->
+  <g opacity="0.8">
+    <path d="M45 65 L47 67 L45 69 L43 67 Z" fill="url(#dataGradient)">
+      <animateTransform attributeName="transform" type="rotate" values="0 45 67;360 45 67" dur="4s" repeatCount="indefinite"/>
+    </path>
+    <path d="M155 125 L157 127 L155 129 L153 127 Z" fill="url(#dataGradient)">
+      <animateTransform attributeName="transform" type="rotate" values="0 155 127;360 155 127" dur="3s" repeatCount="indefinite"/>
+    </path>
+    <path d="M120 45 L122 47 L120 49 L118 47 Z" fill="url(#brainGradient)">
+      <animateTransform attributeName="transform" type="rotate" values="0 120 47;360 120 47" dur="5s" repeatCount="indefinite"/>
+    </path>
+  </g>
+  
+  <!-- Data Flow Lines -->
+  <path d="M40 140 Q60 130 80 140 Q100 150 120 140 Q140 130 160 140" 
+        stroke="url(#dataGradient)" stroke-width="1" fill="none" opacity="0.5" stroke-dasharray="5,5">
+    <animate attributeName="stroke-dashoffset" values="0;10" dur="2s" repeatCount="indefinite"/>
+  </path>
+</svg> 

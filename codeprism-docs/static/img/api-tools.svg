@@ -1,0 +1,108 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="apiGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#1e40af;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e3a8a;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="toolsGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="dataGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00d4ff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0ea5e9;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background API Network -->
+  <circle cx="100" cy="100" r="80" fill="none" stroke="url(#apiGradient)" stroke-width="1" opacity="0.3" stroke-dasharray="5,5">
+    <animate attributeName="stroke-dashoffset" values="0;10" dur="3s" repeatCount="indefinite"/>
+  </circle>
+  
+  <!-- Central API Hub -->
+  <rect x="80" y="80" width="40" height="40" fill="url(#apiGradient)" rx="8" opacity="0.9"/>
+  <text x="100" y="105" text-anchor="middle" fill="white" font-family="monospace" font-size="12" font-weight="bold">API</text>
+  
+  <!-- REST Endpoints -->
+  <g opacity="0.8">
+    <!-- GET -->
+    <rect x="40" y="40" width="30" height="20" fill="url(#toolsGradient)" rx="4"/>
+    <text x="55" y="53" text-anchor="middle" fill="white" font-family="monospace" font-size="8" font-weight="bold">GET</text>
+    
+    <!-- POST -->
+    <rect x="130" y="40" width="30" height="20" fill="url(#dataGradient)" rx="4"/>
+    <text x="145" y="53" text-anchor="middle" fill="white" font-family="monospace" font-size="8" font-weight="bold">POST</text>
+    
+    <!-- PUT -->
+    <rect x="40" y="140" width="30" height="20" fill="#f59e0b" rx="4"/>
+    <text x="55" y="153" text-anchor="middle" fill="white" font-family="monospace" font-size="8" font-weight="bold">PUT</text>
+    
+    <!-- DELETE -->
+    <rect x="130" y="140" width="30" height="20" fill="#dc2626" rx="4"/>
+    <text x="145" y="153" text-anchor="middle" fill="white" font-family="monospace" font-size="7" font-weight="bold">DEL</text>
+  </g>
+  
+  <!-- API Connection Lines -->
+  <g opacity="0.6">
+    <line x1="70" y1="50" x2="85" y2="85" stroke="url(#toolsGradient)" stroke-width="2"/>
+    <line x1="130" y1="50" x2="115" y2="85" stroke="url(#dataGradient)" stroke-width="2"/>
+    <line x1="70" y1="150" x2="85" y2="115" stroke="#f59e0b" stroke-width="2"/>
+    <line x1="130" y1="150" x2="115" y2="115" stroke="#dc2626" stroke-width="2"/>
+  </g>
+  
+  <!-- CLI Tools -->
+  <g transform="translate(20, 90)" opacity="0.7">
+    <rect width="25" height="20" fill="url(#apiGradient)" rx="3"/>
+    <rect x="2" y="2" width="21" height="3" fill="white" opacity="0.8" rx="1"/>
+    <rect x="2" y="7" width="15" height="2" fill="white" opacity="0.6" rx="1"/>
+    <rect x="2" y="11" width="18" height="2" fill="white" opacity="0.6" rx="1"/>
+    <rect x="2" y="15" width="12" height="2" fill="white" opacity="0.6" rx="1"/>
+    <circle cx="22" cy="3" r="1" fill="#10b981"/>
+  </g>
+  
+  <!-- SDK/Library Icons -->
+  <g transform="translate(155, 90)" opacity="0.7">
+    <rect width="25" height="20" fill="url(#toolsGradient)" rx="3"/>
+    <path d="M5 5 L10 8 L5 11 M12 5 L17 8 L12 11" stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <circle cx="22" cy="3" r="1" fill="#00d4ff"/>
+  </g>
+  
+  <!-- Data Flow Arrows -->
+  <g opacity="0.5">
+    <path d="M100 25 L100 35 M95 30 L100 25 L105 30" stroke="url(#apiGradient)" stroke-width="2" fill="none" stroke-linecap="round">
+      <animateTransform attributeName="transform" type="translate" values="0,0;0,10;0,0" dur="2s" repeatCount="indefinite"/>
+    </path>
+    <path d="M175 100 L165 100 M170 95 L175 100 L170 105" stroke="url(#toolsGradient)" stroke-width="2" fill="none" stroke-linecap="round">
+      <animateTransform attributeName="transform" type="translate" values="0,0;-10,0;0,0" dur="2s" repeatCount="indefinite" begin="0.5s"/>
+    </path>
+    <path d="M100 175 L100 165 M95 170 L100 175 L105 170" stroke="url(#dataGradient)" stroke-width="2" fill="none" stroke-linecap="round">
+      <animateTransform attributeName="transform" type="translate" values="0,0;0,-10;0,0" dur="2s" repeatCount="indefinite" begin="1s"/>
+    </path>
+    <path d="M25 100 L35 100 M30 95 L25 100 L30 105" stroke="url(#apiGradient)" stroke-width="2" fill="none" stroke-linecap="round">
+      <animateTransform attributeName="transform" type="translate" values="0,0;10,0;0,0" dur="2s" repeatCount="indefinite" begin="1.5s"/>
+    </path>
+  </g>
+  
+  <!-- JSON Data Symbols -->
+  <g opacity="0.4" font-family="monospace" font-size="10" fill="url(#dataGradient)">
+    <text x="60" y="25">{"}</text>
+    <text x="140" y="25">[...]</text>
+    <text x="25" y="180">{"}</text>
+    <text x="165" y="180">[...]</text>
+  </g>
+  
+  <!-- Integration Points -->
+  <circle cx="100" cy="50" r="4" fill="url(#toolsGradient)">
+    <animate attributeName="opacity" values="0.5;1;0.5" dur="2s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="150" cy="100" r="4" fill="url(#dataGradient)">
+    <animate attributeName="opacity" values="0.5;1;0.5" dur="2s" repeatCount="indefinite" begin="0.5s"/>
+  </circle>
+  <circle cx="100" cy="150" r="4" fill="url(#apiGradient)">
+    <animate attributeName="opacity" values="0.5;1;0.5" dur="2s" repeatCount="indefinite" begin="1s"/>
+  </circle>
+  <circle cx="50" cy="100" r="4" fill="url(#toolsGradient)">
+    <animate attributeName="opacity" values="0.5;1;0.5" dur="2s" repeatCount="indefinite" begin="1.5s"/>
+  </circle>
+</svg> 

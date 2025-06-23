@@ -11,32 +11,62 @@ type FeatureItem = {
 
 const FeatureList: FeatureItem[] = [
   {
-    title: 'Easy to Use',
-    Svg: require('@site/static/img/undraw_docusaurus_mountain.svg').default,
+    title: 'Advanced Code Parsing',
+    Svg: require('@site/static/img/ai-code-parsing.svg').default,
     description: (
       <>
-        Docusaurus was designed from the ground up to be easily installed and
-        used to get your website up and running quickly.
+        Parse and analyze code across multiple languages including Rust, Python, JavaScript, 
+        and TypeScript. Extract ASTs, symbols, and dependencies with high precision.
       </>
     ),
   },
   {
-    title: 'Focus on What Matters',
-    Svg: require('@site/static/img/undraw_docusaurus_tree.svg').default,
+    title: 'AI-Powered Analysis',
+    Svg: require('@site/static/img/ai-analysis.svg').default,
     description: (
       <>
-        Docusaurus lets you focus on your docs, and we&apos;ll do the chores. Go
-        ahead and move your docs into the <code>docs</code> directory.
+        Leverage artificial intelligence for semantic code search, complexity analysis, 
+        and intelligent insights. Integrate with AI assistants via Model Context Protocol (MCP).
       </>
     ),
   },
   {
-    title: 'Powered by React',
-    Svg: require('@site/static/img/undraw_docusaurus_react.svg').default,
+    title: 'Performance & Scalability',
+    Svg: require('@site/static/img/performance-scalability.svg').default,
     description: (
       <>
-        Extend or customize your website layout by reusing React. Docusaurus can
-        be extended while reusing the same header and footer.
+        Built in Rust for maximum performance and memory safety. Handle large codebases 
+        efficiently with incremental analysis and smart caching strategies.
+      </>
+    ),
+  },
+  {
+    title: 'Rich API & Tools',
+    Svg: require('@site/static/img/api-tools.svg').default,
+    description: (
+      <>
+        Comprehensive REST API, command-line tools, and extensible architecture. 
+        Easy integration with editors, CI/CD pipelines, and development workflows.
+      </>
+    ),
+  },
+  {
+    title: 'Code Quality Insights',
+    Svg: require('@site/static/img/code-quality.svg').default,
+    description: (
+      <>
+        Identify code smells, security issues, and performance bottlenecks. 
+        Get actionable recommendations to improve code quality and maintainability.
+      </>
+    ),
+  },
+  {
+    title: 'Developer Experience',
+    Svg: require('@site/static/img/developer-experience.svg').default,
+    description: (
+      <>
+        Simple setup, intuitive APIs, and comprehensive documentation. 
+        Focus on your code while CodePrism handles the complex analysis tasks.
       </>
     ),
   },
@@ -60,6 +90,10 @@ export default function HomepageFeatures(): ReactNode {
   return (
     <section className={styles.features}>
       <div className="container">
+        <div className="text--center margin-bottom--lg">
+          <Heading as="h2">Why Choose CodePrism?</Heading>
+          <p>Discover the powerful features that make CodePrism the ideal choice for code analysis</p>
+        </div>
         <div className="row">
           {FeatureList.map((props, idx) => (
             <Feature key={idx} {...props} />

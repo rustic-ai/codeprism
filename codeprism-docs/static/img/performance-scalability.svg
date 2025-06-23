@@ -1,0 +1,109 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="rustGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f59e0b;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#dc2626;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7c2d12;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="speedGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00d4ff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e3a8a;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="scaleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background Performance Ring -->
+  <circle cx="100" cy="100" r="85" fill="none" stroke="url(#speedGradient)" stroke-width="2" opacity="0.3"/>
+  <circle cx="100" cy="100" r="70" fill="none" stroke="url(#scaleGradient)" stroke-width="2" opacity="0.3"/>
+  
+  <!-- Rust Gear (Performance Core) -->
+  <g transform="translate(100,100)">
+    <path d="M-25 0 L-20 -8 L-12 -8 L-8 -15 L8 -15 L12 -8 L20 -8 L25 0 L20 8 L12 8 L8 15 L-8 15 L-12 8 L-20 8 Z" 
+          fill="url(#rustGradient)" opacity="0.9">
+      <animateTransform attributeName="transform" type="rotate" values="0;360" dur="10s" repeatCount="indefinite"/>
+    </path>
+    <circle r="12" fill="url(#rustGradient)"/>
+    <circle r="6" fill="#ffffff" opacity="0.9"/>
+  </g>
+  
+  <!-- Speed Indicators -->
+  <g opacity="0.8">
+    <!-- Speed Lines -->
+    <path d="M30 90 L60 95" stroke="url(#speedGradient)" stroke-width="3" stroke-linecap="round">
+      <animate attributeName="opacity" values="0;1;0" dur="1.5s" repeatCount="indefinite" begin="0s"/>
+    </path>
+    <path d="M25 100 L65 100" stroke="url(#speedGradient)" stroke-width="4" stroke-linecap="round">
+      <animate attributeName="opacity" values="0;1;0" dur="1.5s" repeatCount="indefinite" begin="0.3s"/>
+    </path>
+    <path d="M30 110 L60 105" stroke="url(#speedGradient)" stroke-width="3" stroke-linecap="round">
+      <animate attributeName="opacity" values="0;1;0" dur="1.5s" repeatCount="indefinite" begin="0.6s"/>
+    </path>
+    
+    <!-- Right Side Speed Lines -->
+    <path d="M140 95 L170 90" stroke="url(#speedGradient)" stroke-width="3" stroke-linecap="round">
+      <animate attributeName="opacity" values="0;1;0" dur="1.5s" repeatCount="indefinite" begin="0.2s"/>
+    </path>
+    <path d="M135 100 L175 100" stroke="url(#speedGradient)" stroke-width="4" stroke-linecap="round">
+      <animate attributeName="opacity" values="0;1;0" dur="1.5s" repeatCount="indefinite" begin="0.5s"/>
+    </path>
+    <path d="M140 105 L170 110" stroke="url(#speedGradient)" stroke-width="3" stroke-linecap="round">
+      <animate attributeName="opacity" values="0;1;0" dur="1.5s" repeatCount="indefinite" begin="0.8s"/>
+    </path>
+  </g>
+  
+  <!-- Scaling Bars -->
+  <g opacity="0.7">
+    <rect x="60" y="140" width="8" height="20" fill="url(#scaleGradient)" rx="4">
+      <animate attributeName="height" values="15;25;15" dur="2s" repeatCount="indefinite"/>
+      <animate attributeName="y" values="145;135;145" dur="2s" repeatCount="indefinite"/>
+    </rect>
+    <rect x="72" y="135" width="8" height="30" fill="url(#scaleGradient)" rx="4">
+      <animate attributeName="height" values="25;35;25" dur="2s" repeatCount="indefinite" begin="0.3s"/>
+      <animate attributeName="y" values="140;130;140" dur="2s" repeatCount="indefinite" begin="0.3s"/>
+    </rect>
+    <rect x="84" y="130" width="8" height="40" fill="url(#scaleGradient)" rx="4">
+      <animate attributeName="height" values="35;45;35" dur="2s" repeatCount="indefinite" begin="0.6s"/>
+      <animate attributeName="y" values="135;125;135" dur="2s" repeatCount="indefinite" begin="0.6s"/>
+    </rect>
+    <rect x="96" y="125" width="8" height="50" fill="url(#scaleGradient)" rx="4">
+      <animate attributeName="height" values="45;55;45" dur="2s" repeatCount="indefinite" begin="0.9s"/>
+      <animate attributeName="y" values="130;120;130" dur="2s" repeatCount="indefinite" begin="0.9s"/>
+    </rect>
+    <rect x="108" y="120" width="8" height="60" fill="url(#scaleGradient)" rx="4">
+      <animate attributeName="height" values="55;65;55" dur="2s" repeatCount="indefinite" begin="1.2s"/>
+      <animate attributeName="y" values="125;115;125" dur="2s" repeatCount="indefinite" begin="1.2s"/>
+    </rect>
+    <rect x="120" y="115" width="8" height="70" fill="url(#scaleGradient)" rx="4">
+      <animate attributeName="height" values="65;75;65" dur="2s" repeatCount="indefinite" begin="1.5s"/>
+      <animate attributeName="y" values="120;110;120" dur="2s" repeatCount="indefinite" begin="1.5s"/>
+    </rect>
+    <rect x="132" y="110" width="8" height="80" fill="url(#scaleGradient)" rx="4">
+      <animate attributeName="height" values="75;85;75" dur="2s" repeatCount="indefinite" begin="1.8s"/>
+      <animate attributeName="y" values="115;105;115" dur="2s" repeatCount="indefinite" begin="1.8s"/>
+    </rect>
+  </g>
+  
+  <!-- Memory Safety Shield -->
+  <path d="M100 40 L110 50 L110 65 L100 75 L90 65 L90 50 Z" 
+        fill="url(#rustGradient)" opacity="0.8" stroke="url(#speedGradient)" stroke-width="2"/>
+  <path d="M95 55 L98 58 L105 51" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/>
+  
+  <!-- Performance Metrics -->
+  <g opacity="0.6">
+    <circle cx="50" cy="50" r="3" fill="url(#speedGradient)">
+      <animate attributeName="r" values="2;5;2" dur="3s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="150" cy="50" r="3" fill="url(#scaleGradient)">
+      <animate attributeName="r" values="2;5;2" dur="3s" repeatCount="indefinite" begin="1s"/>
+    </circle>
+    <circle cx="50" cy="150" r="3" fill="url(#rustGradient)">
+      <animate attributeName="r" values="2;5;2" dur="3s" repeatCount="indefinite" begin="2s"/>
+    </circle>
+    <circle cx="150" cy="150" r="3" fill="url(#speedGradient)">
+      <animate attributeName="r" values="2;5;2" dur="3s" repeatCount="indefinite" begin="1.5s"/>
+    </circle>
+  </g>
+</svg> 

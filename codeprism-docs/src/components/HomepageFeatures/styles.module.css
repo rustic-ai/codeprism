@@ -1,11 +1,42 @@
 .features {
   display: flex;
   align-items: center;
-  padding: 2rem 0;
+  padding: 4rem 0;
   width: 100%;
 }
 
 .featureSvg {
-  height: 200px;
-  width: 200px;
+  height: 120px;
+  width: 120px;
+  margin-bottom: 1rem;
+}
+
+/* Ensure features are displayed in a responsive grid */
+.features .row {
+  margin-bottom: 2rem;
+}
+
+.features .col {
+  margin-bottom: 2rem;
+}
+
+.features h3 {
+  color: var(--ifm-color-primary);
+  margin-bottom: 1rem;
+}
+
+.features p {
+  color: var(--ifm-color-emphasis-700);
+  line-height: 1.6;
+}
+
+@media screen and (max-width: 996px) {
+  .features {
+    padding: 2rem 0;
+  }
+  
+  .featureSvg {
+    height: 100px;
+    width: 100px;
+  }
 }

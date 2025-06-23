@@ -28,3 +28,241 @@
   --ifm-color-primary-lightest: #4fddbf;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
 }
+
+/**
+ * CodePrism - Modern AI-Inspired Theme
+ * Material Design principles with AI-focused color palette
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* AI-Inspired Color Palette */
+:root {
+  /* Primary Colors - Deep AI Blue */
+  --ifm-color-primary: #1e3a8a;
+  --ifm-color-primary-dark: #1e40af;
+  --ifm-color-primary-darker: #1d4ed8;
+  --ifm-color-primary-darkest: #2563eb;
+  --ifm-color-primary-light: #3b82f6;
+  --ifm-color-primary-lighter: #60a5fa;
+  --ifm-color-primary-lightest: #93c5fd;
+
+  /* AI Accent Colors */
+  --ai-electric-blue: #00d4ff;
+  --ai-neural-purple: #8b5cf6;
+  --ai-quantum-green: #10b981;
+  --ai-cyber-pink: #ec4899;
+  --ai-matrix-orange: #f59e0b;
+
+  /* Material Design Elevation */
+  --md-elevation-1: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+  --md-elevation-2: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+  --md-elevation-3: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
+  --md-elevation-4: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);
+
+  /* Typography */
+  --ifm-font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --ifm-font-family-monospace: 'JetBrains Mono', 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  --ifm-font-size-base: 16px;
+  --ifm-line-height-base: 1.6;
+
+  /* Modern Spacing */
+  --ifm-spacing-horizontal: 1.5rem;
+  --ifm-spacing-vertical: 1.5rem;
+
+  /* Border Radius */
+  --ifm-border-radius: 12px;
+  --ifm-button-border-radius: 8px;
+  --ifm-card-border-radius: 16px;
+
+  /* Code Styling */
+  --ifm-code-font-size: 0.875rem;
+  --ifm-code-background: rgba(30, 58, 138, 0.1);
+  --ifm-code-border-radius: 6px;
+  --docusaurus-highlighted-code-line-bg: rgba(59, 130, 246, 0.1);
+
+  /* Gradients */
+  --ai-gradient-primary: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #8b5cf6 100%);
+  --ai-gradient-secondary: linear-gradient(135deg, #10b981 0%, #00d4ff 100%);
+  --ai-gradient-accent: linear-gradient(135deg, #ec4899 0%, #f59e0b 100%);
+
+  /* Background Colors */
+  --ifm-background-color: #ffffff;
+  --ifm-background-surface-color: #f8fafc;
+  --ifm-color-emphasis-100: #f1f5f9;
+  --ifm-color-emphasis-200: #e2e8f0;
+  --ifm-color-emphasis-300: #cbd5e1;
+  --ifm-color-emphasis-700: #374151;
+  --ifm-color-emphasis-800: #1f2937;
+  --ifm-color-emphasis-900: #111827;
+}
+
+/* Dark Theme - AI Night Mode */
+[data-theme='dark'] {
+  /* Primary Colors - Brighter for dark mode */
+  --ifm-color-primary: #60a5fa;
+  --ifm-color-primary-dark: #3b82f6;
+  --ifm-color-primary-darker: #2563eb;
+  --ifm-color-primary-darkest: #1d4ed8;
+  --ifm-color-primary-light: #93c5fd;
+  --ifm-color-primary-lighter: #bfdbfe;
+  --ifm-color-primary-lightest: #dbeafe;
+
+  /* Dark Backgrounds */
+  --ifm-background-color: #0f172a;
+  --ifm-background-surface-color: #1e293b;
+  --ifm-color-emphasis-100: #334155;
+  --ifm-color-emphasis-200: #475569;
+  --ifm-color-emphasis-300: #64748b;
+  --ifm-color-emphasis-700: #cbd5e1;
+  --ifm-color-emphasis-800: #e2e8f0;
+  --ifm-color-emphasis-900: #f1f5f9;
+
+  /* Code in dark mode */
+  --ifm-code-background: rgba(96, 165, 250, 0.15);
+  --docusaurus-highlighted-code-line-bg: rgba(96, 165, 250, 0.2);
+
+  /* Dark gradients */
+  --ai-gradient-primary: linear-gradient(135deg, #1e293b 0%, #3b82f6 50%, #8b5cf6 100%);
+}
+
+/* Material Design Components */
+.button {
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0.02em;
+  box-shadow: var(--md-elevation-2);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: none;
+}
+
+.button:hover {
+  box-shadow: var(--md-elevation-3);
+  transform: translateY(-1px);
+}
+
+.button--primary {
+  background: var(--ai-gradient-primary);
+  color: white;
+}
+
+.button--secondary {
+  background: var(--ai-gradient-secondary);
+  color: white;
+}
+
+/* Cards with Material Design */
+.card {
+  box-shadow: var(--md-elevation-1);
+  border-radius: var(--ifm-card-border-radius);
+  border: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card:hover {
+  box-shadow: var(--md-elevation-3);
+  transform: translateY(-2px);
+}
+
+/* Hero Section Enhancements */
+.hero {
+  background: var(--ai-gradient-primary);
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  animation: float 20s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(180deg); }
+}
+
+.hero__title {
+  font-weight: 700;
+  font-size: 3.5rem;
+  margin-bottom: 1rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.hero__subtitle {
+  font-size: 1.5rem;
+  font-weight: 400;
+  opacity: 0.95;
+}
+
+/* Navbar Enhancements */
+.navbar {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--md-elevation-2);
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
+}
+
+[data-theme='dark'] .navbar {
+  background: rgba(15, 23, 42, 0.95);
+  border-bottom: 1px solid var(--ifm-color-emphasis-300);
+}
+
+/* Footer Enhancements */
+.footer {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  color: var(--ifm-color-emphasis-700);
+}
+
+/* Code Block Enhancements */
+.prism-code {
+  border-radius: var(--ifm-border-radius);
+  box-shadow: var(--md-elevation-1);
+}
+
+/* Smooth Scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom Animations */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-in {
+  animation: slideInUp 0.6s ease-out;
+}
+
+/* AI-themed accents */
+.ai-accent {
+  background: var(--ai-gradient-accent);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 600;
+}
+
+/* Responsive Design Improvements */
+@media (max-width: 768px) {
+  .hero__title {
+    font-size: 2.5rem;
+  }
+  
+  .hero__subtitle {
+    font-size: 1.25rem;
+  }
+}

@@ -1,0 +1,117 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="qualityGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#059669;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#047857;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="securityGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#dc2626;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#b91c1c;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#991b1b;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="insightGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e40af;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background Quality Ring -->
+  <circle cx="100" cy="100" r="85" fill="none" stroke="url(#qualityGradient)" stroke-width="3" opacity="0.3"/>
+  
+  <!-- Central Quality Badge -->
+  <circle cx="100" cy="100" r="35" fill="url(#qualityGradient)" opacity="0.9"/>
+  <path d="M85 100 L95 110 L115 85" stroke="white" stroke-width="4" fill="none" stroke-linecap="round"/>
+  
+  <!-- Security Shield -->
+  <g transform="translate(50, 50)">
+    <path d="M20 10 L30 15 L30 30 L20 40 L10 30 L10 15 Z" 
+          fill="url(#securityGradient)" opacity="0.8"/>
+    <path d="M15 22 L18 25 L25 18" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <circle cx="8" cy="8" r="2" fill="url(#securityGradient)">
+      <animate attributeName="opacity" values="0.5;1;0.5" dur="2s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+  
+  <!-- Performance Metrics -->
+  <g transform="translate(130, 50)" opacity="0.8">
+    <rect x="0" y="15" width="4" height="10" fill="url(#qualityGradient)" rx="2"/>
+    <rect x="6" y="10" width="4" height="15" fill="url(#qualityGradient)" rx="2"/>
+    <rect x="12" y="5" width="4" height="20" fill="url(#qualityGradient)" rx="2"/>
+    <rect x="18" y="8" width="4" height="17" fill="url(#qualityGradient)" rx="2"/>
+    <rect x="24" y="3" width="4" height="22" fill="url(#qualityGradient)" rx="2"/>
+    <circle cx="35" cy="5" r="2" fill="url(#insightGradient)">
+      <animate attributeName="opacity" values="0.5;1;0.5" dur="2s" repeatCount="indefinite" begin="0.5s"/>
+    </circle>
+  </g>
+  
+  <!-- Code Smell Detection -->
+  <g transform="translate(50, 130)" opacity="0.7">
+    <circle cx="15" cy="15" r="12" fill="none" stroke="url(#securityGradient)" stroke-width="2" stroke-dasharray="3,3">
+      <animate attributeName="stroke-dashoffset" values="0;6" dur="2s" repeatCount="indefinite"/>
+    </circle>
+    <path d="M10 10 L20 20 M20 10 L10 20" stroke="url(#securityGradient)" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="35" cy="5" r="2" fill="url(#securityGradient)">
+      <animate attributeName="opacity" values="0.5;1;0.5" dur="2s" repeatCount="indefinite" begin="1s"/>
+    </circle>
+  </g>
+  
+  <!-- Complexity Analysis -->
+  <g transform="translate(130, 130)" opacity="0.8">
+    <circle cx="15" cy="15" r="8" fill="none" stroke="url(#insightGradient)" stroke-width="2"/>
+    <circle cx="15" cy="15" r="4" fill="none" stroke="url(#insightGradient)" stroke-width="2"/>
+    <circle cx="15" cy="15" r="1" fill="url(#insightGradient)"/>
+    <path d="M15 7 L15 2 M18 10 L23 8 M18 20 L23 22 M12 20 L7 22 M12 10 L7 8" 
+          stroke="url(#insightGradient)" stroke-width="1" opacity="0.6"/>
+    <circle cx="35" cy="5" r="2" fill="url(#qualityGradient)">
+      <animate attributeName="opacity" values="0.5;1;0.5" dur="2s" repeatCount="indefinite" begin="1.5s"/>
+    </circle>
+  </g>
+  
+  <!-- Quality Score Arc -->
+  <g opacity="0.6">
+    <path d="M70 40 A 50 50 0 0 1 130 40" 
+          fill="none" stroke="url(#qualityGradient)" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="130" cy="40" r="3" fill="url(#qualityGradient)"/>
+    <text x="100" y="25" text-anchor="middle" fill="url(#qualityGradient)" font-family="sans-serif" font-size="12" font-weight="bold">95%</text>
+  </g>
+  
+  <!-- Maintainability Index -->
+  <g transform="translate(30, 80)" opacity="0.7">
+    <rect x="0" y="0" width="20" height="40" fill="none" stroke="url(#insightGradient)" stroke-width="2" rx="4"/>
+    <rect x="2" y="32" width="16" height="6" fill="url(#qualityGradient)" rx="2"/>
+    <rect x="2" y="24" width="16" height="6" fill="url(#qualityGradient)" rx="2"/>
+    <rect x="2" y="16" width="16" height="6" fill="url(#qualityGradient)" rx="2"/>
+    <rect x="2" y="8" width="16" height="6" fill="url(#insightGradient)" rx="2" opacity="0.5"/>
+    <rect x="2" y="2" width="16" height="4" fill="url(#insightGradient)" rx="2" opacity="0.3"/>
+  </g>
+  
+  <!-- Technical Debt Indicator -->
+  <g transform="translate(150, 80)" opacity="0.7">
+    <circle cx="10" cy="20" r="15" fill="none" stroke="url(#securityGradient)" stroke-width="3" stroke-dasharray="20,10">
+      <animate attributeName="stroke-dashoffset" values="0;30" dur="3s" repeatCount="indefinite"/>
+    </circle>
+    <text x="10" y="25" text-anchor="middle" fill="url(#securityGradient)" font-family="sans-serif" font-size="8" font-weight="bold">LOW</text>
+  </g>
+  
+  <!-- Insight Connections -->
+  <g opacity="0.4">
+    <line x1="65" y1="65" x2="85" y2="85" stroke="url(#qualityGradient)" stroke-width="1" stroke-dasharray="2,2"/>
+    <line x1="135" y1="65" x2="115" y2="85" stroke="url(#insightGradient)" stroke-width="1" stroke-dasharray="2,2"/>
+    <line x1="65" y1="135" x2="85" y2="115" stroke="url(#securityGradient)" stroke-width="1" stroke-dasharray="2,2"/>
+    <line x1="135" y1="135" x2="115" y2="115" stroke="url(#insightGradient)" stroke-width="1" stroke-dasharray="2,2"/>
+  </g>
+  
+  <!-- Recommendation Sparkles -->
+  <g opacity="0.6">
+    <path d="M170 30 L172 32 L170 34 L168 32 Z" fill="url(#qualityGradient)">
+      <animateTransform attributeName="transform" type="rotate" values="0 170 32;360 170 32" dur="4s" repeatCount="indefinite"/>
+    </path>
+    <path d="M30 170 L32 172 L30 174 L28 172 Z" fill="url(#insightGradient)">
+      <animateTransform attributeName="transform" type="rotate" values="0 30 172;360 30 172" dur="3s" repeatCount="indefinite"/>
+    </path>
+    <path d="M170 170 L172 172 L170 174 L168 172 Z" fill="url(#securityGradient)">
+      <animateTransform attributeName="transform" type="rotate" values="0 170 172;360 170 172" dur="5s" repeatCount="indefinite"/>
+    </path>
+  </g>
+</svg> 

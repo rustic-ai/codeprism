@@ -14,18 +14,71 @@ function HomepageHeader() {
     <header className={clsx('hero hero--primary', styles.heroBanner)}>
       <div className="container">
         <Heading as="h1" className="hero__title">
-          Welcome to {siteConfig.title}
+          {siteConfig.title}
         </Heading>
         <p className="hero__subtitle">{siteConfig.tagline}</p>
+        <p className={styles.heroDescription}>
+          A powerful Rust-based code analysis tool that helps developers understand, navigate, 
+          and optimize their codebases using advanced parsing and AI-driven insights.
+        </p>
         <div className={styles.buttons}>
           <Link
-            className="button button--secondary button--lg"
-            to="/docs/intro">
-            Explore the Documentation
+            className="button button--primary button--lg"
+            to="/docs/GETTING_STARTED">
+            Get Started
           </Link>
+          <Link
+            className="button button--secondary button--lg"
+            to="/docs/Architecture">
+            Learn Architecture
+          </Link>
+          <Link
+            className="button button--outline button--lg"
+            to="/docs/API_Reference">
+            API Reference
+          </Link>
+        </div>
+        <div className={styles.quickStart}>
+          <p>Quick Start:</p>
+          <code>cargo install codeprism</code>
         </div>
       </div>
     </header>
+  );
+}
+
+function HomepageStats() {
+  return (
+    <section className={styles.stats}>
+      <div className="container">
+        <div className="row">
+          <div className="col col--3">
+            <div className={styles.stat}>
+              <h3>Multi-Language</h3>
+              <p>Support for Rust, Python, JavaScript, TypeScript, and more</p>
+            </div>
+          </div>
+          <div className="col col--3">
+            <div className={styles.stat}>
+              <h3>AI-Powered</h3>
+              <p>Intelligent code analysis and semantic search capabilities</p>
+            </div>
+          </div>
+          <div className="col col--3">
+            <div className={styles.stat}>
+              <h3>Fast & Efficient</h3>
+              <p>Built in Rust for maximum performance and reliability</p>
+            </div>
+          </div>
+          <div className="col col--3">
+            <div className={styles.stat}>
+              <h3>MCP Compatible</h3>
+              <p>Model Context Protocol integration for AI assistants</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -33,11 +86,12 @@ export default function Home(): ReactNode {
   const {siteConfig} = useDocusaurusContext();
   return (
     <Layout
-      title={`Welcome to ${siteConfig.title}`}
-      description="Understand and Analyze Your Codebase with AI">
+      title={`${siteConfig.title} - Code Analysis Tool`}
+      description="Understand and Analyze Your Codebase with AI. A powerful Rust-based code analysis tool with multi-language support and intelligent insights.">
       <HomepageHeader />
       <main>
-        {/* <HomepageFeatures /> */}
+        <HomepageStats />
+        <HomepageFeatures />
       </main>
     </Layout>
   );

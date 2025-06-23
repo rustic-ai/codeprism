@@ -1,0 +1,150 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="uiGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#ec4899;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f59e0b;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="docGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e40af;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="easeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background Ease Circle -->
+  <circle cx="100" cy="100" r="80" fill="url(#easeGradient)" opacity="0.1"/>
+  
+  <!-- Central Interface -->
+  <rect x="60" y="60" width="80" height="80" fill="url(#uiGradient)" rx="12" opacity="0.9"/>
+  
+  <!-- Window Controls -->
+  <g opacity="0.8">
+    <circle cx="75" cy="75" r="3" fill="#ff5f56"/>
+    <circle cx="85" cy="75" r="3" fill="#ffbd2e"/>
+    <circle cx="95" cy="75" r="3" fill="#27ca3f"/>
+  </g>
+  
+  <!-- Code Editor Interface -->
+  <g opacity="0.7">
+    <rect x="70" y="90" width="60" height="3" fill="white" opacity="0.8" rx="1"/>
+    <rect x="70" y="97" width="45" height="3" fill="white" opacity="0.6" rx="1"/>
+    <rect x="70" y="104" width="55" height="3" fill="white" opacity="0.6" rx="1"/>
+    <rect x="70" y="111" width="40" height="3" fill="white" opacity="0.6" rx="1"/>
+    <rect x="70" y="118" width="50" height="3" fill="white" opacity="0.6" rx="1"/>
+    <rect x="70" y="125" width="35" height="3" fill="white" opacity="0.6" rx="1"/>
+  </g>
+  
+  <!-- Documentation Book -->
+  <g transform="translate(30, 40)" opacity="0.8">
+    <rect x="0" y="0" width="25" height="30" fill="url(#docGradient)" rx="3"/>
+    <rect x="3" y="3" width="19" height="2" fill="white" opacity="0.8" rx="1"/>
+    <rect x="3" y="7" width="15" height="2" fill="white" opacity="0.6" rx="1"/>
+    <rect x="3" y="11" width="17" height="2" fill="white" opacity="0.6" rx="1"/>
+    <rect x="3" y="15" width="12" height="2" fill="white" opacity="0.6" rx="1"/>
+    <rect x="3" y="19" width="16" height="2" fill="white" opacity="0.6" rx="1"/>
+    <rect x="3" y="23" width="10" height="2" fill="white" opacity="0.6" rx="1"/>
+    <circle cx="35" cy="5" r="2" fill="url(#docGradient)">
+      <animate attributeName="opacity" values="0.5;1;0.5" dur="2s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+  
+  <!-- API Documentation -->
+  <g transform="translate(145, 40)" opacity="0.8">
+    <rect x="0" y="0" width="25" height="30" fill="url(#easeGradient)" rx="3"/>
+    <text x="12.5" y="20" text-anchor="middle" fill="white" font-family="monospace" font-size="8" font-weight="bold">API</text>
+    <circle cx="35" cy="5" r="2" fill="url(#easeGradient)">
+      <animate attributeName="opacity" values="0.5;1;0.5" dur="2s" repeatCount="indefinite" begin="0.5s"/>
+    </circle>
+  </g>
+  
+  <!-- CLI Terminal -->
+  <g transform="translate(30, 130)" opacity="0.8">
+    <rect x="0" y="0" width="30" height="25" fill="#1f2937" rx="3"/>
+    <rect x="2" y="2" width="26" height="3" fill="#374151" rx="1"/>
+    <circle cx="5" cy="3.5" r="1" fill="#ef4444"/>
+    <circle cx="8" cy="3.5" r="1" fill="#f59e0b"/>
+    <circle cx="11" cy="3.5" r="1" fill="#10b981"/>
+    <rect x="3" y="8" width="4" height="1" fill="#10b981" rx="0.5"/>
+    <rect x="8" y="8" width="15" height="1" fill="#6b7280" rx="0.5"/>
+    <rect x="3" y="11" width="20" height="1" fill="#6b7280" rx="0.5"/>
+    <rect x="3" y="14" width="12" height="1" fill="#6b7280" rx="0.5"/>
+    <rect x="3" y="17" width="8" height="1" fill="#10b981" rx="0.5">
+      <animate attributeName="opacity" values="0.5;1;0.5" dur="1s" repeatCount="indefinite"/>
+    </rect>
+    <circle cx="40" cy="5" r="2" fill="#10b981">
+      <animate attributeName="opacity" values="0.5;1;0.5" dur="2s" repeatCount="indefinite" begin="1s"/>
+    </circle>
+  </g>
+  
+  <!-- IDE Integration -->
+  <g transform="translate(145, 130)" opacity="0.8">
+    <rect x="0" y="0" width="30" height="25" fill="url(#uiGradient)" rx="3"/>
+    <rect x="2" y="2" width="26" height="3" fill="white" opacity="0.3" rx="1"/>
+    <rect x="3" y="8" width="24" height="2" fill="white" opacity="0.7" rx="1"/>
+    <rect x="3" y="12" width="18" height="2" fill="white" opacity="0.5" rx="1"/>
+    <rect x="3" y="16" width="20" height="2" fill="white" opacity="0.5" rx="1"/>
+    <rect x="3" y="20" width="15" height="2" fill="white" opacity="0.5" rx="1"/>
+    <circle cx="40" cy="5" r="2" fill="url(#uiGradient)">
+      <animate attributeName="opacity" values="0.5;1;0.5" dur="2s" repeatCount="indefinite" begin="1.5s"/>
+    </circle>
+  </g>
+  
+  <!-- User Satisfaction Stars -->
+  <g opacity="0.7">
+    <g transform="translate(85, 25)">
+      <path d="M5 0 L6 3 L10 3 L7 5 L8 9 L5 7 L2 9 L3 5 L0 3 L4 3 Z" fill="url(#easeGradient)"/>
+    </g>
+    <g transform="translate(100, 25)">
+      <path d="M5 0 L6 3 L10 3 L7 5 L8 9 L5 7 L2 9 L3 5 L0 3 L4 3 Z" fill="url(#easeGradient)"/>
+    </g>
+    <g transform="translate(115, 25)">
+      <path d="M5 0 L6 3 L10 3 L7 5 L8 9 L5 7 L2 9 L3 5 L0 3 L4 3 Z" fill="url(#easeGradient)"/>
+    </g>
+    <g transform="translate(130, 25)">
+      <path d="M5 0 L6 3 L10 3 L7 5 L8 9 L5 7 L2 9 L3 5 L0 3 L4 3 Z" fill="url(#easeGradient)"/>
+    </g>
+    <g transform="translate(145, 25)">
+      <path d="M5 0 L6 3 L10 3 L7 5 L8 9 L5 7 L2 9 L3 5 L0 3 L4 3 Z" fill="url(#easeGradient)"/>
+    </g>
+  </g>
+  
+  <!-- Ease of Use Indicators -->
+  <g opacity="0.6">
+    <circle cx="50" cy="100" r="3" fill="url(#easeGradient)">
+      <animate attributeName="r" values="2;5;2" dur="3s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="150" cy="100" r="3" fill="url(#docGradient)">
+      <animate attributeName="r" values="2;5;2" dur="3s" repeatCount="indefinite" begin="1s"/>
+    </circle>
+    <circle cx="100" cy="170" r="3" fill="url(#uiGradient)">
+      <animate attributeName="r" values="2;5;2" dur="3s" repeatCount="indefinite" begin="2s"/>
+    </circle>
+  </g>
+  
+  <!-- Connection Lines -->
+  <g opacity="0.3">
+    <line x1="55" y1="70" x2="65" y2="85" stroke="url(#docGradient)" stroke-width="1" stroke-dasharray="2,2"/>
+    <line x1="145" y1="70" x2="135" y2="85" stroke="url(#easeGradient)" stroke-width="1" stroke-dasharray="2,2"/>
+    <line x1="55" y1="130" x2="65" y2="115" stroke="url(#easeGradient)" stroke-width="1" stroke-dasharray="2,2"/>
+    <line x1="145" y1="130" x2="135" y2="115" stroke="url(#uiGradient)" stroke-width="1" stroke-dasharray="2,2"/>
+  </g>
+  
+  <!-- Intuitive Flow Arrows -->
+  <g opacity="0.5">
+    <path d="M20 100 L30 100 M25 95 L20 100 L25 105" stroke="url(#easeGradient)" stroke-width="2" fill="none" stroke-linecap="round">
+      <animateTransform attributeName="transform" type="translate" values="0,0;10,0;0,0" dur="2s" repeatCount="indefinite"/>
+    </path>
+    <path d="M180 100 L170 100 M175 95 L180 100 L175 105" stroke="url(#uiGradient)" stroke-width="2" fill="none" stroke-linecap="round">
+      <animateTransform attributeName="transform" type="translate" values="0,0;-10,0;0,0" dur="2s" repeatCount="indefinite" begin="1s"/>
+    </path>
+  </g>
+  
+  <!-- Focus Indicator -->
+  <circle cx="100" cy="100" r="45" fill="none" stroke="url(#uiGradient)" stroke-width="2" opacity="0.4" stroke-dasharray="10,5">
+    <animate attributeName="stroke-dashoffset" values="0;15" dur="3s" repeatCount="indefinite"/>
+  </circle>
+</svg> 

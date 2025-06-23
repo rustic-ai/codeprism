@@ -1,0 +1,43 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="codeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e3a8a;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="accentGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00d4ff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#10b981;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background Circle -->
+  <circle cx="100" cy="100" r="90" fill="url(#codeGradient)" opacity="0.1"/>
+  
+  <!-- Code Brackets -->
+  <path d="M40 60 L20 80 L20 120 L40 140" stroke="url(#codeGradient)" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <path d="M160 60 L180 80 L180 120 L160 140" stroke="url(#codeGradient)" stroke-width="4" fill="none" stroke-linecap="round"/>
+  
+  <!-- Neural Network Nodes -->
+  <circle cx="70" cy="70" r="8" fill="url(#accentGradient)"/>
+  <circle cx="130" cy="70" r="8" fill="url(#accentGradient)"/>
+  <circle cx="100" cy="100" r="12" fill="url(#codeGradient)"/>
+  <circle cx="70" cy="130" r="8" fill="url(#accentGradient)"/>
+  <circle cx="130" cy="130" r="8" fill="url(#accentGradient)"/>
+  
+  <!-- Neural Connections -->
+  <line x1="70" y1="70" x2="100" y2="100" stroke="url(#accentGradient)" stroke-width="2" opacity="0.7"/>
+  <line x1="130" y1="70" x2="100" y2="100" stroke="url(#accentGradient)" stroke-width="2" opacity="0.7"/>
+  <line x1="100" y1="100" x2="70" y2="130" stroke="url(#accentGradient)" stroke-width="2" opacity="0.7"/>
+  <line x1="100" y1="100" x2="130" y2="130" stroke="url(#accentGradient)" stroke-width="2" opacity="0.7"/>
+  
+  <!-- Code Lines -->
+  <rect x="50" y="45" width="30" height="3" fill="url(#codeGradient)" opacity="0.6" rx="1"/>
+  <rect x="50" y="52" width="20" height="3" fill="url(#codeGradient)" opacity="0.6" rx="1"/>
+  <rect x="120" y="45" width="25" height="3" fill="url(#codeGradient)" opacity="0.6" rx="1"/>
+  <rect x="120" y="52" width="35" height="3" fill="url(#codeGradient)" opacity="0.6" rx="1"/>
+  
+  <!-- AST Tree Structure -->
+  <path d="M100 85 L100 75 M95 80 L105 80" stroke="url(#codeGradient)" stroke-width="2" stroke-linecap="round"/>
+  <path d="M100 115 L100 125 M95 120 L105 120" stroke="url(#codeGradient)" stroke-width="2" stroke-linecap="round"/>
+</svg> 

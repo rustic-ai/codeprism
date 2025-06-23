@@ -4,20 +4,221 @@
  */
 
 .heroBanner {
-  padding: 4rem 0;
+  padding: 6rem 0;
   text-align: center;
   position: relative;
   overflow: hidden;
+  background: var(--ai-gradient-primary);
+  color: white;
+}
+
+.heroBanner::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  animation: float 20s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(180deg); }
 }
 
 @media screen and (max-width: 996px) {
   .heroBanner {
-    padding: 2rem;
+    padding: 3rem 0;
   }
+}
+
+.heroDescription {
+  font-size: 1.3rem;
+  margin: 2rem auto 2.5rem;
+  max-width: 900px;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.7;
+  font-weight: 400;
 }
 
 .buttons {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 3rem;
+  z-index: 1;
+  position: relative;
+}
+
+.buttons .button {
+  font-weight: 600;
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
+  border-radius: var(--ifm-button-border-radius);
+  box-shadow: var(--md-elevation-2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: none;
+  text-decoration: none;
+}
+
+.buttons .button:hover {
+  box-shadow: var(--md-elevation-4);
+  transform: translateY(-2px);
+  text-decoration: none;
+}
+
+.buttons .button--primary {
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--ifm-color-primary);
+  border: 2px solid transparent;
+}
+
+.buttons .button--primary:hover {
+  background: white;
+  color: var(--ifm-color-primary-dark);
+}
+
+.buttons .button--secondary {
+  background: var(--ai-gradient-secondary);
+  color: white;
+}
+
+.buttons .button--outline {
+  background: transparent;
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.7);
+}
+
+.buttons .button--outline:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: white;
+  color: white;
+}
+
+.quickStart {
+  margin-top: 3rem;
+  padding: 1.5rem 2rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  display: inline-block;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  z-index: 1;
+  position: relative;
+}
+
+.quickStart p {
+  margin: 0 0 0.8rem 0;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1rem;
+}
+
+.quickStart code {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 1.1rem;
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: block;
+  text-align: center;
+}
+
+.stats {
+  padding: 5rem 0;
+  background: var(--ifm-background-surface-color);
+  position: relative;
+}
+
+.stat {
+  text-align: center;
+  padding: 2rem 1rem;
+  border-radius: 16px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.stat:hover {
+  transform: translateY(-5px);
+}
+
+.stat::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 4px;
+  background: var(--ai-gradient-primary);
+  border-radius: 2px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.stat:hover::before {
+  opacity: 1;
+}
+
+.stat h3 {
+  color: var(--ifm-color-primary);
+  margin-bottom: 1rem;
+  font-size: 1.4rem;
+  font-weight: 700;
+  background: var(--ai-gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.stat p {
+  color: var(--ifm-color-emphasis-700);
+  margin: 0;
+  line-height: 1.6;
+  font-size: 1rem;
+}
+
+@media screen and (max-width: 996px) {
+  .heroDescription {
+    font-size: 1.1rem;
+    margin: 1.5rem auto 2rem;
+  }
+  
+  .buttons {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .buttons .button {
+    width: 100%;
+    max-width: 300px;
+  }
+  
+  .quickStart {
+    margin-top: 2rem;
+    padding: 1rem 1.5rem;
+  }
+  
+  .quickStart code {
+    font-size: 1rem;
+    padding: 0.6rem 1rem;
+  }
+  
+  .stats {
+    padding: 3rem 0;
+  }
+  
+  .stat {
+    padding: 1.5rem 1rem;
+  }
+  
+  .stat h3 {
+    font-size: 1.2rem;
+  }
 }

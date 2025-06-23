@@ -15,15 +15,15 @@ const config: Config = {
   },
 
   // Set the production url of your site here
-  url: 'https://rohit-g.github.io',
+  url: 'https://rustic-ai.github.io',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: '/prism/',
+  baseUrl: '/codeprism/',
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
-  organizationName: 'rohit-g', // Usually your GitHub org/user name.
-  projectName: 'prism', // Usually your repo name.
+  organizationName: 'rustic-ai', // Usually your GitHub org/user name.
+  projectName: 'codeprism', // Usually your repo name.
 
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
@@ -45,7 +45,7 @@ const config: Config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
+            'https://github.com/rustic-ai/codeprism/tree/main/codeprism-docs/',
         },
         blog: {
           showReadingTime: true,
@@ -56,7 +56,7 @@ const config: Config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
+            'https://github.com/rustic-ai/codeprism/tree/main/codeprism-docs/',
           // Useful options to enforce blogging best practices
           onInlineTags: 'warn',
           onInlineAuthors: 'warn',
@@ -87,7 +87,7 @@ const config: Config = {
         },
         {to: '/blog', label: 'Blog', position: 'left'},
         {
-          href: 'https://github.com/rohit-g/prism',
+          href: 'https://github.com/rustic-ai/codeprism',
           label: 'GitHub',
           position: 'right',
         },
@@ -97,11 +97,19 @@ const config: Config = {
       style: 'dark',
       links: [
         {
-          title: 'Docs',
+          title: 'Documentation',
           items: [
             {
-              label: 'Documentation',
-              to: '/docs/intro',
+              label: 'Getting Started',
+              to: '/docs/GETTING_STARTED',
+            },
+            {
+              label: 'Architecture',
+              to: '/docs/Architecture',
+            },
+            {
+              label: 'API Reference',
+              to: '/docs/API_Reference',
             },
           ],
         },
@@ -109,16 +117,16 @@ const config: Config = {
           title: 'Community',
           items: [
             {
-              label: 'Stack Overflow',
-              href: 'https://stackoverflow.com/questions/tagged/docusaurus',
+              label: 'GitHub Discussions',
+              href: 'https://github.com/rustic-ai/codeprism/discussions',
             },
             {
-              label: 'Discord',
-              href: 'https://discordapp.com/invite/docusaurus',
+              label: 'Issues',
+              href: 'https://github.com/rustic-ai/codeprism/issues',
             },
             {
-              label: 'X',
-              href: 'https://x.com/docusaurus',
+              label: 'Contributing',
+              to: '/docs/Contributing',
             },
           ],
         },
@@ -131,7 +139,11 @@ const config: Config = {
             },
             {
               label: 'GitHub',
-              href: 'https://github.com/rohit-g/prism',
+              href: 'https://github.com/rustic-ai/codeprism',
+            },
+            {
+              label: 'License',
+              href: 'https://github.com/rustic-ai/codeprism/blob/main/LICENSE-MIT',
             },
           ],
         },

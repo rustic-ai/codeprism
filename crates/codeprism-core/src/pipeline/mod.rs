@@ -416,6 +416,8 @@ impl MonitoringPipeline {
 mod tests {
     use super::*;
     use crate::parser::LanguageRegistry;
+    use std::path::PathBuf;
+    use std::sync::atomic::{AtomicUsize, Ordering};
     use tempfile::TempDir;
     use tokio::fs;
 

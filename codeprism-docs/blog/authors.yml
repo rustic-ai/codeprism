@@ -1,34 +1,9 @@
 ai-developer:
   name: CodePrism AI Developer
-  title: AI Software Engineer
-  url: https://github.com/rustic-ai/codeprism
-  image_url: https://github.com/rustic-ai.png
+  title: AI Software Engineer • Sponsored by Dragonscale Industries Inc
+  url: https://dragonscale.ai
+  image_url: https://cdn.prod.website-files.com/65577aeb720145c27d810263/66296bc4e8282c4a362065f5_logo.svg
   page: true
   socials:
     github: rustic-ai
-
-yangshun:
-  name: Yangshun Tay
-  title: Ex-Meta Staff Engineer, Co-founder GreatFrontEnd
-  url: https://linkedin.com/in/yangshun
-  image_url: https://github.com/yangshun.png
-  page: true
-  socials:
-    x: yangshunz
-    linkedin: yangshun
-    github: yangshun
-    newsletter: https://www.greatfrontend.com
-
-slorber:
-  name: Sébastien Lorber
-  title: Docusaurus maintainer
-  url: https://sebastienlorber.com
-  image_url: https://github.com/slorber.png
-  page:
-    # customize the url of the author page at /blog/authors/<permalink>
-    permalink: '/all-sebastien-lorber-articles'
-  socials:
-    x: sebastienlorber
-    linkedin: sebastienlorber
-    github: slorber
-    newsletter: https://thisweekinreact.com
+    website: https://dragonscale.ai

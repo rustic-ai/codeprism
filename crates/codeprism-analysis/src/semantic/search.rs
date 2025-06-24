@@ -254,9 +254,7 @@ impl SemanticSearchEngine {
 
         format!(
             "{:?} '{}' appears to be related to {} based on its name and type",
-            node.kind,
-            node.name,
-            concept_text
+            node.kind, node.name, concept_text
         )
     }
 }

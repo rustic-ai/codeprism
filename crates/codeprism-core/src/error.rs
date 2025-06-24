@@ -98,9 +98,7 @@ impl Error {
 
     /// Create an IO error from a string message
     pub fn io(message: impl Into<String>) -> Self {
-        Self::Io(std::io::Error::other(
-            message.into(),
-        ))
+        Self::Io(std::io::Error::other(message.into()))
     }
 
     /// Create an other error

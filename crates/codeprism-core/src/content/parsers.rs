@@ -1501,9 +1501,7 @@ And even more lines."#;
         assert_eq!(chunks[0].content, invalid_json);
 
         let metadata = chunks[0].metadata.as_object().unwrap();
-        assert!(
-            metadata.get("parse_error").unwrap().as_bool().unwrap()
-        );
+        assert!(metadata.get("parse_error").unwrap().as_bool().unwrap());
         assert_eq!(
             metadata.get("config_type").unwrap().as_str().unwrap(),
             "json"

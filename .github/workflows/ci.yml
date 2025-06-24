@@ -63,9 +63,6 @@ jobs:
       
       - name: Run integration tests
         run: cargo test --test '*' --all-features --workspace
-        
-      - name: Run MCP end-to-end tests
-        run: cargo test --package codeprism-mcp --test '*' --all-features
 
   fmt:
     name: Rustfmt

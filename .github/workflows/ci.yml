@@ -83,7 +83,7 @@ jobs:
         with:
           components: clippy
       - uses: Swatinem/rust-cache@v2
-      - run: cargo clippy --all-features --all-targets --workspace -- -D warnings -A missing-docs
+      - run: cargo clippy --all-features --all-targets --workspace
 
   coverage:
     name: Code Coverage

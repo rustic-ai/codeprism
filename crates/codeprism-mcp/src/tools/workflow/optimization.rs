@@ -83,7 +83,7 @@ pub fn create_optimize_workflow_tool() -> Tool {
 
 /// Optimize workflow based on history and goals
 pub async fn optimize_workflow(
-    server: &CodePrismMcpServer,
+    _server: &CodePrismMcpServer,
     arguments: Option<&Value>,
 ) -> Result<CallToolResult> {
     let default_args = json!({});
@@ -367,7 +367,7 @@ fn analyze_workflow_history(history: &[Value]) -> Result<WorkflowAnalysis> {
 }
 
 /// Analyze session workflow (placeholder implementation)
-fn analyze_session_workflow(session_id: SessionId) -> Result<WorkflowAnalysis> {
+fn analyze_session_workflow(_session_id: SessionId) -> Result<WorkflowAnalysis> {
     // In real implementation, would fetch session data
     Ok(WorkflowAnalysis {
         performance_metrics: PerformanceMetrics {
@@ -389,7 +389,7 @@ fn analyze_session_workflow(session_id: SessionId) -> Result<WorkflowAnalysis> {
 fn identify_workflow_issues(
     tool_times: &HashMap<String, Vec<u64>>,
     tool_success: &HashMap<String, (u32, u32)>,
-    overall_success_rate: f64,
+    _overall_success_rate: f64,
 ) -> Vec<WorkflowIssue> {
     let mut issues = Vec::new();
 
@@ -526,8 +526,8 @@ fn estimate_parallelization_efficiency(tool_times: &HashMap<String, Vec<u64>>) -
 fn generate_optimization_recommendations(
     analysis: &WorkflowAnalysis,
     goals: &[&str],
-    target_performance: Option<&Value>,
-    constraints: Option<&Value>,
+    _target_performance: Option<&Value>,
+    _constraints: Option<&Value>,
 ) -> Result<OptimizationRecommendations> {
     let mut recommendations = Vec::new();
     let mut quick_wins = Vec::new();
@@ -659,7 +659,7 @@ fn create_optimized_sequence(
         "analyze_security",
         "analyze_performance",
     ];
-    let mut parallel_group_id = 1;
+    let parallel_group_id = 1;
 
     for tool_name in &analysis_tools {
         if let Some(pattern) = tool_patterns.get(*tool_name) {
@@ -679,7 +679,7 @@ fn create_optimized_sequence(
         .any(|s| s.parallel_group == Some(parallel_group_id))
     {
         order += 1;
-        parallel_group_id += 1;
+        // parallel_group_id would be incremented here for future groups
     }
 
     // Add remaining tools

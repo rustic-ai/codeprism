@@ -70,7 +70,7 @@ pub fn create_suggest_analysis_workflow_tool() -> Tool {
 
 /// Generate workflow recommendations based on user goals
 pub async fn suggest_analysis_workflow(
-    server: &CodePrismMcpServer,
+    _server: &CodePrismMcpServer,
     arguments: Option<&Value>,
 ) -> Result<CallToolResult> {
     let args = arguments.ok_or_else(|| anyhow::anyhow!("Missing arguments"))?;
@@ -153,7 +153,7 @@ pub async fn suggest_analysis_workflow(
 /// Workflow recommendation structure
 #[derive(Debug, Clone)]
 struct WorkflowRecommendation {
-    goal: String,
+    _goal: String,
     estimated_duration: u32,
     tool_sequence: Vec<ToolStep>,
     stages: Vec<WorkflowStageInfo>,
@@ -348,7 +348,7 @@ fn generate_codebase_understanding_workflow(
     let adjusted_duration = time_budget.unwrap_or(duration).min(duration);
 
     Ok(WorkflowRecommendation {
-        goal: "understand_codebase".to_string(),
+        _goal: "understand_codebase".to_string(),
         estimated_duration: adjusted_duration,
         tool_sequence: tools,
         stages: vec![
@@ -408,7 +408,7 @@ fn generate_security_analysis_workflow(
     };
 
     Ok(WorkflowRecommendation {
-        goal: "find_security_issues".to_string(),
+        _goal: "find_security_issues".to_string(),
         estimated_duration: time_budget.unwrap_or(base_duration),
         tool_sequence: vec![ToolStep {
             step: 1,
@@ -452,7 +452,7 @@ fn generate_performance_analysis_workflow(
     };
 
     Ok(WorkflowRecommendation {
-        goal: "analyze_performance".to_string(),
+        _goal: "analyze_performance".to_string(),
         estimated_duration: time_budget.unwrap_or(base_duration),
         tool_sequence: vec![ToolStep {
             step: 1,
@@ -497,7 +497,7 @@ fn generate_data_flow_analysis_workflow(
     };
 
     Ok(WorkflowRecommendation {
-        goal: "trace_data_flow".to_string(),
+        _goal: "trace_data_flow".to_string(),
         estimated_duration: time_budget.unwrap_or(base_duration),
         tool_sequence: vec![ToolStep {
             step: 1,
@@ -541,7 +541,7 @@ fn generate_architecture_analysis_workflow(
     };
 
     Ok(WorkflowRecommendation {
-        goal: "analyze_architecture".to_string(),
+        _goal: "analyze_architecture".to_string(),
         estimated_duration: time_budget.unwrap_or(base_duration),
         tool_sequence: vec![ToolStep {
             step: 1,
@@ -587,7 +587,7 @@ fn generate_debugging_workflow(
     };
 
     Ok(WorkflowRecommendation {
-        goal: "debug_issue".to_string(),
+        _goal: "debug_issue".to_string(),
         estimated_duration: time_budget.unwrap_or(base_duration),
         tool_sequence: vec![ToolStep {
             step: 1,
@@ -628,7 +628,7 @@ fn generate_refactoring_workflow(
     };
 
     Ok(WorkflowRecommendation {
-        goal: "refactor_preparation".to_string(),
+        _goal: "refactor_preparation".to_string(),
         estimated_duration: time_budget.unwrap_or(base_duration),
         tool_sequence: vec![ToolStep {
             step: 1,

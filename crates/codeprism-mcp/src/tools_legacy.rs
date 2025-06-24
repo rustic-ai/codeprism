@@ -2452,7 +2452,7 @@ impl ToolManager {
     }
 
     /// Calculate content similarity between two text blocks (simplified)
-    fn calculate_content_similarity(&self, content1: &str, content2: &str) -> f64 {
+    fn _calculate_content_similarity(&self, content1: &str, content2: &str) -> f64 {
         let lines1: Vec<String> = content1
             .lines()
             .map(|s| s.trim().to_string())
@@ -4180,7 +4180,7 @@ impl ToolManager {
     /// Find duplicate code patterns
     async fn find_duplicates(
         &self,
-        server: &CodePrismMcpServer,
+        _server: &CodePrismMcpServer,
         arguments: Option<Value>,
     ) -> Result<CallToolResult> {
         let args = arguments.unwrap_or_default();
@@ -5411,17 +5411,17 @@ def complex_function(a, b, c, d, e):
         // Identical content
         let content1 = "line 1\nline 2\nline 3";
         let content2 = "line 1\nline 2\nline 3";
-        let similarity = manager.calculate_content_similarity(content1, content2);
+        let similarity = manager._calculate_content_similarity(content1, content2);
         assert_eq!(similarity, 1.0);
 
         // Completely different content
         let content3 = "different\ncontent\nhere";
-        let similarity2 = manager.calculate_content_similarity(content1, content3);
+        let similarity2 = manager._calculate_content_similarity(content1, content3);
         assert_eq!(similarity2, 0.0);
 
         // Partial similarity
         let content4 = "line 1\nline 2\ndifferent line";
-        let similarity3 = manager.calculate_content_similarity(content1, content4);
+        let similarity3 = manager._calculate_content_similarity(content1, content4);
         assert!(similarity3 > 0.0 && similarity3 < 1.0);
     }
 
@@ -5495,7 +5495,7 @@ def test_function(x, y):
     async fn test_new_tools_call_routing() {
         let server = create_test_server().await;
         let manager = ToolManager::new(server);
-        let server = create_test_server().await;
+        let _server = create_test_server().await;
 
         // Test analyze_complexity routing
         let complexity_params = crate::tools::CallToolParams {

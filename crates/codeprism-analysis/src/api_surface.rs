@@ -24,7 +24,7 @@ pub struct ApiSurfaceAnalyzer {
 
 #[derive(Debug, Clone)]
 struct ApiPattern {
-    name: String,
+    _name: String,
     pattern: Regex,
     element_type: String,
     visibility_pattern: Option<Regex>,
@@ -43,19 +43,19 @@ impl ApiSurfaceAnalyzer {
         // Public API patterns
         let public_api_patterns = vec![
             ApiPattern {
-                name: "Public Function".to_string(),
+                _name: "Public Function".to_string(),
                 pattern: Regex::new(r"(?m)^(pub\s+)?(?:async\s+)?fn\s+(\w+)\s*\([^)]*\)").unwrap(),
                 element_type: "function".to_string(),
                 visibility_pattern: Some(Regex::new(r"^pub\s+").unwrap()),
             },
             ApiPattern {
-                name: "Public Class".to_string(),
+                _name: "Public Class".to_string(),
                 pattern: Regex::new(r"(?m)^(pub\s+)?(?:class|struct)\s+(\w+)").unwrap(),
                 element_type: "class".to_string(),
                 visibility_pattern: Some(Regex::new(r"^pub\s+").unwrap()),
             },
             ApiPattern {
-                name: "Public Method".to_string(),
+                _name: "Public Method".to_string(),
                 pattern: Regex::new(
                     r"(?m)^\s*(pub\s+)?(?:async\s+)?(?:def|fn)\s+(\w+)\s*\([^)]*\)",
                 )
@@ -64,7 +64,7 @@ impl ApiSurfaceAnalyzer {
                 visibility_pattern: Some(Regex::new(r"^\s*pub\s+").unwrap()),
             },
             ApiPattern {
-                name: "Public Constant".to_string(),
+                _name: "Public Constant".to_string(),
                 pattern: Regex::new(r"(?m)^(pub\s+)?const\s+(\w+)").unwrap(),
                 element_type: "constant".to_string(),
                 visibility_pattern: Some(Regex::new(r"^pub\s+").unwrap()),
@@ -76,19 +76,19 @@ impl ApiSurfaceAnalyzer {
         // Versioning patterns
         let versioning_patterns = vec![
             ApiPattern {
-                name: "Version Annotation".to_string(),
+                _name: "Version Annotation".to_string(),
                 pattern: Regex::new(r#"@version\s*\(\s*["']([\d.]+)["']\s*\)"#).unwrap(),
                 element_type: "version".to_string(),
                 visibility_pattern: None,
             },
             ApiPattern {
-                name: "Since Annotation".to_string(),
+                _name: "Since Annotation".to_string(),
                 pattern: Regex::new(r#"@since\s*\(\s*["']([\d.]+)["']\s*\)"#).unwrap(),
                 element_type: "version".to_string(),
                 visibility_pattern: None,
             },
             ApiPattern {
-                name: "Deprecated Annotation".to_string(),
+                _name: "Deprecated Annotation".to_string(),
                 pattern: Regex::new(r"@deprecated|#\[deprecated\]|@Deprecated").unwrap(),
                 element_type: "deprecated".to_string(),
                 visibility_pattern: None,
@@ -100,13 +100,13 @@ impl ApiSurfaceAnalyzer {
         // Breaking change patterns
         let breaking_change_patterns = vec![
             ApiPattern {
-                name: "Parameter Change".to_string(),
+                _name: "Parameter Change".to_string(),
                 pattern: Regex::new(r"(?m)fn\s+\w+\s*\([^)]*\w+\s*:\s*\w+[^)]*\)").unwrap(),
                 element_type: "breaking_change".to_string(),
                 visibility_pattern: None,
             },
             ApiPattern {
-                name: "Return Type Change".to_string(),
+                _name: "Return Type Change".to_string(),
                 pattern: Regex::new(r"(?m)fn\s+\w+\s*\([^)]*\)\s*->\s*\w+").unwrap(),
                 element_type: "breaking_change".to_string(),
                 visibility_pattern: None,
@@ -118,13 +118,13 @@ impl ApiSurfaceAnalyzer {
         // Documentation patterns
         let documentation_patterns = vec![
             ApiPattern {
-                name: "Doc Comment".to_string(),
+                _name: "Doc Comment".to_string(),
                 pattern: Regex::new(r#"(?m)^\s*///.*$|^\s*#.*$|^\s*""".*?""""#).unwrap(),
                 element_type: "documentation".to_string(),
                 visibility_pattern: None,
             },
             ApiPattern {
-                name: "Missing Documentation".to_string(),
+                _name: "Missing Documentation".to_string(),
                 pattern: Regex::new(r#"(?m)^(pub\s+)?(?:fn|class|struct)\s+\w+"#).unwrap(),
                 element_type: "missing_docs".to_string(),
                 visibility_pattern: Some(Regex::new(r"^pub\s+").unwrap()),
@@ -136,7 +136,7 @@ impl ApiSurfaceAnalyzer {
         // Compatibility patterns
         let compatibility_patterns = vec![
             ApiPattern {
-                name: "Generic Type".to_string(),
+                _name: "Generic Type".to_string(),
                 pattern: Regex::new(
                     r"<[A-Z]\w*(?:\s*:\s*\w+)?(?:\s*,\s*[A-Z]\w*(?:\s*:\s*\w+)?)*>",
                 )
@@ -145,7 +145,7 @@ impl ApiSurfaceAnalyzer {
                 visibility_pattern: None,
             },
             ApiPattern {
-                name: "Optional Parameter".to_string(),
+                _name: "Optional Parameter".to_string(),
                 pattern: Regex::new(r"\w+\s*:\s*Option<\w+>|\w+\s*=\s*\w+").unwrap(),
                 element_type: "optional".to_string(),
                 visibility_pattern: None,

@@ -365,7 +365,7 @@ async fn explain_symbol(
         .unwrap_or(4);
 
     // Session context for workflow guidance
-    let session_id = args
+    let _session_id = args
         .get("session_id")
         .and_then(|v| v.as_str())
         .map(|s| SessionId(s.to_string()));

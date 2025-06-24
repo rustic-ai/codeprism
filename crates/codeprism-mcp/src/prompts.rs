@@ -2002,7 +2002,7 @@ class Database:
     async fn test_prompt_manager_creation() {
         let server = create_test_server().await;
         let server_arc = std::sync::Arc::new(tokio::sync::RwLock::new(server));
-        let prompt_manager = PromptManager::new(server_arc);
+        let _prompt_manager = PromptManager::new(server_arc);
 
         // Prompt manager should be created successfully
     }

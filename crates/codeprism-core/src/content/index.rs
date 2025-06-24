@@ -166,10 +166,10 @@ impl ContentIndex {
                 if !matches.is_empty() {
                     let score = self.calculate_relevance_score(&chunk, &matches, query);
                     results.push(SearchResult {
-                        chunk,
+                        chunk: chunk.clone(),
                         score,
                         matches,
-                        related_nodes: Vec::new(), // TODO: Populate from chunk.related_nodes
+                        related_nodes: chunk.related_nodes.clone(),
                     });
                 }
             }

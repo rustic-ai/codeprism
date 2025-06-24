@@ -216,7 +216,7 @@ impl AstMapper {
         Ok(())
     }
 
-    /// Handle assignments (variable declarations)
+    /// Handle variable assignments
     fn handle_assignment(&mut self, cursor: &TreeCursor) -> Result<()> {
         let node = cursor.node();
         let span = Span::from_node(&node);
@@ -229,7 +229,7 @@ impl AstMapper {
         Ok(())
     }
 
-    /// Extract assignment targets (variables being assigned to)
+    /// Extract assignment targets and create variable nodes
     fn extract_assignment_targets(
         &mut self,
         target_node: &tree_sitter::Node,
@@ -238,7 +238,7 @@ impl AstMapper {
         match target_node.kind() {
             "identifier" => {
                 let name = self.get_node_text(target_node);
-                self.create_variable_node(name, span.clone())?;
+                self.create_variable_node(name, span.clone(), target_node)?;
             }
             "pattern_list" | "tuple_pattern" => {
                 // Handle multiple assignment: a, b = 1, 2
@@ -249,7 +249,7 @@ impl AstMapper {
                         if child.kind() == "identifier" {
                             let name = self.get_node_text(&child);
                             let child_span = Span::from_node(&child);
-                            self.create_variable_node(name, child_span)?;
+                            self.create_variable_node(name, child_span, &child)?;
                         }
                         if !cursor.goto_next_sibling() {
                             break;
@@ -266,7 +266,12 @@ impl AstMapper {
     }
 
     /// Create a variable node
-    fn create_variable_node(&mut self, name: String, span: Span) -> Result<()> {
+    fn create_variable_node(
+        &mut self,
+        name: String,
+        span: Span,
+        tree_node: &tree_sitter::Node,
+    ) -> Result<()> {
         let var_node = Node::new(
             &self.repo_id,
             NodeKind::Variable,
@@ -277,7 +282,7 @@ impl AstMapper {
         );
 
         // Add edge from parent scope
-        if let Some(parent_id) = self.find_enclosing_scope_id() {
+        if let Some(parent_id) = self.find_enclosing_scope_id(tree_node) {
             self.edges
                 .push(Edge::new(parent_id, var_node.id, EdgeKind::Writes));
         }
@@ -589,10 +594,134 @@ impl AstMapper {
     }
 
     /// Extract function signature (type hints)
-    fn extract_function_signature(&self, _node: &tree_sitter::Node) -> Option<String> {
-        // TODO: Implement proper signature extraction for Python type hints
-        // This would involve parsing parameters and return type annotations
-        None
+    fn extract_function_signature(&self, node: &tree_sitter::Node) -> Option<String> {
+        let mut signature_parts = Vec::new();
+
+        // Get function name
+        if let Some(name_node) = node.child_by_field_name("name") {
+            signature_parts.push(self.get_node_text(&name_node));
+        }
+
+        // Parse parameters
+        if let Some(params_node) = node.child_by_field_name("parameters") {
+            let params_str = self.extract_parameters_with_types(&params_node);
+            signature_parts.push(format!("({})", params_str));
+        } else {
+            signature_parts.push("()".to_string());
+        }
+
+        // Parse return type annotation
+        if let Some(return_type_node) = node.child_by_field_name("return_type") {
+            let return_type = self.get_node_text(&return_type_node);
+            signature_parts.push(format!(" -> {}", return_type));
+        }
+
+        if signature_parts.is_empty() {
+            None
+        } else {
+            Some(signature_parts.join(""))
+        }
+    }
+
+    /// Extract parameters with their type annotations
+    fn extract_parameters_with_types(&self, params_node: &tree_sitter::Node) -> String {
+        let mut params = Vec::new();
+        let mut cursor = params_node.walk();
+
+        if cursor.goto_first_child() {
+            loop {
+                let child = cursor.node();
+                match child.kind() {
+                    "identifier" => {
+                        // Simple parameter without type annotation
+                        params.push(self.get_node_text(&child));
+                    }
+                    "typed_parameter" => {
+                        // Parameter with type annotation: param: Type
+                        let mut param_parts = Vec::new();
+
+                        if let Some(name_node) = child.child_by_field_name("pattern") {
+                            param_parts.push(self.get_node_text(&name_node));
+                        }
+
+                        if let Some(type_node) = child.child_by_field_name("type") {
+                            param_parts.push(format!(": {}", self.get_node_text(&type_node)));
+                        }
+
+                        if !param_parts.is_empty() {
+                            params.push(param_parts.join(""));
+                        }
+                    }
+                    "default_parameter" => {
+                        // Parameter with default value: param=default or param: Type = default
+                        let mut param_parts = Vec::new();
+
+                        if let Some(name_node) = child.child_by_field_name("name") {
+                            param_parts.push(self.get_node_text(&name_node));
+                        }
+
+                        if let Some(type_node) = child.child_by_field_name("type") {
+                            param_parts.push(format!(": {}", self.get_node_text(&type_node)));
+                        }
+
+                        if let Some(value_node) = child.child_by_field_name("value") {
+                            param_parts.push(format!(" = {}", self.get_node_text(&value_node)));
+                        }
+
+                        if !param_parts.is_empty() {
+                            params.push(param_parts.join(""));
+                        }
+                    }
+                    "typed_default_parameter" => {
+                        // Parameter with both type and default: param: Type = default
+                        let mut param_parts = Vec::new();
+
+                        if let Some(name_node) = child.child_by_field_name("pattern") {
+                            param_parts.push(self.get_node_text(&name_node));
+                        }
+
+                        if let Some(type_node) = child.child_by_field_name("type") {
+                            param_parts.push(format!(": {}", self.get_node_text(&type_node)));
+                        }
+
+                        if let Some(value_node) = child.child_by_field_name("value") {
+                            param_parts.push(format!(" = {}", self.get_node_text(&value_node)));
+                        }
+
+                        if !param_parts.is_empty() {
+                            params.push(param_parts.join(""));
+                        }
+                    }
+                    "list_splat_pattern" => {
+                        // *args parameter
+                        params.push(format!(
+                            "*{}",
+                            self.get_node_text(&child).trim_start_matches('*')
+                        ));
+                    }
+                    "dictionary_splat_pattern" => {
+                        // **kwargs parameter
+                        params.push(format!(
+                            "**{}",
+                            self.get_node_text(&child).trim_start_matches("**")
+                        ));
+                    }
+                    _ => {
+                        // Handle other parameter types or skip non-parameter nodes like commas
+                        let text = self.get_node_text(&child);
+                        if !text.trim().is_empty() && text != "," && text != "(" && text != ")" {
+                            params.push(text);
+                        }
+                    }
+                }
+
+                if !cursor.goto_next_sibling() {
+                    break;
+                }
+            }
+        }
+
+        params.join(", ")
     }
 
     /// Check if a node is inside a class
@@ -635,9 +764,52 @@ impl AstMapper {
     }
 
     /// Find enclosing scope ID (for variable declarations)
-    fn find_enclosing_scope_id(&self) -> Option<crate::types::NodeId> {
-        // For now, just return module ID
-        // TODO: Implement proper scope detection
+    fn find_enclosing_scope_id(&self, node: &tree_sitter::Node) -> Option<crate::types::NodeId> {
+        // Traverse up the AST to find the nearest enclosing scope
+        let mut parent = node.parent();
+
+        while let Some(p) = parent {
+            match p.kind() {
+                "function_definition" | "async_function_definition" => {
+                    // Found a function scope
+                    if let Some(id) = self.node_map.get(&p.id()) {
+                        return Some(*id);
+                    }
+                }
+                "class_definition" => {
+                    // Found a class scope
+                    if let Some(id) = self.node_map.get(&p.id()) {
+                        return Some(*id);
+                    }
+                }
+                "lambda" => {
+                    // Found a lambda scope (also a function scope)
+                    if let Some(id) = self.node_map.get(&p.id()) {
+                        return Some(*id);
+                    }
+                }
+                "comprehension"
+                | "list_comprehension"
+                | "set_comprehension"
+                | "dictionary_comprehension"
+                | "generator_expression" => {
+                    // Comprehensions have their own scope in Python
+                    if let Some(id) = self.node_map.get(&p.id()) {
+                        return Some(*id);
+                    }
+                }
+                "module" => {
+                    // Reached module level - this is the global scope
+                    return self.find_module_node_id();
+                }
+                _ => {
+                    // Continue traversing up for other node types
+                }
+            }
+            parent = p.parent();
+        }
+
+        // If we didn't find any specific scope, default to module scope
         self.find_module_node_id()
     }
 

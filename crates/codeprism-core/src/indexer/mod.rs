@@ -610,8 +610,8 @@ mod tests {
         let (indexer, _temp_dir) = create_test_indexer();
         let result = IndexingResult::new("test".to_string());
 
-        let memory = indexer.estimate_memory_usage(&result);
-        assert!(memory >= 0); // Should not panic
+        let _memory = indexer.estimate_memory_usage(&result);
+        // Memory usage is always >= 0 for usize type, test passes
     }
 
     #[test]

@@ -238,7 +238,7 @@ impl ComplexityAnalyzer {
         let mi = 171.0 - volume_penalty - complexity_penalty - loc_penalty - difficulty_penalty;
 
         // Ensure result is in valid range
-        mi.max(0.0).min(100.0)
+        mi.clamp(0.0, 100.0)
     }
 }
 
@@ -293,6 +293,6 @@ mod tests {
         let simple_code = "function test() { return 1; }";
         let mi = analyzer.calculate_maintainability_index(simple_code, 1);
 
-        assert!(mi >= 0.0 && mi <= 100.0);
+        assert!((0.0..=100.0).contains(&mi));
     }
 }

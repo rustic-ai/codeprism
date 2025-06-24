@@ -2,7 +2,6 @@
 
 use crate::error::Result;
 use crate::types::{Edge, EdgeKind, Language, Node, NodeKind, Span};
-use serde_json;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use tree_sitter::{Tree, TreeCursor};

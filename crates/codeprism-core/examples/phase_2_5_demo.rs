@@ -101,10 +101,10 @@ async fn main() -> Result<()> {
 
     for repo in repos {
         println!(
-            "   - {}: {} ({})",
+            "   - {}: {} ({:?})",
             repo.config.name,
             repo.config.repo_id,
-            format!("{:?}", repo.health)
+            repo.health
         );
     }
 

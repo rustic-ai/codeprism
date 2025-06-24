@@ -198,7 +198,7 @@ impl SemanticSearchEngine {
     /// Calculate relevance score for a node
     fn calculate_relevance_score(&self, node: &Node, concepts: &[String]) -> f64 {
         let mut score = 0.0;
-        let node_text = format!("{} {}", node.name, format!("{:?}", node.kind)).to_lowercase();
+        let node_text = format!("{} {:?}", node.name, node.kind).to_lowercase();
 
         for concept in concepts {
             // Direct name match
@@ -223,7 +223,7 @@ impl SemanticSearchEngine {
     /// Get concepts that matched for a node
     fn get_matched_concepts(&self, node: &Node, concepts: &[String]) -> Vec<String> {
         let mut matched = Vec::new();
-        let node_text = format!("{} {}", node.name, format!("{:?}", node.kind)).to_lowercase();
+        let node_text = format!("{} {:?}", node.name, node.kind).to_lowercase();
 
         for concept in concepts {
             if node.name.to_lowercase().contains(concept) {
@@ -253,8 +253,8 @@ impl SemanticSearchEngine {
         };
 
         format!(
-            "{} '{}' appears to be related to {} based on its name and type",
-            format!("{:?}", node.kind),
+            "{:?} '{}' appears to be related to {} based on its name and type",
+            node.kind,
             node.name,
             concept_text
         )

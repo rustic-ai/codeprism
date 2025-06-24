@@ -2970,14 +2970,14 @@ impl ToolManager {
         include_source_context: bool,
     ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<()>> + 'a>> {
         Box::pin(async move {
-        // Prevent infinite recursion and excessive depth
-        if current_depth >= max_depth || visited.contains(class_id) {
-            return Ok(());
-        }
+            // Prevent infinite recursion and excessive depth
+            if current_depth >= max_depth || visited.contains(class_id) {
+                return Ok(());
+            }
 
-        visited.insert(*class_id);
+            visited.insert(*class_id);
 
-        if let Some(class_node) = server.graph_store().get_node(class_id) {
+            if let Some(class_node) = server.graph_store().get_node(class_id) {
                 if let Ok(inheritance_info) = server.graph_query().get_inheritance_info(class_id) {
                     let mut class_data = serde_json::Map::new();
 
@@ -3119,7 +3119,7 @@ impl ToolManager {
                 }
             }
 
-        Ok(())
+            Ok(())
         })
     }
 
@@ -5076,7 +5076,6 @@ def another_function():
     #[tokio::test]
     async fn test_context_edge_cases() {
         use std::fs;
-        use std::os::unix::fs::PermissionsExt;
         use tempfile::TempDir;
 
         let temp_dir = TempDir::new().expect("Failed to create temp dir");
@@ -5097,22 +5096,35 @@ def another_function():
         let context = tool_manager.extract_source_context(&normal_file, 0, 2);
         assert!(context.is_none()); // Line 0 is invalid
 
-        // Test with unreadable file (permission denied)
-        let restricted_file = temp_dir.path().join("restricted.py");
-        fs::write(&restricted_file, "secret content").unwrap();
+        // Test with unreadable file (permission denied) - Unix only
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
 
-        // Remove read permissions
-        let mut perms = fs::metadata(&restricted_file).unwrap().permissions();
-        perms.set_mode(0o000);
-        fs::set_permissions(&restricted_file, perms).unwrap();
+            let restricted_file = temp_dir.path().join("restricted.py");
+            fs::write(&restricted_file, "secret content").unwrap();
 
-        let context = tool_manager.extract_source_context(&restricted_file, 1, 2);
-        assert!(context.is_none()); // Should handle permission errors gracefully
+            // Remove read permissions
+            let mut perms = fs::metadata(&restricted_file).unwrap().permissions();
+            perms.set_mode(0o000);
+            fs::set_permissions(&restricted_file, perms).unwrap();
 
-        // Restore permissions for cleanup
-        let mut perms = fs::metadata(&restricted_file).unwrap().permissions();
-        perms.set_mode(0o644);
-        fs::set_permissions(&restricted_file, perms).unwrap();
+            let context = tool_manager.extract_source_context(&restricted_file, 1, 2);
+            assert!(context.is_none()); // Should handle permission errors gracefully
+
+            // Restore permissions for cleanup
+            let mut perms = fs::metadata(&restricted_file).unwrap().permissions();
+            perms.set_mode(0o644);
+            fs::set_permissions(&restricted_file, perms).unwrap();
+        }
+
+        // For Windows, test with a nonexistent file (simpler permission test)
+        #[cfg(windows)]
+        {
+            let nonexistent_file = temp_dir.path().join("nonexistent.py");
+            let context = tool_manager.extract_source_context(&nonexistent_file, 1, 2);
+            assert!(context.is_none()); // Should handle file not found gracefully
+        }
     }
 
     #[tokio::test]
@@ -7610,9 +7622,9 @@ impl ToolManager {
         current_depth: usize,
     ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<()>> + 'a>> {
         Box::pin(async move {
-        if current_depth >= max_depth {
-            return Ok(());
-        }
+            if current_depth >= max_depth {
+                return Ok(());
+            }
 
             let mut chain = current_chain;
             if let Some(node) = server.graph_store().get_node(&current_node) {
@@ -7646,7 +7658,7 @@ impl ToolManager {
                 }
             }
 
-        Ok(())
+            Ok(())
         })
     }
 

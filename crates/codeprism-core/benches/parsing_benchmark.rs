@@ -94,24 +94,25 @@ fn benchmark_lexical_analysis(c: &mut Criterion) {
     c.bench_function("lexical_analysis", |b| {
         b.iter(|| {
             let code = black_box(SAMPLE_PYTHON_CODE);
-            
+
             // Count different token types
-            let keywords = code.matches("def ").count() 
+            let keywords = code.matches("def ").count()
                 + code.matches("class ").count()
                 + code.matches("if ").count()
                 + code.matches("for ").count()
                 + code.matches("while ").count()
                 + code.matches("return ").count();
-                
+
             let operators = code.matches(" + ").count()
                 + code.matches(" - ").count()
                 + code.matches(" = ").count()
                 + code.matches(" == ").count();
-                
-            let identifiers = code.split_whitespace()
+
+            let identifiers = code
+                .split_whitespace()
                 .filter(|word| word.chars().all(|c| c.is_alphanumeric() || c == '_'))
                 .count();
-                
+
             (keywords, operators, identifiers)
         });
     });
@@ -121,11 +122,11 @@ fn benchmark_syntax_analysis(c: &mut Criterion) {
     c.bench_function("syntax_analysis", |b| {
         b.iter(|| {
             let code = black_box(SAMPLE_JAVASCRIPT_CODE);
-            
+
             // Analyze nesting depth
             let mut max_depth = 0usize;
             let mut current_depth = 0usize;
-            
+
             for ch in code.chars() {
                 match ch {
                     '{' | '(' | '[' => {
@@ -138,12 +139,12 @@ fn benchmark_syntax_analysis(c: &mut Criterion) {
                     _ => {}
                 }
             }
-            
+
             // Count function declarations
             let function_count = code.matches("function ").count()
                 + code.matches("async ").count()
                 + code.matches("=> ").count();
-            
+
             (max_depth, function_count)
         });
     });
@@ -152,14 +153,18 @@ fn benchmark_syntax_analysis(c: &mut Criterion) {
 fn benchmark_content_analysis(c: &mut Criterion) {
     c.bench_function("analyze_code_complexity", |b| {
         b.iter(|| {
-            let python_complexity = black_box(SAMPLE_PYTHON_CODE.matches("for ").count() 
-                + SAMPLE_PYTHON_CODE.matches("if ").count()
-                + SAMPLE_PYTHON_CODE.matches("while ").count());
-                
-            let js_complexity = black_box(SAMPLE_JAVASCRIPT_CODE.matches("for ").count()
-                + SAMPLE_JAVASCRIPT_CODE.matches("if ").count()
-                + SAMPLE_JAVASCRIPT_CODE.matches("while ").count());
-                
+            let python_complexity = black_box(
+                SAMPLE_PYTHON_CODE.matches("for ").count()
+                    + SAMPLE_PYTHON_CODE.matches("if ").count()
+                    + SAMPLE_PYTHON_CODE.matches("while ").count(),
+            );
+
+            let js_complexity = black_box(
+                SAMPLE_JAVASCRIPT_CODE.matches("for ").count()
+                    + SAMPLE_JAVASCRIPT_CODE.matches("if ").count()
+                    + SAMPLE_JAVASCRIPT_CODE.matches("while ").count(),
+            );
+
             python_complexity + js_complexity
         });
     });
@@ -168,15 +173,16 @@ fn benchmark_content_analysis(c: &mut Criterion) {
 fn benchmark_string_operations(c: &mut Criterion) {
     c.bench_function("string_processing", |b| {
         b.iter(|| {
-            let combined = format!("{}\n{}", 
-                black_box(SAMPLE_PYTHON_CODE), 
+            let combined = format!(
+                "{}\n{}",
+                black_box(SAMPLE_PYTHON_CODE),
                 black_box(SAMPLE_JAVASCRIPT_CODE)
             );
-            
+
             let word_count = black_box(combined.split_whitespace().count());
             let line_count = black_box(combined.lines().count());
             let char_count = black_box(combined.chars().count());
-            
+
             (word_count, line_count, char_count)
         });
     });
@@ -186,23 +192,26 @@ fn benchmark_pattern_matching(c: &mut Criterion) {
     c.bench_function("pattern_matching", |b| {
         b.iter(|| {
             let code = black_box(SAMPLE_PYTHON_CODE);
-            
+
             // Simulate AST pattern matching
-            let class_patterns = code.lines()
+            let class_patterns = code
+                .lines()
                 .filter(|line| line.trim_start().starts_with("class "))
                 .count();
-                
-            let function_patterns = code.lines()
+
+            let function_patterns = code
+                .lines()
                 .filter(|line| line.trim_start().starts_with("def "))
                 .count();
-                
-            let comment_patterns = code.lines()
+
+            let comment_patterns = code
+                .lines()
                 .filter(|line| {
                     let trimmed = line.trim();
                     trimmed.starts_with("#") || trimmed.starts_with("\"\"\"")
                 })
                 .count();
-                
+
             (class_patterns, function_patterns, comment_patterns)
         });
     });
@@ -216,4 +225,4 @@ criterion_group!(
     benchmark_string_operations,
     benchmark_pattern_matching
 );
-criterion_main!(benches); 
+criterion_main!(benches);

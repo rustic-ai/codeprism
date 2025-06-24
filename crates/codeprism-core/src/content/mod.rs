@@ -839,9 +839,9 @@ mod tests {
 
             // Test the specific update kind
             match &update.update_kind {
-                ContentUpdateKind::Created => assert!(true),
-                ContentUpdateKind::Modified => assert!(true),
-                ContentUpdateKind::Deleted => assert!(true),
+                ContentUpdateKind::Created => { /* Content creation handled */ }
+                ContentUpdateKind::Modified => { /* Content modification handled */ }
+                ContentUpdateKind::Deleted => { /* Content deletion handled */ }
                 ContentUpdateKind::Renamed {
                     old_path: renamed_old_path,
                 } => {

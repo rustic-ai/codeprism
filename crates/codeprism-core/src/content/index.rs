@@ -1234,7 +1234,7 @@ mod tests {
         let index = ContentIndex::new();
 
         // Add files with different patterns
-        let files = vec!["test_one.md", "test_two.md", "other.txt", "config.json"];
+        let files = ["test_one.md", "test_two.md", "other.txt", "config.json"];
         for (i, file_name) in files.iter().enumerate() {
             let file_path = Path::new(file_name);
             let chunk = create_test_chunk(

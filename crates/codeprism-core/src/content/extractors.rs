@@ -676,7 +676,7 @@ mod tests {
         let source = "/* outer /* inner */ comment */";
         let matches: Vec<_> = js_extractor.comment_regex.find_iter(source).collect();
         assert!(
-            matches.len() >= 1,
+            !matches.is_empty(),
             "Should handle nested comments gracefully"
         );
 

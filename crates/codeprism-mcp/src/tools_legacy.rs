@@ -2958,17 +2958,18 @@ impl ToolManager {
     }
 
     /// Recursive helper for building inheritance tree
-    async fn build_tree_recursive(
-        &self,
-        server: &CodePrismMcpServer,
-        class_id: &codeprism_core::NodeId,
-        tree: &mut serde_json::Map<String, serde_json::Value>,
-        visited: &mut std::collections::HashSet<codeprism_core::NodeId>,
-        direction: &str,
+    fn build_tree_recursive<'a>(
+        &'a self,
+        server: &'a CodePrismMcpServer,
+        class_id: &'a codeprism_core::NodeId,
+        tree: &'a mut serde_json::Map<String, serde_json::Value>,
+        visited: &'a mut std::collections::HashSet<codeprism_core::NodeId>,
+        direction: &'a str,
         current_depth: usize,
         max_depth: usize,
         include_source_context: bool,
-    ) -> Result<()> {
+    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<()>> + 'a>> {
+        Box::pin(async move {
         // Prevent infinite recursion and excessive depth
         if current_depth >= max_depth || visited.contains(class_id) {
             return Ok(());
@@ -3119,6 +3120,7 @@ impl ToolManager {
             }
 
         Ok(())
+        })
     }
 
     /// Analyze metaclass impact on inheritance hierarchy
@@ -7598,15 +7600,16 @@ impl ToolManager {
     }
 
     /// Recursive helper for building dependency chains
-    async fn build_chains_recursive(
-        &self,
-        server: &CodePrismMcpServer,
+    fn build_chains_recursive<'a>(
+        &'a self,
+        server: &'a CodePrismMcpServer,
         current_node: codeprism_core::NodeId,
         current_chain: Vec<String>,
-        all_chains: &mut Vec<serde_json::Value>,
+        all_chains: &'a mut Vec<serde_json::Value>,
         max_depth: usize,
         current_depth: usize,
-    ) -> Result<()> {
+    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<()>> + 'a>> {
+        Box::pin(async move {
         if current_depth >= max_depth {
             return Ok(());
         }
@@ -7643,7 +7646,7 @@ impl ToolManager {
                 }
             }
 
-            Ok(())
+        Ok(())
         })
     }
 

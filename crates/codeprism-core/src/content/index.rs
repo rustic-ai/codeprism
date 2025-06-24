@@ -785,7 +785,7 @@ mod tests {
         let index = ContentIndex::new();
 
         // Test default implementation
-        let index_default = ContentIndex::default();
+        let _index_default = ContentIndex::default();
 
         // Initially empty
         let stats = index.get_stats();

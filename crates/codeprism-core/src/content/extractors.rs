@@ -754,10 +754,10 @@ const y = 2; // Final comment
 
     #[test]
     fn test_javascript_comment_extraction() {
-        let extractor = CommentExtractor::new();
-        let file_path = std::path::Path::new("test.js");
+        let _extractor = CommentExtractor::new();
+        let _file_path = std::path::Path::new("test.js");
 
-        let source = r#"
+        let _source = r#"
 // This is a single line comment
 function test() {
     /* This is a block comment */
@@ -784,10 +784,10 @@ function documented(value) {
 
     #[test]
     fn test_python_comment_extraction() {
-        let extractor = CommentExtractor::new();
-        let file_path = std::path::Path::new("test.py");
+        let _extractor = CommentExtractor::new();
+        let _file_path = std::path::Path::new("test.py");
 
-        let source = r#"
+        let _source = r#"
 # This is a single line comment
 def test():
     """
@@ -905,7 +905,7 @@ class Example:
 
     #[test]
     fn test_comment_context_detection() {
-        let js_extractor = JavaScriptCommentExtractor::new();
+        let _js_extractor = JavaScriptCommentExtractor::new();
 
         // Test block vs inline detection logic
         let block_comment = "/* This is a block comment */";

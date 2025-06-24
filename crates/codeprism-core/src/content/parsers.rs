@@ -902,7 +902,7 @@ mod tests {
 
     #[test]
     fn test_document_parser_creation() {
-        let parser = DocumentParser::new();
+        let _parser = DocumentParser::new();
         // Just test that creation doesn't panic
         assert!(true);
     }

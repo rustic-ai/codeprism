@@ -5,15 +5,17 @@
 
 use anyhow::Result;
 use serde_json::Value;
+use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
+use tokio::time::Duration;
 use tracing::{debug, info, warn};
 
 use crate::{
     prompts::{GetPromptParams, ListPromptsParams, PromptManager},
     protocol::{
-        ClientInfo, InitializeParams, InitializeResult, JsonRpcError, JsonRpcNotification,
-        JsonRpcRequest, JsonRpcResponse, ServerInfo,
+        CancellationParams, CancellationToken, ClientInfo, InitializeParams, InitializeResult,
+        JsonRpcError, JsonRpcNotification, JsonRpcRequest, JsonRpcResponse, ServerInfo,
     },
     resources::{ListResourcesParams, ReadResourceParams, ResourceManager},
     tools::{CallToolParams, ListToolsParams, ToolRegistry},
@@ -30,6 +32,57 @@ pub enum ServerState {
     Ready,
     /// Server is shutting down
     Shutdown,
+}
+
+/// Registry for tracking active requests and their cancellation tokens
+#[derive(Debug, Default)]
+pub struct RequestRegistry {
+    /// Active requests mapped by their ID
+    active_requests: HashMap<String, CancellationToken>,
+}
+
+impl RequestRegistry {
+    /// Register a new request with its cancellation token
+    pub fn register(&mut self, request_id: String, token: CancellationToken) {
+        debug!("Registering request {}", request_id);
+        self.active_requests.insert(request_id, token);
+    }
+
+    /// Unregister a completed request
+    pub fn unregister(&mut self, request_id: &str) {
+        debug!("Unregistering request {}", request_id);
+        self.active_requests.remove(request_id);
+    }
+
+    /// Cancel a specific request
+    pub fn cancel_request(&mut self, request_id: &str) -> bool {
+        if let Some(token) = self.active_requests.get(request_id) {
+            info!("Cancelling request {}", request_id);
+            token.cancel();
+            true
+        } else {
+            warn!("Request {} not found for cancellation", request_id);
+            false
+        }
+    }
+
+    /// Get the cancellation token for a request
+    pub fn get_token(&self, request_id: &str) -> Option<&CancellationToken> {
+        self.active_requests.get(request_id)
+    }
+
+    /// Cancel all active requests (for shutdown)
+    pub fn cancel_all(&mut self) {
+        info!(
+            "Cancelling all {} active requests",
+            self.active_requests.len()
+        );
+        for (request_id, token) in &self.active_requests {
+            debug!("Cancelling request {}", request_id);
+            token.cancel();
+        }
+        self.active_requests.clear();
+    }
 }
 
 /// Main MCP Server implementation
@@ -50,6 +103,10 @@ pub struct McpServer {
     tool_registry: ToolRegistry,
     /// Prompt manager
     prompt_manager: PromptManager,
+    /// Request registry for cancellation tracking
+    request_registry: Arc<RwLock<RequestRegistry>>,
+    /// Default timeout for operations
+    default_timeout: Duration,
 }
 
 impl McpServer {
@@ -73,6 +130,8 @@ impl McpServer {
             resource_manager,
             tool_registry,
             prompt_manager,
+            request_registry: Arc::new(RwLock::new(RequestRegistry::default())),
+            default_timeout: Duration::from_secs(300), // 5 minutes default timeout
         })
     }
 
@@ -112,6 +171,8 @@ impl McpServer {
             resource_manager,
             tool_registry,
             prompt_manager,
+            request_registry: Arc::new(RwLock::new(RequestRegistry::default())),
+            default_timeout: Duration::from_secs(300), // 5 minutes default timeout
         })
     }
 
@@ -152,6 +213,11 @@ impl McpServer {
             }
         }
 
+        // Cancel all active requests before shutdown
+        let mut registry = self.request_registry.write().await;
+        registry.cancel_all();
+        drop(registry);
+
         transport.close().await?;
         info!("Prism MCP server stopped");
         Ok(())
@@ -178,27 +244,73 @@ impl McpServer {
         }
     }
 
-    /// Handle a JSON-RPC request
+    /// Handle a JSON-RPC request with cancellation support
     async fn handle_request(&mut self, request: JsonRpcRequest) -> JsonRpcResponse {
         debug!(
             "Handling request: method={}, id={:?}",
             request.method, request.id
         );
 
-        let result = match request.method.as_str() {
-            "initialize" => self.handle_initialize(request.params).await,
-            "resources/list" => self.handle_resources_list(request.params).await,
-            "resources/read" => self.handle_resources_read(request.params).await,
-            "tools/list" => self.handle_tools_list(request.params).await,
-            "tools/call" => self.handle_tools_call(request.params).await,
-            "prompts/list" => self.handle_prompts_list(request.params).await,
-            "prompts/get" => self.handle_prompts_get(request.params).await,
-            _ => Err(JsonRpcError::method_not_found(&request.method)),
-        };
+        // Create cancellation token for this request
+        let token = CancellationToken::new(request.id.clone());
+        let request_id_str = request.id.to_string();
+
+        // Register the request
+        {
+            let mut registry = self.request_registry.write().await;
+            registry.register(request_id_str.clone(), token.clone());
+        }
+
+        // Handle the request with cancellation support
+        let result = self
+            .handle_request_with_cancellation(request.clone(), token.clone())
+            .await;
+
+        // Unregister the request
+        {
+            let mut registry = self.request_registry.write().await;
+            registry.unregister(&request_id_str);
+        }
 
         match result {
             Ok(result) => JsonRpcResponse::success(request.id, result),
             Err(error) => JsonRpcResponse::error(request.id, error),
+        }
+    }
+
+    /// Handle a request with cancellation token
+    async fn handle_request_with_cancellation(
+        &mut self,
+        request: JsonRpcRequest,
+        token: CancellationToken,
+    ) -> Result<Value, JsonRpcError> {
+        let timeout = self.default_timeout;
+
+        let operation = async {
+            match request.method.as_str() {
+                "initialize" => self.handle_initialize(request.params).await,
+                "resources/list" => self.handle_resources_list(request.params).await,
+                "resources/read" => self.handle_resources_read(request.params).await,
+                "tools/list" => self.handle_tools_list(request.params).await,
+                "tools/call" => self.handle_tools_call(request.params, token.clone()).await,
+                "prompts/list" => self.handle_prompts_list(request.params).await,
+                "prompts/get" => self.handle_prompts_get(request.params).await,
+                _ => Err(JsonRpcError::method_not_found(&request.method)),
+            }
+        };
+
+        match token.with_timeout(timeout, operation).await {
+            Ok(result) => result,
+            Err(crate::protocol::CancellationError::Cancelled) => Err(JsonRpcError::new(
+                -32800,
+                "Request was cancelled".to_string(),
+                None,
+            )),
+            Err(crate::protocol::CancellationError::Timeout) => Err(JsonRpcError::new(
+                -32801,
+                "Request timed out".to_string(),
+                None,
+            )),
         }
     }
 
@@ -212,8 +324,25 @@ impl McpServer {
                 self.state = ServerState::Ready;
             }
             "notifications/cancelled" => {
-                debug!("Received cancellation notification");
-                // TODO: Handle request cancellation
+                if let Some(params) = notification.params {
+                    match serde_json::from_value::<CancellationParams>(params) {
+                        Ok(cancel_params) => {
+                            let request_id = cancel_params.id.to_string();
+                            let mut registry = self.request_registry.write().await;
+                            if registry.cancel_request(&request_id) {
+                                info!("Successfully cancelled request {}", request_id);
+                                if let Some(reason) = cancel_params.reason {
+                                    debug!("Cancellation reason: {}", reason);
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            warn!("Invalid cancellation notification params: {}", e);
+                        }
+                    }
+                } else {
+                    warn!("Cancellation notification missing parameters");
+                }
             }
             _ => {
                 warn!("Unknown notification method: {}", notification.method);
@@ -311,13 +440,18 @@ impl McpServer {
             .map_err(|e| JsonRpcError::internal_error(format!("Serialization error: {}", e)))
     }
 
-    /// Handle tools/call request
-    async fn handle_tools_call(&self, params: Option<Value>) -> Result<Value, JsonRpcError> {
+    /// Handle tools/call request with cancellation support
+    async fn handle_tools_call(
+        &self,
+        params: Option<Value>,
+        _token: CancellationToken,
+    ) -> Result<Value, JsonRpcError> {
         let params: CallToolParams = params
             .ok_or_else(|| JsonRpcError::invalid_params("Missing parameters".to_string()))?
             .try_into_type()
             .map_err(|e| JsonRpcError::invalid_params(format!("Invalid parameters: {}", e)))?;
 
+        // TODO: Pass cancellation token to tool registry in the future
         let result = self
             .tool_registry
             .call_tool(params)
@@ -721,8 +855,12 @@ def parse_config_value(value: str) -> Union[str, int, bool]:
             name: "repository_stats".to_string(),
             arguments: Some(serde_json::json!({})),
         };
+        let dummy_token = CancellationToken::new(serde_json::Value::String("test".to_string()));
         let tool_result = server
-            .handle_tools_call(Some(serde_json::to_value(tool_params).unwrap()))
+            .handle_tools_call(
+                Some(serde_json::to_value(tool_params).unwrap()),
+                dummy_token,
+            )
             .await;
         assert!(tool_result.is_ok());
 

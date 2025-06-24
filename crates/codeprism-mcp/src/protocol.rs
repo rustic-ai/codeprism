@@ -5,6 +5,9 @@
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::sync::Arc;
+use tokio::sync::Notify;
+use tokio::time::Duration;
 
 /// JSON-RPC 2.0 Request message
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -57,6 +60,90 @@ pub struct JsonRpcError {
     /// Optional additional error data
     #[serde(skip_serializing_if = "Option::is_none")]
     pub data: Option<serde_json::Value>,
+}
+
+/// Cancellation notification parameters
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CancellationParams {
+    /// Request ID being cancelled
+    pub id: serde_json::Value,
+    /// Optional reason for cancellation
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+}
+
+/// Cancellation token for request cancellation
+#[derive(Debug, Clone)]
+pub struct CancellationToken {
+    /// Notifier for cancellation
+    notify: Arc<Notify>,
+    /// Whether the token is cancelled
+    cancelled: Arc<std::sync::atomic::AtomicBool>,
+    /// Request ID associated with this token
+    request_id: serde_json::Value,
+}
+
+impl CancellationToken {
+    /// Create a new cancellation token
+    pub fn new(request_id: serde_json::Value) -> Self {
+        Self {
+            notify: Arc::new(Notify::new()),
+            cancelled: Arc::new(std::sync::atomic::AtomicBool::new(false)),
+            request_id,
+        }
+    }
+
+    /// Check if cancellation was requested
+    pub fn is_cancelled(&self) -> bool {
+        self.cancelled.load(std::sync::atomic::Ordering::Relaxed)
+    }
+
+    /// Cancel this token
+    pub fn cancel(&self) {
+        self.cancelled
+            .store(true, std::sync::atomic::Ordering::Relaxed);
+        self.notify.notify_waiters();
+    }
+
+    /// Wait for cancellation
+    pub async fn cancelled(&self) {
+        if self.is_cancelled() {
+            return;
+        }
+        self.notify.notified().await;
+    }
+
+    /// Get the request ID
+    pub fn request_id(&self) -> &serde_json::Value {
+        &self.request_id
+    }
+
+    /// Run an operation with timeout and cancellation
+    pub async fn with_timeout<F, T>(
+        &self,
+        timeout: Duration,
+        operation: F,
+    ) -> Result<T, CancellationError>
+    where
+        F: std::future::Future<Output = T>,
+    {
+        tokio::select! {
+            result = operation => Ok(result),
+            _ = self.cancelled() => Err(CancellationError::Cancelled),
+            _ = tokio::time::sleep(timeout) => Err(CancellationError::Timeout),
+        }
+    }
+}
+
+/// Cancellation error types
+#[derive(Debug, Clone, thiserror::Error)]
+pub enum CancellationError {
+    /// Operation was cancelled
+    #[error("Operation was cancelled")]
+    Cancelled,
+    /// Operation timed out
+    #[error("Operation timed out")]
+    Timeout,
 }
 
 /// MCP Initialize request parameters

@@ -4645,7 +4645,7 @@ def process_data(input_data: str) -> str:
             assert!(stats["total_nodes"].as_u64().unwrap() > 0);
             assert!(stats["status"].as_str().unwrap() == "active");
         } else {
-            panic!("Expected text content");
+            assert!(false, "Expected text content but received different content type");
         }
     }
 

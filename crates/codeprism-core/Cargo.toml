@@ -30,6 +30,7 @@ dashmap.workspace = true
 once_cell.workspace = true
 rayon.workspace = true
 regex.workspace = true
+rand.workspace = true
 
 # File watching
 notify.workspace = true

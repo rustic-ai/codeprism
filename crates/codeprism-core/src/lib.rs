@@ -13,10 +13,12 @@ pub mod error;
 pub mod graph;
 pub mod indexer;
 pub mod linkers;
+pub mod observability;
 pub mod parser;
 pub mod patch;
 pub mod pipeline;
 pub mod repository;
+pub mod resilience;
 pub mod scanner;
 pub mod watcher;
 
@@ -26,7 +28,7 @@ pub use content::{
     CommentContext, ConfigFormat, ContentChunk, ContentNode, ContentStats, ContentType,
     DocumentFormat, SearchQuery, SearchResult,
 };
-pub use error::{Error, Result};
+pub use error::{Error, ErrorContext, ErrorSeverity, RecoveryStrategy, Result};
 pub use graph::{
     DynamicAttribute, GraphQuery, GraphStore, InheritanceFilter, InheritanceInfo,
     InheritanceRelation, PathResult, SymbolInfo,
@@ -48,6 +50,8 @@ pub use scanner::{
     ScanResult,
 };
 pub use watcher::{ChangeEvent, ChangeKind, FileWatcher};
+pub use resilience::{RetryConfig, CircuitBreaker, ResilienceManager, CircuitState};
+pub use observability::{MetricsCollector, HealthMonitor, PerformanceMonitor, HealthCheckResult};
 
 /// Re-export commonly used types
 pub mod prelude {
@@ -57,7 +61,7 @@ pub mod prelude {
         CommentContext, ConfigFormat, ContentChunk, ContentNode, ContentStats, ContentType,
         DocumentFormat, SearchQuery, SearchResult,
     };
-    pub use crate::error::{Error, Result};
+    pub use crate::error::{Error, ErrorContext, ErrorSeverity, RecoveryStrategy, Result};
     pub use crate::graph::{
         DynamicAttribute, GraphQuery, GraphStore, InheritanceFilter, InheritanceInfo,
         InheritanceRelation, PathResult, SymbolInfo,
@@ -83,4 +87,6 @@ pub mod prelude {
         ScanResult,
     };
     pub use crate::watcher::{ChangeEvent, ChangeKind, FileWatcher};
+    pub use crate::resilience::{RetryConfig, CircuitBreaker, ResilienceManager, CircuitState};
+    pub use crate::observability::{MetricsCollector, HealthMonitor, PerformanceMonitor, HealthCheckResult};
 }

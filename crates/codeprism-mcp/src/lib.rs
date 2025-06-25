@@ -22,6 +22,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 pub mod context;
+pub mod error_handler;
 pub mod prompts;
 pub mod protocol;
 pub mod resources;
@@ -37,6 +38,7 @@ pub use protocol::{
 };
 pub use server::McpServer;
 pub use transport::{StdioTransport, Transport};
+pub use error_handler::{McpError, McpResult, McpErrorHandler};
 
 /// Python language parser adapter
 struct PythonParserAdapter;

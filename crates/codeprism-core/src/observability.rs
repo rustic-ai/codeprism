@@ -620,7 +620,8 @@ mod tests {
 
         let snapshot = collector.get_metrics_snapshot();
 
-        assert!(snapshot.uptime_seconds >= 0);
+        // Uptime should be a valid positive number - check it's reasonable
+        assert!(snapshot.uptime_seconds < 365 * 24 * 3600); // Less than a year
         assert!(snapshot.operation_metrics.contains_key("op1"));
         assert_eq!(snapshot.resource_usage.get("memory_mb"), Some(&512));
         assert!(!snapshot.error_counts.is_empty());

@@ -556,10 +556,11 @@ mod tests {
 
         let attempts = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
         let attempts_clone = attempts.clone();
-        
+
         let result = executor
             .execute(|| {
-                let current_attempt = attempts_clone.fetch_add(1, std::sync::atomic::Ordering::SeqCst) + 1;
+                let current_attempt =
+                    attempts_clone.fetch_add(1, std::sync::atomic::Ordering::SeqCst) + 1;
                 async move {
                     if current_attempt < 2 {
                         Err(Error::storage("temporary failure"))
@@ -581,7 +582,7 @@ mod tests {
 
         let attempts = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
         let attempts_clone = attempts.clone();
-        
+
         let result: Result<&str> = executor
             .execute(|| {
                 attempts_clone.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
@@ -607,10 +608,11 @@ mod tests {
 
         let attempts = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
         let attempts_clone = attempts.clone();
-        
+
         let result = manager
             .execute(|| {
-                let current_attempt = attempts_clone.fetch_add(1, std::sync::atomic::Ordering::SeqCst) + 1;
+                let current_attempt =
+                    attempts_clone.fetch_add(1, std::sync::atomic::Ordering::SeqCst) + 1;
                 async move {
                     if current_attempt < 2 {
                         Err(Error::storage("temporary failure"))

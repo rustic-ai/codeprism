@@ -564,7 +564,8 @@ mod tests {
         handler.handle_error(&error, Some("test_operation")).await;
 
         let metrics = handler.get_metrics();
-        assert!(metrics.uptime_seconds >= 0);
+        // Uptime should be a valid positive number - check it's reasonable
+        assert!(metrics.uptime_seconds < 365 * 24 * 3600); // Less than a year
     }
 
     #[test]

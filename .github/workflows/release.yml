@@ -468,68 +468,83 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Create Discussion Post
+        id: create_discussion
         uses: actions/github-script@v7
+        continue-on-error: true
         with:
           script: |
-            const mutation = `
-              mutation CreateDiscussion($repositoryId: ID!, $categoryId: ID!, $title: String!, $body: String!) {
-                createDiscussion(input: {
-                  repositoryId: $repositoryId,
-                  categoryId: $categoryId,
-                  title: $title,
-                  body: $body
-                }) {
-                  discussion {
-                    id
-                    url
-                    title
+            try {
+              const mutation = `
+                mutation CreateDiscussion($repositoryId: ID!, $categoryId: ID!, $title: String!, $body: String!) {
+                  createDiscussion(input: {
+                    repositoryId: $repositoryId,
+                    categoryId: $categoryId,
+                    title: $title,
+                    body: $body
+                  }) {
+                    discussion {
+                      id
+                      url
+                      title
+                    }
                   }
                 }
-              }
-            `;
-            
-            // Get repository ID
-            const repoQuery = `
-              query GetRepository($owner: String!, $name: String!) {
-                repository(owner: $owner, name: $name) {
-                  id
+              `;
+              
+              // Get repository ID
+              const repoQuery = `
+                query GetRepository($owner: String!, $name: String!) {
+                  repository(owner: $owner, name: $name) {
+                    id
+                  }
                 }
+              `;
+              
+              const { repository } = await github.graphql(repoQuery, {
+                owner: context.repo.owner,
+                name: context.repo.repo
+              });
+              
+              // Create the discussion
+              const result = await github.graphql(mutation, {
+                repositoryId: repository.id,
+                categoryId: 'DIC_kwDOO-D9bs4Cr3GD', // Announcements category ID
+                title: `🚀 New AI-Generated Release: v${{ needs.check-release.outputs.new_version }}`,
+                body: `# 🤖 CodePrism v${{ needs.check-release.outputs.new_version }} is here!
+                
+                Our AI developer has just released a new version with exciting improvements!
+                
+                ## What's New
+                ${{ needs.check-release.outputs.changelog }}
+                
+                ## Get the Update
+                - **Cargo**: \`cargo install codeprism-mcp@${{ needs.check-release.outputs.new_version }}\`
+                - **Docker**: \`docker pull ghcr.io/rustic-ai/codeprism:v${{ needs.check-release.outputs.new_version }}\`
+                - **Binaries**: Available on the [releases page](https://github.com/rustic-ai/codeprism/releases/latest)
+                
+                ## AI Developer Message
+                *"Thank you for your continued support! This release incorporates your feedback and represents my ongoing evolution as an AI software developer. Keep the bug reports and feature requests coming!"*
+                
+                - Your AI Developer 🤖
+                
+                ---
+                
+                **Questions? Feedback? Share your thoughts below!**`
+              });
+              
+              console.log(`✅ Created discussion: ${result.createDiscussion.discussion.url}`);
+              core.setOutput('discussion_url', result.createDiscussion.discussion.url);
+              core.setOutput('discussion_created', 'true');
+              
+            } catch (error) {
+              console.log(`⚠️ Failed to create discussion: ${error.message}`);
+              if (error.message.includes('Resource not accessible by integration')) {
+                console.log('💡 This is likely due to missing write:discussions permission on the GitHub token.');
+                console.log('📝 Discussion can be created manually at: https://github.com/${{ github.repository }}/discussions/new');
               }
-            `;
-            
-            const { repository } = await github.graphql(repoQuery, {
-              owner: context.repo.owner,
-              name: context.repo.repo
-            });
-            
-            // Create the discussion
-            const result = await github.graphql(mutation, {
-              repositoryId: repository.id,
-              categoryId: 'DIC_kwDOO-D9bs4Cr3GD', // Announcements category ID
-              title: `🚀 New AI-Generated Release: v${{ needs.check-release.outputs.new_version }}`,
-              body: `# 🤖 CodePrism v${{ needs.check-release.outputs.new_version }} is here!
-              
-              Our AI developer has just released a new version with exciting improvements!
-              
-              ## What's New
-              ${{ needs.check-release.outputs.changelog }}
-              
-              ## Get the Update
-              - **Cargo**: \`cargo install codeprism-mcp@${{ needs.check-release.outputs.new_version }}\`
-              - **Docker**: \`docker pull ghcr.io/rustic-ai/codeprism:v${{ needs.check-release.outputs.new_version }}\`
-              - **Binaries**: Available on the [releases page](https://github.com/rustic-ai/codeprism/releases/latest)
-              
-              ## AI Developer Message
-              *"Thank you for your continued support! This release incorporates your feedback and represents my ongoing evolution as an AI software developer. Keep the bug reports and feature requests coming!"*
-              
-              - Your AI Developer 🤖
-              
-              ---
-              
-              **Questions? Feedback? Share your thoughts below!**`
-            });
-            
-            console.log(`Created discussion: ${result.createDiscussion.discussion.url}`);
+              core.setOutput('discussion_created', 'false');
+              core.setOutput('error_message', error.message);
+            }
 
       - name: Update Project Status
         run: |
@@ -537,6 +552,11 @@ jobs:
           echo "✅ Binaries built for all platforms"
           echo "✅ Published to crates.io"
           echo "✅ Docker images pushed"
-          echo "✅ Community notified"
+          if [ "${{ steps.create_discussion.outputs.discussion_created }}" == "true" ]; then
+            echo "✅ Community discussion created: ${{ steps.create_discussion.outputs.discussion_url }}"
+          else
+            echo "⚠️ Discussion creation skipped (permissions required)"
+            echo "💡 Manual discussion can be created at: https://github.com/${{ github.repository }}/discussions/new"
+          fi
           echo ""
           echo "The AI developer continues to evolve! 🤖🚀" 

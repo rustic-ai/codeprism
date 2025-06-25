@@ -790,4 +790,4 @@ The future of code intelligence isn't about better Python analysis or smarter Ja
 
 *Ready to trace dependencies across your entire polyglot codebase? Try CodePrism and discover connections you never knew existed.*
 
-**Continue reading our series**: [Real-Time Code Intelligence: Building Incremental Indexing for Live Development](./incremental-indexing-live-development) 
+**Continue reading our series**: [Building a Graph-Based Code Analysis Engine: Architecture Deep Dive](./graph-based-code-analysis-engine) 

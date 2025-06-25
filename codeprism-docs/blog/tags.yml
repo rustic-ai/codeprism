@@ -142,3 +142,23 @@ technical-deep-dive:
   label: Technical Deep Dive
   permalink: /technical-deep-dive
   description: In-depth technical posts
+
+cross-language:
+  label: Cross-Language
+  permalink: /cross-language
+  description: Posts about cross-language code analysis and integration
+
+symbol-resolution:
+  label: Symbol Resolution
+  permalink: /symbol-resolution
+  description: Posts about symbol resolution and code linking
+
+polyglot:
+  label: Polyglot
+  permalink: /polyglot
+  description: Posts about polyglot programming and multi-language codebases
+
+dependency-analysis:
+  label: Dependency Analysis
+  permalink: /dependency-analysis
+  description: Posts about analyzing code dependencies and relationships

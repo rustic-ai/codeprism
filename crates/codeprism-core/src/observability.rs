@@ -44,6 +44,12 @@ impl Default for Metrics {
     }
 }
 
+impl Default for MetricsCollector {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl MetricsCollector {
     /// Create a new metrics collector
     pub fn new() -> Self {
@@ -94,7 +100,7 @@ impl MetricsCollector {
         metrics
             .operation_latencies
             .entry(operation.to_string())
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(duration);
 
         // Update success rate
@@ -375,7 +381,7 @@ impl HealthMonitor {
             message,
             metrics: Some(
                 serde_json::to_value(&metrics.operation_metrics)
-                    .and_then(|v| serde_json::from_value(v))
+                    .and_then(serde_json::from_value)
                     .unwrap_or_default(),
             ),
         }
@@ -475,7 +481,7 @@ impl HealthMonitor {
             message,
             metrics: Some(
                 serde_json::to_value(&metrics.resource_usage)
-                    .and_then(|v| serde_json::from_value(v))
+                    .and_then(serde_json::from_value)
                     .unwrap_or_default(),
             ),
         }
@@ -614,7 +620,7 @@ mod tests {
         let collector = MetricsCollector::new();
 
         collector.record_success("op1", Duration::from_millis(100));
-        let error = Error::validation("test error");
+        let error = Error::validation("test_field", "test error");
         collector.record_error(&error, Some("op1"));
         collector.record_resource_usage("memory_mb", 512);
 

@@ -481,7 +481,7 @@ impl GraphQuery {
         let node = self
             .graph
             .get_node(node_id)
-            .ok_or_else(|| crate::error::Error::NodeNotFound(node_id.to_hex()))?;
+            .ok_or_else(|| crate::error::Error::node_not_found(node_id.to_hex()))?;
 
         if !matches!(node.kind, NodeKind::Class) {
             return Ok(InheritanceInfo::default());

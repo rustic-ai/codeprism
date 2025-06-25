@@ -151,11 +151,6 @@ impl CircuitBreaker {
         }
     }
 
-    /// Create a circuit breaker with default configuration
-    pub fn default() -> Self {
-        Self::new(CircuitBreakerConfig::default())
-    }
-
     /// Check if the circuit allows the request
     pub fn can_execute(&self) -> bool {
         let mut state = self.state.lock().unwrap();
@@ -252,6 +247,12 @@ impl CircuitBreaker {
     }
 }
 
+impl Default for CircuitBreaker {
+    fn default() -> Self {
+        Self::new(CircuitBreakerConfig::default())
+    }
+}
+
 /// Retry executor with exponential backoff
 pub struct RetryExecutor {
     config: RetryConfig,
@@ -261,11 +262,6 @@ impl RetryExecutor {
     /// Create a new retry executor
     pub fn new(config: RetryConfig) -> Self {
         Self { config }
-    }
-
-    /// Create a retry executor with default configuration
-    pub fn default() -> Self {
-        Self::new(RetryConfig::default())
     }
 
     /// Execute a function with retry logic
@@ -323,6 +319,12 @@ impl RetryExecutor {
     }
 }
 
+impl Default for RetryExecutor {
+    fn default() -> Self {
+        Self::new(RetryConfig::default())
+    }
+}
+
 /// Comprehensive resilience manager
 pub struct ResilienceManager {
     retry_executor: RetryExecutor,
@@ -335,14 +337,6 @@ impl ResilienceManager {
         Self {
             retry_executor: RetryExecutor::new(retry_config),
             circuit_breaker: CircuitBreaker::new(circuit_config),
-        }
-    }
-
-    /// Create a resilience manager with default configurations
-    pub fn default() -> Self {
-        Self {
-            retry_executor: RetryExecutor::default(),
-            circuit_breaker: CircuitBreaker::default(),
         }
     }
 
@@ -404,6 +398,15 @@ impl ResilienceManager {
     /// Check if the circuit is healthy
     pub fn is_healthy(&self) -> bool {
         matches!(self.circuit_breaker.state(), CircuitState::Closed)
+    }
+}
+
+impl Default for ResilienceManager {
+    fn default() -> Self {
+        Self {
+            retry_executor: RetryExecutor::default(),
+            circuit_breaker: CircuitBreaker::default(),
+        }
     }
 }
 

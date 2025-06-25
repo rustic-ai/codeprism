@@ -125,7 +125,7 @@ impl ParserEngine {
         let parser = self
             .registry
             .get_by_extension(ext)
-            .ok_or_else(|| Error::UnsupportedLanguage(ext.to_string()))?;
+            .ok_or_else(|| Error::unsupported_language(ext.to_string()))?;
 
         // Parse the file
         let result = parser.parse(&context)?;
@@ -299,8 +299,11 @@ mod tests {
         let result = engine.parse_file(context);
         assert!(result.is_err());
         match result.unwrap_err() {
-            Error::UnsupportedLanguage(ext) => assert_eq!(ext, "unknown"),
-            _ => panic!("Expected UnsupportedLanguage error"),
+            Error::Validation { field, message, .. } => {
+                assert_eq!(field, "language");
+                assert!(message.contains("unknown"));
+            }
+            _ => panic!("Expected Validation error for unsupported language"),
         }
     }
 

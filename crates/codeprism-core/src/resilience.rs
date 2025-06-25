@@ -67,7 +67,8 @@ impl RetryConfig {
     /// Calculate delay for a given attempt
     pub fn calculate_delay(&self, attempt: u32) -> Duration {
         let mut delay = Duration::from_millis(
-            (self.base_delay.as_millis() as f64 * self.backoff_multiplier.powi(attempt as i32)) as u64,
+            (self.base_delay.as_millis() as f64 * self.backoff_multiplier.powi(attempt as i32))
+                as u64,
         );
 
         if delay > self.max_delay {
@@ -220,7 +221,10 @@ impl CircuitBreaker {
                     // Transition to open
                     state.circuit_state = CircuitState::Open;
                     state.last_transition_time = now;
-                    error!("Circuit breaker opened due to {} failures", state.failure_count);
+                    error!(
+                        "Circuit breaker opened due to {} failures",
+                        state.failure_count
+                    );
                 }
             }
             CircuitState::HalfOpen => {
@@ -273,7 +277,11 @@ impl RetryExecutor {
         let mut last_error = None;
 
         for attempt in 0..self.config.max_attempts {
-            debug!("Executing operation, attempt {}/{}", attempt + 1, self.config.max_attempts);
+            debug!(
+                "Executing operation, attempt {}/{}",
+                attempt + 1,
+                self.config.max_attempts
+            );
 
             match operation().await {
                 Ok(result) => {
@@ -291,13 +299,20 @@ impl RetryExecutor {
                     }
 
                     if attempt + 1 >= self.config.max_attempts {
-                        error!("Operation failed after {} attempts: {}", self.config.max_attempts, error);
+                        error!(
+                            "Operation failed after {} attempts: {}",
+                            self.config.max_attempts, error
+                        );
                         break;
                     }
 
                     let delay = self.config.calculate_delay(attempt);
-                    warn!("Operation failed (attempt {}), retrying in {:?}: {}", 
-                          attempt + 1, delay, error);
+                    warn!(
+                        "Operation failed (attempt {}), retrying in {:?}: {}",
+                        attempt + 1,
+                        delay,
+                        error
+                    );
 
                     sleep(delay).await;
                 }
@@ -341,15 +356,21 @@ impl ResilienceManager {
             return Err(Error::other("Circuit breaker is open"));
         }
 
-        let result = self.retry_executor.execute(|| {
-            let op = operation.clone();
-            async move { op().await }
-        }).await;
+        let result = self
+            .retry_executor
+            .execute(|| {
+                let op = operation.clone();
+                async move { op().await }
+            })
+            .await;
 
         match &result {
             Ok(_) => self.circuit_breaker.record_success(),
             Err(error) => {
-                if matches!(error.severity(), ErrorSeverity::Error | ErrorSeverity::Critical) {
+                if matches!(
+                    error.severity(),
+                    ErrorSeverity::Error | ErrorSeverity::Critical
+                ) {
                     self.circuit_breaker.record_failure();
                 }
             }
@@ -359,11 +380,7 @@ impl ResilienceManager {
     }
 
     /// Execute with graceful degradation - returns partial results on failure
-    pub async fn execute_with_fallback<F, Fut, T, FB, FutB>(
-        &self,
-        operation: F,
-        fallback: FB,
-    ) -> T
+    pub async fn execute_with_fallback<F, Fut, T, FB, FutB>(&self, operation: F, fallback: FB) -> T
     where
         F: Fn() -> Fut + Clone,
         Fut: std::future::Future<Output = Result<T>>,
@@ -402,13 +419,19 @@ impl DegradationHandler {
     ) -> Result<Option<T>> {
         match error.recovery_strategy() {
             RecoveryStrategy::Degrade => {
-                warn!("Gracefully degrading parse operation for {}: {}", 
-                      file_path.display(), error);
+                warn!(
+                    "Gracefully degrading parse operation for {}: {}",
+                    file_path.display(),
+                    error
+                );
                 Ok(fallback_fn.await)
             }
             RecoveryStrategy::Fallback => {
-                info!("Using fallback for parse operation for {}: {}", 
-                      file_path.display(), error);
+                info!(
+                    "Using fallback for parse operation for {}: {}",
+                    file_path.display(),
+                    error
+                );
                 Ok(fallback_fn.await)
             }
             _ => Err(error.clone()),
@@ -425,7 +448,10 @@ impl DegradationHandler {
             RecoveryStrategy::Degrade => {
                 let completion_rate = (processed_files as f64 / total_files as f64) * 100.0;
                 if completion_rate >= 80.0 {
-                    warn!("Indexing completed with degraded results: {:.1}% processed", completion_rate);
+                    warn!(
+                        "Indexing completed with degraded results: {:.1}% processed",
+                        completion_rate
+                    );
                     Ok(())
                 } else {
                     Err(error.clone())
@@ -528,12 +554,14 @@ mod tests {
     async fn test_retry_executor_success() {
         let executor = RetryExecutor::new(RetryConfig::new(3, Duration::from_millis(10)));
 
-        let mut attempts = 0;
+        let attempts = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let attempts_clone = attempts.clone();
+        
         let result = executor
             .execute(|| {
-                attempts += 1;
+                let current_attempt = attempts_clone.fetch_add(1, std::sync::atomic::Ordering::SeqCst) + 1;
                 async move {
-                    if attempts < 2 {
+                    if current_attempt < 2 {
                         Err(Error::storage("temporary failure"))
                     } else {
                         Ok("success")
@@ -544,25 +572,25 @@ mod tests {
 
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), "success");
-        assert_eq!(attempts, 2);
+        assert_eq!(attempts.load(std::sync::atomic::Ordering::SeqCst), 2);
     }
 
     #[tokio::test]
     async fn test_retry_executor_failure() {
         let executor = RetryExecutor::new(RetryConfig::new(2, Duration::from_millis(10)));
 
-        let mut attempts = 0;
-        let result = executor
+        let attempts = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let attempts_clone = attempts.clone();
+        
+        let result: Result<&str> = executor
             .execute(|| {
-                attempts += 1;
-                async move {
-                    Err(Error::storage("persistent failure"))
-                }
+                attempts_clone.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                async move { Err(Error::storage("persistent failure")) }
             })
             .await;
 
         assert!(result.is_err());
-        assert_eq!(attempts, 2);
+        assert_eq!(attempts.load(std::sync::atomic::Ordering::SeqCst), 2);
     }
 
     #[tokio::test]
@@ -577,12 +605,14 @@ mod tests {
             },
         );
 
-        let mut attempts = 0;
+        let attempts = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let attempts_clone = attempts.clone();
+        
         let result = manager
             .execute(|| {
-                attempts += 1;
+                let current_attempt = attempts_clone.fetch_add(1, std::sync::atomic::Ordering::SeqCst) + 1;
                 async move {
-                    if attempts < 2 {
+                    if current_attempt < 2 {
                         Err(Error::storage("temporary failure"))
                     } else {
                         Ok("success")
@@ -609,4 +639,4 @@ mod tests {
 
         assert_eq!(result, "fallback result");
     }
-} 
+}

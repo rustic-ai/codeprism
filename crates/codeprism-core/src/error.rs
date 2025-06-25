@@ -189,7 +189,11 @@ impl Clone for Error {
     fn clone(&self) -> Self {
         match self {
             Self::Io(e) => Self::Io(std::io::Error::other(e.to_string())),
-            Self::Parse { file, message, context } => Self::Parse {
+            Self::Parse {
+                file,
+                message,
+                context,
+            } => Self::Parse {
                 file: file.clone(),
                 message: message.clone(),
                 context: context.clone(),
@@ -197,14 +201,19 @@ impl Clone for Error {
             Self::UnsupportedLanguage(s) => Self::UnsupportedLanguage(s.clone()),
             Self::TreeSitter(s) => Self::TreeSitter(s.clone()),
             Self::Storage(s) => Self::Storage(s.clone()),
-            Self::Serialization(e) => Self::Serialization(serde_json::Error::io(std::io::Error::other(e.to_string()))),
+            Self::Serialization(e) => {
+                Self::Serialization(serde_json::Error::io(std::io::Error::other(e.to_string())))
+            }
             Self::Config(s) => Self::Config(s.clone()),
             Self::Watcher(s) => Self::Watcher(s.clone()),
             Self::Indexing(s) => Self::Indexing(s.clone()),
             Self::InvalidNodeId(s) => Self::InvalidNodeId(s.clone()),
             Self::NodeNotFound(s) => Self::NodeNotFound(s.clone()),
             Self::EdgeNotFound(s) => Self::EdgeNotFound(s.clone()),
-            Self::Timeout { operation, duration } => Self::Timeout {
+            Self::Timeout {
+                operation,
+                duration,
+            } => Self::Timeout {
                 operation: operation.clone(),
                 duration: *duration,
             },
@@ -317,9 +326,9 @@ impl Error {
 
     /// Create a parse error with context
     pub fn parse_with_context(
-        file: impl Into<PathBuf>, 
-        message: impl Into<String>, 
-        context: Option<ErrorContext>
+        file: impl Into<PathBuf>,
+        message: impl Into<String>,
+        context: Option<ErrorContext>,
     ) -> Self {
         Self::Parse {
             file: file.into(),
@@ -452,7 +461,10 @@ mod tests {
         let context = ErrorContext::new()
             .with_request_id("req-123".to_string())
             .with_operation("parse_file".to_string())
-            .with_metadata("file_size".to_string(), serde_json::Value::Number(1024.into()));
+            .with_metadata(
+                "file_size".to_string(),
+                serde_json::Value::Number(1024.into()),
+            );
 
         assert_eq!(context.request_id, Some("req-123".to_string()));
         assert_eq!(context.operation, Some("parse_file".to_string()));

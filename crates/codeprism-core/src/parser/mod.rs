@@ -318,7 +318,7 @@ mod tests {
         let result = engine.parse_file(context);
         assert!(result.is_err());
         match result.unwrap_err() {
-            Error::Parse { file, message } => {
+            Error::Parse { file, message, .. } => {
                 assert_eq!(file, PathBuf::from("README"));
                 assert!(message.contains("No file extension"));
             }

@@ -38,6 +38,10 @@ pub use indexer::{
     MemoryStats,
 };
 pub use linkers::{Linker, RestLinker, SqlLinker, SymbolResolver};
+pub use observability::{
+    ComponentHealth, HealthCheckResult, HealthMonitor, HealthStatus as ObservabilityHealthStatus,
+    MetricsCollector, MetricsSnapshot, OperationMetrics, OperationPerformance, PerformanceMonitor,
+};
 pub use parser::{LanguageParser, LanguageRegistry, ParseContext, ParseResult, ParserEngine};
 pub use patch::{AstPatch, PatchBuilder};
 pub use pipeline::{
@@ -45,13 +49,12 @@ pub use pipeline::{
     PipelineEventHandler, PipelineStats,
 };
 pub use repository::{HealthStatus, RepositoryConfig, RepositoryInfo, RepositoryManager};
+pub use resilience::{CircuitBreaker, CircuitState, ResilienceManager, RetryConfig};
 pub use scanner::{
     DependencyMode, DiscoveredFile, NoOpProgressReporter, ProgressReporter, RepositoryScanner,
     ScanResult,
 };
 pub use watcher::{ChangeEvent, ChangeKind, FileWatcher};
-pub use resilience::{RetryConfig, CircuitBreaker, ResilienceManager, CircuitState};
-pub use observability::{MetricsCollector, HealthMonitor, PerformanceMonitor, HealthCheckResult};
 
 /// Re-export commonly used types
 pub mod prelude {
@@ -71,6 +74,11 @@ pub mod prelude {
         MemoryStats,
     };
     pub use crate::linkers::{Linker, RestLinker, SqlLinker, SymbolResolver};
+    pub use crate::observability::{
+        ComponentHealth, HealthCheckResult, HealthMonitor,
+        HealthStatus as ObservabilityHealthStatus, MetricsCollector, MetricsSnapshot,
+        OperationMetrics, OperationPerformance, PerformanceMonitor,
+    };
     pub use crate::parser::{
         LanguageParser, LanguageRegistry, ParseContext, ParseResult, ParserEngine,
     };
@@ -82,11 +90,10 @@ pub mod prelude {
     pub use crate::repository::{
         HealthStatus, RepositoryConfig, RepositoryInfo, RepositoryManager,
     };
+    pub use crate::resilience::{CircuitBreaker, CircuitState, ResilienceManager, RetryConfig};
     pub use crate::scanner::{
         DependencyMode, DiscoveredFile, NoOpProgressReporter, ProgressReporter, RepositoryScanner,
         ScanResult,
     };
     pub use crate::watcher::{ChangeEvent, ChangeKind, FileWatcher};
-    pub use crate::resilience::{RetryConfig, CircuitBreaker, ResilienceManager, CircuitState};
-    pub use crate::observability::{MetricsCollector, HealthMonitor, PerformanceMonitor, HealthCheckResult};
 }

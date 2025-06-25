@@ -32,13 +32,13 @@ pub mod tools_legacy;
 pub mod transport;
 
 // Re-export main types
+pub use error_handler::{McpError, McpErrorHandler, McpResult};
 pub use protocol::{
     InitializeParams, InitializeResult, JsonRpcNotification, JsonRpcRequest, JsonRpcResponse,
     ServerCapabilities,
 };
 pub use server::McpServer;
 pub use transport::{StdioTransport, Transport};
-pub use error_handler::{McpError, McpResult, McpErrorHandler};
 
 /// Python language parser adapter
 struct PythonParserAdapter;

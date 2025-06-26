@@ -31,44 +31,77 @@ This document defines the standardized parser interface and implementation requi
 ### Scope
 
 This specification covers:
-- Core parser trait definitions and contracts
+- Core parser structure and contracts
 - Universal AST node and edge type specifications
-- MCP server integration requirements
+- MCP server integration patterns
 - Performance benchmarks and optimization guidelines
 - Comprehensive testing patterns and requirements
 
 ## Core Parser Interface
 
-### LanguageParser Trait
+All language parsers are expected to be self-contained crates that expose a parser struct and a set of shared data types for the Universal AST. The primary interaction point is an adapter that prepares the parser for use within the CodePrism system.
 
-All language parsers must implement the `LanguageParser` trait:
+### Language-Specific Parser
+
+Each language crate should define its own parser struct. This struct is responsible for holding the tree-sitter parser state and handling the core parsing logic.
 
 ```rust
-/// Language parser trait that all parsers must implement
-pub trait LanguageParser: Send + Sync {
-    /// Get the language this parser handles
-    fn language(&self) -> Language;
+// Example from codeprism-lang-python/src/parser.rs
 
-    /// Parse a file and extract nodes and edges
-    /// 
-    /// # Arguments
-    /// * `context` - Parse context containing file information and content
-    /// 
-    /// # Returns
-    /// Returns a `ParseResult` containing the syntax tree, extracted nodes, and edges.
-    /// 
-    /// # Errors
-    /// Returns `Error::Parse` if the source code contains syntax errors that prevent
-    /// parsing, or `Error::NodeExtraction` if AST extraction fails.
-    fn parse(&self, context: &ParseContext) -> Result<ParseResult>;
+/// Python parser
+pub struct PythonParser {
+    /// Tree-sitter parser for Python
+    parser: Parser,
+}
+
+impl PythonParser {
+    /// Create a new Python parser
+    pub fn new() -> Self {
+        let mut parser = Parser::new();
+        parser
+            .set_language(&tree_sitter_python::LANGUAGE.into())
+            .expect("Failed to load Python grammar");
+
+        Self { parser }
+    }
+
+    /// Parse a Python file
+    pub fn parse(&mut self, context: &ParseContext) -> Result<ParseResult> {
+        let language = Self::detect_language(&context.file_path);
+
+        // Parse the file
+        let tree = self
+            .parser
+            .parse(&context.content, context.old_tree.as_ref())
+            .ok_or_else(|| Error::parse(&context.file_path, "Failed to parse file"))?;
+
+        // Extract nodes and edges
+        let mapper = AstMapper::new(
+            &context.repo_id,
+            context.file_path.clone(),
+            language,
+            &context.content,
+        );
+
+        let (nodes, edges) = mapper.extract(&tree)?;
+
+        Ok(ParseResult { tree, nodes, edges })
+    }
+
+    /// Get the language for a file based on its extension
+    pub fn detect_language(path: &Path) -> Language {
+        match path.extension().and_then(|s| s.to_str()) {
+            Some("py") | Some("pyw") => Language::Python,
+            _ => Language::Python, // Default to Python
+        }
+    }
 }
 ```
 
 **Implementation Requirements:**
-- **Thread Safety**: Must be `Send + Sync` for parallel processing
-- **Error Handling**: Graceful degradation for malformed code
-- **Memory Efficiency**: Minimal allocation overhead
-- **Incremental Support**: Utilize tree-sitter's incremental parsing capabilities
+- **State Management**: The struct should manage the `tree-sitter::Parser` instance.
+- **Error Handling**: Graceful degradation for malformed code.
+- **Incremental Support**: Utilize tree-sitter's incremental parsing capabilities by accepting an old tree in the `ParseContext`.
 
 ### ParseContext Structure
 
@@ -87,14 +120,6 @@ pub struct ParseContext {
     /// File content as UTF-8 string
     pub content: String,
 }
-
-impl ParseContext {
-    /// Create a new parse context
-    pub fn new(repo_id: String, file_path: PathBuf, content: String) -> Self;
-    
-    /// Set the old tree for incremental parsing
-    pub fn with_old_tree(mut self, tree: Tree) -> Self;
-}
 ```
 
 **Usage Guidelines:**
@@ -102,6 +127,25 @@ impl ParseContext {
 - **File Path**: Should be relative to repository root when possible
 - **Old Tree**: Always provide when available for performance optimization
 - **Content Validation**: Ensure UTF-8 encoding before parsing
+- **Direct Construction**: Create instances directly using struct literal syntax:
+
+```rust
+// Example usage - direct struct construction
+let context = ParseContext {
+    repo_id: "test_repo".to_string(),
+    file_path: PathBuf::from("test.py"),
+    old_tree: None,
+    content: "def hello():\n    return 'world'".to_string(),
+};
+
+// For incremental parsing with old tree
+let context_with_tree = ParseContext {
+    repo_id: "test_repo".to_string(),
+    file_path: PathBuf::from("test.py"),
+    old_tree: Some(previous_tree),
+    content: "def hello():\n    return 'updated'".to_string(),
+};
+```
 
 ### ParseResult Format
 
@@ -356,84 +400,148 @@ pub struct Node {
 
 ### MCP Server Integration
 
-Language parsers integrate with the MCP server through adapter patterns:
+Language parsers are not integrated directly. Instead, each parser crate provides an **Adapter** that prepares it for consumption by the MCP server. The calling environment (the MCP server) is then responsible for converting the parser's output into its internal types.
+
+This is achieved through an adapter struct in the parser crate and a `ParseResultConverter` trait that the caller implements.
+
+#### Parser Crate Adapter
+
+The parser crate should expose an adapter struct and a top-level `parse_file` function.
 
 ```rust
-/// MCP integration adapter for language parsers
-pub struct LanguageParserAdapter {
-    parser: std::sync::Mutex<dyn LanguageParser>,
+// Example from codeprism-lang-python/src/adapter.rs
+
+/// Adapter that prepares the Python parser for use in CodePrism
+pub struct PythonLanguageParser {
+    parser: std::sync::Mutex<PythonParser>,
 }
 
-impl LanguageParserAdapter {
-    pub fn new<P: LanguageParser + 'static>(parser: P) -> Self {
+impl PythonLanguageParser {
+    /// Create a new Python language parser adapter
+    pub fn new() -> Self {
         Self {
-            parser: std::sync::Mutex::new(parser),
+            parser: std::sync::Mutex::new(PythonParser::new()),
         }
     }
-    
-    /// Parse a file and convert results to MCP-compatible format
-    pub fn parse_for_mcp(
-        &self,
-        repo_id: &str,
-        file_path: PathBuf,
-        content: String,
-        old_tree: Option<Tree>,
-    ) -> Result<(Vec<Node>, Vec<Edge>)> {
-        let context = ParseContext::new(repo_id.to_string(), file_path, content);
-        let context = if let Some(tree) = old_tree {
-            context.with_old_tree(tree)
-        } else {
-            context
-        };
-        
-        let mut parser = self.parser.lock()
-            .map_err(|_| Error::other("Parser lock poisoned"))?;
-        
-        let result = parser.parse(&context)?;
-        Ok((result.nodes, result.edges))
-    }
+}
+
+/// Parse a file and return the result in the parser's internal types
+pub fn parse_file(
+    parser: &PythonLanguageParser,
+    repo_id: &str,
+    file_path: std::path::PathBuf,
+    content: String,
+    old_tree: Option<tree_sitter::Tree>,
+) -> Result<(tree_sitter::Tree, Vec<py_types::Node>, Vec<py_types::Edge>), crate::error::Error> {
+    let context = PyParseContext {
+        repo_id: repo_id.to_string(),
+        file_path,
+        old_tree,
+        content,
+    };
+
+    let mut parser = parser.parser.lock().unwrap();
+    let result = parser.parse(&context)?;
+
+    Ok((result.tree, result.nodes, result.edges))
+}
+```
+
+#### Caller-Side Conversion
+
+The consumer of the parser (e.g., the MCP server) must implement a `ParseResultConverter` trait to transform the parser's output into the application's native U-AST types.
+
+```rust
+// Example from codeprism-lang-python/src/adapter.rs
+
+// This trait is defined in the parser crate and implemented by the caller.
+pub trait ParseResultConverter {
+    type Node;
+    type Edge;
+    type ParseResult;
+
+    fn convert_node(node: py_types::Node) -> Self::Node;
+    fn convert_edge(edge: py_types::Edge) -> Self::Edge;
+    fn create_parse_result(
+        tree: tree_sitter::Tree,
+        nodes: Vec<Self::Node>,
+        edges: Vec<Self::Edge>,
+    ) -> Self::ParseResult;
 }
 ```
 
 **Integration Requirements:**
-- **Thread Safety**: Must handle concurrent parsing requests
-- **Error Propagation**: Convert parser errors to MCP-compatible format
-- **Resource Management**: Efficient memory usage for large files
-- **Caching Support**: Integration with parser engine caching
+- **Decoupling**: The parser crate must not depend on core application crates (like `codeprism-core`).
+- **Thread Safety**: The adapter must handle concurrent parsing requests, typically using a `Mutex`.
+- **Type Conversion**: The caller is responsible for converting the parser-specific `Node` and `Edge` types into its own types.
+- **Error Propagation**: Convert parser errors to a format understood by the calling application.
 
 ### Error Handling Patterns
 
-Parsers must implement comprehensive error handling:
+Parsers must implement comprehensive error handling. It's recommended to use a dedicated error enum with `thiserror`.
 
 ```rust
-/// Parser-specific error types
-#[derive(Debug, thiserror::Error)]
-pub enum ParseError {
-    #[error("Syntax error in {file} at {line}:{column}: {message}")]
-    Syntax {
-        file: PathBuf,
-        line: usize,
-        column: usize,
-        message: String,
-    },
-    
-    #[error("Failed to extract node at {file}:{line}:{column}: {message}")]
-    NodeExtraction {
-        file: PathBuf,
-        line: usize,
-        column: usize,
-        message: String,
-    },
-    
-    #[error("Tree-sitter error: {0}")]
-    TreeSitter(String),
-    
-    #[error("UTF-8 encoding error: {0}")]
-    Encoding(#[from] std::str::Utf8Error),
-    
+/// Parser-specific error types (from actual Python parser implementation)
+#[derive(Error, Debug)]
+pub enum Error {
+    /// Parse error
+    #[error("Failed to parse {file}: {message}")]
+    ParseError { file: PathBuf, message: String },
+
+    /// Tree-sitter error
+    #[error("Tree-sitter error in {file}: {message}")]
+    TreeSitterError { file: PathBuf, message: String },
+
+    /// AST mapping error
+    #[error("AST mapping error in {file}: {message}")]
+    AstMappingError { file: PathBuf, message: String },
+
+    /// IO error
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
+
+    /// JSON serialization error
+    #[error("JSON error: {0}")]
+    Json(#[from] serde_json::Error),
+
+    /// Generic error
+    #[error("Python parser error: {0}")]
+    Generic(String),
 }
+
+impl Error {
+    /// Create a parse error
+    pub fn parse(file: &std::path::Path, message: &str) -> Self {
+        Self::ParseError {
+            file: file.to_path_buf(),
+            message: message.to_string(),
+        }
+    }
+
+    /// Create a tree-sitter error
+    pub fn tree_sitter(file: &std::path::Path, message: &str) -> Self {
+        Self::TreeSitterError {
+            file: file.to_path_buf(),
+            message: message.to_string(),
+        }
+    }
+
+    /// Create an AST mapping error
+    pub fn ast_mapping(file: &std::path::Path, message: &str) -> Self {
+        Self::AstMappingError {
+            file: file.to_path_buf(),
+            message: message.to_string(),
+        }
+    }
+
+    /// Create a generic error
+    pub fn generic(message: &str) -> Self {
+        Self::Generic(message.to_string())
+    }
+}
+
+/// Result type for Python parser
+pub type Result<T> = std::result::Result<T, Error>;
 ```
 
 **Error Handling Guidelines:**
@@ -490,24 +598,25 @@ impl AstMapper {
 All parsers must use tree-sitter for syntax parsing:
 
 ```rust
-/// Standard tree-sitter integration pattern
-pub struct LanguageParser {
+/// Standard tree-sitter integration pattern (from actual implementation)
+pub struct PythonParser {
     parser: tree_sitter::Parser,
 }
 
-impl LanguageParser {
-    pub fn new() -> Result<Self> {
+impl PythonParser {
+    pub fn new() -> Self {
         let mut parser = tree_sitter::Parser::new();
-        parser.set_language(&tree_sitter_language::language())
-            .map_err(|e| Error::other(format!("Failed to set language: {}", e)))?;
+        parser
+            .set_language(&tree_sitter_python::LANGUAGE.into())
+            .expect("Failed to load Python grammar");
         
-        Ok(Self { parser })
+        Self { parser }
     }
     
     fn parse_with_tree_sitter(&mut self, context: &ParseContext) -> Result<tree_sitter::Tree> {
         self.parser
             .parse(&context.content, context.old_tree.as_ref())
-            .ok_or_else(|| Error::parse(&context.file_path, "Tree-sitter parsing failed"))
+            .ok_or_else(|| Error::parse(&context.file_path, "Failed to parse file"))
     }
 }
 ```
@@ -582,34 +691,102 @@ mod tests {
     
     #[test]
     fn test_function_extraction() {
-        let parser = LanguageParser::new().unwrap();
-        let code = r#"
-            function hello(name) {
-                return "Hello, " + name;
-            }
-        "#;
-        
-        let context = ParseContext::new(
-            "test".to_string(),
-            PathBuf::from("test.js"),
-            code.to_string(),
-        );
-        
+        let mut parser = PythonParser::new();
+        let context = ParseContext {
+            repo_id: "test_repo".to_string(),
+            file_path: PathBuf::from("test.py"),
+            old_tree: None,
+            content: "def hello():\n    return 'world'".to_string(),
+        };
+
         let result = parser.parse(&context).unwrap();
-        
-        assert_eq!(result.nodes.len(), 1);
-        assert_eq!(result.nodes[0].kind, NodeKind::Function);
-        assert_eq!(result.nodes[0].name, "hello");
-    }
-    
-    #[test] 
-    fn test_incremental_parsing() {
-        // Test incremental updates...
+        assert!(!result.nodes.is_empty());
+
+        // Should have at least a module node and a function node
+        assert!(result
+            .nodes
+            .iter()
+            .any(|n| matches!(n.kind, NodeKind::Module)));
+        assert!(result
+            .nodes
+            .iter()
+            .any(|n| matches!(n.kind, NodeKind::Function)));
     }
     
     #[test]
-    fn test_error_recovery() {
-        // Test malformed code handling...
+    fn test_class_parsing() {
+        let mut parser = PythonParser::new();
+        let context = ParseContext {
+            repo_id: "test_repo".to_string(),
+            file_path: PathBuf::from("test.py"),
+            old_tree: None,
+            content: "class MyClass:\n    def method(self):\n        pass".to_string(),
+        };
+
+        let result = parser.parse(&context).unwrap();
+        assert!(!result.nodes.is_empty());
+
+        // Should have module, class, and method nodes
+        assert!(result
+            .nodes
+            .iter()
+            .any(|n| matches!(n.kind, NodeKind::Module)));
+        assert!(result
+            .nodes
+            .iter()
+            .any(|n| matches!(n.kind, NodeKind::Class)));
+        assert!(result
+            .nodes
+            .iter()
+            .any(|n| matches!(n.kind, NodeKind::Method)));
+    }
+
+    #[test] 
+    fn test_incremental_parsing() {
+        let mut parser = PythonParser::new();
+
+        // First parse
+        let context1 = ParseContext {
+            repo_id: "test_repo".to_string(),
+            file_path: PathBuf::from("test.py"),
+            old_tree: None,
+            content: "def foo():\n    return 1".to_string(),
+        };
+        let result1 = parser.parse(&context1).unwrap();
+
+        // Second parse with small edit
+        let context2 = ParseContext {
+            repo_id: "test_repo".to_string(),
+            file_path: PathBuf::from("test.py"),
+            old_tree: Some(result1.tree),
+            content: "def foo():\n    return 2".to_string(),
+        };
+        let result2 = parser.parse(&context2).unwrap();
+
+        // Both should have the same structure
+        assert_eq!(result1.nodes.len(), result2.nodes.len());
+    }
+    
+    #[test]
+    fn test_import_parsing() {
+        let mut parser = PythonParser::new();
+        let context = ParseContext {
+            repo_id: "test_repo".to_string(),
+            file_path: PathBuf::from("test.py"),
+            old_tree: None,
+            content: "import os\nfrom sys import path\nimport json as j".to_string(),
+        };
+
+        let result = parser.parse(&context).unwrap();
+
+        let import_nodes: Vec<_> = result
+            .nodes
+            .iter()
+            .filter(|n| matches!(n.kind, NodeKind::Import))
+            .collect();
+
+        // Should have at least one import node
+        assert!(!import_nodes.is_empty());
     }
 }
 ```
@@ -622,16 +799,17 @@ mod benchmarks {
     use criterion::{black_box, criterion_group, criterion_main, Criterion};
     
     fn bench_parse_large_file(c: &mut Criterion) {
-        let content = include_str!("fixtures/large_file.js");
-        let mut parser = LanguageParser::new().unwrap();
+        let content = include_str!("../tests/fixtures/large.py");
+        let mut parser = PythonParser::new();
         
-        c.bench_function("parse_large_file", |b| {
+        c.bench_function("parse_large_python", |b| {
             b.iter(|| {
-                let context = ParseContext::new(
-                    "bench".to_string(),
-                    PathBuf::from("large.js"),
-                    black_box(content.to_string()),
-                );
+                let context = ParseContext {
+                    repo_id: "bench".to_string(),
+                    file_path: PathBuf::from("large.py"),
+                    old_tree: None,
+                    content: black_box(content.to_string()),
+                };
                 parser.parse(&context).unwrap()
             })
         });
@@ -649,59 +827,74 @@ mod benchmarks {
 Here's a complete example parser implementation:
 
 ```rust
-// src/lib.rs
+// src/lib.rs (actual implementation)
 mod adapter;
+mod analysis;
 mod ast_mapper;
 mod error;
 mod parser;
 mod types;
 
-pub use adapter::LanguageParserAdapter;
+pub use adapter::{parse_file, ParseResultConverter, PythonLanguageParser};
+pub use analysis::PythonAnalyzer;
 pub use error::{Error, Result};
-pub use parser::{LanguageParser, ParseContext, ParseResult};
+pub use parser::{ParseContext, ParseResult, PythonParser};
 pub use types::{Edge, EdgeKind, Language, Node, NodeId, NodeKind, Span};
 
-/// Create a new language parser instance
-pub fn create_parser() -> LanguageParserAdapter {
-    LanguageParserAdapter::new(LanguageParser::new().expect("Failed to create parser"))
+// Re-export the parser for registration
+pub fn create_parser() -> PythonLanguageParser {
+    PythonLanguageParser::new()
 }
 ```
 
 ```rust
-// src/parser.rs
+// src/parser.rs (actual implementation)
 use crate::ast_mapper::AstMapper;
 use crate::error::{Error, Result};
 use crate::types::{Edge, Language, Node};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tree_sitter::{Parser, Tree};
 
-pub struct LanguageParser {
+pub struct PythonParser {
     parser: Parser,
 }
 
-impl LanguageParser {
-    pub fn new() -> Result<Self> {
+impl PythonParser {
+    pub fn new() -> Self {
         let mut parser = Parser::new();
-        parser.set_language(&tree_sitter_mylang::language())
-            .map_err(|e| Error::other(format!("Failed to set language: {}", e)))?;
+        parser
+            .set_language(&tree_sitter_python::LANGUAGE.into())
+            .expect("Failed to load Python grammar");
         
-        Ok(Self { parser })
+        Self { parser }
+    }
+    
+    pub fn detect_language(path: &Path) -> Language {
+        match path.extension().and_then(|s| s.to_str()) {
+            Some("py") | Some("pyw") => Language::Python,
+            _ => Language::Python, // Default to Python
+        }
     }
     
     pub fn parse(&mut self, context: &ParseContext) -> Result<ParseResult> {
-        let tree = self.parser
+        let language = Self::detect_language(&context.file_path);
+
+        // Parse the file
+        let tree = self
+            .parser
             .parse(&context.content, context.old_tree.as_ref())
-            .ok_or_else(|| Error::parse(&context.file_path, "Parsing failed"))?;
-        
+            .ok_or_else(|| Error::parse(&context.file_path, "Failed to parse file"))?;
+
+        // Extract nodes and edges
         let mapper = AstMapper::new(
             &context.repo_id,
             context.file_path.clone(),
-            Language::MyLanguage,
+            language,
             &context.content,
         );
-        
+
         let (nodes, edges) = mapper.extract(&tree)?;
-        
+
         Ok(ParseResult { tree, nodes, edges })
     }
 }
@@ -837,42 +1030,37 @@ codeprism-lang-mylang/
 
 ```toml
 [package]
-name = "codeprism-lang-mylang"
+name = "codeprism-lang-python"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
-description = "MyLanguage language support for codeprism"
+description = "Python language support for codeprism"
 
 [dependencies]
 # Core dependencies
-anyhow.workspace = true
 thiserror.workspace = true
-tracing.workspace = true
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
 
 # Tree-sitter
 tree-sitter.workspace = true
-tree-sitter-mylang = "1.0.0"  # Use appropriate version
+tree-sitter-python.workspace = true
 
 # CodePrism integration
 blake3.workspace = true
 hex.workspace = true
 
 [dev-dependencies]
-criterion = { workspace = true, features = ["html_reports"] }
-insta.workspace = true
-tempfile.workspace = true
-tokio = { workspace = true, features = ["test-util"] }
+# No dev dependencies in actual implementation
 
 [build-dependencies]
 cc = "1.0"
 
 [[bench]]
-name = "parse_benchmark"
+name = "parsing_benchmark"
 harness = false
 ```
 
@@ -895,6 +1083,7 @@ All parser implementations must pass the acceptance criteria defined in this spe
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | 2025-06-25 | Initial specification release |
+| 1.1 | 2025-01-27 | **MAJOR CORRECTIONS** - Updated all code examples to match actual Python parser implementation. Removed non-existent LanguageParser trait, fixed ParseContext usage, corrected error types, and updated integration patterns to reflect actual codebase structure. |
 
 ### References
 

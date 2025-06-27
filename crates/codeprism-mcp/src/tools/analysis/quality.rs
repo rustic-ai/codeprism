@@ -3,7 +3,9 @@
 use crate::tools_legacy::{CallToolParams, CallToolResult, Tool, ToolContent};
 use crate::CodePrismMcpServer;
 use anyhow::Result;
+use codeprism_analysis::security::SecurityAnalyzer;
 use serde_json::Value;
+use std::path::Path;
 
 /// List quality analysis tools
 pub fn list_tools() -> Vec<Tool> {
@@ -85,10 +87,10 @@ pub fn list_tools() -> Vec<Tool> {
                         "type": "array",
                         "items": {
                             "type": "string",
-                            "enum": ["injection", "authentication", "authorization", "data_exposure", "unsafe_patterns", "crypto", "all"]
+                            "enum": ["injection", "xss", "csrf", "authentication", "authorization", "data_exposure", "unsafe_patterns", "crypto", "all"]
                         },
                         "description": "Types of vulnerabilities to check",
-                        "default": ["injection", "authentication", "authorization"]
+                        "default": ["injection", "xss", "csrf", "authentication"]
                     },
                     "severity_threshold": {
                         "type": "string",
@@ -268,7 +270,7 @@ async fn find_unused_code(
 
 /// Analyze security vulnerabilities
 async fn analyze_security(
-    _server: &CodePrismMcpServer,
+    server: &CodePrismMcpServer,
     arguments: Option<&Value>,
 ) -> Result<CallToolResult> {
     let default_args = serde_json::json!({});
@@ -282,16 +284,127 @@ async fn analyze_security(
     let vulnerability_types = args
         .get("vulnerability_types")
         .and_then(|v| v.as_array())
-        .map(|arr| arr.iter().filter_map(|v| v.as_str()).collect::<Vec<_>>())
-        .unwrap_or_else(|| vec!["injection", "authentication", "authorization"]);
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|v| v.as_str())
+                .map(|s| s.to_string())
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_else(|| {
+            vec![
+                "injection".to_string(),
+                "xss".to_string(),
+                "csrf".to_string(),
+                "authentication".to_string(),
+            ]
+        });
+
+    let severity_threshold = args
+        .get("severity_threshold")
+        .and_then(|v| v.as_str())
+        .unwrap_or("medium");
+
+    // Initialize the security analyzer
+    let analyzer = SecurityAnalyzer::new();
+    let mut all_vulnerabilities = Vec::new();
+    let mut files_analyzed = 0;
+    let mut analysis_errors = Vec::new();
+
+    // Get repository path and scan files
+    if let Some(repo_path) = server.repository_path() {
+        match server.scanner().discover_files(repo_path) {
+            Ok(files) => {
+                for file_path in files {
+                    // Filter for relevant file types (source code, config, etc.)
+                    if should_analyze_file_for_security(&file_path) {
+                        match std::fs::read_to_string(&file_path) {
+                            Ok(content) => {
+                                files_analyzed += 1;
+                                match analyzer.analyze_content_with_location(
+                                    &content,
+                                    Some(&file_path.display().to_string()),
+                                    &vulnerability_types,
+                                    severity_threshold,
+                                ) {
+                                    Ok(vulnerabilities) => {
+                                        all_vulnerabilities.extend(vulnerabilities);
+                                    }
+                                    Err(e) => {
+                                        analysis_errors.push(format!(
+                                            "Error analyzing {}: {}",
+                                            file_path.display(),
+                                            e
+                                        ));
+                                    }
+                                }
+                            }
+                            Err(_) => {
+                                // Skip binary files or files that can't be read
+                                continue;
+                            }
+                        }
+                    }
+                }
+            }
+            Err(e) => {
+                return Ok(CallToolResult {
+                    content: vec![ToolContent::Text {
+                        text: format!("Failed to scan repository: {}", e),
+                    }],
+                    is_error: Some(true),
+                });
+            }
+        }
+    } else {
+        return Ok(CallToolResult {
+            content: vec![ToolContent::Text {
+                text: "No repository loaded for security analysis".to_string(),
+            }],
+            is_error: Some(true),
+        });
+    }
+
+    // Generate comprehensive security report
+    let security_report = analyzer.generate_security_report(&all_vulnerabilities);
+
+    // Format vulnerabilities for response
+    let formatted_vulnerabilities: Vec<serde_json::Value> = all_vulnerabilities
+        .iter()
+        .map(|vuln| {
+            serde_json::json!({
+                "type": vuln.vulnerability_type,
+                "severity": vuln.severity,
+                "description": vuln.description,
+                "location": vuln.location,
+                "file_path": vuln.file_path,
+                "line_number": vuln.line_number,
+                "recommendation": vuln.recommendation,
+                "cvss_score": vuln.cvss_score,
+                "owasp_category": vuln.owasp_category,
+                "confidence": vuln.confidence
+            })
+        })
+        .collect();
 
     let result = serde_json::json!({
         "scope": scope,
-        "vulnerability_types": vulnerability_types,
-        "vulnerabilities": [],
-        "security_score": 95,
-        "summary": "Security analysis completed - no critical vulnerabilities found",
-        "status": "placeholder_implementation"
+        "analysis_parameters": {
+            "vulnerability_types": vulnerability_types,
+            "severity_threshold": severity_threshold,
+            "files_analyzed": files_analyzed
+        },
+        "vulnerabilities": formatted_vulnerabilities,
+        "security_report": security_report,
+        "analysis_metadata": {
+            "total_files_scanned": files_analyzed,
+            "analysis_errors": analysis_errors.len(),
+            "errors": if analysis_errors.is_empty() { None } else { Some(analysis_errors) }
+        },
+        "summary": format!(
+            "Security analysis completed: {} vulnerabilities found across {} files",
+            all_vulnerabilities.len(),
+            files_analyzed
+        )
     });
 
     Ok(CallToolResult {
@@ -300,6 +413,54 @@ async fn analyze_security(
         }],
         is_error: Some(false),
     })
+}
+
+/// Check if a file should be analyzed for security vulnerabilities
+fn should_analyze_file_for_security(file_path: &Path) -> bool {
+    if let Some(extension) = file_path.extension().and_then(|e| e.to_str()) {
+        let ext = extension.to_lowercase();
+        matches!(
+            ext.as_str(),
+            "js" | "jsx"
+                | "ts"
+                | "tsx"
+                | "py"
+                | "java"
+                | "php"
+                | "rb"
+                | "go"
+                | "rs"
+                | "c"
+                | "cpp"
+                | "cs"
+                | "html"
+                | "htm"
+                | "xml"
+                | "sql"
+                | "sh"
+                | "bash"
+                | "ps1"
+                | "yaml"
+                | "yml"
+                | "json"
+                | "properties"
+                | "ini"
+                | "conf"
+                | "config"
+                | "env"
+                | "dockerfile"
+        )
+    } else {
+        // Check for files without extensions that might be important
+        if let Some(filename) = file_path.file_name().and_then(|n| n.to_str()) {
+            matches!(
+                filename.to_lowercase().as_str(),
+                "dockerfile" | "makefile" | "jenkinsfile" | ".env"
+            )
+        } else {
+            false
+        }
+    }
 }
 
 /// Analyze performance issues

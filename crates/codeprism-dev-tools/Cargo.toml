@@ -1,0 +1,40 @@
+[package]
+name = "codeprism-dev-tools"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Development and debugging utilities for CodePrism parser development"
+
+[dependencies]
+# Workspace dependencies
+codeprism-core = { path = "../codeprism-core" }
+anyhow.workspace = true
+thiserror.workspace = true
+serde = { workspace = true, features = ["derive"] }
+serde_json.workspace = true
+tokio = { workspace = true, features = ["full"] }
+tracing.workspace = true
+
+# Tree-sitter for AST operations
+tree-sitter.workspace = true
+
+# Additional dependencies for dev tools
+clap = { workspace = true, features = ["derive"] }
+colored = "2.1"
+crossterm = "0.28"
+indicatif = "0.17"
+tempfile.workspace = true
+regex.workspace = true
+handlebars = "5.1"
+
+[dev-dependencies]
+tempfile.workspace = true
+insta.workspace = true
+
+[features]
+default = ["interactive"]
+interactive = []
+graphviz = [] 

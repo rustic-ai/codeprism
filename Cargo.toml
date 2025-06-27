@@ -8,6 +8,7 @@ members = [
     "crates/codeprism-lang-js",
     "crates/codeprism-lang-python",
     "crates/codeprism-lang-java",
+    "crates/codeprism-dev-tools",
 ]
 
 [workspace.package]
@@ -62,6 +63,12 @@ dashmap = "6.1"
 rayon = "1.10"
 regex = "1.11"
 rand = "0.8"
+
+# Dev tools dependencies
+colored = "2.1"
+crossterm = "0.28"
+indicatif = "0.17"
+handlebars = "5.1"
 
 # Testing
 insta = { version = "1.40", features = ["yaml"] }

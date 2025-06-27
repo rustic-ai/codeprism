@@ -86,9 +86,15 @@ pub enum HealthStatus {
     /// Repository needs reindexing
     Stale,
     /// Repository has indexing errors
-    Degraded { error_count: usize },
+    Degraded {
+        /// Number of files that failed to index
+        error_count: usize,
+    },
     /// Repository is corrupted or inaccessible
-    Unhealthy { reason: String },
+    Unhealthy {
+        /// Description of why the repository is unhealthy
+        reason: String,
+    },
 }
 
 /// Repository statistics and metadata

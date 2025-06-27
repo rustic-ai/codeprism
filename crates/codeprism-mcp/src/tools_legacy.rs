@@ -4,6 +4,14 @@
 //! The massive monolithic implementation has been broken down into
 //! logical modules for better maintainability.
 
+#![allow(clippy::too_many_arguments)]
+#![allow(clippy::only_used_in_recursion)]
+#![allow(clippy::unnecessary_map_or)]
+#![allow(clippy::items_after_test_module)]
+#![allow(clippy::single_match)]
+#![allow(clippy::assertions_on_constants)]
+#![allow(irrefutable_let_patterns)]
+
 use crate::CodePrismMcpServer;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
@@ -4639,17 +4647,11 @@ def process_data(input_data: str) -> str:
         assert_eq!(tool_result.is_error, Some(false));
         assert_eq!(tool_result.content.len(), 1);
 
-        if let ToolContent::Text { text } = &tool_result.content[0] {
-            let stats: serde_json::Value = serde_json::from_str(text).unwrap();
-            assert!(stats["total_files"].as_u64().unwrap() > 0);
-            assert!(stats["total_nodes"].as_u64().unwrap() > 0);
-            assert!(stats["status"].as_str().unwrap() == "active");
-        } else {
-            assert!(
-                false,
-                "Expected text content but received different content type"
-            );
-        }
+        let ToolContent::Text { text } = &tool_result.content[0];
+        let stats: serde_json::Value = serde_json::from_str(text).unwrap();
+        assert!(stats["total_files"].as_u64().unwrap() > 0);
+        assert!(stats["total_nodes"].as_u64().unwrap() > 0);
+        assert!(stats["status"].as_str().unwrap() == "active");
     }
 
     #[tokio::test]
@@ -9977,26 +9979,24 @@ impl ToolManager {
             api_issues.extend(versioning_issues);
         }
 
-        if analysis_types.contains(&"breaking_changes".to_string())
-            || analysis_types.contains(&"all".to_string())
+        if (analysis_types.contains(&"breaking_changes".to_string())
+            || analysis_types.contains(&"all".to_string()))
+            && detect_breaking_changes
         {
-            if detect_breaking_changes {
-                let breaking_change_issues = self
-                    .detect_api_breaking_changes(server, exclude_patterns)
-                    .await?;
-                api_issues.extend(breaking_change_issues);
-            }
+            let breaking_change_issues = self
+                .detect_api_breaking_changes(server, exclude_patterns)
+                .await?;
+            api_issues.extend(breaking_change_issues);
         }
 
-        if analysis_types.contains(&"documentation".to_string())
-            || analysis_types.contains(&"all".to_string())
+        if (analysis_types.contains(&"documentation".to_string())
+            || analysis_types.contains(&"all".to_string()))
+            && check_documentation_coverage
         {
-            if check_documentation_coverage {
-                let doc_coverage_issues = self
-                    .analyze_api_documentation_coverage(server, exclude_patterns)
-                    .await?;
-                api_issues.extend(doc_coverage_issues);
-            }
+            let doc_coverage_issues = self
+                .analyze_api_documentation_coverage(server, exclude_patterns)
+                .await?;
+            api_issues.extend(doc_coverage_issues);
         }
 
         if analysis_types.contains(&"compatibility".to_string())
@@ -10281,28 +10281,27 @@ impl ToolManager {
             }
 
             // Check for functions that might be removing features
-            if function_name.contains("remove")
+            if (function_name.contains("remove")
                 || function_name.contains("delete")
-                || function_name.contains("drop")
+                || function_name.contains("drop"))
+                && self.is_public_api_element(function_name)
             {
-                if self.is_public_api_element(function_name) {
-                    issues.push(serde_json::json!({
-                        "type": "Potentially Breaking API Function",
-                        "category": "breaking_changes",
-                        "severity": "high",
-                        "function": {
-                            "id": function.id.to_hex(),
-                            "name": function.name,
-                            "file": function.file.display().to_string(),
-                            "location": {
-                                "start_line": function.span.start_line,
-                                "end_line": function.span.end_line
-                            }
-                        },
-                        "description": format!("Function '{}' might remove functionality - potential breaking change", function.name),
-                        "recommendation": "Ensure proper deprecation process and provide alternatives"
-                    }));
-                }
+                issues.push(serde_json::json!({
+                    "type": "Potentially Breaking API Function",
+                    "category": "breaking_changes",
+                    "severity": "high",
+                    "function": {
+                        "id": function.id.to_hex(),
+                        "name": function.name,
+                        "file": function.file.display().to_string(),
+                        "location": {
+                            "start_line": function.span.start_line,
+                            "end_line": function.span.end_line
+                        }
+                    },
+                    "description": format!("Function '{}' might remove functionality - potential breaking change", function.name),
+                    "recommendation": "Ensure proper deprecation process and provide alternatives"
+                }));
             }
         }
 

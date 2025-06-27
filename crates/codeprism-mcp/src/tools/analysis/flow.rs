@@ -1,5 +1,7 @@
 //! Data flow analysis tools
 
+#![allow(clippy::too_many_arguments)]
+
 use crate::tools_legacy::{CallToolParams, CallToolResult, Tool, ToolContent};
 use crate::CodePrismMcpServer;
 use anyhow::Result;

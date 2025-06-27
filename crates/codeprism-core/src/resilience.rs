@@ -326,6 +326,7 @@ impl Default for RetryExecutor {
 }
 
 /// Comprehensive resilience manager
+#[derive(Default)]
 pub struct ResilienceManager {
     retry_executor: RetryExecutor,
     circuit_breaker: CircuitBreaker,
@@ -398,15 +399,6 @@ impl ResilienceManager {
     /// Check if the circuit is healthy
     pub fn is_healthy(&self) -> bool {
         matches!(self.circuit_breaker.state(), CircuitState::Closed)
-    }
-}
-
-impl Default for ResilienceManager {
-    fn default() -> Self {
-        Self {
-            retry_executor: RetryExecutor::default(),
-            circuit_breaker: CircuitBreaker::default(),
-        }
     }
 }
 

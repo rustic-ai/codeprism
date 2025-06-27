@@ -148,6 +148,7 @@ pub type McpResult<T> = Result<T, McpError>;
 pub struct McpErrorHandler {
     metrics_collector: MetricsCollector,
     health_monitor: HealthMonitor,
+    #[allow(dead_code)] // Will be used in future performance monitoring features
     performance_monitor: PerformanceMonitor,
     resilience_manager: ResilienceManager,
     circuit_states: Arc<RwLock<std::collections::HashMap<String, CircuitState>>>,
@@ -478,7 +479,6 @@ macro_rules! mcp_tool_error {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tokio::time::{sleep, Duration};
 
     #[test]
     fn test_mcp_error_severity() {

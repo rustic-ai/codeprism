@@ -115,6 +115,7 @@ impl Default for JavaScriptCommentExtractor {
 }
 
 impl JavaScriptCommentExtractor {
+    /// Create a new JavaScript comment extractor
     pub fn new() -> Self {
         Self {
             patterns: CommentPatterns {
@@ -265,6 +266,7 @@ impl Default for PythonCommentExtractor {
 }
 
 impl PythonCommentExtractor {
+    /// Create a new Python comment extractor
     pub fn new() -> Self {
         Self {
             patterns: CommentPatterns {
@@ -409,6 +411,7 @@ impl PythonCommentExtractor {
 // Stub implementations for other languages
 macro_rules! simple_comment_extractor {
     ($name:ident, $language:ident, $single_line:expr, $block_start:expr, $block_end:expr) => {
+        /// Comment extractor for a specific programming language
         pub struct $name {
             patterns: CommentPatterns,
         }
@@ -420,6 +423,7 @@ macro_rules! simple_comment_extractor {
         }
 
         impl $name {
+            /// Create a new comment extractor for this language
             pub fn new() -> Self {
                 Self {
                     patterns: CommentPatterns {

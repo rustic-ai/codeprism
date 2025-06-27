@@ -46,14 +46,25 @@ impl ChunkId {
 #[serde(rename_all = "snake_case")]
 pub enum ContentType {
     /// Source code with language context
-    Code { language: Language },
+    Code {
+        /// Programming language of the source code
+        language: Language,
+    },
     /// Documentation files
-    Documentation { format: DocumentFormat },
+    Documentation {
+        /// Format of the documentation file
+        format: DocumentFormat,
+    },
     /// Configuration files
-    Configuration { format: ConfigFormat },
+    Configuration {
+        /// Format of the configuration file
+        format: ConfigFormat,
+    },
     /// Code comments
     Comment {
+        /// Programming language containing the comment
         language: Language,
+        /// Context where the comment appears
         context: CommentContext,
     },
     /// Plain text files
@@ -64,10 +75,15 @@ pub enum ContentType {
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum DocumentFormat {
+    /// Markdown format (.md)
     Markdown,
+    /// reStructuredText format (.rst)
     RestructuredText,
+    /// AsciiDoc format (.adoc)
     AsciiDoc,
+    /// Plain text format (.txt)
     PlainText,
+    /// HTML format (.html)
     Html,
 }
 
@@ -75,12 +91,19 @@ pub enum DocumentFormat {
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ConfigFormat {
+    /// JSON format (.json)
     Json,
+    /// YAML format (.yml, .yaml)
     Yaml,
+    /// TOML format (.toml)
     Toml,
+    /// INI format (.ini)
     Ini,
+    /// Properties format (.properties)
     Properties,
+    /// Environment variable format (.env)
     Env,
+    /// XML format (.xml)
     Xml,
 }
 
@@ -89,9 +112,15 @@ pub enum ConfigFormat {
 #[serde(rename_all = "snake_case")]
 pub enum CommentContext {
     /// Comment associated with a function
-    Function { function_name: String },
+    Function {
+        /// Name of the function this comment describes
+        function_name: String,
+    },
     /// Comment associated with a class
-    Class { class_name: String },
+    Class {
+        /// Name of the class this comment describes
+        class_name: String,
+    },
     /// Comment associated with a module/file
     Module,
     /// Inline comment
@@ -390,7 +419,10 @@ pub enum ContentUpdateKind {
     /// File was deleted
     Deleted,
     /// File was renamed
-    Renamed { old_path: PathBuf },
+    Renamed {
+        /// The previous path before the file was renamed
+        old_path: PathBuf,
+    },
 }
 
 #[cfg(test)]

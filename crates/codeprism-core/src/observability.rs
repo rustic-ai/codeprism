@@ -210,42 +210,63 @@ impl MetricsCollector {
 /// Snapshot of metrics at a point in time
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct MetricsSnapshot {
+    /// System uptime in seconds
     pub uptime_seconds: u64,
+    /// Error counts by error type
     pub error_counts: HashMap<String, u64>,
+    /// Distribution of errors by severity level
     pub error_severity_distribution: HashMap<String, u64>,
+    /// Metrics for each tracked operation
     pub operation_metrics: HashMap<String, OperationMetrics>,
+    /// Resource usage statistics
     pub resource_usage: HashMap<String, u64>,
 }
 
+/// Metrics for a specific operation
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct OperationMetrics {
+    /// Number of successful executions
     pub success_count: u64,
+    /// Total number of executions
     pub total_count: u64,
+    /// Error rate as a decimal (0.0 to 1.0)
     pub error_rate: f64,
+    /// Average latency in milliseconds
     pub average_latency_ms: Option<u64>,
 }
 
 /// Health check status
 #[derive(Debug, Clone, PartialEq, serde::Serialize)]
 pub enum HealthStatus {
+    /// All systems functioning normally
     Healthy,
+    /// Some issues detected but system is still operational
     Degraded,
+    /// Critical issues preventing normal operation
     Unhealthy,
 }
 
 /// Health check result
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct HealthCheckResult {
+    /// Overall system health status
     pub status: HealthStatus,
+    /// Individual component health checks
     pub checks: HashMap<String, ComponentHealth>,
+    /// Human-readable status message
     pub overall_message: String,
+    /// When this health check was performed
     pub timestamp: chrono::DateTime<chrono::Utc>,
 }
 
+/// Health status of a specific system component
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct ComponentHealth {
+    /// Health status of this component
     pub status: HealthStatus,
+    /// Descriptive message about the component's health
     pub message: String,
+    /// Additional metrics relevant to this component
     pub metrics: Option<HashMap<String, serde_json::Value>>,
 }
 
@@ -547,10 +568,14 @@ impl PerformanceMonitor {
     }
 }
 
+/// Performance metrics for a specific operation
 #[derive(Debug, Clone)]
 pub struct OperationPerformance {
+    /// Name of the operation
     pub operation: String,
+    /// Error rate as a decimal (0.0 to 1.0)
     pub error_rate: f64,
+    /// Average execution time
     pub average_latency: Duration,
 }
 

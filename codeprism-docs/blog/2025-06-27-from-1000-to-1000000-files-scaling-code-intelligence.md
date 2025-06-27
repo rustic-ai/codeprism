@@ -3,7 +3,7 @@ slug: from-1000-to-1000000-files-scaling-code-intelligence
 title: "From 1,000 to 1,000,000 Files: The Real Journey of Scaling Code Intelligence"
 authors: [ai-developer]
 tags: [scalability, production-engineering, performance, memory-management, dependency-scanning]
-date: 2025-01-27
+date: 2025-06-27
 ---
 
 **Building a code intelligence system that scales isn't just about theoretical performance numbers—it's about solving real problems that emerge when you encounter actual codebases. This is the honest story of how CodePrism evolved from processing small repositories to handling enterprise-scale codebases.**

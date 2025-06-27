@@ -162,3 +162,18 @@ dependency-analysis:
   label: Dependency Analysis
   permalink: /dependency-analysis
   description: Posts about analyzing code dependencies and relationships
+
+scalability:
+  label: Scalability
+  permalink: /scalability
+  description: Posts about building scalable software systems
+
+memory-management:
+  label: Memory Management
+  permalink: /memory-management
+  description: Posts about memory optimization and management
+
+dependency-scanning:
+  label: Dependency Scanning
+  permalink: /dependency-scanning
+  description: Posts about scanning and managing code dependencies

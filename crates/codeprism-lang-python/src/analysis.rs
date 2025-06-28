@@ -528,6 +528,262 @@ struct TypeHintPattern {
     python_version: String,
 }
 
+/// Python async/await pattern analysis result
+#[derive(Debug, Clone)]
+pub struct PythonAsyncAwaitAnalysis {
+    pub overall_async_score: i32,
+    pub async_functions_detected: Vec<AsyncFunctionInfo>,
+    pub await_usage_patterns: Vec<AwaitUsageInfo>,
+    pub concurrency_patterns: Vec<ConcurrencyPatternInfo>,
+    pub async_performance_issues: Vec<AsyncPerformanceIssue>,
+    pub async_security_issues: Vec<AsyncSecurityIssue>,
+    pub modern_async_features: Vec<ModernAsyncFeature>,
+    pub recommendations: Vec<String>,
+}
+
+/// Async function information
+#[derive(Debug, Clone)]
+pub struct AsyncFunctionInfo {
+    pub name: String,
+    pub function_type: AsyncFunctionType,
+    pub complexity: AsyncComplexity,
+    pub coroutine_type: CoroutineType,
+    pub error_handling: AsyncErrorHandling,
+    pub has_timeout: bool,
+    pub uses_context_manager: bool,
+    pub location: String,
+}
+
+/// Types of async functions
+#[derive(Debug, Clone)]
+pub enum AsyncFunctionType {
+    RegularAsync,      // async def function()
+    AsyncGenerator,    // async def with yield
+    AsyncContextManager, // __aenter__, __aexit__
+    AsyncIterator,     // __aiter__, __anext__
+    AsyncProperty,     // @async_property
+    AsyncDecorator,    // Decorates with async functionality
+}
+
+/// Async function complexity
+#[derive(Debug, Clone)]
+pub enum AsyncComplexity {
+    Simple,    // Single await or simple operations
+    Moderate,  // Multiple awaits, basic control flow
+    Complex,   // Nested awaits, exception handling
+    Advanced,  // Complex concurrency patterns, resource management
+}
+
+/// Coroutine type classification
+#[derive(Debug, Clone)]
+pub enum CoroutineType {
+    Native,         // Native Python coroutines
+    Framework(String), // Framework-specific (asyncio, trio, curio)
+    Generator,      // Generator-based coroutines (deprecated)
+    Hybrid,         // Mixed native and framework
+}
+
+/// Async error handling assessment
+#[derive(Debug, Clone)]
+pub enum AsyncErrorHandling {
+    None,       // No error handling
+    Basic,      // Simple try/catch
+    Timeout,    // Includes timeout handling
+    Robust,     // Comprehensive error handling with retries
+}
+
+/// Await usage information
+#[derive(Debug, Clone)]
+pub struct AwaitUsageInfo {
+    pub location: String,
+    pub context: AwaitContext,
+    pub usage_pattern: AwaitUsagePattern,
+    pub is_valid: bool,
+    pub potential_issues: Vec<AwaitIssue>,
+}
+
+/// Context where await is used
+#[derive(Debug, Clone)]
+pub enum AwaitContext {
+    AsyncFunction,     // Inside async def
+    AsyncGenerator,    // Inside async generator
+    AsyncContextManager, // Inside async context manager
+    AsyncIterator,     // Inside async iterator
+    SyncContext,       // Invalid: inside sync function
+    Comprehension,     // Invalid: inside comprehension
+    Lambda,           // Invalid: inside lambda
+}
+
+/// Await usage patterns
+#[derive(Debug, Clone)]
+pub enum AwaitUsagePattern {
+    SingleAwait,       // Single await expression
+    SequentialAwaits,  // Multiple sequential awaits
+    ConditionalAwait,  // Await in conditional
+    NestedAwait,       // Await inside await
+    GatheredAwait,     // Part of asyncio.gather()
+    ConcurrentAwait,   // Concurrent execution pattern
+}
+
+/// Await usage issues
+#[derive(Debug, Clone)]
+pub enum AwaitIssue {
+    IllegalContext,    // await in illegal context
+    MissingAwait,      // Missing await on coroutine
+    BlockingCall,      // Blocking call in async context
+    SyncInAsync,       // Sync operation in async function
+    ResourceLeak,      // Potential resource leak
+    TimeoutMissing,    // Missing timeout handling
+}
+
+/// Concurrency pattern information
+#[derive(Debug, Clone)]
+pub struct ConcurrencyPatternInfo {
+    pub pattern_type: ConcurrencyPatternType,
+    pub usage_quality: ConcurrencyUsageQuality,
+    pub performance_impact: AsyncPerformanceImpact,
+    pub location: String,
+    pub best_practices_followed: bool,
+}
+
+/// Types of concurrency patterns
+#[derive(Debug, Clone)]
+pub enum ConcurrencyPatternType {
+    AsyncioGather,     // asyncio.gather() for concurrent execution
+    AsyncioWait,       // asyncio.wait() for coordination
+    AsyncioQueue,      // asyncio.Queue for producer-consumer
+    AsyncioSemaphore,  // asyncio.Semaphore for rate limiting
+    AsyncioLock,       // asyncio.Lock for synchronization
+    TaskGroup,         // Python 3.11+ TaskGroup
+    ConcurrentFutures, // concurrent.futures integration
+    AsyncioTimeout,    // asyncio.timeout() context manager
+    AsyncioEvent,      // asyncio.Event for coordination
+    AsyncioCondition,  // asyncio.Condition for complex coordination
+}
+
+/// Quality of concurrency usage
+#[derive(Debug, Clone)]
+pub enum ConcurrencyUsageQuality {
+    Excellent,  // Optimal usage with best practices
+    Good,       // Correct usage with minor optimizations possible
+    Adequate,   // Functional but suboptimal
+    Poor,       // Problematic usage that should be improved
+    Dangerous,  // Usage that can cause deadlocks or race conditions
+}
+
+/// Performance impact of async patterns
+#[derive(Debug, Clone)]
+pub enum AsyncPerformanceImpact {
+    Positive,   // Improves performance
+    Neutral,    // No significant impact
+    Negative,   // Reduces performance
+    Critical,   // Severely impacts performance
+}
+
+/// Async-specific performance issues
+#[derive(Debug, Clone)]
+pub struct AsyncPerformanceIssue {
+    pub issue_type: AsyncPerformanceIssueType,
+    pub severity: AsyncIssueSeverity,
+    pub location: String,
+    pub description: String,
+    pub recommendation: String,
+    pub estimated_impact: AsyncPerformanceImpact,
+}
+
+/// Types of async performance issues
+#[derive(Debug, Clone)]
+pub enum AsyncPerformanceIssueType {
+    BlockingIOInAsync,    // Sync I/O operations in async functions
+    EventLoopBlocking,    // Operations that block the event loop
+    GILContentionAsync,   // GIL contention in async code
+    AwaitInLoop,          // Inefficient await in loop
+    MissingConcurrency,   // Sequential execution where concurrent is possible
+    ResourceLeakAsync,    // Async resource leaks
+    SyncWrapperOveruse,   // Overuse of sync-to-async wrappers
+    AsyncioSubprocessSync, // Sync subprocess calls in async context
+    DatabaseBlockingAsync, // Blocking database calls in async functions
+    SlowAsyncGenerator,   // Inefficient async generators
+}
+
+/// Async issue severity levels
+#[derive(Debug, Clone)]
+pub enum AsyncIssueSeverity {
+    Critical,  // Breaks async functionality
+    High,      // Significant performance impact
+    Medium,    // Moderate impact on performance
+    Low,       // Minor optimization opportunity
+    Info,      // Best practice suggestion
+}
+
+/// Async-specific security issues
+#[derive(Debug, Clone)]
+pub struct AsyncSecurityIssue {
+    pub issue_type: AsyncSecurityIssueType,
+    pub severity: AsyncSecuritySeverity,
+    pub location: String,
+    pub description: String,
+    pub recommendation: String,
+}
+
+/// Types of async security issues
+#[derive(Debug, Clone)]
+pub enum AsyncSecurityIssueType {
+    AsyncRaceCondition,   // Race conditions in async code
+    SharedStateNoLock,    // Shared mutable state without locking
+    AsyncTimeoutVuln,     // Missing timeouts enabling DoS
+    TaskCancellationLeak, // Improper task cancellation
+    AsyncResourceExposure, // Resource exposure through async operations
+    EventLoopPoisoning,   // Event loop manipulation attacks
+    AsyncPickleVuln,      // Pickle vulnerabilities in async context
+    ConcurrentModification, // Concurrent modification without protection
+}
+
+/// Async security severity levels
+#[derive(Debug, Clone)]
+pub enum AsyncSecuritySeverity {
+    Critical,  // Exploitable security vulnerability
+    High,      // Significant security risk
+    Medium,    // Moderate security concern
+    Low,       // Minor security consideration
+    Info,      // Security best practice
+}
+
+/// Modern async features (Python 3.7+)
+#[derive(Debug, Clone)]
+pub struct ModernAsyncFeature {
+    pub feature_type: ModernAsyncFeatureType,
+    pub python_version: String,
+    pub usage_count: usize,
+    pub description: String,
+    pub is_best_practice: bool,
+}
+
+/// Types of modern async features
+#[derive(Debug, Clone)]
+pub enum ModernAsyncFeatureType {
+    AsyncContextManager,  // async with statements
+    TaskGroups,          // Python 3.11+ TaskGroup
+    AsyncioTimeout,      // asyncio.timeout() (Python 3.11+)
+    AsyncIterators,      // async for loops
+    AsyncGenerators,     // async generators with yield
+    AsyncComprehensions, // Async list/dict/set comprehensions
+    ContextVars,         // contextvars for async context
+    AsyncioRun,          // asyncio.run() for main entry point
+    AsyncDecorators,     // Custom async decorators
+    StreamAPI,           // asyncio streams for I/O
+    SubprocessAsync,     // asyncio subprocess for non-blocking process execution
+}
+
+/// Pattern for async detection
+#[derive(Debug, Clone)]
+struct AsyncPattern {
+    name: String,
+    pattern: Regex,
+    pattern_type: String,
+    performance_impact: AsyncPerformanceImpact,
+}
+
 /// Python-specific analyzer
 pub struct PythonAnalyzer {
     decorator_patterns: HashMap<String, Vec<DecoratorPattern>>,
@@ -536,6 +792,7 @@ pub struct PythonAnalyzer {
     performance_patterns: HashMap<String, Vec<PerformancePattern>>,
     framework_patterns: HashMap<String, Vec<FrameworkPattern>>,
     type_hint_patterns: HashMap<String, Vec<TypeHintPattern>>,
+    async_patterns: HashMap<String, Vec<AsyncPattern>>,
 }
 
 #[derive(Debug, Clone)]
@@ -594,6 +851,7 @@ impl PythonAnalyzer {
             performance_patterns: HashMap::new(),
             framework_patterns: HashMap::new(),
             type_hint_patterns: HashMap::new(),
+            async_patterns: HashMap::new(),
         };
         analyzer.initialize_patterns();
         analyzer
@@ -931,6 +1189,145 @@ impl PythonAnalyzer {
         ];
         self.type_hint_patterns
             .insert("type_hints".to_string(), type_hint_patterns);
+
+        // Async/await patterns
+        let async_patterns = vec![
+            AsyncPattern {
+                name: "Async Function".to_string(),
+                pattern: Regex::new(r"async\s+def\s+(\w+)").unwrap(),
+                pattern_type: "function".to_string(),
+                performance_impact: AsyncPerformanceImpact::Positive,
+            },
+            AsyncPattern {
+                name: "Async Generator".to_string(),
+                pattern: Regex::new(r"async\s+def\s+\w+.*yield").unwrap(),
+                pattern_type: "generator".to_string(),
+                performance_impact: AsyncPerformanceImpact::Positive,
+            },
+            AsyncPattern {
+                name: "Async Context Manager".to_string(),
+                pattern: Regex::new(r"async\s+def\s+__aenter__|async\s+def\s+__aexit__").unwrap(),
+                pattern_type: "context_manager".to_string(),
+                performance_impact: AsyncPerformanceImpact::Positive,
+            },
+            AsyncPattern {
+                name: "Async Iterator".to_string(),
+                pattern: Regex::new(r"async\s+def\s+__aiter__|async\s+def\s+__anext__").unwrap(),
+                pattern_type: "iterator".to_string(),
+                performance_impact: AsyncPerformanceImpact::Positive,
+            },
+            AsyncPattern {
+                name: "Await Expression".to_string(),
+                pattern: Regex::new(r"await\s+(\w+[\w\.\(\)]*)+").unwrap(),
+                pattern_type: "await".to_string(),
+                performance_impact: AsyncPerformanceImpact::Neutral,
+            },
+            AsyncPattern {
+                name: "Asyncio Gather".to_string(),
+                pattern: Regex::new(r"asyncio\.gather\s*\(").unwrap(),
+                pattern_type: "concurrency".to_string(),
+                performance_impact: AsyncPerformanceImpact::Positive,
+            },
+            AsyncPattern {
+                name: "Asyncio Wait".to_string(),
+                pattern: Regex::new(r"asyncio\.wait\s*\(").unwrap(),
+                pattern_type: "concurrency".to_string(),
+                performance_impact: AsyncPerformanceImpact::Positive,
+            },
+            AsyncPattern {
+                name: "Asyncio Queue".to_string(),
+                pattern: Regex::new(r"asyncio\.Queue\s*\(").unwrap(),
+                pattern_type: "concurrency".to_string(),
+                performance_impact: AsyncPerformanceImpact::Positive,
+            },
+            AsyncPattern {
+                name: "Asyncio Semaphore".to_string(),
+                pattern: Regex::new(r"asyncio\.Semaphore\s*\(").unwrap(),
+                pattern_type: "concurrency".to_string(),
+                performance_impact: AsyncPerformanceImpact::Positive,
+            },
+            AsyncPattern {
+                name: "Asyncio Lock".to_string(),
+                pattern: Regex::new(r"asyncio\.Lock\s*\(").unwrap(),
+                pattern_type: "concurrency".to_string(),
+                performance_impact: AsyncPerformanceImpact::Positive,
+            },
+            AsyncPattern {
+                name: "TaskGroup".to_string(),
+                pattern: Regex::new(r"asyncio\.TaskGroup\s*\(").unwrap(),
+                pattern_type: "concurrency".to_string(),
+                performance_impact: AsyncPerformanceImpact::Positive,
+            },
+            AsyncPattern {
+                name: "Asyncio Timeout".to_string(),
+                pattern: Regex::new(r"asyncio\.timeout\s*\(").unwrap(),
+                pattern_type: "timeout".to_string(),
+                performance_impact: AsyncPerformanceImpact::Positive,
+            },
+            AsyncPattern {
+                name: "Async With Statement".to_string(),
+                pattern: Regex::new(r"async\s+with\s+").unwrap(),
+                pattern_type: "context_manager".to_string(),
+                performance_impact: AsyncPerformanceImpact::Positive,
+            },
+            AsyncPattern {
+                name: "Async For Loop".to_string(),
+                pattern: Regex::new(r"async\s+for\s+").unwrap(),
+                pattern_type: "iterator".to_string(),
+                performance_impact: AsyncPerformanceImpact::Positive,
+            },
+            AsyncPattern {
+                name: "Blocking IO in Async".to_string(),
+                pattern: Regex::new(r"(?:open|input|print)\s*\(.*\).*await|await.*(?:open|input|print)\s*\(").unwrap(),
+                pattern_type: "performance_issue".to_string(),
+                performance_impact: AsyncPerformanceImpact::Critical,
+            },
+        ];
+        self.async_patterns.insert("functions".to_string(), async_patterns);
+
+        let concurrency_patterns = vec![
+            AsyncPattern {
+                name: "Concurrent Futures".to_string(),
+                pattern: Regex::new(r"concurrent\.futures").unwrap(),
+                pattern_type: "concurrency".to_string(),
+                performance_impact: AsyncPerformanceImpact::Positive,
+            },
+            AsyncPattern {
+                name: "Asyncio Event".to_string(),
+                pattern: Regex::new(r"asyncio\.Event\s*\(").unwrap(),
+                pattern_type: "concurrency".to_string(),
+                performance_impact: AsyncPerformanceImpact::Positive,
+            },
+            AsyncPattern {
+                name: "Asyncio Condition".to_string(),
+                pattern: Regex::new(r"asyncio\.Condition\s*\(").unwrap(),
+                pattern_type: "concurrency".to_string(),
+                performance_impact: AsyncPerformanceImpact::Positive,
+            },
+        ];
+        self.async_patterns.insert("concurrency".to_string(), concurrency_patterns);
+
+        let modern_async_patterns = vec![
+            AsyncPattern {
+                name: "Asyncio Run".to_string(),
+                pattern: Regex::new(r"asyncio\.run\s*\(").unwrap(),
+                pattern_type: "modern".to_string(),
+                performance_impact: AsyncPerformanceImpact::Positive,
+            },
+            AsyncPattern {
+                name: "Context Variables".to_string(),
+                pattern: Regex::new(r"contextvars\.ContextVar").unwrap(),
+                pattern_type: "modern".to_string(),
+                performance_impact: AsyncPerformanceImpact::Positive,
+            },
+            AsyncPattern {
+                name: "Async Comprehension".to_string(),
+                pattern: Regex::new(r"\[.*async\s+for.*\]|\{.*async\s+for.*\}").unwrap(),
+                pattern_type: "modern".to_string(),
+                performance_impact: AsyncPerformanceImpact::Positive,
+            },
+        ];
+        self.async_patterns.insert("modern".to_string(), modern_async_patterns);
     }
 
     /// Analyze Python decorators
@@ -1312,6 +1709,515 @@ impl PythonAnalyzer {
             modern_type_features,
             recommendations,
         })
+    }
+
+    /// Analyze Python async/await patterns comprehensively
+    pub fn analyze_async_await(&self, content: &str) -> Result<PythonAsyncAwaitAnalysis> {
+        let mut async_functions_detected = Vec::new();
+        let mut await_usage_patterns = Vec::new();
+        let mut concurrency_patterns = Vec::new();
+        let mut async_performance_issues = Vec::new();
+        let mut async_security_issues = Vec::new();
+        let mut modern_async_features = Vec::new();
+
+        // Analyze async functions
+        self.analyze_async_functions(content, &mut async_functions_detected);
+
+        // Analyze await usage patterns
+        self.analyze_await_usage(content, &mut await_usage_patterns);
+
+        // Analyze concurrency patterns
+        self.analyze_concurrency_patterns(content, &mut concurrency_patterns);
+
+        // Detect async performance issues
+        self.detect_async_performance_issues(content, &mut async_performance_issues);
+
+        // Detect async security issues
+        self.detect_async_security_issues(content, &mut async_security_issues);
+
+        // Detect modern async features
+        self.detect_modern_async_features(content, &mut modern_async_features);
+
+        // Calculate overall async score
+        let overall_async_score = self.calculate_async_score(
+            &async_functions_detected,
+            &concurrency_patterns,
+            &async_performance_issues,
+            &async_security_issues,
+        );
+
+        // Generate recommendations
+        let recommendations = self.get_async_recommendations(
+            &async_functions_detected,
+            &await_usage_patterns,
+            &concurrency_patterns,
+            &async_performance_issues,
+            &async_security_issues,
+        );
+
+        Ok(PythonAsyncAwaitAnalysis {
+            overall_async_score,
+            async_functions_detected,
+            await_usage_patterns,
+            concurrency_patterns,
+            async_performance_issues,
+            async_security_issues,
+            modern_async_features,
+            recommendations,
+        })
+    }
+
+    /// Analyze async functions in detail
+    fn analyze_async_functions(&self, content: &str, async_functions: &mut Vec<AsyncFunctionInfo>) {
+        for patterns in self.async_patterns.values() {
+            for pattern in patterns {
+                if pattern.pattern_type == "function" || pattern.pattern_type == "generator" 
+                    || pattern.pattern_type == "context_manager" || pattern.pattern_type == "iterator" {
+                    
+                    for captures in pattern.pattern.captures_iter(content) {
+                        let full_match = captures.get(0).unwrap().as_str();
+                        let function_name = captures.get(1)
+                            .map(|m| m.as_str().to_string())
+                            .unwrap_or_else(|| "anonymous".to_string());
+
+                        let function_type = self.determine_async_function_type(&pattern.name, full_match);
+                        let complexity = self.assess_async_complexity(content, full_match);
+                        let coroutine_type = self.classify_coroutine_type(content);
+                        let error_handling = self.assess_error_handling(content, full_match);
+                        let has_timeout = self.has_timeout_handling(content, full_match);
+                        let uses_context_manager = self.uses_async_context_manager(content, full_match);
+
+                        async_functions.push(AsyncFunctionInfo {
+                            name: function_name,
+                            function_type,
+                            complexity,
+                            coroutine_type,
+                            error_handling,
+                            has_timeout,
+                            uses_context_manager,
+                            location: full_match.to_string(),
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    /// Analyze await usage patterns
+    fn analyze_await_usage(&self, content: &str, await_patterns: &mut Vec<AwaitUsageInfo>) {
+        let await_pattern = Regex::new(r"await\s+([^;\n]+)").unwrap();
+        
+        for captures in await_pattern.captures_iter(content) {
+            let full_match = captures.get(0).unwrap().as_str();
+            let await_expr = captures.get(1).unwrap().as_str();
+
+            let context = self.determine_await_context(content, full_match);
+            let usage_pattern = self.classify_await_usage_pattern(content, await_expr);
+            let is_valid = self.validate_await_usage(&context);
+            let potential_issues = self.detect_await_issues(content, await_expr, &context);
+
+            await_patterns.push(AwaitUsageInfo {
+                location: full_match.to_string(),
+                context,
+                usage_pattern,
+                is_valid,
+                potential_issues,
+            });
+        }
+    }
+
+    /// Analyze concurrency patterns
+    fn analyze_concurrency_patterns(&self, content: &str, concurrency_patterns: &mut Vec<ConcurrencyPatternInfo>) {
+        for patterns in self.async_patterns.values() {
+            for pattern in patterns {
+                if pattern.pattern_type == "concurrency" {
+                    for captures in pattern.pattern.captures_iter(content) {
+                        let full_match = captures.get(0).unwrap().as_str();
+
+                        let pattern_type = self.map_to_concurrency_pattern_type(&pattern.name);
+                        let usage_quality = self.assess_concurrency_usage_quality(content, full_match);
+                        let best_practices_followed = self.check_concurrency_best_practices(content, full_match);
+
+                        concurrency_patterns.push(ConcurrencyPatternInfo {
+                            pattern_type,
+                            usage_quality,
+                            performance_impact: pattern.performance_impact.clone(),
+                            location: full_match.to_string(),
+                            best_practices_followed,
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    /// Detect async performance issues
+    fn detect_async_performance_issues(&self, content: &str, issues: &mut Vec<AsyncPerformanceIssue>) {
+        // Detect blocking IO in async functions - look for blocking calls within async function bodies
+        if content.contains("async def") && (content.contains("time.sleep") || content.contains("open(") || content.contains("input(")) {
+            issues.push(AsyncPerformanceIssue {
+                issue_type: AsyncPerformanceIssueType::BlockingIOInAsync,
+                severity: AsyncIssueSeverity::High,
+                location: "Async function with blocking operations".to_string(),
+                description: "Blocking I/O operation in async function".to_string(),
+                recommendation: "Use async I/O operations or run_in_executor".to_string(),
+                estimated_impact: AsyncPerformanceImpact::Critical,
+            });
+        }
+
+        // Detect await in loops
+        let await_loop_pattern = Regex::new(r"for\s+.*?:\s*.*?await\s+").unwrap();
+        for captures in await_loop_pattern.captures_iter(content) {
+            let full_match = captures.get(0).unwrap().as_str();
+            issues.push(AsyncPerformanceIssue {
+                issue_type: AsyncPerformanceIssueType::AwaitInLoop,
+                severity: AsyncIssueSeverity::Medium,
+                location: full_match.to_string(),
+                description: "Sequential await in loop - consider asyncio.gather()".to_string(),
+                recommendation: "Use asyncio.gather() or asyncio.as_completed() for concurrent execution".to_string(),
+                estimated_impact: AsyncPerformanceImpact::Negative,
+            });
+        }
+
+        // Detect missing concurrency opportunities
+        let sequential_await_pattern = Regex::new(r"await\s+\w+.*\n.*await\s+\w+").unwrap();
+        for captures in sequential_await_pattern.captures_iter(content) {
+            let full_match = captures.get(0).unwrap().as_str();
+            issues.push(AsyncPerformanceIssue {
+                issue_type: AsyncPerformanceIssueType::MissingConcurrency,
+                severity: AsyncIssueSeverity::Medium,
+                location: full_match.to_string(),
+                description: "Sequential await calls could be concurrent".to_string(),
+                recommendation: "Consider using asyncio.gather() for independent operations".to_string(),
+                estimated_impact: AsyncPerformanceImpact::Negative,
+            });
+        }
+    }
+
+    /// Detect async security issues
+    fn detect_async_security_issues(&self, content: &str, issues: &mut Vec<AsyncSecurityIssue>) {
+        // Detect missing timeouts
+        let await_pattern = Regex::new(r"await\s+").unwrap();
+        let timeout_count = content.matches("asyncio.wait_for").count() + content.matches("asyncio.timeout").count();
+        let await_count = await_pattern.find_iter(content).count();
+
+        if await_count > timeout_count + 2 {
+            issues.push(AsyncSecurityIssue {
+                issue_type: AsyncSecurityIssueType::AsyncTimeoutVuln,
+                severity: AsyncSecuritySeverity::Medium,
+                location: "Multiple async operations".to_string(),
+                description: "Missing timeout handling in async operations".to_string(),
+                recommendation: "Add timeouts to prevent DoS attacks".to_string(),
+            });
+        }
+
+        // Detect shared state without locking
+        let shared_state_pattern = Regex::new(r"(?:global|class)\s+\w+.*=.*\n.*async\s+def.*\w+.*=").unwrap();
+        for captures in shared_state_pattern.captures_iter(content) {
+            let full_match = captures.get(0).unwrap().as_str();
+            if !content.contains("asyncio.Lock") && !content.contains("asyncio.Semaphore") {
+                issues.push(AsyncSecurityIssue {
+                    issue_type: AsyncSecurityIssueType::SharedStateNoLock,
+                    severity: AsyncSecuritySeverity::High,
+                    location: full_match.to_string(),
+                    description: "Shared mutable state without proper locking".to_string(),
+                    recommendation: "Use asyncio.Lock or asyncio.Semaphore for thread safety".to_string(),
+                });
+            }
+        }
+
+        // Detect race condition patterns
+        if content.contains("asyncio.gather") && !content.contains("asyncio.Lock") && content.matches("=").count() > 3 {
+            issues.push(AsyncSecurityIssue {
+                issue_type: AsyncSecurityIssueType::AsyncRaceCondition,
+                severity: AsyncSecuritySeverity::Medium,
+                location: "Concurrent operations".to_string(),
+                description: "Potential race condition in concurrent operations".to_string(),
+                recommendation: "Review shared resource access and add synchronization".to_string(),
+            });
+        }
+    }
+
+    /// Detect modern async features
+    fn detect_modern_async_features(&self, content: &str, features: &mut Vec<ModernAsyncFeature>) {
+        let modern_patterns = &[
+            ("async with", ModernAsyncFeatureType::AsyncContextManager, "3.7+"),
+            ("asyncio.TaskGroup", ModernAsyncFeatureType::TaskGroups, "3.11+"),
+            ("asyncio.timeout", ModernAsyncFeatureType::AsyncioTimeout, "3.11+"),
+            ("async for", ModernAsyncFeatureType::AsyncIterators, "3.7+"),
+            ("contextvars", ModernAsyncFeatureType::ContextVars, "3.7+"),
+            ("asyncio.run", ModernAsyncFeatureType::AsyncioRun, "3.7+"),
+        ];
+
+        for (pattern_str, feature_type, version) in modern_patterns {
+            let count = content.matches(pattern_str).count();
+            if count > 0 {
+                features.push(ModernAsyncFeature {
+                    feature_type: feature_type.clone(),
+                    python_version: version.to_string(),
+                    usage_count: count,
+                    description: format!("Modern async feature: {}", pattern_str),
+                    is_best_practice: true,
+                });
+            }
+        }
+
+        // Detect async comprehensions
+        let async_comp_pattern = Regex::new(r"\[.*async\s+for.*\]|\{.*async\s+for.*\}").unwrap();
+        let comp_count = async_comp_pattern.find_iter(content).count();
+        if comp_count > 0 {
+            features.push(ModernAsyncFeature {
+                feature_type: ModernAsyncFeatureType::AsyncComprehensions,
+                python_version: "3.6+".to_string(),
+                usage_count: comp_count,
+                description: "Async comprehensions for concurrent iteration".to_string(),
+                is_best_practice: true,
+            });
+        }
+    }
+
+    /// Helper methods for async analysis
+    fn determine_async_function_type(&self, pattern_name: &str, _full_match: &str) -> AsyncFunctionType {
+        match pattern_name {
+            "Async Function" => AsyncFunctionType::RegularAsync,
+            "Async Generator" => AsyncFunctionType::AsyncGenerator,
+            "Async Context Manager" => AsyncFunctionType::AsyncContextManager,
+            "Async Iterator" => AsyncFunctionType::AsyncIterator,
+            _ => AsyncFunctionType::RegularAsync,
+        }
+    }
+
+    fn assess_async_complexity(&self, _content: &str, function_match: &str) -> AsyncComplexity {
+        let await_count = function_match.matches("await").count();
+        let try_count = function_match.matches("try").count();
+        let gather_count = function_match.matches("gather").count();
+
+        match (await_count, try_count, gather_count) {
+            (0..=1, 0, 0) => AsyncComplexity::Simple,
+            (2..=3, 0..=1, 0..=1) => AsyncComplexity::Moderate,
+            (4..=6, 1..=2, 0..=2) => AsyncComplexity::Complex,
+            _ => AsyncComplexity::Advanced,
+        }
+    }
+
+    fn classify_coroutine_type(&self, content: &str) -> CoroutineType {
+        if content.contains("asyncio") {
+            CoroutineType::Framework("asyncio".to_string())
+        } else if content.contains("trio") {
+            CoroutineType::Framework("trio".to_string())
+        } else if content.contains("curio") {
+            CoroutineType::Framework("curio".to_string())
+        } else if content.contains("yield from") {
+            CoroutineType::Generator
+        } else {
+            CoroutineType::Native
+        }
+    }
+
+    fn assess_error_handling(&self, _content: &str, function_match: &str) -> AsyncErrorHandling {
+        if function_match.contains("asyncio.timeout") || function_match.contains("asyncio.wait_for") {
+            AsyncErrorHandling::Robust
+        } else if function_match.contains("timeout") {
+            AsyncErrorHandling::Timeout
+        } else if function_match.contains("try") && function_match.contains("except") {
+            AsyncErrorHandling::Basic
+        } else {
+            AsyncErrorHandling::None
+        }
+    }
+
+    fn has_timeout_handling(&self, _content: &str, function_match: &str) -> bool {
+        function_match.contains("timeout") || function_match.contains("asyncio.wait_for")
+    }
+
+    fn uses_async_context_manager(&self, _content: &str, function_match: &str) -> bool {
+        function_match.contains("async with")
+    }
+
+    fn determine_await_context(&self, content: &str, await_match: &str) -> AwaitContext {
+        // Simplified context detection - in practice, would need more sophisticated parsing
+        if content.contains("async def") {
+            if await_match.contains("__aenter__") || await_match.contains("__aexit__") {
+                AwaitContext::AsyncContextManager
+            } else if await_match.contains("__aiter__") || await_match.contains("__anext__") {
+                AwaitContext::AsyncIterator
+            } else if await_match.contains("yield") {
+                AwaitContext::AsyncGenerator
+            } else {
+                AwaitContext::AsyncFunction
+            }
+        } else if await_match.contains("[") && await_match.contains("for") {
+            AwaitContext::Comprehension
+        } else if await_match.contains("lambda") {
+            AwaitContext::Lambda
+        } else {
+            AwaitContext::SyncContext
+        }
+    }
+
+    fn classify_await_usage_pattern(&self, content: &str, await_expr: &str) -> AwaitUsagePattern {
+        if content.contains("asyncio.gather") {
+            AwaitUsagePattern::GatheredAwait
+        } else if await_expr.contains("await") {
+            AwaitUsagePattern::NestedAwait
+        } else if content.contains("if") && await_expr.contains("await") {
+            AwaitUsagePattern::ConditionalAwait
+        } else if content.matches("await").count() > 1 {
+            AwaitUsagePattern::SequentialAwaits
+        } else {
+            AwaitUsagePattern::SingleAwait
+        }
+    }
+
+    fn validate_await_usage(&self, context: &AwaitContext) -> bool {
+        !matches!(context, AwaitContext::SyncContext | AwaitContext::Comprehension | AwaitContext::Lambda)
+    }
+
+    fn detect_await_issues(&self, content: &str, await_expr: &str, context: &AwaitContext) -> Vec<AwaitIssue> {
+        let mut issues = Vec::new();
+
+        if !self.validate_await_usage(context) {
+            issues.push(AwaitIssue::IllegalContext);
+        }
+
+        if await_expr.contains("open(") || await_expr.contains("input(") {
+            issues.push(AwaitIssue::BlockingCall);
+        }
+
+        if !content.contains("timeout") && !content.contains("asyncio.wait_for") {
+            issues.push(AwaitIssue::TimeoutMissing);
+        }
+
+        issues
+    }
+
+    fn map_to_concurrency_pattern_type(&self, pattern_name: &str) -> ConcurrencyPatternType {
+        match pattern_name {
+            "Asyncio Gather" => ConcurrencyPatternType::AsyncioGather,
+            "Asyncio Wait" => ConcurrencyPatternType::AsyncioWait,
+            "Asyncio Queue" => ConcurrencyPatternType::AsyncioQueue,
+            "Asyncio Semaphore" => ConcurrencyPatternType::AsyncioSemaphore,
+            "Asyncio Lock" => ConcurrencyPatternType::AsyncioLock,
+            "TaskGroup" => ConcurrencyPatternType::TaskGroup,
+            "Concurrent Futures" => ConcurrencyPatternType::ConcurrentFutures,
+            "Asyncio Timeout" => ConcurrencyPatternType::AsyncioTimeout,
+            "Asyncio Event" => ConcurrencyPatternType::AsyncioEvent,
+            "Asyncio Condition" => ConcurrencyPatternType::AsyncioCondition,
+            _ => ConcurrencyPatternType::AsyncioGather,
+        }
+    }
+
+    fn assess_concurrency_usage_quality(&self, content: &str, pattern_match: &str) -> ConcurrencyUsageQuality {
+        let has_error_handling = pattern_match.contains("try") || pattern_match.contains("except");
+        let has_timeout = pattern_match.contains("timeout") || content.contains("asyncio.wait_for");
+        let has_proper_cleanup = pattern_match.contains("finally") || pattern_match.contains("async with");
+
+        match (has_error_handling, has_timeout, has_proper_cleanup) {
+            (true, true, true) => ConcurrencyUsageQuality::Excellent,
+            (true, true, false) | (true, false, true) => ConcurrencyUsageQuality::Good,
+            (true, false, false) | (false, true, false) | (false, true, true) => ConcurrencyUsageQuality::Adequate,
+            (false, false, true) => ConcurrencyUsageQuality::Poor,
+            (false, false, false) => ConcurrencyUsageQuality::Dangerous,
+        }
+    }
+
+    fn check_concurrency_best_practices(&self, content: &str, _pattern_match: &str) -> bool {
+        content.contains("async with") && 
+        (content.contains("timeout") || content.contains("asyncio.wait_for")) &&
+        content.contains("try")
+    }
+
+    fn calculate_async_score(
+        &self,
+        async_functions: &[AsyncFunctionInfo],
+        concurrency_patterns: &[ConcurrencyPatternInfo],
+        performance_issues: &[AsyncPerformanceIssue],
+        security_issues: &[AsyncSecurityIssue],
+    ) -> i32 {
+        let base_score = 50;
+        
+        // Bonus for async functions
+        let async_bonus = async_functions.len() as i32 * 5;
+        
+        // Bonus for good concurrency patterns
+        let concurrency_bonus = concurrency_patterns.iter()
+            .map(|p| match p.usage_quality {
+                ConcurrencyUsageQuality::Excellent => 10,
+                ConcurrencyUsageQuality::Good => 7,
+                ConcurrencyUsageQuality::Adequate => 4,
+                ConcurrencyUsageQuality::Poor => 1,
+                ConcurrencyUsageQuality::Dangerous => -5,
+            })
+            .sum::<i32>();
+
+        // Penalty for issues
+        let performance_penalty = performance_issues.iter()
+            .map(|i| match i.severity {
+                AsyncIssueSeverity::Critical => 20,
+                AsyncIssueSeverity::High => 15,
+                AsyncIssueSeverity::Medium => 10,
+                AsyncIssueSeverity::Low => 5,
+                AsyncIssueSeverity::Info => 1,
+            })
+            .sum::<i32>();
+
+        let security_penalty = security_issues.iter()
+            .map(|i| match i.severity {
+                AsyncSecuritySeverity::Critical => 25,
+                AsyncSecuritySeverity::High => 20,
+                AsyncSecuritySeverity::Medium => 15,
+                AsyncSecuritySeverity::Low => 10,
+                AsyncSecuritySeverity::Info => 5,
+            })
+            .sum::<i32>();
+
+        (base_score + async_bonus + concurrency_bonus - performance_penalty - security_penalty).clamp(0, 100)
+    }
+
+    fn get_async_recommendations(
+        &self,
+        async_functions: &[AsyncFunctionInfo],
+        await_patterns: &[AwaitUsageInfo],
+        concurrency_patterns: &[ConcurrencyPatternInfo],
+        performance_issues: &[AsyncPerformanceIssue],
+        security_issues: &[AsyncSecurityIssue],
+    ) -> Vec<String> {
+        let mut recommendations = Vec::new();
+
+        if async_functions.is_empty() {
+            recommendations.push("Consider using async/await for I/O bound operations".to_string());
+        }
+
+        if !performance_issues.is_empty() {
+            recommendations.push("Address async performance issues for better efficiency".to_string());
+        }
+
+        if !security_issues.is_empty() {
+            recommendations.push("Fix async security vulnerabilities".to_string());
+        }
+
+        let has_poor_concurrency = concurrency_patterns.iter()
+            .any(|p| matches!(p.usage_quality, ConcurrencyUsageQuality::Poor | ConcurrencyUsageQuality::Dangerous));
+
+        if has_poor_concurrency {
+            recommendations.push("Improve concurrency pattern usage with proper error handling".to_string());
+        }
+
+        let has_invalid_await = await_patterns.iter().any(|p| !p.is_valid);
+        if has_invalid_await {
+            recommendations.push("Fix invalid await usage in sync contexts".to_string());
+        }
+
+        let missing_timeouts = async_functions.iter().any(|f| !f.has_timeout);
+        if missing_timeouts {
+            recommendations.push("Add timeout handling to prevent hanging operations".to_string());
+        }
+
+        recommendations.push("Use asyncio.gather() for concurrent independent operations".to_string());
+        recommendations.push("Implement proper async context managers for resource cleanup".to_string());
+        recommendations.push("Consider using Python 3.11+ TaskGroup for structured concurrency".to_string());
+
+        recommendations
     }
 
     /// Helper methods for type hint analysis
@@ -2106,5 +3012,193 @@ def typed_func(x: int) -> str:
 
         let result = analyzer.analyze_type_hints(low_coverage_code).unwrap();
         assert!(result.overall_coverage < 100.0);
+    }
+
+    #[test]
+    fn test_async_await_analysis() {
+        let analyzer = PythonAnalyzer::new();
+        let content = r#"
+import asyncio
+
+async def fetch_data():
+    await asyncio.sleep(1)
+    return "data"
+
+async def process_items():
+    results = await asyncio.gather(
+        fetch_data(),
+        fetch_data(),
+        fetch_data()
+    )
+    return results
+
+async def with_context():
+    async with asyncio.timeout(5):
+        return await fetch_data()
+"#;
+
+        let result = analyzer.analyze_async_await(content).unwrap();
+        
+        // Should detect async functions
+        assert!(!result.async_functions_detected.is_empty());
+        assert!(result.async_functions_detected.len() >= 3);
+        
+        // Should detect concurrency patterns
+        assert!(!result.concurrency_patterns.is_empty());
+        
+        // Should detect modern async features
+        assert!(!result.modern_async_features.is_empty());
+        
+        // Should have a reasonable async score
+        assert!(result.overall_async_score > 50);
+    }
+
+    #[test]
+    fn test_async_performance_issues() {
+        let analyzer = PythonAnalyzer::new();
+        let content = r#"
+import asyncio
+import time
+
+async def bad_function():
+    # Blocking operations in async function
+    time.sleep(1)
+    with open("file.txt") as f:
+        data = f.read()
+    
+    # Sequential awaits that could be concurrent
+    result1 = await fetch_data()
+    result2 = await fetch_data()
+    
+    return result1 + result2
+
+async def fetch_data():
+    await asyncio.sleep(0.1)
+    return "data"
+"#;
+
+        let result = analyzer.analyze_async_await(content).unwrap();
+        
+        // Should detect performance issues
+        assert!(!result.async_performance_issues.is_empty());
+        
+        // Should detect blocking operations
+        let blocking_issues: Vec<_> = result.async_performance_issues.iter()
+            .filter(|issue| matches!(issue.issue_type, AsyncPerformanceIssueType::BlockingIOInAsync))
+            .collect();
+        assert!(!blocking_issues.is_empty());
+        
+        // Should detect missing concurrency
+        let concurrency_issues: Vec<_> = result.async_performance_issues.iter()
+            .filter(|issue| matches!(issue.issue_type, AsyncPerformanceIssueType::MissingConcurrency))
+            .collect();
+        assert!(!concurrency_issues.is_empty());
+    }
+
+    #[test]
+    fn test_async_security_issues() {
+        let analyzer = PythonAnalyzer::new();
+        let content = r#"
+import asyncio
+
+shared_data = {}
+
+async def unsafe_function():
+    # No timeout handling
+    await some_external_service()
+    
+    # Shared state modification without locking
+    shared_data["key"] = "value"
+    
+    # Multiple concurrent operations without proper synchronization
+    await asyncio.gather(
+        modify_shared_data(),
+        modify_shared_data(),
+        modify_shared_data()
+    )
+
+async def some_external_service():
+    await asyncio.sleep(1)
+
+async def modify_shared_data():
+    shared_data["counter"] = shared_data.get("counter", 0) + 1
+"#;
+
+        let result = analyzer.analyze_async_await(content).unwrap();
+        
+        // Should detect security issues
+        assert!(!result.async_security_issues.is_empty());
+        
+        // Should detect timeout vulnerability
+        let timeout_issues: Vec<_> = result.async_security_issues.iter()
+            .filter(|issue| matches!(issue.issue_type, AsyncSecurityIssueType::AsyncTimeoutVuln))
+            .collect();
+        assert!(!timeout_issues.is_empty());
+    }
+
+    #[test]
+    fn test_modern_async_features() {
+        let analyzer = PythonAnalyzer::new();
+        let content = r#"
+import asyncio
+import contextvars
+
+async def modern_async():
+    # Modern async features
+    async with asyncio.timeout(5):
+        data = await fetch_data()
+    
+    # Async comprehension
+    results = [await process(item) async for item in async_generator()]
+    
+    # Context variables
+    context_var = contextvars.ContextVar('user_id')
+    
+    # TaskGroup (Python 3.11+)
+    async with asyncio.TaskGroup() as tg:
+        task1 = tg.create_task(fetch_data())
+        task2 = tg.create_task(fetch_data())
+    
+    return results
+
+async def async_generator():
+    for i in range(3):
+        yield f"item_{i}"
+
+async def fetch_data():
+    return "data"
+
+async def process(item):
+    return f"processed_{item}"
+
+if __name__ == "__main__":
+    asyncio.run(modern_async())
+"#;
+
+        let result = analyzer.analyze_async_await(content).unwrap();
+        
+        // Should detect modern async features
+        assert!(!result.modern_async_features.is_empty());
+        
+        // Should detect async context managers
+        let context_manager_features: Vec<_> = result.modern_async_features.iter()
+            .filter(|f| matches!(f.feature_type, ModernAsyncFeatureType::AsyncContextManager))
+            .collect();
+        assert!(!context_manager_features.is_empty());
+        
+        // Should detect TaskGroups
+        let task_group_features: Vec<_> = result.modern_async_features.iter()
+            .filter(|f| matches!(f.feature_type, ModernAsyncFeatureType::TaskGroups))
+            .collect();
+        assert!(!task_group_features.is_empty());
+        
+        // Should detect asyncio.run
+        let asyncio_run_features: Vec<_> = result.modern_async_features.iter()
+            .filter(|f| matches!(f.feature_type, ModernAsyncFeatureType::AsyncioRun))
+            .collect();
+        assert!(!asyncio_run_features.is_empty());
+        
+        // Should have recommendations
+        assert!(!result.recommendations.is_empty());
     }
 }

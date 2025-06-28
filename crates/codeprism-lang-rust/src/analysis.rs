@@ -14,8 +14,8 @@ pub struct RustAnalyzer {
 impl RustAnalyzer {
     /// Create a new Rust analyzer
     pub fn new(nodes: Vec<Node>, edges: Vec<Edge>) -> Self {
-        let mut analyzer = Self { 
-            nodes, 
+        let mut analyzer = Self {
+            nodes,
             edges,
             scope_map: HashMap::new(),
         };
@@ -27,7 +27,10 @@ impl RustAnalyzer {
     fn build_scope_map(&mut self) {
         for edge in &self.edges {
             if matches!(edge.kind, crate::types::EdgeKind::Contains) {
-                self.scope_map.entry(edge.source).or_default().push(edge.target);
+                self.scope_map
+                    .entry(edge.source)
+                    .or_default()
+                    .push(edge.target);
             }
         }
     }
@@ -137,7 +140,7 @@ impl RustAnalyzer {
     /// Detect ownership antipatterns in a function
     fn detect_ownership_antipatterns(&self, function_node: &Node) -> Vec<OwnershipPattern> {
         let mut patterns = Vec::new();
-        
+
         // Check function signature for ownership issues
         if let Some(signature) = &function_node.signature {
             // Detect unnecessary owned parameters
@@ -146,7 +149,9 @@ impl RustAnalyzer {
                     pattern_type: OwnershipPatternType::UnnecessaryOwned,
                     location: function_node.span.clone(),
                     description: "Function takes owned String when &str would suffice".to_string(),
-                    suggestion: Some("Consider using &str parameter for read-only string access".to_string()),
+                    suggestion: Some(
+                        "Consider using &str parameter for read-only string access".to_string(),
+                    ),
                     severity: Severity::Medium,
                 });
             }
@@ -157,8 +162,14 @@ impl RustAnalyzer {
                 patterns.push(OwnershipPattern {
                     pattern_type: OwnershipPatternType::MultipleMutableBorrows,
                     location: function_node.span.clone(),
-                    description: format!("Function has {} mutable borrows, potential for borrowing conflicts", mut_borrow_count),
-                    suggestion: Some("Consider refactoring to reduce mutable borrows or use interior mutability".to_string()),
+                    description: format!(
+                        "Function has {} mutable borrows, potential for borrowing conflicts",
+                        mut_borrow_count
+                    ),
+                    suggestion: Some(
+                        "Consider refactoring to reduce mutable borrows or use interior mutability"
+                            .to_string(),
+                    ),
                     severity: Severity::High,
                 });
             }
@@ -170,17 +181,20 @@ impl RustAnalyzer {
     /// Detect unnecessary clone operations
     fn detect_unnecessary_clones(&self, function_node: &Node) -> Vec<OwnershipPattern> {
         let mut patterns = Vec::new();
-        
+
         // Look for calls within this function that might be unnecessary clones
         if let Some(scope_nodes) = self.scope_map.get(&function_node.id) {
             for &node_id in scope_nodes {
                 if let Some(call_node) = self.nodes.iter().find(|n| n.id == node_id) {
-                    if matches!(call_node.kind, NodeKind::Call) && call_node.name.contains("clone") {
+                    if matches!(call_node.kind, NodeKind::Call) && call_node.name.contains("clone")
+                    {
                         patterns.push(OwnershipPattern {
                             pattern_type: OwnershipPatternType::UnnecessaryClone,
                             location: call_node.span.clone(),
                             description: "Potential unnecessary clone() call".to_string(),
-                            suggestion: Some("Check if borrowing would work instead of cloning".to_string()),
+                            suggestion: Some(
+                                "Check if borrowing would work instead of cloning".to_string(),
+                            ),
                             severity: Severity::Medium,
                         });
                     }
@@ -194,15 +208,18 @@ impl RustAnalyzer {
     /// Detect inefficient borrowing patterns
     fn detect_inefficient_borrowing(&self, function_node: &Node) -> Vec<OwnershipPattern> {
         let mut patterns = Vec::new();
-        
+
         // Analyze function metadata for borrowing patterns
         if let Some(metadata) = function_node.metadata.as_object() {
             if let Some(params) = metadata.get("parameters").and_then(|p| p.as_array()) {
                 for param in params {
                     if let Some(param_obj) = param.as_object() {
-                        if let Some(ownership) = param_obj.get("ownership").and_then(|o| o.as_str()) {
+                        if let Some(ownership) = param_obj.get("ownership").and_then(|o| o.as_str())
+                        {
                             if ownership == "borrowed" {
-                                if let Some(usage) = param_obj.get("usage_pattern").and_then(|u| u.as_str()) {
+                                if let Some(usage) =
+                                    param_obj.get("usage_pattern").and_then(|u| u.as_str())
+                                {
                                     if usage == "stored" {
                                         patterns.push(OwnershipPattern {
                                             pattern_type: OwnershipPatternType::InefficientBorrowing,
@@ -226,15 +243,21 @@ impl RustAnalyzer {
     /// Detect move semantics issues
     fn detect_move_semantics_issues(&self, function_node: &Node) -> Vec<OwnershipPattern> {
         let mut patterns = Vec::new();
-        
+
         // Check for potential move after use patterns
         if let Some(signature) = &function_node.signature {
-            if signature.contains("self") && !signature.contains("&self") && !signature.contains("&mut self") {
+            if signature.contains("self")
+                && !signature.contains("&self")
+                && !signature.contains("&mut self")
+            {
                 patterns.push(OwnershipPattern {
                     pattern_type: OwnershipPatternType::PotentialMoveError,
                     location: function_node.span.clone(),
                     description: "Method takes self by value, object will be moved".to_string(),
-                    suggestion: Some("Consider if borrowing (&self or &mut self) would be more appropriate".to_string()),
+                    suggestion: Some(
+                        "Consider if borrowing (&self or &mut self) would be more appropriate"
+                            .to_string(),
+                    ),
                     severity: Severity::Low,
                 });
             }
@@ -246,14 +269,16 @@ impl RustAnalyzer {
     /// Analyze variable ownership patterns
     fn analyze_variable_ownership(&self, variable_node: &Node) -> Vec<OwnershipPattern> {
         let mut patterns = Vec::new();
-        
+
         // Check if variable name suggests it should be a reference
         if variable_node.name.ends_with("_ref") || variable_node.name.starts_with("ref_") {
             patterns.push(OwnershipPattern {
                 pattern_type: OwnershipPatternType::InconsistentNaming,
                 location: variable_node.span.clone(),
                 description: "Variable name suggests reference but type might be owned".to_string(),
-                suggestion: Some("Ensure naming convention matches ownership semantics".to_string()),
+                suggestion: Some(
+                    "Ensure naming convention matches ownership semantics".to_string(),
+                ),
                 severity: Severity::Low,
             });
         }
@@ -266,7 +291,7 @@ impl RustAnalyzer {
     /// Detect allocation patterns that might be inefficient
     fn detect_allocation_patterns(&self, function_node: &Node) -> Vec<PerformanceIssue> {
         let mut issues = Vec::new();
-        
+
         if let Some(scope_nodes) = self.scope_map.get(&function_node.id) {
             for &node_id in scope_nodes {
                 if let Some(call_node) = self.nodes.iter().find(|n| n.id == node_id) {
@@ -276,8 +301,12 @@ impl RustAnalyzer {
                             issues.push(PerformanceIssue {
                                 issue_type: PerformanceIssueType::FrequentAllocations,
                                 location: call_node.span.clone(),
-                                description: "Vector allocation detected - ensure not in hot path".to_string(),
-                                suggestion: Some("Consider pre-allocating with capacity or reusing allocations".to_string()),
+                                description: "Vector allocation detected - ensure not in hot path"
+                                    .to_string(),
+                                suggestion: Some(
+                                    "Consider pre-allocating with capacity or reusing allocations"
+                                        .to_string(),
+                                ),
                                 impact: PerformanceImpact::Medium,
                             });
                         }
@@ -288,8 +317,10 @@ impl RustAnalyzer {
                                 issue_type: PerformanceIssueType::UnoptimizedCollections,
                                 location: call_node.span.clone(),
                                 description: "HashMap created without initial capacity".to_string(),
-                                suggestion: Some("Use HashMap::with_capacity() if size is known".to_string()),
-                                impact: PerformanceImpact::Low,
+                                suggestion: Some(
+                                    "Use HashMap::with_capacity() if size is known".to_string(),
+                                ),
+                                impact: PerformanceImpact::Medium,
                             });
                         }
                     }
@@ -303,10 +334,10 @@ impl RustAnalyzer {
     /// Detect string manipulation inefficiencies
     fn detect_string_inefficiencies(&self, function_node: &Node) -> Vec<PerformanceIssue> {
         let mut issues = Vec::new();
-        
+
         if let Some(scope_nodes) = self.scope_map.get(&function_node.id) {
             let mut string_pushes = 0;
-            
+
             for &node_id in scope_nodes {
                 if let Some(call_node) = self.nodes.iter().find(|n| n.id == node_id) {
                     if matches!(call_node.kind, NodeKind::Call) {
@@ -314,14 +345,17 @@ impl RustAnalyzer {
                         if call_node.name.contains("push_str") || call_node.name.contains("push") {
                             string_pushes += 1;
                         }
-                        
+
                         // Detect string concatenation in loops
-                        if call_node.name.contains("+") && string_pushes > 3 {
+                        if call_node.name.contains("+") && string_pushes > 2 {
                             issues.push(PerformanceIssue {
                                 issue_type: PerformanceIssueType::StringConcatenation,
                                 location: call_node.span.clone(),
                                 description: "Multiple string operations detected".to_string(),
-                                suggestion: Some("Consider using String::with_capacity() or format! macro".to_string()),
+                                suggestion: Some(
+                                    "Consider using String::with_capacity() or format! macro"
+                                        .to_string(),
+                                ),
                                 impact: PerformanceImpact::Medium,
                             });
                         }
@@ -336,7 +370,7 @@ impl RustAnalyzer {
     /// Detect iterator chain inefficiencies
     fn detect_iterator_inefficiencies(&self, function_node: &Node) -> Vec<PerformanceIssue> {
         let mut issues = Vec::new();
-        
+
         if let Some(scope_nodes) = self.scope_map.get(&function_node.id) {
             for &node_id in scope_nodes {
                 if let Some(call_node) = self.nodes.iter().find(|n| n.id == node_id) {
@@ -346,8 +380,13 @@ impl RustAnalyzer {
                             issues.push(PerformanceIssue {
                                 issue_type: PerformanceIssueType::IteratorChains,
                                 location: call_node.span.clone(),
-                                description: "collect() call may be unnecessary if chaining iterators".to_string(),
-                                suggestion: Some("Consider avoiding intermediate collection if possible".to_string()),
+                                description:
+                                    "collect() call may be unnecessary if chaining iterators"
+                                        .to_string(),
+                                suggestion: Some(
+                                    "Consider avoiding intermediate collection if possible"
+                                        .to_string(),
+                                ),
                                 impact: PerformanceImpact::Medium,
                             });
                         }
@@ -362,7 +401,7 @@ impl RustAnalyzer {
     /// Detect collection usage inefficiencies
     fn detect_collection_inefficiencies(&self, function_node: &Node) -> Vec<PerformanceIssue> {
         let mut issues = Vec::new();
-        
+
         if let Some(signature) = &function_node.signature {
             // Detect Vec<T> parameters when slice would work
             if signature.contains("Vec<") && !signature.contains("&mut") {
@@ -370,7 +409,9 @@ impl RustAnalyzer {
                     issue_type: PerformanceIssueType::UnoptimizedCollections,
                     location: function_node.span.clone(),
                     description: "Function takes Vec<T> when &[T] slice might suffice".to_string(),
-                    suggestion: Some("Consider using slice (&[T]) for read-only access".to_string()),
+                    suggestion: Some(
+                        "Consider using slice (&[T]) for read-only access".to_string(),
+                    ),
                     impact: PerformanceImpact::Low,
                 });
             }
@@ -382,14 +423,17 @@ impl RustAnalyzer {
     /// Analyze performance implications of specific calls
     fn analyze_call_performance(&self, call_node: &Node) -> Vec<PerformanceIssue> {
         let mut issues = Vec::new();
-        
+
         // Detect expensive operations
         if call_node.name.contains("sort") && !call_node.name.contains("sort_unstable") {
             issues.push(PerformanceIssue {
                 issue_type: PerformanceIssueType::SuboptimalAlgorithms,
                 location: call_node.span.clone(),
                 description: "Using stable sort when unstable sort might be sufficient".to_string(),
-                suggestion: Some("Consider sort_unstable() for better performance if stability not required".to_string()),
+                suggestion: Some(
+                    "Consider sort_unstable() for better performance if stability not required"
+                        .to_string(),
+                ),
                 impact: PerformanceImpact::Low,
             });
         }
@@ -401,21 +445,53 @@ impl RustAnalyzer {
 
     /// Check if a function is marked as unsafe
     fn is_unsafe_function(&self, function_node: &Node) -> bool {
-        function_node.signature.as_ref()
-            .map(|sig| sig.contains("unsafe"))
-            .unwrap_or(false) || function_node.name.contains("unsafe")
+        // Check function signature for unsafe keyword
+        if let Some(signature) = &function_node.signature {
+            if signature.contains("unsafe") {
+                return true;
+            }
+        }
+        
+        // Check function name for unsafe
+        if function_node.name.contains("unsafe") {
+            return true;
+        }
+        
+        // Check if it's a method with unsafe in metadata
+        if matches!(function_node.kind, NodeKind::Method) {
+            if let Some(metadata) = function_node.metadata.as_object() {
+                if let Some(unsafe_flag) = metadata.get("unsafe").and_then(|u| u.as_bool()) {
+                    if unsafe_flag {
+                        return true;
+                    }
+                }
+                if let Some(modifiers) = metadata.get("modifiers").and_then(|m| m.as_array()) {
+                    for modifier in modifiers {
+                        if let Some(mod_str) = modifier.as_str() {
+                            if mod_str == "unsafe" {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        false
     }
 
     /// Analyze unsafe function usage
     fn analyze_unsafe_function(&self, function_node: &Node) -> Vec<SafetyIssue> {
         let mut issues = Vec::new();
-        
+
         issues.push(SafetyIssue {
             issue_type: SafetyIssueType::UnsafeFunction,
             location: function_node.span.clone(),
             description: "Unsafe function requires careful review".to_string(),
             rationale: None,
-            mitigation: Some("Document safety invariants and ensure all callers uphold them".to_string()),
+            mitigation: Some(
+                "Document safety invariants and ensure all callers uphold them".to_string(),
+            ),
             risk_level: RiskLevel::High,
         });
 
@@ -431,7 +507,9 @@ impl RustAnalyzer {
                                 location: call_node.span.clone(),
                                 description: "Raw pointer dereference detected".to_string(),
                                 rationale: None,
-                                mitigation: Some("Ensure pointer is valid and properly aligned".to_string()),
+                                mitigation: Some(
+                                    "Ensure pointer is valid and properly aligned".to_string(),
+                                ),
                                 risk_level: RiskLevel::Critical,
                             });
                         }
@@ -446,7 +524,7 @@ impl RustAnalyzer {
     /// Detect FFI-related safety patterns
     fn detect_ffi_patterns(&self, function_node: &Node) -> Vec<SafetyIssue> {
         let mut issues = Vec::new();
-        
+
         // Check signature for FFI patterns
         if let Some(signature) = &function_node.signature {
             // Detect extern "C" functions
@@ -456,7 +534,9 @@ impl RustAnalyzer {
                     location: function_node.span.clone(),
                     description: "FFI function boundary requires careful handling".to_string(),
                     rationale: None,
-                    mitigation: Some("Validate all parameters and handle C-style errors properly".to_string()),
+                    mitigation: Some(
+                        "Validate all parameters and handle C-style errors properly".to_string(),
+                    ),
                     risk_level: RiskLevel::High,
                 });
             }
@@ -466,9 +546,12 @@ impl RustAnalyzer {
                 issues.push(SafetyIssue {
                     issue_type: SafetyIssueType::FFIBoundary,
                     location: function_node.span.clone(),
-                    description: "C string handling requires null termination validation".to_string(),
+                    description: "C string handling requires null termination validation"
+                        .to_string(),
                     rationale: None,
-                    mitigation: Some("Ensure proper null termination and UTF-8 validation".to_string()),
+                    mitigation: Some(
+                        "Ensure proper null termination and UTF-8 validation".to_string(),
+                    ),
                     risk_level: RiskLevel::Medium,
                 });
             }
@@ -476,13 +559,20 @@ impl RustAnalyzer {
             // Detect C-style raw pointers (common in FFI)
             if signature.contains("*const") || signature.contains("*mut") {
                 // Look for typical FFI patterns
-                if signature.contains("i8") || signature.contains("c_char") || signature.contains("c_void") {
+                if signature.contains("i8")
+                    || signature.contains("c_char")
+                    || signature.contains("c_void")
+                {
                     issues.push(SafetyIssue {
                         issue_type: SafetyIssueType::FFIBoundary,
                         location: function_node.span.clone(),
-                        description: "Function uses C-style raw pointers typical of FFI".to_string(),
+                        description: "Function uses C-style raw pointers typical of FFI"
+                            .to_string(),
                         rationale: None,
-                        mitigation: Some("Validate pointer parameters and handle null pointers safely".to_string()),
+                        mitigation: Some(
+                            "Validate pointer parameters and handle null pointers safely"
+                                .to_string(),
+                        ),
                         risk_level: RiskLevel::High,
                     });
                 }
@@ -496,9 +586,12 @@ impl RustAnalyzer {
                     issues.push(SafetyIssue {
                         issue_type: SafetyIssueType::FFIBoundary,
                         location: function_node.span.clone(),
-                        description: "Extern function requires FFI safety considerations".to_string(),
+                        description: "Extern function requires FFI safety considerations"
+                            .to_string(),
                         rationale: None,
-                        mitigation: Some("Ensure proper parameter validation and error handling".to_string()),
+                        mitigation: Some(
+                            "Ensure proper parameter validation and error handling".to_string(),
+                        ),
                         risk_level: RiskLevel::High,
                     });
                 }
@@ -509,14 +602,17 @@ impl RustAnalyzer {
         if let Some(scope_nodes) = self.scope_map.get(&function_node.id) {
             for &node_id in scope_nodes {
                 if let Some(use_node) = self.nodes.iter().find(|n| n.id == node_id) {
-                    if matches!(use_node.kind, NodeKind::Use) && 
-                       (use_node.name.contains("CString") || use_node.name.contains("CStr")) {
+                    if matches!(use_node.kind, NodeKind::Use)
+                        && (use_node.name.contains("CString") || use_node.name.contains("CStr"))
+                    {
                         issues.push(SafetyIssue {
                             issue_type: SafetyIssueType::FFIBoundary,
                             location: use_node.span.clone(),
                             description: "C string types used - typical of FFI code".to_string(),
                             rationale: None,
-                            mitigation: Some("Ensure proper null termination and UTF-8 validation".to_string()),
+                            mitigation: Some(
+                                "Ensure proper null termination and UTF-8 validation".to_string(),
+                            ),
                             risk_level: RiskLevel::Medium,
                         });
                     }
@@ -530,7 +626,7 @@ impl RustAnalyzer {
     /// Detect memory safety issues
     fn detect_memory_safety_issues(&self, function_node: &Node) -> Vec<SafetyIssue> {
         let mut issues = Vec::new();
-        
+
         if let Some(scope_nodes) = self.scope_map.get(&function_node.id) {
             for &node_id in scope_nodes {
                 if let Some(call_node) = self.nodes.iter().find(|n| n.id == node_id) {
@@ -571,7 +667,7 @@ impl RustAnalyzer {
     /// Analyze async/await usage patterns
     fn analyze_async_patterns(&self, function_node: &Node) -> Vec<ConcurrencyIssue> {
         let mut issues = Vec::new();
-        
+
         if let Some(signature) = &function_node.signature {
             if signature.contains("async") {
                 // Check for blocking operations in async functions
@@ -580,7 +676,9 @@ impl RustAnalyzer {
                         if let Some(call_node) = self.nodes.iter().find(|n| n.id == node_id) {
                             if matches!(call_node.kind, NodeKind::Call) {
                                 // Blocking operations
-                                if call_node.name.contains("block_on") || call_node.name.contains("wait") {
+                                if call_node.name.contains("block_on")
+                                    || call_node.name.contains("wait")
+                                {
                                     issues.push(ConcurrencyIssue {
                                         issue_type: ConcurrencyIssueType::AsyncAntipattern,
                                         location: call_node.span.clone(),
@@ -591,12 +689,16 @@ impl RustAnalyzer {
                                 }
 
                                 // Missing .await
-                                if call_node.name.contains("async") && !call_node.name.contains(".await") {
+                                if call_node.name.contains("async")
+                                    && !call_node.name.contains(".await")
+                                {
                                     issues.push(ConcurrencyIssue {
                                         issue_type: ConcurrencyIssueType::MissingAwait,
                                         location: call_node.span.clone(),
                                         description: "Async call without .await".to_string(),
-                                        suggestion: Some("Add .await to async function call".to_string()),
+                                        suggestion: Some(
+                                            "Add .await to async function call".to_string(),
+                                        ),
                                         severity: ConcurrencySeverity::High,
                                     });
                                 }
@@ -613,10 +715,10 @@ impl RustAnalyzer {
     /// Detect potential deadlock situations
     fn detect_deadlock_potential(&self, function_node: &Node) -> Vec<ConcurrencyIssue> {
         let mut issues = Vec::new();
-        
+
         if let Some(scope_nodes) = self.scope_map.get(&function_node.id) {
             let mut mutex_calls = Vec::new();
-            
+
             for &node_id in scope_nodes {
                 if let Some(call_node) = self.nodes.iter().find(|n| n.id == node_id) {
                     if matches!(call_node.kind, NodeKind::Call) && call_node.name.contains("lock") {
@@ -624,14 +726,19 @@ impl RustAnalyzer {
                     }
                 }
             }
-            
+
             // Multiple mutex locks in same function
             if mutex_calls.len() > 1 {
                 issues.push(ConcurrencyIssue {
                     issue_type: ConcurrencyIssueType::DeadlockPotential,
                     location: function_node.span.clone(),
-                    description: format!("Function acquires {} locks, potential deadlock risk", mutex_calls.len()),
-                    suggestion: Some("Ensure consistent lock ordering or use try_lock with timeouts".to_string()),
+                    description: format!(
+                        "Function acquires {} locks, potential deadlock risk",
+                        mutex_calls.len()
+                    ),
+                    suggestion: Some(
+                        "Ensure consistent lock ordering or use try_lock with timeouts".to_string(),
+                    ),
                     severity: ConcurrencySeverity::High,
                 });
             }
@@ -643,7 +750,7 @@ impl RustAnalyzer {
     /// Analyze thread safety patterns
     fn analyze_thread_safety(&self, function_node: &Node) -> Vec<ConcurrencyIssue> {
         let mut issues = Vec::new();
-        
+
         // Check for non-Send/Sync types in function signature
         if let Some(signature) = &function_node.signature {
             // This is a simplified check - in practice, would need type resolution
@@ -652,7 +759,9 @@ impl RustAnalyzer {
                     issue_type: ConcurrencyIssueType::ThreadSafetyViolation,
                     location: function_node.span.clone(),
                     description: "Function uses non-thread-safe types (Rc, RefCell)".to_string(),
-                    suggestion: Some("Consider Arc and Mutex for thread-safe alternatives".to_string()),
+                    suggestion: Some(
+                        "Consider Arc and Mutex for thread-safe alternatives".to_string(),
+                    ),
                     severity: ConcurrencySeverity::Medium,
                 });
             }
@@ -664,12 +773,17 @@ impl RustAnalyzer {
                 if let Some(call_node) = self.nodes.iter().find(|n| n.id == node_id) {
                     if matches!(call_node.kind, NodeKind::Call) {
                         // Detect Rc::new or RefCell::new calls
-                        if call_node.name.contains("Rc::new") || call_node.name.contains("RefCell::new") {
+                        if call_node.name.contains("Rc::new")
+                            || call_node.name.contains("RefCell::new")
+                        {
                             issues.push(ConcurrencyIssue {
                                 issue_type: ConcurrencyIssueType::ThreadSafetyViolation,
                                 location: call_node.span.clone(),
                                 description: "Non-thread-safe type used (Rc/RefCell)".to_string(),
-                                suggestion: Some("Consider Arc and Mutex for thread-safe alternatives".to_string()),
+                                suggestion: Some(
+                                    "Consider Arc and Mutex for thread-safe alternatives"
+                                        .to_string(),
+                                ),
                                 severity: ConcurrencySeverity::Medium,
                             });
                         }
@@ -680,14 +794,18 @@ impl RustAnalyzer {
 
         // Also check if function scope uses non-thread-safe types from use statements
         for use_node in &self.nodes {
-            if matches!(use_node.kind, NodeKind::Use) && 
-               (use_node.name.contains("std::rc::Rc") || use_node.name.contains("std::cell::RefCell")) {
+            if matches!(use_node.kind, NodeKind::Use)
+                && (use_node.name.contains("std::rc::Rc")
+                    || use_node.name.contains("std::cell::RefCell"))
+            {
                 // If this use is in the same module as the function, it's a potential issue
                 issues.push(ConcurrencyIssue {
                     issue_type: ConcurrencyIssueType::ThreadSafetyViolation,
                     location: function_node.span.clone(),
                     description: "Module imports non-thread-safe types (Rc, RefCell)".to_string(),
-                    suggestion: Some("Consider Arc and Mutex for thread-safe alternatives".to_string()),
+                    suggestion: Some(
+                        "Consider Arc and Mutex for thread-safe alternatives".to_string(),
+                    ),
                     severity: ConcurrencySeverity::Low,
                 });
             }
@@ -699,7 +817,7 @@ impl RustAnalyzer {
     /// Analyze channel usage patterns
     fn analyze_channel_usage(&self, function_node: &Node) -> Vec<ConcurrencyIssue> {
         let mut issues = Vec::new();
-        
+
         if let Some(scope_nodes) = self.scope_map.get(&function_node.id) {
             for &node_id in scope_nodes {
                 if let Some(call_node) = self.nodes.iter().find(|n| n.id == node_id) {
@@ -709,8 +827,12 @@ impl RustAnalyzer {
                             issues.push(ConcurrencyIssue {
                                 issue_type: ConcurrencyIssueType::UnboundedChannel,
                                 location: call_node.span.clone(),
-                                description: "Unbounded channel can lead to memory growth".to_string(),
-                                suggestion: Some("Consider bounded channels with appropriate capacity".to_string()),
+                                description: "Unbounded channel can lead to memory growth"
+                                    .to_string(),
+                                suggestion: Some(
+                                    "Consider bounded channels with appropriate capacity"
+                                        .to_string(),
+                                ),
                                 severity: ConcurrencySeverity::Medium,
                             });
                         }
@@ -725,20 +847,22 @@ impl RustAnalyzer {
     /// Analyze Send/Sync trait implementations for types
     fn analyze_send_sync_traits(&self, type_node: &Node) -> Vec<ConcurrencyIssue> {
         let mut issues = Vec::new();
-        
+
         // Look for manual Send/Sync implementations
         let type_name = &type_node.name;
         for node in &self.nodes {
-            if matches!(node.kind, NodeKind::Impl) && node.name.contains(type_name) {
-                if node.name.contains("Send") || node.name.contains("Sync") {
-                    issues.push(ConcurrencyIssue {
-                        issue_type: ConcurrencyIssueType::ManualSendSync,
-                        location: node.span.clone(),
-                        description: "Manual Send/Sync implementation requires careful review".to_string(),
-                        suggestion: Some("Ensure thread safety guarantees are maintained".to_string()),
-                        severity: ConcurrencySeverity::High,
-                    });
-                }
+            if matches!(node.kind, NodeKind::Impl)
+                && node.name.contains(type_name)
+                && (node.name.contains("Send") || node.name.contains("Sync"))
+            {
+                issues.push(ConcurrencyIssue {
+                    issue_type: ConcurrencyIssueType::ManualSendSync,
+                    location: node.span.clone(),
+                    description: "Manual Send/Sync implementation requires careful review"
+                        .to_string(),
+                    suggestion: Some("Ensure thread safety guarantees are maintained".to_string()),
+                    severity: ConcurrencySeverity::High,
+                });
             }
         }
 

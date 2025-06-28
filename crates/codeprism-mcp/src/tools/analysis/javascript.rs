@@ -16,7 +16,8 @@ pub fn list_tools() -> Vec<Tool> {
         Tool {
             name: "analyze_javascript_frameworks".to_string(),
             title: Some("Analyze JavaScript Frameworks".to_string()),
-            description: "Detect and analyze JavaScript/TypeScript frameworks and libraries in use".to_string(),
+            description: "Detect and analyze JavaScript/TypeScript frameworks and libraries in use"
+                .to_string(),
             input_schema: serde_json::json!({
                 "type": "object",
                 "properties": {
@@ -26,7 +27,7 @@ pub fn list_tools() -> Vec<Tool> {
                         "default": true
                     },
                     "analyze_versions": {
-                        "type": "boolean", 
+                        "type": "boolean",
                         "description": "Attempt to detect framework versions",
                         "default": true
                     },
@@ -77,7 +78,9 @@ pub fn list_tools() -> Vec<Tool> {
         Tool {
             name: "analyze_nodejs_patterns".to_string(),
             title: Some("Analyze Node.js Patterns".to_string()),
-            description: "Analyze Node.js backend patterns, database integrations, and architecture".to_string(),
+            description:
+                "Analyze Node.js backend patterns, database integrations, and architecture"
+                    .to_string(),
             input_schema: serde_json::json!({
                 "type": "object",
                 "properties": {
@@ -104,7 +107,7 @@ pub fn list_tools() -> Vec<Tool> {
                 },
                 "required": []
             }),
-        }
+        },
     ]
 }
 
@@ -114,9 +117,15 @@ pub async fn call_tool(
     params: &CallToolParams,
 ) -> Result<CallToolResult> {
     match params.name.as_str() {
-        "analyze_javascript_frameworks" => analyze_javascript_frameworks(server, params.arguments.as_ref()).await,
-        "analyze_react_components" => analyze_react_components(server, params.arguments.as_ref()).await,
-        "analyze_nodejs_patterns" => analyze_nodejs_patterns(server, params.arguments.as_ref()).await,
+        "analyze_javascript_frameworks" => {
+            analyze_javascript_frameworks(server, params.arguments.as_ref()).await
+        }
+        "analyze_react_components" => {
+            analyze_react_components(server, params.arguments.as_ref()).await
+        }
+        "analyze_nodejs_patterns" => {
+            analyze_nodejs_patterns(server, params.arguments.as_ref()).await
+        }
         _ => Err(anyhow::anyhow!(
             "Unknown JavaScript analysis tool: {}",
             params.name
@@ -132,15 +141,18 @@ async fn analyze_javascript_frameworks(
     let default_args = serde_json::json!({});
     let args = arguments.unwrap_or(&default_args);
 
-    let include_confidence = args.get("include_confidence")
+    let include_confidence = args
+        .get("include_confidence")
         .and_then(|v| v.as_bool())
         .unwrap_or(true);
 
-    let analyze_versions = args.get("analyze_versions")
+    let analyze_versions = args
+        .get("analyze_versions")
         .and_then(|v| v.as_bool())
         .unwrap_or(true);
 
-    let frameworks = args.get("frameworks")
+    let frameworks = args
+        .get("frameworks")
         .and_then(|v| v.as_array())
         .map(|arr| {
             arr.iter()
@@ -163,14 +175,16 @@ async fn analyze_javascript_frameworks(
                         match std::fs::read_to_string(&file_path) {
                             Ok(content) => {
                                 files_analyzed += 1;
-                                
+
                                 // Analyze content using our Phase 1.3 capabilities
                                 match analyzer.detect_frameworks(&content) {
                                     Ok(frameworks_detected) => {
                                         // Extract framework information
                                         for framework in frameworks_detected {
-                                            if frameworks.contains(&"all".to_string()) || 
-                                               frameworks.contains(&framework.name.to_lowercase()) {
+                                            if frameworks.contains(&"all".to_string())
+                                                || frameworks
+                                                    .contains(&framework.name.to_lowercase())
+                                            {
                                                 all_frameworks.push(framework);
                                             }
                                         }
@@ -196,20 +210,22 @@ async fn analyze_javascript_frameworks(
     // Aggregate and analyze results
     let mut framework_summary = std::collections::HashMap::new();
     for framework in &all_frameworks {
-        let entry = framework_summary.entry(framework.name.clone()).or_insert_with(|| {
-            serde_json::json!({
-                "name": framework.name,
-                "confidence": framework.confidence,
-                "files_count": 0,
-                "versions": Vec::<String>::new(),
-                "features": Vec::<String>::new(),
-                "best_practices": Vec::<String>::new()
-            })
-        });
+        let entry = framework_summary
+            .entry(framework.name.clone())
+            .or_insert_with(|| {
+                serde_json::json!({
+                    "name": framework.name,
+                    "confidence": framework.confidence,
+                    "files_count": 0,
+                    "versions": Vec::<String>::new(),
+                    "features": Vec::<String>::new(),
+                    "best_practices": Vec::<String>::new()
+                })
+            });
 
         // Update counts and features
         entry["files_count"] = serde_json::json!(entry["files_count"].as_u64().unwrap_or(0) + 1);
-        
+
         if include_confidence {
             let current_confidence = entry["confidence"].as_f64().unwrap_or(0.0);
             let new_confidence = (current_confidence + framework.confidence as f64) / 2.0;
@@ -218,14 +234,30 @@ async fn analyze_javascript_frameworks(
 
         // Merge features and best practices
         for feature in &framework.features_used {
-            if !entry["features"].as_array().unwrap().iter().any(|f| f.as_str() == Some(feature)) {
-                entry["features"].as_array_mut().unwrap().push(serde_json::json!(feature));
+            if !entry["features"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|f| f.as_str() == Some(feature))
+            {
+                entry["features"]
+                    .as_array_mut()
+                    .unwrap()
+                    .push(serde_json::json!(feature));
             }
         }
 
         for practice in &framework.best_practices {
-            if !entry["best_practices"].as_array().unwrap().iter().any(|p| p.as_str() == Some(practice)) {
-                entry["best_practices"].as_array_mut().unwrap().push(serde_json::json!(practice));
+            if !entry["best_practices"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|p| p.as_str() == Some(practice))
+            {
+                entry["best_practices"]
+                    .as_array_mut()
+                    .unwrap()
+                    .push(serde_json::json!(practice));
             }
         }
     }
@@ -262,19 +294,23 @@ async fn analyze_react_components(
     let default_args = serde_json::json!({});
     let args = arguments.unwrap_or(&default_args);
 
-    let include_hooks = args.get("include_hooks")
+    let include_hooks = args
+        .get("include_hooks")
         .and_then(|v| v.as_bool())
         .unwrap_or(true);
 
-    let analyze_props = args.get("analyze_props")
+    let analyze_props = args
+        .get("analyze_props")
         .and_then(|v| v.as_bool())
         .unwrap_or(true);
 
-    let detect_patterns = args.get("detect_patterns")
+    let _detect_patterns = args
+        .get("detect_patterns")
         .and_then(|v| v.as_bool())
         .unwrap_or(true);
 
-    let include_context = args.get("include_context")
+    let include_context = args
+        .get("include_context")
         .and_then(|v| v.as_bool())
         .unwrap_or(true);
 
@@ -291,19 +327,25 @@ async fn analyze_react_components(
                         match std::fs::read_to_string(&file_path) {
                             Ok(content) => {
                                 files_analyzed += 1;
-                                
+
                                 // Analyze content using our Phase 1.3 capabilities
                                 match analyzer.analyze_react_patterns(&content) {
                                     Ok(components) => {
                                         // Extract React component information
                                         for component in components {
                                             let hooks_data = if include_hooks {
-                                                component.hooks_used.iter().map(|h| serde_json::json!({
-                                                    "name": h.name,
-                                                    "hook_type": h.hook_type,
-                                                    "dependencies": h.dependencies,
-                                                    "custom_hook": h.custom_hook
-                                                })).collect::<Vec<_>>()
+                                                component
+                                                    .hooks_used
+                                                    .iter()
+                                                    .map(|h| {
+                                                        serde_json::json!({
+                                                            "name": h.name,
+                                                            "hook_type": h.hook_type,
+                                                            "dependencies": h.dependencies,
+                                                            "custom_hook": h.custom_hook
+                                                        })
+                                                    })
+                                                    .collect::<Vec<_>>()
                                             } else {
                                                 Vec::new()
                                             };
@@ -321,11 +363,17 @@ async fn analyze_react_components(
                                             };
 
                                             let context_data = if include_context {
-                                                component.context_usage.iter().map(|c| serde_json::json!({
-                                                    "context_name": c.context_name,
-                                                    "usage_type": c.usage_type,
-                                                    "values_consumed": c.values_consumed
-                                                })).collect::<Vec<_>>()
+                                                component
+                                                    .context_usage
+                                                    .iter()
+                                                    .map(|c| {
+                                                        serde_json::json!({
+                                                            "context_name": c.context_name,
+                                                            "usage_type": c.usage_type,
+                                                            "values_consumed": c.values_consumed
+                                                        })
+                                                    })
+                                                    .collect::<Vec<_>>()
                                             } else {
                                                 Vec::new()
                                             };
@@ -409,19 +457,23 @@ async fn analyze_nodejs_patterns(
     let default_args = serde_json::json!({});
     let args = arguments.unwrap_or(&default_args);
 
-    let include_databases = args.get("include_databases")
+    let include_databases = args
+        .get("include_databases")
         .and_then(|v| v.as_bool())
         .unwrap_or(true);
 
-    let analyze_routing = args.get("analyze_routing")
+    let analyze_routing = args
+        .get("analyze_routing")
         .and_then(|v| v.as_bool())
         .unwrap_or(true);
 
-    let detect_orms = args.get("detect_orms")
+    let detect_orms = args
+        .get("detect_orms")
         .and_then(|v| v.as_bool())
         .unwrap_or(true);
 
-    let include_security = args.get("include_security")
+    let include_security = args
+        .get("include_security")
         .and_then(|v| v.as_bool())
         .unwrap_or(true);
 
@@ -438,26 +490,34 @@ async fn analyze_nodejs_patterns(
                         match std::fs::read_to_string(&file_path) {
                             Ok(content) => {
                                 files_analyzed += 1;
-                                
+
                                 // Analyze content using our Phase 1.3 capabilities
                                 match analyzer.analyze_nodejs_patterns(&content) {
                                     Ok(patterns) => {
                                         // Extract Node.js pattern information
                                         for pattern in patterns {
-                                            let route_data = pattern.route_info.map(|r| serde_json::json!({
-                                                "path": r.path,
-                                                "method": r.method,
-                                                "parameters": r.parameters,
-                                                "query_params": r.query_params,
-                                                "middleware_used": r.middleware_used
-                                            }));
+                                            let route_data = pattern.route_info.map(|r| {
+                                                serde_json::json!({
+                                                    "path": r.path,
+                                                    "method": r.method,
+                                                    "parameters": r.parameters,
+                                                    "query_params": r.query_params,
+                                                    "middleware_used": r.middleware_used
+                                                })
+                                            });
 
                                             let db_patterns_data = if include_databases {
-                                                pattern.database_patterns.iter().map(|db| serde_json::json!({
-                                                    "db_type": db.db_type,
-                                                    "operations": db.operations,
-                                                    "orm_framework": db.orm_framework
-                                                })).collect::<Vec<_>>()
+                                                pattern
+                                                    .database_patterns
+                                                    .iter()
+                                                    .map(|db| {
+                                                        serde_json::json!({
+                                                            "db_type": db.db_type,
+                                                            "operations": db.operations,
+                                                            "orm_framework": db.orm_framework
+                                                        })
+                                                    })
+                                                    .collect::<Vec<_>>()
                                             } else {
                                                 Vec::new()
                                             };
@@ -518,7 +578,10 @@ async fn analyze_nodejs_patterns(
 /// Helper function to determine if a file is a JavaScript/TypeScript file
 fn is_javascript_file(path: &Path) -> bool {
     if let Some(extension) = path.extension() {
-        matches!(extension.to_str(), Some("js") | Some("jsx") | Some("ts") | Some("tsx") | Some("mjs") | Some("cjs"))
+        matches!(
+            extension.to_str(),
+            Some("js") | Some("jsx") | Some("ts") | Some("tsx") | Some("mjs") | Some("cjs")
+        )
     } else {
         false
     }
@@ -538,10 +601,22 @@ fn is_react_file(path: &Path) -> bool {
 /// Helper function to determine if a file is a Node.js file
 fn is_nodejs_file(path: &Path) -> bool {
     if let Some(extension) = path.extension() {
-        matches!(extension.to_str(), Some("js") | Some("ts") | Some("mjs") | Some("cjs"))
+        matches!(
+            extension.to_str(),
+            Some("js") | Some("ts") | Some("mjs") | Some("cjs")
+        )
     } else if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
-        matches!(name, "server.js" | "app.js" | "index.js" | "main.js" | "api.js" | "routes.js" | "middleware.js")
+        matches!(
+            name,
+            "server.js"
+                | "app.js"
+                | "index.js"
+                | "main.js"
+                | "api.js"
+                | "routes.js"
+                | "middleware.js"
+        )
     } else {
         false
     }
-} 
+}

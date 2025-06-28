@@ -163,10 +163,10 @@ pub struct SecurityAssessment {
 /// Security levels
 #[derive(Debug, Clone)]
 pub enum SecurityLevel {
-    High,        // Well-secured with multiple layers
-    Medium,      // Basic security measures present
-    Low,         // Minimal security implementation
-    Vulnerable,  // Security issues detected
+    High,       // Well-secured with multiple layers
+    Medium,     // Basic security measures present
+    Low,        // Minimal security implementation
+    Vulnerable, // Security issues detected
 }
 
 /// Security vulnerability information
@@ -296,7 +296,7 @@ pub enum IssueSeverity {
 #[derive(Debug, Clone)]
 pub enum ImpactLevel {
     High,     // Significant performance impact
-    Medium,   // Moderate performance impact  
+    Medium,   // Moderate performance impact
     Low,      // Minor performance impact
     Positive, // Performance optimization
 }
@@ -346,9 +346,9 @@ pub struct VueDirective {
 /// Vue directive types
 #[derive(Debug, Clone)]
 pub enum VueDirectiveType {
-    BuiltIn,    // v-if, v-for, v-model, etc.
-    Custom,     // User-defined directives
-    Component,  // Component-specific directives
+    BuiltIn,   // v-if, v-for, v-model, etc.
+    Custom,    // User-defined directives
+    Component, // Component-specific directives
 }
 
 /// Angular component analysis (Phase 1.3)
@@ -580,10 +580,11 @@ pub struct WebSocketSecurityAssessment {
 
 /// WebSocket authentication methods
 #[derive(Debug, Clone)]
+#[allow(clippy::upper_case_acronyms)]
 pub enum WebSocketAuthMethod {
-    JWT,
+    Jwt,
     SessionBased,
-    APIKey,
+    ApiKey,
     OAuth,
     Custom,
     None,
@@ -611,6 +612,7 @@ pub enum ScalingStrategy {
 }
 
 /// Advanced Node.js pattern analysis (Phase 1.3)
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct AdvancedNodePatternInfo {
     pub pattern_type: AdvancedNodePatternType,
@@ -622,6 +624,7 @@ pub struct AdvancedNodePatternInfo {
 }
 
 /// Advanced Node.js pattern types
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum AdvancedNodePatternType {
     SecurityMiddleware,
@@ -634,6 +637,7 @@ pub enum AdvancedNodePatternType {
 }
 
 /// Middleware information
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct MiddlewareInfo {
     pub name: String,
@@ -645,12 +649,13 @@ pub struct MiddlewareInfo {
 }
 
 /// Middleware types
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum MiddlewareType {
     Authentication,
     Authorization,
     RateLimiting,
-    CORS,
+    Cors,
     Logging,
     Validation,
     Caching,
@@ -660,6 +665,7 @@ pub enum MiddlewareType {
 }
 
 /// Error handling pattern information
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct ErrorHandlingPattern {
     pub pattern_type: ErrorHandlingType,
@@ -670,6 +676,7 @@ pub struct ErrorHandlingPattern {
 }
 
 /// Error handling types
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum ErrorHandlingType {
     TryCatch,
@@ -682,6 +689,7 @@ pub enum ErrorHandlingType {
 }
 
 /// Error classification
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct ErrorClassification {
     pub error_type: ErrorType,
@@ -691,6 +699,8 @@ pub struct ErrorClassification {
 }
 
 /// Error types
+#[allow(dead_code)]
+#[allow(clippy::enum_variant_names)]
 #[derive(Debug, Clone)]
 pub enum ErrorType {
     ValidationError,
@@ -704,6 +714,7 @@ pub enum ErrorType {
 }
 
 /// Error severity levels
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum ErrorSeverity {
     Critical,
@@ -714,6 +725,7 @@ pub enum ErrorSeverity {
 }
 
 /// User impact levels
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum UserImpact {
     ServiceUnavailable,
@@ -723,6 +735,7 @@ pub enum UserImpact {
 }
 
 /// Performance indicator for advanced patterns
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct PerformanceIndicator {
     pub indicator_type: PerformanceType,
@@ -733,10 +746,12 @@ pub struct PerformanceIndicator {
 }
 
 /// Performance types
+#[allow(dead_code)]
+#[allow(clippy::upper_case_acronyms)]
 #[derive(Debug, Clone)]
 pub enum PerformanceType {
     Memory,
-    CPU,
+    Cpu,
     Network,
     Disk,
     Database,
@@ -746,6 +761,7 @@ pub enum PerformanceType {
 }
 
 /// Performance metrics
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct PerformanceMetrics {
     pub response_time: Option<f64>,
@@ -756,6 +772,7 @@ pub struct PerformanceMetrics {
 }
 
 /// Microservice pattern information
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct MicroservicePattern {
     pub pattern_name: String,
@@ -766,9 +783,12 @@ pub struct MicroservicePattern {
 }
 
 /// Service communication patterns
+#[allow(dead_code)]
+#[allow(clippy::upper_case_acronyms)]
+#[allow(non_camel_case_types)]
 #[derive(Debug, Clone)]
 pub enum ServiceCommunication {
-    HTTP,
+    Http,
     GraphQL,
     gRPC,
     MessageQueue,
@@ -777,6 +797,7 @@ pub enum ServiceCommunication {
 }
 
 /// Data consistency patterns
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum DataConsistency {
     Strong,
@@ -787,6 +808,7 @@ pub enum DataConsistency {
 }
 
 /// Fault tolerance patterns
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum FaultTolerance {
     CircuitBreaker,
@@ -798,6 +820,7 @@ pub enum FaultTolerance {
 }
 
 /// Monitoring levels
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum MonitoringLevel {
     Comprehensive,
@@ -807,6 +830,7 @@ pub enum MonitoringLevel {
 }
 
 /// Database pattern information
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct DatabasePattern {
     pub database_type: DatabaseType,
@@ -817,6 +841,7 @@ pub struct DatabasePattern {
 }
 
 /// Database types
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum DatabaseType {
     PostgreSQL,
@@ -830,10 +855,12 @@ pub enum DatabaseType {
 }
 
 /// Database access patterns
+#[allow(dead_code)]
+#[allow(clippy::upper_case_acronyms)]
 #[derive(Debug, Clone)]
 pub enum DatabaseAccessPattern {
     DirectAccess,
-    ORM,
+    Orm,
     QueryBuilder,
     Repository,
     ActiveRecord,
@@ -841,6 +868,7 @@ pub enum DatabaseAccessPattern {
 }
 
 /// Optimization levels
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum OptimizationLevel {
     High,
@@ -850,6 +878,7 @@ pub enum OptimizationLevel {
 }
 
 /// Connection management patterns
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum ConnectionManagement {
     Pool,
@@ -860,9 +889,11 @@ pub enum ConnectionManagement {
 }
 
 /// Transaction handling patterns
+#[allow(dead_code)]
+#[allow(clippy::upper_case_acronyms)]
 #[derive(Debug, Clone)]
 pub enum TransactionHandling {
-    ACID,
+    Acid,
     Eventually,
     TwoPhase,
     Saga,
@@ -1822,12 +1853,25 @@ impl JavaScriptAnalyzer {
         let mut components = Vec::new();
 
         // Single File Component detection
-        if self.vue_patterns.get("single_file_component").unwrap().is_match(content) {
+        if self
+            .vue_patterns
+            .get("single_file_component")
+            .unwrap()
+            .is_match(content)
+        {
             let component_name = "VueComponent".to_string(); // Simplified extraction
-            
-            let composition_api = self.vue_patterns.get("composition_api").unwrap().is_match(content);
-            let options_api = self.vue_patterns.get("options_api").unwrap().is_match(content);
-            
+
+            let composition_api = self
+                .vue_patterns
+                .get("composition_api")
+                .unwrap()
+                .is_match(content);
+            let options_api = self
+                .vue_patterns
+                .get("options_api")
+                .unwrap()
+                .is_match(content);
+
             let component_type = if composition_api {
                 VueComponentType::CompositionAPI
             } else if options_api {
@@ -1842,7 +1886,12 @@ impl JavaScriptAnalyzer {
                 composition_api,
                 props: Vec::new(), // Simplified for Phase 1.3
                 emits: Vec::new(),
-                directives: if self.vue_patterns.get("directives").unwrap().is_match(content) {
+                directives: if self
+                    .vue_patterns
+                    .get("directives")
+                    .unwrap()
+                    .is_match(content)
+                {
                     vec![VueDirective {
                         name: "v-if".to_string(),
                         directive_type: VueDirectiveType::BuiltIn,
@@ -1853,7 +1902,12 @@ impl JavaScriptAnalyzer {
                     Vec::new()
                 },
                 lifecycle_hooks: Vec::new(),
-                composables: if self.vue_patterns.get("composables").unwrap().is_match(content) {
+                composables: if self
+                    .vue_patterns
+                    .get("composables")
+                    .unwrap()
+                    .is_match(content)
+                {
                     vec!["useComposable".to_string()]
                 } else {
                     Vec::new()
@@ -1869,11 +1923,21 @@ impl JavaScriptAnalyzer {
         let mut components = Vec::new();
 
         // Component decorator detection
-        if self.angular_patterns.get("component_decorator").unwrap().is_match(content) {
+        if self
+            .angular_patterns
+            .get("component_decorator")
+            .unwrap()
+            .is_match(content)
+        {
             let selector = "app-component".to_string(); // Simplified extraction
             let component_name = "AngularComponent".to_string(); // Simplified extraction
 
-            let component_type = if self.angular_patterns.get("service_decorator").unwrap().is_match(content) {
+            let component_type = if self
+                .angular_patterns
+                .get("service_decorator")
+                .unwrap()
+                .is_match(content)
+            {
                 AngularComponentType::Service
             } else {
                 AngularComponentType::Component
@@ -1885,7 +1949,12 @@ impl JavaScriptAnalyzer {
                 selector,
                 inputs: Vec::new(), // Simplified for Phase 1.3
                 outputs: Vec::new(),
-                lifecycle_hooks: if self.angular_patterns.get("lifecycle_hooks").unwrap().is_match(content) {
+                lifecycle_hooks: if self
+                    .angular_patterns
+                    .get("lifecycle_hooks")
+                    .unwrap()
+                    .is_match(content)
+                {
                     vec!["ngOnInit".to_string()]
                 } else {
                     Vec::new()
@@ -1905,7 +1974,12 @@ impl JavaScriptAnalyzer {
         let mut security_score = 0;
 
         // Check for authentication middleware
-        if self.security_patterns.get("authentication_middleware").unwrap().is_match(content) {
+        if self
+            .security_patterns
+            .get("authentication_middleware")
+            .unwrap()
+            .is_match(content)
+        {
             security_score += 2;
             security_features.push(SecurityFeature {
                 feature_type: SecurityFeatureType::Authentication,
@@ -1915,7 +1989,12 @@ impl JavaScriptAnalyzer {
         }
 
         // Check for input validation
-        if self.security_patterns.get("input_validation").unwrap().is_match(content) {
+        if self
+            .security_patterns
+            .get("input_validation")
+            .unwrap()
+            .is_match(content)
+        {
             security_score += 2;
             security_features.push(SecurityFeature {
                 feature_type: SecurityFeatureType::InputValidation,
@@ -1925,7 +2004,12 @@ impl JavaScriptAnalyzer {
         }
 
         // Check for vulnerabilities
-        if self.security_patterns.get("sql_injection_risk").unwrap().is_match(content) {
+        if self
+            .security_patterns
+            .get("sql_injection_risk")
+            .unwrap()
+            .is_match(content)
+        {
             security_score -= 3;
             vulnerabilities.push(SecurityVulnerability {
                 vulnerability_type: VulnerabilityType::SqlInjection,
@@ -1936,7 +2020,12 @@ impl JavaScriptAnalyzer {
             });
         }
 
-        if self.security_patterns.get("xss_vulnerability").unwrap().is_match(content) {
+        if self
+            .security_patterns
+            .get("xss_vulnerability")
+            .unwrap()
+            .is_match(content)
+        {
             security_score -= 3;
             vulnerabilities.push(SecurityVulnerability {
                 vulnerability_type: VulnerabilityType::XssRisk,
@@ -1969,11 +2058,16 @@ impl JavaScriptAnalyzer {
     /// Analyze performance patterns and optimizations (Phase 1.3)
     pub fn analyze_performance_patterns(&self, content: &str) -> Result<PerformanceAnalysis> {
         let mut optimizations = Vec::new();
-        let mut issues = Vec::new();
+        let issues = Vec::new();
         let mut score = 50; // Base score
 
         // Check for lazy loading
-        if self.performance_patterns.get("lazy_loading").unwrap().is_match(content) {
+        if self
+            .performance_patterns
+            .get("lazy_loading")
+            .unwrap()
+            .is_match(content)
+        {
             score += 15;
             optimizations.push(PerformanceOptimization {
                 optimization_type: OptimizationType::LazyLoading,
@@ -1984,7 +2078,12 @@ impl JavaScriptAnalyzer {
         }
 
         // Check for memoization
-        if self.performance_patterns.get("memoization").unwrap().is_match(content) {
+        if self
+            .performance_patterns
+            .get("memoization")
+            .unwrap()
+            .is_match(content)
+        {
             score += 10;
             optimizations.push(PerformanceOptimization {
                 optimization_type: OptimizationType::Memoization,
@@ -1995,7 +2094,12 @@ impl JavaScriptAnalyzer {
         }
 
         // Check for caching
-        if self.performance_patterns.get("caching").unwrap().is_match(content) {
+        if self
+            .performance_patterns
+            .get("caching")
+            .unwrap()
+            .is_match(content)
+        {
             score += 10;
             optimizations.push(PerformanceOptimization {
                 optimization_type: OptimizationType::Caching,
@@ -2006,7 +2110,12 @@ impl JavaScriptAnalyzer {
         }
 
         // Check for database optimization
-        if self.performance_patterns.get("database_optimization").unwrap().is_match(content) {
+        if self
+            .performance_patterns
+            .get("database_optimization")
+            .unwrap()
+            .is_match(content)
+        {
             score += 5;
             optimizations.push(PerformanceOptimization {
                 optimization_type: OptimizationType::DatabaseOptimization,
@@ -2031,8 +2140,16 @@ impl JavaScriptAnalyzer {
 
     /// Analyze WebSocket patterns and real-time features (Phase 1.3)
     pub fn analyze_websocket_patterns(&self, content: &str) -> Result<Option<WebSocketAnalysis>> {
-        let socket_io_detected = self.websocket_patterns.get("socket_io").unwrap().is_match(content);
-        let native_ws_detected = self.websocket_patterns.get("native_websocket").unwrap().is_match(content);
+        let socket_io_detected = self
+            .websocket_patterns
+            .get("socket_io")
+            .unwrap()
+            .is_match(content);
+        let native_ws_detected = self
+            .websocket_patterns
+            .get("native_websocket")
+            .unwrap()
+            .is_match(content);
 
         if !socket_io_detected && !native_ws_detected {
             return Ok(None);
@@ -2045,7 +2162,11 @@ impl JavaScriptAnalyzer {
         };
 
         let mut patterns = Vec::new();
-        let room_management = self.websocket_patterns.get("room_management").unwrap().is_match(content);
+        let room_management = self
+            .websocket_patterns
+            .get("room_management")
+            .unwrap()
+            .is_match(content);
 
         patterns.push(WebSocketPattern {
             pattern_type: WebSocketPatternType::RealTimeChat,
@@ -2098,12 +2219,22 @@ impl JavaScriptAnalyzer {
         let mut complexity = 0;
 
         // Check for union/intersection types
-        if self.advanced_typescript_patterns.get("union_intersection").unwrap().is_match(content) {
+        if self
+            .advanced_typescript_patterns
+            .get("union_intersection")
+            .unwrap()
+            .is_match(content)
+        {
             complexity += 2;
         }
 
         // Check for conditional types
-        if self.advanced_typescript_patterns.get("conditional_types").unwrap().is_match(content) {
+        if self
+            .advanced_typescript_patterns
+            .get("conditional_types")
+            .unwrap()
+            .is_match(content)
+        {
             complexity += 4;
             analysis.conditional_types.push(ConditionalType {
                 condition: "T extends U".to_string(),
@@ -2114,7 +2245,12 @@ impl JavaScriptAnalyzer {
         }
 
         // Check for mapped types
-        if self.advanced_typescript_patterns.get("mapped_types").unwrap().is_match(content) {
+        if self
+            .advanced_typescript_patterns
+            .get("mapped_types")
+            .unwrap()
+            .is_match(content)
+        {
             complexity += 3;
             analysis.mapped_types.push(MappedType {
                 source_type: "T".to_string(),
@@ -2125,7 +2261,12 @@ impl JavaScriptAnalyzer {
         }
 
         // Check for utility types
-        if self.advanced_typescript_patterns.get("utility_types").unwrap().is_match(content) {
+        if self
+            .advanced_typescript_patterns
+            .get("utility_types")
+            .unwrap()
+            .is_match(content)
+        {
             complexity += 2;
             analysis.utility_types.push(UtilityTypeUsage {
                 utility_name: "Partial".to_string(),
@@ -2334,7 +2475,10 @@ mod tests {
         let components = analyzer.analyze_vue_patterns(vue_code).unwrap();
         assert!(!components.is_empty());
         assert_eq!(components[0].name, "VueComponent");
-        assert!(matches!(components[0].component_type, VueComponentType::CompositionAPI));
+        assert!(matches!(
+            components[0].component_type,
+            VueComponentType::CompositionAPI
+        ));
         assert!(components[0].composition_api);
         assert!(!components[0].directives.is_empty());
         assert_eq!(components[0].directives[0].name, "v-if");
@@ -2370,7 +2514,10 @@ mod tests {
         let components = analyzer.analyze_angular_patterns(angular_code).unwrap();
         assert!(!components.is_empty());
         assert_eq!(components[0].name, "AngularComponent");
-        assert!(matches!(components[0].component_type, AngularComponentType::Component));
+        assert!(matches!(
+            components[0].component_type,
+            AngularComponentType::Component
+        ));
         assert_eq!(components[0].selector, "app-component");
         assert!(!components[0].lifecycle_hooks.is_empty());
         assert_eq!(components[0].lifecycle_hooks[0], "ngOnInit");
@@ -2402,9 +2549,12 @@ mod tests {
         "#;
 
         let assessment = analyzer.analyze_security_assessment(secure_code).unwrap();
-        assert!(matches!(assessment.level, SecurityLevel::High | SecurityLevel::Medium));
+        assert!(matches!(
+            assessment.level,
+            SecurityLevel::High | SecurityLevel::Medium
+        ));
         assert!(!assessment.security_features.is_empty());
-        
+
         let vulnerable_code = r#"
             app.get('/user/:id', (req, res) => {
                 // SQL injection vulnerability
@@ -2415,8 +2565,13 @@ mod tests {
             });
         "#;
 
-        let vulnerable_assessment = analyzer.analyze_security_assessment(vulnerable_code).unwrap();
-        assert!(matches!(vulnerable_assessment.level, SecurityLevel::Vulnerable));
+        let vulnerable_assessment = analyzer
+            .analyze_security_assessment(vulnerable_code)
+            .unwrap();
+        assert!(matches!(
+            vulnerable_assessment.level,
+            SecurityLevel::Vulnerable
+        ));
         assert!(!vulnerable_assessment.vulnerabilities_detected.is_empty());
     }
 
@@ -2451,15 +2606,25 @@ mod tests {
             const cachedData = cache.get('user-data') || await fetchUserData();
         "#;
 
-        let analysis = analyzer.analyze_performance_patterns(optimized_code).unwrap();
+        let analysis = analyzer
+            .analyze_performance_patterns(optimized_code)
+            .unwrap();
         assert!(analysis.overall_score > 50);
         assert!(!analysis.optimizations_detected.is_empty());
-        
+
         let optimizations = &analysis.optimizations_detected;
-        assert!(optimizations.iter().any(|o| matches!(o.optimization_type, OptimizationType::LazyLoading)));
-        assert!(optimizations.iter().any(|o| matches!(o.optimization_type, OptimizationType::Memoization)));
-        assert!(optimizations.iter().any(|o| matches!(o.optimization_type, OptimizationType::Caching)));
-        assert!(optimizations.iter().any(|o| matches!(o.optimization_type, OptimizationType::DatabaseOptimization)));
+        assert!(optimizations
+            .iter()
+            .any(|o| matches!(o.optimization_type, OptimizationType::LazyLoading)));
+        assert!(optimizations
+            .iter()
+            .any(|o| matches!(o.optimization_type, OptimizationType::Memoization)));
+        assert!(optimizations
+            .iter()
+            .any(|o| matches!(o.optimization_type, OptimizationType::Caching)));
+        assert!(optimizations
+            .iter()
+            .any(|o| matches!(o.optimization_type, OptimizationType::DatabaseOptimization)));
     }
 
     #[test]
@@ -2487,9 +2652,12 @@ mod tests {
 
         let analysis = analyzer.analyze_websocket_patterns(socket_io_code).unwrap();
         assert!(analysis.is_some());
-        
+
         let ws_analysis = analysis.unwrap();
-        assert!(matches!(ws_analysis.implementation_type, WebSocketImplementationType::SocketIO));
+        assert!(matches!(
+            ws_analysis.implementation_type,
+            WebSocketImplementationType::SocketIO
+        ));
         assert!(!ws_analysis.patterns.is_empty());
         assert!(ws_analysis.patterns[0].room_management);
         assert!(!ws_analysis.patterns[0].event_handlers.is_empty());
@@ -2507,7 +2675,10 @@ mod tests {
 
         let native_analysis = analyzer.analyze_websocket_patterns(native_ws_code).unwrap();
         assert!(native_analysis.is_some());
-        assert!(matches!(native_analysis.unwrap().implementation_type, WebSocketImplementationType::NativeWebSocket));
+        assert!(matches!(
+            native_analysis.unwrap().implementation_type,
+            WebSocketImplementationType::NativeWebSocket
+        ));
     }
 
     #[test]
@@ -2543,18 +2714,20 @@ mod tests {
             type UserRecord = Record<string, User>;
         "#;
 
-        let analysis = analyzer.analyze_enhanced_typescript(complex_ts_code).unwrap();
+        let analysis = analyzer
+            .analyze_enhanced_typescript(complex_ts_code)
+            .unwrap();
         assert!(analysis.complexity_score > 0);
         assert!(!analysis.conditional_types.is_empty());
         assert!(!analysis.mapped_types.is_empty());
         assert!(!analysis.utility_types.is_empty());
-        
+
         let conditional_type = &analysis.conditional_types[0];
         assert_eq!(conditional_type.complexity_score, 4);
-        
+
         let mapped_type = &analysis.mapped_types[0];
         assert!(mapped_type.modifiers.contains(&TypeModifier::Optional));
-        
+
         let utility_type = &analysis.utility_types[0];
         assert_eq!(utility_type.utility_name, "Partial");
         assert!(utility_type.best_practice_score > 0.0);

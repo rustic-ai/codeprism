@@ -5,6 +5,6 @@
 
 pub mod complexity;
 pub mod flow;
+pub mod javascript;
 pub mod quality;
-pub mod specialized; // New module for quality analysis tools
-pub mod javascript; // Phase 2.1: JavaScript-specific analysis tools
+pub mod specialized; // New module for quality analysis tools // Phase 2.1: JavaScript-specific analysis tools

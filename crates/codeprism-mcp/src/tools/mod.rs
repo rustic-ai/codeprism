@@ -45,6 +45,7 @@ impl ToolRegistry {
         tools.extend(analysis::flow::list_tools());
         tools.extend(analysis::specialized::list_tools());
         tools.extend(analysis::quality::list_tools());
+        tools.extend(analysis::javascript::list_tools()); // Phase 2.1: JavaScript analysis tools
 
         // Workflow orchestration tools
         tools.extend(workflow::register_workflow_tools());
@@ -86,6 +87,11 @@ impl ToolRegistry {
             | "analyze_security"
             | "analyze_performance"
             | "analyze_api_surface" => analysis::quality::call_tool(&server, &params).await,
+
+            // JavaScript analysis tools (Phase 2.1)
+            "analyze_javascript_frameworks"
+            | "analyze_react_components"
+            | "analyze_nodejs_patterns" => analysis::javascript::call_tool(&server, &params).await,
 
             // Workflow orchestration tools
             "suggest_analysis_workflow" | "batch_analysis" | "optimize_workflow" => {

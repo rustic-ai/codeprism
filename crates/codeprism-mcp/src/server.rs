@@ -890,7 +890,7 @@ def parse_config_value(value: str) -> Union[str, int, bool]:
 
         let tools_value = tools_result.unwrap();
         let tools: crate::tools::ListToolsResult = serde_json::from_value(tools_value).unwrap();
-        assert_eq!(tools.tools.len(), 23); // All 23 tools should be available including all implemented tools
+        assert_eq!(tools.tools.len(), 26); // All 26 tools should be available including the new JavaScript analysis tools (Phase 2.1)
 
         // 5. Test tools/call with repository_stats
         let tool_params = crate::tools::CallToolParams {

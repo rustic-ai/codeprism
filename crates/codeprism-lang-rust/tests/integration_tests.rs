@@ -367,3 +367,472 @@ fn test_incremental_parsing() {
     assert_eq!(func1.name, "foo");
     assert_eq!(func2.name, "foo");
 }
+
+#[tokio::test]
+async fn test_enhanced_rust_analysis_ownership_patterns() {
+    let mut parser = RustParser::new();
+    let context = ParseContext {
+        repo_id: "test_repo".to_string(),
+        file_path: PathBuf::from("test.rs"),
+        old_tree: None,
+        content: r#"
+fn process_data(data: String, numbers: Vec<i32>) -> String {
+    let cloned_data = data.clone();
+    let another_clone = cloned_data.clone();
+    another_clone
+}
+
+fn inefficient_borrowing(text: &str) -> String {
+    // This borrowed parameter is used to create an owned value
+    text.to_string()
+}
+
+fn multiple_mut_borrows(a: &mut Vec<i32>, b: &mut Vec<i32>, c: &mut HashMap<String, i32>) {
+    a.push(1);
+    b.push(2);
+    c.insert("key".to_string(), 3);
+}
+"#.to_string(),
+    };
+
+    let result = parser.parse(&context).unwrap();
+    let analyzer = RustAnalyzer::new(result.nodes, result.edges);
+    let analysis = analyzer.analyze_all();
+
+    // Should detect ownership patterns
+    assert!(!analysis.ownership_patterns.is_empty());
+    
+    // Should detect unnecessary owned parameters
+    let has_unnecessary_owned = analysis.ownership_patterns.iter()
+        .any(|pattern| matches!(pattern.pattern_type, OwnershipPatternType::UnnecessaryOwned));
+    assert!(has_unnecessary_owned);
+
+    // Should detect multiple mutable borrows
+    let has_multiple_mut_borrows = analysis.ownership_patterns.iter()
+        .any(|pattern| matches!(pattern.pattern_type, OwnershipPatternType::MultipleMutableBorrows));
+    assert!(has_multiple_mut_borrows);
+}
+
+#[tokio::test]
+async fn test_enhanced_rust_analysis_performance_issues() {
+    let mut parser = RustParser::new();
+    let context = ParseContext {
+        repo_id: "test_repo".to_string(),
+        file_path: PathBuf::from("test.rs"),
+        old_tree: None,
+        content: r#"
+use std::collections::HashMap;
+
+fn performance_issues() {
+    // Allocation without capacity
+    let mut map = HashMap::new();
+    let mut vec = Vec::new();
+    
+    // String concatenation
+    let mut result = String::new();
+    result.push_str("hello");
+    result.push_str("world");
+    result.push_str("test");
+    result.push_str("more");
+    
+    // Inefficient sorting
+    let mut numbers = vec![3, 1, 4, 1, 5];
+    numbers.sort();
+    
+    // Iterator collect
+    let collected: Vec<i32> = vec.iter().map(|x| x * 2).collect();
+}
+
+fn takes_vec_unnecessarily(data: Vec<String>) -> usize {
+    data.len()
+}
+"#.to_string(),
+    };
+
+    let result = parser.parse(&context).unwrap();
+    let analyzer = RustAnalyzer::new(result.nodes, result.edges);
+    let analysis = analyzer.analyze_all();
+
+    // Should detect performance issues
+    assert!(!analysis.performance_issues.is_empty());
+    
+    // Should detect unoptimized collections
+    let has_unoptimized_collections = analysis.performance_issues.iter()
+        .any(|issue| matches!(issue.issue_type, PerformanceIssueType::UnoptimizedCollections));
+    assert!(has_unoptimized_collections);
+}
+
+#[tokio::test]
+async fn test_enhanced_rust_analysis_safety_issues() {
+    let mut parser = RustParser::new();
+    let context = ParseContext {
+        repo_id: "test_repo".to_string(),
+        file_path: PathBuf::from("test.rs"),
+        old_tree: None,
+        content: r#"
+use std::ffi::{CString, CStr};
+
+unsafe fn unsafe_function() -> *mut i32 {
+    std::ptr::null_mut()
+}
+
+extern "C" fn ffi_function(ptr: *const i8) -> i32 {
+    unsafe {
+        if ptr.is_null() {
+            return -1;
+        }
+        *ptr as i32
+    }
+}
+
+fn uses_c_strings() {
+    let c_string = CString::new("hello").unwrap();
+    let c_str = unsafe { CStr::from_ptr(c_string.as_ptr()) };
+}
+
+unsafe fn dangerous_transmute() {
+    let value = 42u32;
+    let bytes: [u8; 4] = std::mem::transmute(value);
+}
+"#.to_string(),
+    };
+
+    let result = parser.parse(&context).unwrap();
+    let analyzer = RustAnalyzer::new(result.nodes, result.edges);
+    let analysis = analyzer.analyze_all();
+
+    // Should detect safety issues
+    assert!(!analysis.safety_issues.is_empty());
+    
+    // Should detect unsafe functions
+    let has_unsafe_function = analysis.safety_issues.iter()
+        .any(|issue| matches!(issue.issue_type, SafetyIssueType::UnsafeFunction));
+    assert!(has_unsafe_function);
+
+    // Should detect FFI boundaries
+    let has_ffi_boundary = analysis.safety_issues.iter()
+        .any(|issue| matches!(issue.issue_type, SafetyIssueType::FFIBoundary));
+    assert!(has_ffi_boundary);
+}
+
+#[tokio::test]
+async fn test_enhanced_rust_analysis_concurrency_issues() {
+    let mut parser = RustParser::new();
+    let context = ParseContext {
+        repo_id: "test_repo".to_string(),
+        file_path: PathBuf::from("test.rs"),
+        old_tree: None,
+        content: r#"
+use std::sync::{Arc, Mutex};
+use std::rc::Rc;
+use std::cell::RefCell;
+use tokio::sync::mpsc;
+
+async fn async_function_with_blocking() {
+    // Blocking operation in async context
+    std::thread::sleep(std::time::Duration::from_millis(100));
+    
+    let result = some_async_operation();
+    // Missing .await
+}
+
+async fn some_async_operation() -> i32 {
+    42
+}
+
+fn multiple_locks() {
+    let mutex1 = Arc::new(Mutex::new(0));
+    let mutex2 = Arc::new(Mutex::new(0));
+    
+    let _guard1 = mutex1.lock().unwrap();
+    let _guard2 = mutex2.lock().unwrap();
+}
+
+fn non_thread_safe_types() {
+    let rc_data = Rc::new(RefCell::new(42));
+    // This won't be thread-safe
+}
+
+fn unbounded_channels() {
+    let (tx, rx) = mpsc::unbounded_channel::<i32>();
+}
+
+#[derive(Debug)]
+struct MyStruct {
+    data: i32,
+}
+
+unsafe impl Send for MyStruct {}
+unsafe impl Sync for MyStruct {}
+"#.to_string(),
+    };
+
+    let result = parser.parse(&context).unwrap();
+    let analyzer = RustAnalyzer::new(result.nodes, result.edges);
+    let analysis = analyzer.analyze_all();
+
+    // Should detect concurrency issues
+    assert!(!analysis.concurrency_issues.is_empty());
+    
+    // Should detect thread safety violations
+    let has_thread_safety_violation = analysis.concurrency_issues.iter()
+        .any(|issue| matches!(issue.issue_type, ConcurrencyIssueType::ThreadSafetyViolation));
+    assert!(has_thread_safety_violation);
+
+    // Should detect deadlock potential
+    let has_deadlock_potential = analysis.concurrency_issues.iter()
+        .any(|issue| matches!(issue.issue_type, ConcurrencyIssueType::DeadlockPotential));
+    assert!(has_deadlock_potential);
+}
+
+#[tokio::test]
+async fn test_comprehensive_rust_analysis() {
+    let mut parser = RustParser::new();
+    let context = ParseContext {
+        repo_id: "test_repo".to_string(),
+        file_path: PathBuf::from("comprehensive_test.rs"),
+        old_tree: None,
+        content: r#"
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
+
+pub struct DataProcessor {
+    cache: HashMap<String, String>,
+    counters: Arc<Mutex<Vec<i32>>>,
+}
+
+impl DataProcessor {
+    pub fn new() -> Self {
+        Self {
+            cache: HashMap::new(), // Should suggest with_capacity
+            counters: Arc::new(Mutex::new(Vec::new())),
+        }
+    }
+    
+    pub fn process_string_data(&self, input: String) -> String {
+        // Unnecessary owned parameter
+        let cloned = input.clone(); // Unnecessary clone
+        cloned.to_uppercase()
+    }
+    
+    pub fn inefficient_string_building(&self) -> String {
+        let mut result = String::new();
+        result.push_str("part1");
+        result.push_str("part2");
+        result.push_str("part3");
+        result.push_str("part4"); // Multiple string operations
+        result
+    }
+    
+    pub unsafe fn dangerous_operation(&self, ptr: *mut i32) {
+        if !ptr.is_null() {
+            *ptr = 42; // Raw pointer dereference
+        }
+    }
+    
+    pub async fn async_with_blocking(&self) {
+        // Blocking in async context
+        std::thread::sleep(std::time::Duration::from_millis(10));
+        
+        let future = std::future::ready(42);
+        // Missing .await
+        let _result = future;
+    }
+}
+
+impl Clone for DataProcessor {
+    fn clone(&self) -> Self {
+        Self {
+            cache: self.cache.clone(),
+            counters: self.counters.clone(),
+        }
+    }
+}
+
+fn takes_vec_when_slice_would_work(data: Vec<String>) -> usize {
+    data.len() // Could use &[String] instead
+}
+
+pub fn multiple_mutex_locks() {
+    let m1 = Arc::new(Mutex::new(0));
+    let m2 = Arc::new(Mutex::new(0));
+    
+    let _g1 = m1.lock().unwrap();
+    let _g2 = m2.lock().unwrap(); // Potential deadlock
+}
+"#.to_string(),
+    };
+
+    let result = parser.parse(&context).unwrap();
+    let analyzer = RustAnalyzer::new(result.nodes, result.edges);
+    let analysis = analyzer.analyze_all();
+
+    // Verify we get comprehensive analysis results
+    assert!(!analysis.ownership_patterns.is_empty(), "Should detect ownership patterns");
+    assert!(!analysis.performance_issues.is_empty(), "Should detect performance issues");
+    assert!(!analysis.safety_issues.is_empty(), "Should detect safety issues");
+    assert!(!analysis.concurrency_issues.is_empty(), "Should detect concurrency issues");
+    
+    // Verify trait implementations are analyzed
+    assert!(!analysis.trait_implementations.is_empty(), "Should detect trait implementations");
+    
+    // Check specific pattern types exist
+    let ownership_types: std::collections::HashSet<_> = analysis.ownership_patterns.iter()
+        .map(|p| std::mem::discriminant(&p.pattern_type))
+        .collect();
+    assert!(ownership_types.len() > 1, "Should detect multiple ownership pattern types");
+    
+    let performance_types: std::collections::HashSet<_> = analysis.performance_issues.iter()
+        .map(|p| std::mem::discriminant(&p.issue_type))
+        .collect();
+    assert!(performance_types.len() > 1, "Should detect multiple performance issue types");
+}
+
+#[tokio::test]
+async fn test_severity_and_impact_levels() {
+    let mut parser = RustParser::new();
+    let context = ParseContext {
+        repo_id: "test_repo".to_string(),
+        file_path: PathBuf::from("severity_test.rs"),
+        old_tree: None,
+        content: r#"
+fn multiple_mutable_refs(a: &mut Vec<i32>, b: &mut HashMap<String, i32>, c: &mut String) {
+    // High severity - multiple mutable borrows
+    a.push(1);
+    b.insert("key".to_string(), 1);
+    c.push_str("test");
+}
+
+unsafe fn critical_unsafe_operation() {
+    let value = 42u32;
+    let bytes: [u8; 4] = std::mem::transmute(value); // Critical risk
+}
+
+fn medium_performance_issue() -> String {
+    let mut result = String::new();
+    result.push_str("a");
+    result.push_str("b");
+    result.push_str("c");
+    result.push_str("d"); // Medium impact string concatenation
+    result
+}
+"#.to_string(),
+    };
+
+    let result = parser.parse(&context).unwrap();
+    let analyzer = RustAnalyzer::new(result.nodes, result.edges);
+    let analysis = analyzer.analyze_all();
+
+    // Check that severity levels are assigned appropriately
+    let high_severity_ownership = analysis.ownership_patterns.iter()
+        .any(|p| matches!(p.severity, Severity::High));
+    assert!(high_severity_ownership, "Should have high severity ownership issues");
+
+    let medium_impact_performance = analysis.performance_issues.iter()
+        .any(|p| matches!(p.impact, PerformanceImpact::Medium));
+    assert!(medium_impact_performance, "Should have medium impact performance issues");
+
+    let critical_risk_safety = analysis.safety_issues.iter()
+        .any(|s| matches!(s.risk_level, RiskLevel::Critical));
+    assert!(critical_risk_safety, "Should have critical risk safety issues");
+}
+
+#[tokio::test]
+async fn debug_analysis_output() {
+    let mut parser = RustParser::new();
+    let context = ParseContext {
+        repo_id: "test_repo".to_string(),
+        file_path: PathBuf::from("debug.rs"),
+        old_tree: None,
+        content: r#"
+use std::ffi::{CString, CStr};
+
+unsafe fn unsafe_function() -> *mut i32 {
+    std::ptr::null_mut()
+}
+
+extern "C" fn ffi_function(ptr: *const i8) -> i32 {
+    unsafe {
+        if ptr.is_null() {
+            return -1;
+        }
+        *ptr as i32
+    }
+}
+"#.to_string(),
+    };
+
+    let result = parser.parse(&context).unwrap();
+    
+    println!("=== NODES ===");
+    for node in &result.nodes {
+        println!("Node: {:?} - {} (signature: {:?})", node.kind, node.name, node.signature);
+    }
+    
+    let analyzer = RustAnalyzer::new(result.nodes, result.edges);
+    let analysis = analyzer.analyze_all();
+
+    println!("=== DEBUG ANALYSIS OUTPUT ===");
+    println!("Ownership patterns: {}", analysis.ownership_patterns.len());
+    for pattern in &analysis.ownership_patterns {
+        println!("  - {:?}: {}", pattern.pattern_type, pattern.description);
+    }
+    
+    println!("Performance issues: {}", analysis.performance_issues.len());
+    for issue in &analysis.performance_issues {
+        println!("  - {:?}: {}", issue.issue_type, issue.description);
+    }
+    
+    println!("Safety issues: {}", analysis.safety_issues.len());
+    for issue in &analysis.safety_issues {
+        println!("  - {:?}: {}", issue.issue_type, issue.description);
+    }
+    
+    println!("Concurrency issues: {}", analysis.concurrency_issues.len());
+    for issue in &analysis.concurrency_issues {
+        println!("  - {:?}: {}", issue.issue_type, issue.description);
+    }
+}
+
+#[tokio::test]
+async fn debug_concurrency_analysis() {
+    let mut parser = RustParser::new();
+    let context = ParseContext {
+        repo_id: "test_repo".to_string(),
+        file_path: PathBuf::from("concurrency_debug.rs"),
+        old_tree: None,
+        content: r#"
+use std::sync::{Arc, Mutex};
+use std::rc::Rc;
+use std::cell::RefCell;
+
+fn non_thread_safe_types() {
+    let rc_data = Rc::new(RefCell::new(42));
+}
+
+fn multiple_locks() {
+    let mutex1 = Arc::new(Mutex::new(0));
+    let mutex2 = Arc::new(Mutex::new(0));
+    
+    let _guard1 = mutex1.lock().unwrap();
+    let _guard2 = mutex2.lock().unwrap();
+}
+"#.to_string(),
+    };
+
+    let result = parser.parse(&context).unwrap();
+    
+    println!("=== CONCURRENCY DEBUG NODES ===");
+    for node in &result.nodes {
+        println!("Node: {:?} - {} (signature: {:?})", node.kind, node.name, node.signature);
+    }
+    
+    let analyzer = RustAnalyzer::new(result.nodes, result.edges);
+    let analysis = analyzer.analyze_all();
+
+    println!("=== CONCURRENCY ANALYSIS ===");
+    println!("Concurrency issues: {}", analysis.concurrency_issues.len());
+    for issue in &analysis.concurrency_issues {
+        println!("  - {:?}: {}", issue.issue_type, issue.description);
+    }
+}

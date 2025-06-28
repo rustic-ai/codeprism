@@ -8,7 +8,12 @@ mod parser;
 mod types;
 
 pub use adapter::{parse_file, ParseResultConverter, RustLanguageParser};
-pub use analysis::RustAnalyzer;
+pub use analysis::{
+    RustAnalyzer, RustAnalysisResult, OwnershipPattern, OwnershipPatternType, PerformanceIssue, 
+    PerformanceIssueType, PerformanceImpact, SafetyIssue, SafetyIssueType, RiskLevel,
+    ConcurrencyIssue, ConcurrencyIssueType, ConcurrencySeverity, Severity, TraitImplementation,
+    UnsafeUsage, UnsafeType, LifetimeUsage, LifetimeScope, MacroUsage, MacroType,
+};
 pub use error::{Error, Result};
 pub use parser::{ParseContext, ParseResult, RustParser};
 pub use types::{Edge, EdgeKind, Language, Node, NodeId, NodeKind, Span};

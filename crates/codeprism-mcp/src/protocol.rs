@@ -20,7 +20,7 @@ pub const SUPPORTED_PROTOCOL_VERSIONS: &[&str] = &[
 pub const DEFAULT_PROTOCOL_VERSION: &str = "2024-11-05";
 
 /// Client types we can detect and optimize for
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum ClientType {
     Claude,
     Cursor,

@@ -21,8 +21,10 @@ use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
 
+pub mod config; // Phase 2.2: Advanced configuration system
 pub mod context;
 pub mod error_handler;
+pub mod monitoring; // Phase 2.2: Performance monitoring system
 pub mod prompts;
 pub mod protocol;
 pub mod resources;
@@ -30,6 +32,7 @@ pub mod server;
 pub mod tools;
 pub mod tools_legacy;
 pub mod transport;
+pub mod validation; // Phase 2.2: Configuration validation & health checks
 
 // Re-export main types
 pub use error_handler::{McpError, McpErrorHandler, McpResult};
@@ -39,6 +42,14 @@ pub use protocol::{
 };
 pub use server::McpServer;
 pub use transport::{StdioTransport, Transport};
+
+// Re-export Phase 2.2 types
+pub use config::{
+    CachingConfig, ConfigProfileManager, McpConfigProfile, MonitoringConfig, SecurityConfig,
+};
+pub use monitoring::{MonitoringMiddleware, PerformanceMonitor, PerformanceSummary};
+pub use tools::dynamic_enablement::{DynamicToolManager, RepositoryAnalysis};
+pub use validation::{StartupReport, SystemValidator, ValidationResult};
 
 /// Python language parser adapter
 struct PythonParserAdapter;

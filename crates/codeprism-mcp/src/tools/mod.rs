@@ -4,6 +4,7 @@
 
 pub mod analysis;
 pub mod core;
+pub mod dynamic_enablement; // Phase 2.2: Dynamic tool enablement
 pub mod search;
 pub mod workflow;
 

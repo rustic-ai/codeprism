@@ -28,6 +28,9 @@ regex = "1.0"
 # Random number generation for session IDs
 rand = "0.8"
 
+# System information
+num_cpus = "1.16"
+
 # Stdio transport
 tokio-util = { version = "0.7", features = ["codec"] }
 futures = "0.3"

@@ -14,6 +14,9 @@ tree-sitter-java.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 tracing.workspace = true
+thiserror.workspace = true
+blake3.workspace = true
+hex.workspace = true
 
 [dev-dependencies]
 insta.workspace = true 

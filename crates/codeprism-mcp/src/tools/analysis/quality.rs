@@ -1352,7 +1352,7 @@ async fn find_dead_code_blocks(
         }
 
         let mut analysis_result = DeadCodeAnalysis::new(function.clone());
-        
+
         // Perform comprehensive dead code analysis
         analyze_function_usage(server, &mut analysis_result).await?;
         analyze_reflection_patterns(server, &mut analysis_result).await?;
@@ -1360,11 +1360,12 @@ async fn find_dead_code_blocks(
         analyze_dynamic_dispatch(server, &mut analysis_result).await?;
         analyze_api_boundaries(server, &mut analysis_result).await?;
         analyze_unreachable_code(server, &mut analysis_result).await?;
-        
+
         if analysis_result.confidence >= confidence_threshold {
             let impact_analysis = perform_impact_analysis(server, &analysis_result).await?;
-            let removal_suggestions = generate_removal_suggestions(&analysis_result, &impact_analysis);
-            
+            let removal_suggestions =
+                generate_removal_suggestions(&analysis_result, &impact_analysis);
+
             dead_code_blocks.push(serde_json::json!({
                 "id": function.id.to_hex(),
                 "name": function.name,
@@ -1432,9 +1433,11 @@ async fn analyze_function_usage(
     analysis: &mut DeadCodeAnalysis,
 ) -> Result<()> {
     let function_name = &analysis.function.name;
-    
+
     // Basic usage analysis
-    let references = server.graph_query().find_references(&analysis.function.id)?;
+    let references = server
+        .graph_query()
+        .find_references(&analysis.function.id)?;
     let call_count = references
         .iter()
         .filter(|r| matches!(r.edge_kind, codeprism_core::EdgeKind::Calls))
@@ -1442,59 +1445,75 @@ async fn analyze_function_usage(
 
     if call_count == 0 {
         analysis.confidence += 0.4;
-        analysis.indicators.push("No direct function calls found".to_string());
-        
+        analysis
+            .indicators
+            .push("No direct function calls found".to_string());
+
         // Check if it's an entry point
-        if function_name.starts_with("main") 
+        if function_name.starts_with("main")
             || function_name.starts_with("__")
             || function_name == "init"
             || function_name.contains("entry")
-            || function_name.contains("bootstrap") {
+            || function_name.contains("bootstrap")
+        {
             analysis.confidence -= 0.6;
-            analysis.indicators.push("Identified as potential entry point".to_string());
+            analysis
+                .indicators
+                .push("Identified as potential entry point".to_string());
             analysis.safety_score -= 0.3;
         }
     } else {
-        analysis.indicators.push(format!("{} direct calls found", call_count));
+        analysis
+            .indicators
+            .push(format!("{} direct calls found", call_count));
     }
 
     // Enhanced naming pattern analysis
     let function_name_lower = function_name.to_lowercase();
-    
+
     // Legacy/deprecated patterns
     if function_name_lower.contains("deprecated")
         || function_name_lower.contains("unused")
         || function_name_lower.contains("old")
         || function_name_lower.contains("legacy")
-        || function_name_lower.contains("obsolete") {
+        || function_name_lower.contains("obsolete")
+    {
         analysis.confidence += 0.7;
         analysis.dead_code_type = "Legacy Function".to_string();
         analysis.category = "Deprecated Code".to_string();
-        analysis.indicators.push("Function name indicates deprecated/legacy code".to_string());
+        analysis
+            .indicators
+            .push("Function name indicates deprecated/legacy code".to_string());
     }
-    
+
     // Temporary/debug patterns
     if function_name_lower.contains("temp")
         || function_name_lower.contains("tmp")
         || function_name_lower.contains("debug")
         || function_name_lower.contains("test_")
         || function_name_lower.contains("_test")
-        || function_name_lower.contains("draft") {
+        || function_name_lower.contains("draft")
+    {
         analysis.confidence += 0.6;
         analysis.dead_code_type = "Temporary Function".to_string();
         analysis.category = "Debug/Test Code".to_string();
-        analysis.indicators.push("Function name suggests temporary or debug code".to_string());
+        analysis
+            .indicators
+            .push("Function name suggests temporary or debug code".to_string());
     }
 
     // Version-specific patterns
     if function_name_lower.contains("_v1")
         || function_name_lower.contains("_old")
         || function_name_lower.contains("_backup")
-        || function_name_lower.contains("_copy") {
+        || function_name_lower.contains("_copy")
+    {
         analysis.confidence += 0.5;
         analysis.dead_code_type = "Versioned Function".to_string();
         analysis.category = "Superseded Code".to_string();
-        analysis.indicators.push("Function appears to be an old version".to_string());
+        analysis
+            .indicators
+            .push("Function appears to be an old version".to_string());
     }
 
     Ok(())
@@ -1506,29 +1525,25 @@ async fn analyze_reflection_patterns(
     analysis: &mut DeadCodeAnalysis,
 ) -> Result<()> {
     let function_name = &analysis.function.name;
-    
+
     // Check for functions that might be called via reflection
     let reflection_patterns = vec![
         // Java reflection patterns
         ("Class.forName", "Java reflection"),
         ("Method.invoke", "Java method invocation"),
         ("Constructor.newInstance", "Java constructor reflection"),
-        
-        // Python reflection patterns  
+        // Python reflection patterns
         ("getattr", "Python dynamic attribute access"),
         ("__getattribute__", "Python attribute access"),
         ("exec", "Python dynamic execution"),
         ("eval", "Python expression evaluation"),
-        
         // JavaScript patterns
         ("Function.prototype.call", "JavaScript dynamic call"),
         ("Function.prototype.apply", "JavaScript dynamic apply"),
         ("eval", "JavaScript dynamic evaluation"),
-        
         // C# reflection patterns
         ("Type.GetMethod", "C# reflection"),
         ("MethodInfo.Invoke", "C# method invocation"),
-        
         // General patterns
         ("dynamic", "Dynamic typing/loading"),
         ("runtime", "Runtime loading"),
@@ -1541,14 +1556,18 @@ async fn analyze_reflection_patterns(
 
     for other_function in all_functions {
         let other_name_lower = other_function.name.to_lowercase();
-        
+
         for (pattern, description) in &reflection_patterns {
             if other_name_lower.contains(&pattern.to_lowercase()) {
                 // Check if this function might reference our target function by name
                 if other_function.name.contains(function_name) {
                     analysis.confidence -= 0.4;
-                    analysis.dynamic_patterns.push(format!("{}: {}", description, other_function.name));
-                    analysis.indicators.push(format!("Potential dynamic usage via {}", description));
+                    analysis
+                        .dynamic_patterns
+                        .push(format!("{}: {}", description, other_function.name));
+                    analysis
+                        .indicators
+                        .push(format!("Potential dynamic usage via {}", description));
                     analysis.safety_score -= 0.2;
                 }
             }
@@ -1558,7 +1577,9 @@ async fn analyze_reflection_patterns(
     // Check for string literals that might contain function names (simplified)
     if function_name.len() > 3 {
         // This is a simplified check - in production, would parse string literals
-        analysis.dynamic_patterns.push("String literal analysis placeholder".to_string());
+        analysis
+            .dynamic_patterns
+            .push("String literal analysis placeholder".to_string());
     }
 
     Ok(())
@@ -1566,13 +1587,13 @@ async fn analyze_reflection_patterns(
 
 /// Analyze framework-specific patterns
 async fn analyze_framework_patterns(
-    server: &CodePrismMcpServer,
+    _server: &CodePrismMcpServer,
     analysis: &mut DeadCodeAnalysis,
 ) -> Result<()> {
     let function_name = &analysis.function.name;
     let function_name_lower = function_name.to_lowercase();
     let file_path = analysis.function.file.to_string_lossy();
-    
+
     // Web framework patterns
     if function_name_lower.contains("handler")
         || function_name_lower.contains("controller")
@@ -1581,10 +1602,15 @@ async fn analyze_framework_patterns(
         || function_name_lower.starts_with("get_")
         || function_name_lower.starts_with("post_")
         || function_name_lower.starts_with("put_")
-        || function_name_lower.starts_with("delete_") {
+        || function_name_lower.starts_with("delete_")
+    {
         analysis.confidence -= 0.5;
-        analysis.framework_context.push("Web framework handler".to_string());
-        analysis.indicators.push("Identified as web framework handler/controller".to_string());
+        analysis
+            .framework_context
+            .push("Web framework handler".to_string());
+        analysis
+            .indicators
+            .push("Identified as web framework handler/controller".to_string());
         analysis.safety_score -= 0.4;
     }
 
@@ -1593,26 +1619,34 @@ async fn analyze_framework_patterns(
         || function_name_lower.contains("_test")
         || function_name_lower.starts_with("spec_")
         || function_name_lower.contains("should_")
-        || file_path.contains("test") {
+        || file_path.contains("test")
+    {
         if file_path.contains("test") {
             // In test files, test functions are expected
             analysis.confidence -= 0.3;
-            analysis.framework_context.push("Test framework function".to_string());
+            analysis
+                .framework_context
+                .push("Test framework function".to_string());
         } else {
             // Test functions outside test directories might be dead
             analysis.confidence += 0.2;
-            analysis.framework_context.push("Test function in non-test file".to_string());
+            analysis
+                .framework_context
+                .push("Test function in non-test file".to_string());
         }
     }
 
-    // Database/ORM patterns  
+    // Database/ORM patterns
     if function_name_lower.contains("migration")
         || function_name_lower.contains("seed")
         || function_name_lower.contains("fixture")
         || function_name_lower.starts_with("up_")
-        || function_name_lower.starts_with("down_") {
+        || function_name_lower.starts_with("down_")
+    {
         analysis.confidence -= 0.4;
-        analysis.framework_context.push("Database migration/ORM function".to_string());
+        analysis
+            .framework_context
+            .push("Database migration/ORM function".to_string());
         analysis.safety_score -= 0.3;
     }
 
@@ -1621,9 +1655,12 @@ async fn analyze_framework_patterns(
         || function_name_lower.contains("callback")
         || function_name_lower.contains("listener")
         || function_name_lower.contains("handler")
-        || function_name_lower.ends_with("_event") {
+        || function_name_lower.ends_with("_event")
+    {
         analysis.confidence -= 0.4;
-        analysis.framework_context.push("Event callback function".to_string());
+        analysis
+            .framework_context
+            .push("Event callback function".to_string());
         analysis.safety_score -= 0.3;
     }
 
@@ -1631,9 +1668,12 @@ async fn analyze_framework_patterns(
     if function_name_lower.starts_with("cmd_")
         || function_name_lower.contains("command")
         || function_name_lower.contains("cli_")
-        || function_name_lower.starts_with("do_") {
+        || function_name_lower.starts_with("do_")
+    {
         analysis.confidence -= 0.3;
-        analysis.framework_context.push("CLI command function".to_string());
+        analysis
+            .framework_context
+            .push("CLI command function".to_string());
         analysis.safety_score -= 0.2;
     }
 
@@ -1641,9 +1681,12 @@ async fn analyze_framework_patterns(
     if function_name_lower.contains("plugin")
         || function_name_lower.contains("extension")
         || function_name_lower.contains("hook")
-        || function_name_lower.contains("filter") {
+        || function_name_lower.contains("filter")
+    {
         analysis.confidence -= 0.5;
-        analysis.framework_context.push("Plugin/extension function".to_string());
+        analysis
+            .framework_context
+            .push("Plugin/extension function".to_string());
         analysis.safety_score -= 0.4;
     }
 
@@ -1656,23 +1699,29 @@ async fn analyze_dynamic_dispatch(
     analysis: &mut DeadCodeAnalysis,
 ) -> Result<()> {
     let function_name = &analysis.function.name;
-    
+
     // Check for interface/trait implementations via classes with Implements edges
     let classes = server
         .graph_store()
         .get_nodes_by_kind(codeprism_core::NodeKind::Class);
-    
+
     for class in classes {
         let class_dependencies = server
             .graph_query()
             .find_dependencies(&class.id, codeprism_core::graph::DependencyType::Direct)?;
-        
+
         for dep in class_dependencies {
             // Check if this is an Implements edge
-            if matches!(dep.edge_kind, codeprism_core::EdgeKind::Implements) && dep.target_node.name == *function_name {
+            if matches!(dep.edge_kind, codeprism_core::EdgeKind::Implements)
+                && dep.target_node.name == *function_name
+            {
                 analysis.confidence -= 0.5;
-                analysis.dynamic_patterns.push(format!("Implements interface: {}", class.name));
-                analysis.indicators.push("Function implements interface (potential dynamic dispatch)".to_string());
+                analysis
+                    .dynamic_patterns
+                    .push(format!("Implements interface: {}", class.name));
+                analysis
+                    .indicators
+                    .push("Function implements interface (potential dynamic dispatch)".to_string());
                 analysis.safety_score -= 0.3;
                 break;
             }
@@ -1683,9 +1732,12 @@ async fn analyze_dynamic_dispatch(
     let function_name_lower = function_name.to_lowercase();
     if function_name_lower.contains("virtual")
         || function_name_lower.contains("override")
-        || function_name_lower.contains("abstract") {
+        || function_name_lower.contains("abstract")
+    {
         analysis.confidence -= 0.4;
-        analysis.dynamic_patterns.push("Virtual/override method".to_string());
+        analysis
+            .dynamic_patterns
+            .push("Virtual/override method".to_string());
         analysis.safety_score -= 0.3;
     }
 
@@ -1694,46 +1746,58 @@ async fn analyze_dynamic_dispatch(
 
 /// Analyze cross-language API boundaries
 async fn analyze_api_boundaries(
-    server: &CodePrismMcpServer,
+    _server: &CodePrismMcpServer,
     analysis: &mut DeadCodeAnalysis,
 ) -> Result<()> {
     let function_name = &analysis.function.name;
     let function_name_lower = function_name.to_lowercase();
-    
+
     // C/C++ export patterns
     if function_name_lower.starts_with("extern")
         || function_name_lower.contains("export")
         || function_name_lower.contains("api_")
-        || function_name_lower.starts_with("c_") {
+        || function_name_lower.starts_with("c_")
+    {
         analysis.confidence -= 0.6;
-        analysis.cross_language_usage.push("C API export".to_string());
+        analysis
+            .cross_language_usage
+            .push("C API export".to_string());
         analysis.safety_score -= 0.4;
     }
 
     // JNI patterns
     if function_name_lower.starts_with("java_")
         || function_name_lower.contains("jni_")
-        || function_name_lower.contains("_jni") {
+        || function_name_lower.contains("_jni")
+    {
         analysis.confidence -= 0.6;
-        analysis.cross_language_usage.push("JNI function".to_string());
+        analysis
+            .cross_language_usage
+            .push("JNI function".to_string());
         analysis.safety_score -= 0.4;
     }
 
     // Python C extension patterns
     if function_name_lower.starts_with("py_")
         || function_name_lower.contains("python_")
-        || function_name_lower.contains("_py") {
+        || function_name_lower.contains("_py")
+    {
         analysis.confidence -= 0.6;
-        analysis.cross_language_usage.push("Python C extension".to_string());
+        analysis
+            .cross_language_usage
+            .push("Python C extension".to_string());
         analysis.safety_score -= 0.4;
     }
 
     // FFI patterns
     if function_name_lower.contains("ffi")
         || function_name_lower.contains("foreign")
-        || function_name_lower.contains("native") {
+        || function_name_lower.contains("native")
+    {
         analysis.confidence -= 0.5;
-        analysis.cross_language_usage.push("Foreign function interface".to_string());
+        analysis
+            .cross_language_usage
+            .push("Foreign function interface".to_string());
         analysis.safety_score -= 0.3;
     }
 
@@ -1742,7 +1806,9 @@ async fn analyze_api_boundaries(
     if file_path.ends_with(".h") || file_path.ends_with(".hpp") {
         // Header files often contain API declarations
         analysis.confidence -= 0.3;
-        analysis.cross_language_usage.push("Header file declaration".to_string());
+        analysis
+            .cross_language_usage
+            .push("Header file declaration".to_string());
         analysis.safety_score -= 0.2;
     }
 
@@ -1755,10 +1821,10 @@ async fn analyze_unreachable_code(
     analysis: &mut DeadCodeAnalysis,
 ) -> Result<()> {
     let function = &analysis.function;
-    
+
     // Check for functions in unreachable modules/files
     let file_path = function.file.to_string_lossy();
-    
+
     // Check if the entire module might be unused
     let module_functions = server
         .graph_store()
@@ -1766,7 +1832,7 @@ async fn analyze_unreachable_code(
         .into_iter()
         .filter(|f| f.file == function.file)
         .collect::<Vec<_>>();
-    
+
     let mut unused_count = 0;
     for module_function in &module_functions {
         let references = server.graph_query().find_references(&module_function.id)?;
@@ -1778,21 +1844,27 @@ async fn analyze_unreachable_code(
             unused_count += 1;
         }
     }
-    
+
     if module_functions.len() > 1 && unused_count as f64 / module_functions.len() as f64 > 0.8 {
         analysis.confidence += 0.3;
-        analysis.indicators.push("Function is in a mostly unused module".to_string());
+        analysis
+            .indicators
+            .push("Function is in a mostly unused module".to_string());
         analysis.category = "Unreachable Module".to_string();
     }
 
     // Check for conditional compilation flags that might make code unreachable
     if file_path.contains("debug") && !file_path.contains("test") {
-        analysis.indicators.push("Function in debug-specific code".to_string());
+        analysis
+            .indicators
+            .push("Function in debug-specific code".to_string());
         analysis.confidence += 0.2;
     }
 
     if file_path.contains("experimental") || file_path.contains("prototype") {
-        analysis.indicators.push("Function in experimental/prototype code".to_string());
+        analysis
+            .indicators
+            .push("Function in experimental/prototype code".to_string());
         analysis.confidence += 0.4;
         analysis.category = "Experimental Code".to_string();
     }
@@ -1806,15 +1878,15 @@ async fn perform_impact_analysis(
     analysis: &DeadCodeAnalysis,
 ) -> Result<serde_json::Value> {
     let function = &analysis.function;
-    
+
     // Analyze dependencies that would be affected
     let dependencies = server
         .graph_query()
         .find_dependencies(&function.id, codeprism_core::graph::DependencyType::Direct)?;
-    
+
     let mut impacted_files = std::collections::HashSet::new();
     let mut impacted_modules = std::collections::HashSet::new();
-    
+
     for dep in &dependencies {
         impacted_files.insert(dep.target_node.file.to_string_lossy().to_string());
         if let Some(parent) = dep.target_node.file.parent() {
@@ -1825,17 +1897,17 @@ async fn perform_impact_analysis(
     // Calculate removal complexity
     let complexity_score = match dependencies.len() {
         0 => "Low",
-        1..=5 => "Medium", 
-        _ => "High"
+        1..=5 => "Medium",
+        _ => "High",
     };
 
     // Estimate effort required
     let lines_of_code = function.span.end_line - function.span.start_line + 1;
     let effort_estimate = match (lines_of_code, dependencies.len()) {
         (0..=10, 0..=2) => "5 minutes",
-        (0..=50, 0..=5) => "15 minutes", 
+        (0..=50, 0..=5) => "15 minutes",
         (0..=100, 0..=10) => "30 minutes",
-        _ => "1+ hours"
+        _ => "1+ hours",
     };
 
     Ok(serde_json::json!({
@@ -1858,7 +1930,7 @@ fn generate_removal_suggestions(
     impact_analysis: &serde_json::Value,
 ) -> Vec<String> {
     let mut suggestions = Vec::new();
-    
+
     // Risk-based suggestions
     if analysis.safety_score > 0.8 {
         suggestions.push("✅ Safe to remove - low risk of unintended consequences".to_string());
@@ -1873,7 +1945,10 @@ fn generate_removal_suggestions(
 
     // Framework-specific suggestions
     if !analysis.framework_context.is_empty() {
-        suggestions.push(format!("Framework context detected: {:?}", analysis.framework_context));
+        suggestions.push(format!(
+            "Framework context detected: {:?}",
+            analysis.framework_context
+        ));
         suggestions.push("Verify framework conventions before removal".to_string());
     }
 
@@ -1883,7 +1958,10 @@ fn generate_removal_suggestions(
     }
 
     // Batch operation suggestions
-    let complexity = impact_analysis.get("removal_complexity").and_then(|v| v.as_str()).unwrap_or("Unknown");
+    let complexity = impact_analysis
+        .get("removal_complexity")
+        .and_then(|v| v.as_str())
+        .unwrap_or("Unknown");
     match complexity {
         "Low" => suggestions.push("Can be included in automated batch removal".to_string()),
         "Medium" => suggestions.push("Group with similar functions for batch review".to_string()),
@@ -1897,15 +1975,15 @@ fn generate_removal_suggestions(
 /// Generate testing recommendations based on analysis
 fn generate_testing_recommendations(analysis: &DeadCodeAnalysis) -> Vec<String> {
     let mut recommendations = Vec::new();
-    
+
     if !analysis.framework_context.is_empty() {
         recommendations.push("Run framework-specific test suite".to_string());
     }
-    
+
     if !analysis.cross_language_usage.is_empty() {
         recommendations.push("Test cross-language bindings and integrations".to_string());
     }
-    
+
     if analysis.safety_score < 0.5 {
         recommendations.push("Comprehensive integration testing required".to_string());
         recommendations.push("Monitor production metrics after removal".to_string());

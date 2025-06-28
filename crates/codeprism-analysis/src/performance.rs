@@ -2,9 +2,9 @@
 
 use anyhow::Result;
 use regex::Regex;
+use serde::Serialize;
 use serde_json::Value;
 use std::collections::HashMap;
-use serde::Serialize;
 
 /// Performance issue information
 #[derive(Debug, Clone)]
@@ -140,7 +140,8 @@ impl PerformanceAnalyzer {
                 optimization_effort: "Low".to_string(),
             },
         ];
-        self.patterns.insert("time_complexity".to_string(), time_patterns);
+        self.patterns
+            .insert("time_complexity".to_string(), time_patterns);
 
         // Enhanced memory usage patterns
         let memory_patterns = vec![
@@ -148,8 +149,12 @@ impl PerformanceAnalyzer {
                 name: "Large Object Creation in Loop".to_string(),
                 pattern: Regex::new(r"(?s)for\s+.*?new\s+\w+\s*\(").unwrap(),
                 severity: "high".to_string(),
-                description: "Frequent large object allocation causing GC pressure and memory fragmentation".to_string(),
-                recommendation: "Use object pooling, factory patterns, or move allocation outside loop".to_string(),
+                description:
+                    "Frequent large object allocation causing GC pressure and memory fragmentation"
+                        .to_string(),
+                recommendation:
+                    "Use object pooling, factory patterns, or move allocation outside loop"
+                        .to_string(),
                 complexity: "O(n)".to_string(),
                 impact_score: 6.0,
                 optimization_effort: "Medium".to_string(),
@@ -158,18 +163,26 @@ impl PerformanceAnalyzer {
                 name: "Memory Leak Pattern".to_string(),
                 pattern: Regex::new(r"(?i)(global|static)\s+\w+\s*=\s*\[\]").unwrap(),
                 severity: "critical".to_string(),
-                description: "Global/static collection may grow indefinitely causing memory leaks".to_string(),
-                recommendation: "Implement proper cleanup, use bounded collections, or WeakReference patterns".to_string(),
+                description: "Global/static collection may grow indefinitely causing memory leaks"
+                    .to_string(),
+                recommendation:
+                    "Implement proper cleanup, use bounded collections, or WeakReference patterns"
+                        .to_string(),
                 complexity: "O(n)".to_string(),
                 impact_score: 9.0,
                 optimization_effort: "Medium".to_string(),
             },
             PerformancePattern {
                 name: "Excessive Buffer Allocation".to_string(),
-                pattern: Regex::new(r"(?i)(buffer|byte\[\]|char\[\])\s*=\s*new\s+.*?\[\s*\d{4,}\s*\]").unwrap(),
+                pattern: Regex::new(
+                    r"(?i)(buffer|byte\[\]|char\[\])\s*=\s*new\s+.*?\[\s*\d{4,}\s*\]",
+                )
+                .unwrap(),
                 severity: "medium".to_string(),
                 description: "Large buffer allocation may cause memory pressure".to_string(),
-                recommendation: "Use streaming, chunked processing, or memory-mapped files for large data".to_string(),
+                recommendation:
+                    "Use streaming, chunked processing, or memory-mapped files for large data"
+                        .to_string(),
                 complexity: "O(1)".to_string(),
                 impact_score: 4.0,
                 optimization_effort: "Medium".to_string(),
@@ -179,13 +192,15 @@ impl PerformanceAnalyzer {
                 pattern: Regex::new(r"(?s)for\s+.*?new\s+String\s*\(").unwrap(),
                 severity: "medium".to_string(),
                 description: "Excessive string object creation in loop".to_string(),
-                recommendation: "Use string interning, StringBuilder, or string constants".to_string(),
+                recommendation: "Use string interning, StringBuilder, or string constants"
+                    .to_string(),
                 complexity: "O(n)".to_string(),
                 impact_score: 3.0,
                 optimization_effort: "Low".to_string(),
             },
         ];
-        self.patterns.insert("memory_usage".to_string(), memory_patterns);
+        self.patterns
+            .insert("memory_usage".to_string(), memory_patterns);
 
         // Enhanced hot spots patterns
         let hotspot_patterns = vec![
@@ -230,7 +245,8 @@ impl PerformanceAnalyzer {
                 optimization_effort: "High".to_string(),
             },
         ];
-        self.patterns.insert("hot_spots".to_string(), hotspot_patterns);
+        self.patterns
+            .insert("hot_spots".to_string(), hotspot_patterns);
 
         // Concurrency bottleneck patterns
         let concurrency_patterns = vec![
@@ -265,7 +281,8 @@ impl PerformanceAnalyzer {
                 optimization_effort: "Medium".to_string(),
             },
         ];
-        self.patterns.insert("concurrency_bottlenecks".to_string(), concurrency_patterns);
+        self.patterns
+            .insert("concurrency_bottlenecks".to_string(), concurrency_patterns);
 
         // Algorithm-specific patterns
         let algorithm_patterns = vec![
@@ -274,7 +291,9 @@ impl PerformanceAnalyzer {
                 pattern: Regex::new(r"(?s)for\s+.*?for\s+.*?(swap|exchange|compare)").unwrap(),
                 severity: "medium".to_string(),
                 description: "Bubble sort or similar O(n²) sorting algorithm detected".to_string(),
-                recommendation: "Use built-in sort functions, quicksort, mergesort, or heapsort for O(n log n)".to_string(),
+                recommendation:
+                    "Use built-in sort functions, quicksort, mergesort, or heapsort for O(n log n)"
+                        .to_string(),
                 complexity: "O(n²)".to_string(),
                 impact_score: 5.0,
                 optimization_effort: "Low".to_string(),
@@ -284,13 +303,15 @@ impl PerformanceAnalyzer {
                 pattern: Regex::new(r"(?s)for\s+.*?(sorted|ordered).*?==").unwrap(),
                 severity: "medium".to_string(),
                 description: "Linear search in sorted data structure".to_string(),
-                recommendation: "Use binary search for O(log n) complexity instead of O(n)".to_string(),
+                recommendation: "Use binary search for O(log n) complexity instead of O(n)"
+                    .to_string(),
                 complexity: "O(n)".to_string(),
                 impact_score: 4.0,
                 optimization_effort: "Low".to_string(),
             },
         ];
-        self.patterns.insert("algorithm_patterns".to_string(), algorithm_patterns);
+        self.patterns
+            .insert("algorithm_patterns".to_string(), algorithm_patterns);
 
         // Performance regression patterns
         let regression_patterns = vec![
@@ -299,23 +320,28 @@ impl PerformanceAnalyzer {
                 pattern: Regex::new(r"(?i)(cache\s*=\s*false|no.?cache|disable.*cache)").unwrap(),
                 severity: "medium".to_string(),
                 description: "Caching appears to be disabled or bypassed".to_string(),
-                recommendation: "Review caching strategy and ensure proper cache utilization".to_string(),
+                recommendation: "Review caching strategy and ensure proper cache utilization"
+                    .to_string(),
                 complexity: "O(1)".to_string(),
                 impact_score: 6.0,
                 optimization_effort: "Low".to_string(),
             },
             PerformancePattern {
                 name: "Debug Code in Production".to_string(),
-                pattern: Regex::new(r"(?i)(debug|trace|verbose)\s*(=\s*true|logging|print)").unwrap(),
+                pattern: Regex::new(r"(?i)(debug|trace|verbose)\s*(=\s*true|logging|print)")
+                    .unwrap(),
                 severity: "low".to_string(),
                 description: "Debug code may impact production performance".to_string(),
-                recommendation: "Remove debug statements or use conditional compilation for production builds".to_string(),
+                recommendation:
+                    "Remove debug statements or use conditional compilation for production builds"
+                        .to_string(),
                 complexity: "O(1)".to_string(),
                 impact_score: 2.0,
                 optimization_effort: "Low".to_string(),
             },
         ];
-        self.patterns.insert("regression_patterns".to_string(), regression_patterns);
+        self.patterns
+            .insert("regression_patterns".to_string(), regression_patterns);
     }
 
     fn initialize_language_specific_patterns(&mut self) {
@@ -326,7 +352,9 @@ impl PerformanceAnalyzer {
                 pattern: Regex::new(r"(?i)threading.*for\s+.*?in").unwrap(),
                 severity: "high".to_string(),
                 description: "Threading in CPU-bound loop affected by Python GIL".to_string(),
-                recommendation: "Use multiprocessing, asyncio, or consider Cython/PyPy for CPU-bound tasks".to_string(),
+                recommendation:
+                    "Use multiprocessing, asyncio, or consider Cython/PyPy for CPU-bound tasks"
+                        .to_string(),
                 complexity: "O(n)".to_string(),
                 impact_score: 7.0,
                 optimization_effort: "High".to_string(),
@@ -336,22 +364,28 @@ impl PerformanceAnalyzer {
                 pattern: Regex::new(r"(?s)for\s+\w+\s+in\s+.*?\.append\s*\(").unwrap(),
                 severity: "low".to_string(),
                 description: "Loop with append can be replaced with list comprehension".to_string(),
-                recommendation: "Use list comprehension for better performance and readability".to_string(),
+                recommendation: "Use list comprehension for better performance and readability"
+                    .to_string(),
                 complexity: "O(n)".to_string(),
                 impact_score: 2.0,
                 optimization_effort: "Low".to_string(),
             },
         ];
-        self.language_specific_patterns.insert("python".to_string(), python_patterns);
+        self.language_specific_patterns
+            .insert("python".to_string(), python_patterns);
 
         // JavaScript-specific patterns
         let js_patterns = vec![
             PerformancePattern {
                 name: "DOM Manipulation in Loop".to_string(),
-                pattern: Regex::new(r"(?s)for\s+.*?(appendChild|removeChild|innerHTML|createElement)").unwrap(),
+                pattern: Regex::new(
+                    r"(?s)for\s+.*?(appendChild|removeChild|innerHTML|createElement)",
+                )
+                .unwrap(),
                 severity: "high".to_string(),
                 description: "DOM manipulation inside loop causing layout thrashing".to_string(),
-                recommendation: "Batch DOM changes using DocumentFragment or virtual DOM patterns".to_string(),
+                recommendation: "Batch DOM changes using DocumentFragment or virtual DOM patterns"
+                    .to_string(),
                 complexity: "O(n)".to_string(),
                 impact_score: 8.0,
                 optimization_effort: "Medium".to_string(),
@@ -361,13 +395,15 @@ impl PerformanceAnalyzer {
                 pattern: Regex::new(r"(?s)for\s+.*?hasOwnProperty").unwrap(),
                 severity: "low".to_string(),
                 description: "Prototype chain traversal in loop".to_string(),
-                recommendation: "Cache property lookups or use Map/Set for better performance".to_string(),
+                recommendation: "Cache property lookups or use Map/Set for better performance"
+                    .to_string(),
                 complexity: "O(n)".to_string(),
                 impact_score: 2.0,
                 optimization_effort: "Low".to_string(),
             },
         ];
-        self.language_specific_patterns.insert("javascript".to_string(), js_patterns);
+        self.language_specific_patterns
+            .insert("javascript".to_string(), js_patterns);
 
         // Java-specific patterns
         let java_patterns = vec![
@@ -375,8 +411,10 @@ impl PerformanceAnalyzer {
                 name: "String Concatenation in Loop".to_string(),
                 pattern: Regex::new(r"(?s)for\s+.*?String\s+.*?\+\s*").unwrap(),
                 severity: "high".to_string(),
-                description: "String concatenation in loop creating many intermediate objects".to_string(),
-                recommendation: "Use StringBuilder or StringBuffer for efficient string building".to_string(),
+                description: "String concatenation in loop creating many intermediate objects"
+                    .to_string(),
+                recommendation: "Use StringBuilder or StringBuffer for efficient string building"
+                    .to_string(),
                 complexity: "O(n²)".to_string(),
                 impact_score: 6.0,
                 optimization_effort: "Low".to_string(),
@@ -386,13 +424,15 @@ impl PerformanceAnalyzer {
                 pattern: Regex::new(r"(?s)for\s+.*?(Integer|Double|Boolean|Float)\s*\(").unwrap(),
                 severity: "medium".to_string(),
                 description: "Autoboxing/unboxing in loop creating wrapper objects".to_string(),
-                recommendation: "Use primitive collections or avoid autoboxing in hot code paths".to_string(),
+                recommendation: "Use primitive collections or avoid autoboxing in hot code paths"
+                    .to_string(),
                 complexity: "O(n)".to_string(),
                 impact_score: 4.0,
                 optimization_effort: "Medium".to_string(),
             },
         ];
-        self.language_specific_patterns.insert("java".to_string(), java_patterns);
+        self.language_specific_patterns
+            .insert("java".to_string(), java_patterns);
     }
 
     /// Analyze content for performance issues with enhanced capabilities
@@ -438,23 +478,24 @@ impl PerformanceAnalyzer {
     /// Analyze recursive function complexity
     pub fn analyze_recursive_complexity(&self, content: &str) -> Result<Vec<RecursiveComplexity>> {
         let mut recursive_functions = Vec::new();
-        
+
         // Pattern for recursive functions (simplified since Rust regex doesn't support backreferences)
         let recursive_pattern = Regex::new(r"(?s)(def|function)\s+(\w+)").unwrap();
-        
+
         for captures in recursive_pattern.captures_iter(content) {
             if let Some(func_name) = captures.get(2) {
                 let function_name = func_name.as_str().to_string();
-                
+
                 // Check if the function actually calls itself by searching for the function name in the content
                 if content.contains(&format!("{}(", function_name)) {
                     // Count occurrences to determine if it's likely recursive
                     let call_count = content.matches(&format!("{}(", function_name)).count();
-                    if call_count > 1 { // Function definition + at least one call
+                    if call_count > 1 {
+                        // Function definition + at least one call
                         // Analyze recursion depth and complexity
-                        let (depth_estimate, complexity, optimization_potential) = 
+                        let (depth_estimate, complexity, optimization_potential) =
                             self.estimate_recursive_complexity(content, &function_name);
-                        
+
                         recursive_functions.push(RecursiveComplexity {
                             function_name,
                             depth_estimate,
@@ -465,21 +506,36 @@ impl PerformanceAnalyzer {
                 }
             }
         }
-        
+
         Ok(recursive_functions)
     }
 
     /// Analyze memory allocation patterns
     pub fn analyze_memory_patterns(&self, content: &str) -> Result<Vec<MemoryPattern>> {
         let mut patterns = Vec::new();
-        
+
         // Analyze various memory allocation patterns
         let allocation_patterns = vec![
-            (r"(?s)for\s+.*?new\s+", "Loop Allocation", "High", "High GC pressure"),
-            (r"(?s)new\s+.*?\[\s*\d{4,}\s*\]", "Large Array", "Medium", "Memory fragmentation"),
-            (r"(?i)(arraylist|vector|list)\s*\(\s*\)", "Default Capacity", "Low", "Potential resizing overhead"),
+            (
+                r"(?s)for\s+.*?new\s+",
+                "Loop Allocation",
+                "High",
+                "High GC pressure",
+            ),
+            (
+                r"(?s)new\s+.*?\[\s*\d{4,}\s*\]",
+                "Large Array",
+                "Medium",
+                "Memory fragmentation",
+            ),
+            (
+                r"(?i)(arraylist|vector|list)\s*\(\s*\)",
+                "Default Capacity",
+                "Low",
+                "Potential resizing overhead",
+            ),
         ];
-        
+
         for (pattern_str, pattern_type, frequency, impact) in allocation_patterns {
             let pattern = Regex::new(pattern_str).unwrap();
             if pattern.is_match(content) {
@@ -491,71 +547,91 @@ impl PerformanceAnalyzer {
                 });
             }
         }
-        
+
         Ok(patterns)
     }
 
     /// Get architectural performance recommendations
     pub fn get_architectural_recommendations(&self, issues: &[PerformanceIssue]) -> Vec<String> {
         let mut recommendations = Vec::new();
-        
-        let total_impact: f64 = issues.iter()
-            .filter_map(|i| i.impact_score)
-            .sum();
-            
-        let critical_issues: usize = issues.iter()
-            .filter(|i| i.severity == "critical")
-            .count();
-            
-        let high_issues: usize = issues.iter()
-            .filter(|i| i.severity == "high") 
-            .count();
+
+        let _total_impact: f64 = issues.iter().filter_map(|i| i.impact_score).sum();
+
+        let critical_issues: usize = issues.iter().filter(|i| i.severity == "critical").count();
+
+        let high_issues: usize = issues.iter().filter(|i| i.severity == "high").count();
 
         // Architectural recommendations based on issue patterns
         if critical_issues > 0 {
             recommendations.push("CRITICAL: Immediate architectural review required".to_string());
-            recommendations.push("Consider implementing performance monitoring and alerting".to_string());
+            recommendations
+                .push("Consider implementing performance monitoring and alerting".to_string());
         }
-        
-        if total_impact > 30.0 {
-            recommendations.push("High performance impact detected - consider performance testing".to_string());
+
+        if _total_impact > 30.0 {
+            recommendations.push(
+                "High performance impact detected - consider performance testing".to_string(),
+            );
         }
-        
+
         if high_issues > 3 {
-            recommendations.push("Multiple high-impact issues - implement staged optimization approach".to_string());
+            recommendations.push(
+                "Multiple high-impact issues - implement staged optimization approach".to_string(),
+            );
         }
-        
+
         // Specific architectural patterns
         if issues.iter().any(|i| i.issue_type.contains("Database")) {
             recommendations.push("Database Architecture: Implement connection pooling, read replicas, and query optimization".to_string());
         }
-        
+
         if issues.iter().any(|i| i.issue_type.contains("Network")) {
-            recommendations.push("Network Architecture: Consider CDN, caching layers, and circuit breaker patterns".to_string());
+            recommendations.push(
+                "Network Architecture: Consider CDN, caching layers, and circuit breaker patterns"
+                    .to_string(),
+            );
         }
-        
+
         if issues.iter().any(|i| i.issue_type.contains("Memory")) {
             recommendations.push("Memory Architecture: Implement memory profiling, garbage collection tuning, and memory-efficient data structures".to_string());
         }
-        
-        if issues.iter().any(|i| i.issue_type.contains("Concurrency") || i.issue_type.contains("Thread")) {
+
+        if issues
+            .iter()
+            .any(|i| i.issue_type.contains("Concurrency") || i.issue_type.contains("Thread"))
+        {
             recommendations.push("Concurrency Architecture: Consider actor model, reactive streams, or lock-free algorithms".to_string());
         }
-        
-        recommendations.push("Implement comprehensive performance benchmarking and continuous monitoring".to_string());
-        
+
+        recommendations.push(
+            "Implement comprehensive performance benchmarking and continuous monitoring"
+                .to_string(),
+        );
+
         recommendations
     }
 
-    fn estimate_recursive_complexity(&self, _content: &str, function_name: &str) -> (String, String, String) {
+    fn estimate_recursive_complexity(
+        &self,
+        _content: &str,
+        function_name: &str,
+    ) -> (String, String, String) {
         // Simplified complexity estimation - in practice would analyze call patterns
         if function_name.contains("fib") || function_name.contains("factorial") {
-            ("Deep".to_string(), "O(2^n)".to_string(), "High - implement memoization".to_string())
+            (
+                "Deep".to_string(),
+                "O(2^n)".to_string(),
+                "High - implement memoization".to_string(),
+            )
         } else {
-            ("Moderate".to_string(), "O(n)".to_string(), "Medium - consider iterative approach".to_string())
+            (
+                "Moderate".to_string(),
+                "O(n)".to_string(),
+                "Medium - consider iterative approach".to_string(),
+            )
         }
     }
-    
+
     fn get_memory_recommendation(&self, pattern_type: &str) -> String {
         match pattern_type {
             "Loop Allocation" => "Move allocation outside loop or use object pooling".to_string(),
@@ -564,7 +640,7 @@ impl PerformanceAnalyzer {
             _ => "Review memory allocation patterns".to_string(),
         }
     }
-    
+
     fn get_line_info(&self, content: &str, position: usize) -> String {
         let line_num = content[..position].matches('\n').count() + 1;
         format!("Line: {}, Position: {}", line_num, position)
@@ -576,7 +652,7 @@ impl PerformanceAnalyzer {
             "low" => true, // Include all complexities
             "medium" => !complexity.contains("O(1)") && !matches!(complexity, "O(log n)"),
             "high" => {
-                complexity.contains("O(n²)") 
+                complexity.contains("O(n²)")
                     || complexity.contains("O(n³)")
                     || complexity.contains("O(n⁴)")
                     || complexity.contains("O(2^n)")
@@ -600,11 +676,11 @@ impl PerformanceAnalyzer {
 
         // Group by issue type and calculate priorities
         let mut issue_counts = HashMap::new();
-        let mut total_impact = 0.0;
+        let mut _total_impact = 0.0;
         for issue in issues {
             *issue_counts.entry(issue.issue_type.clone()).or_insert(0) += 1;
             if let Some(impact) = issue.impact_score {
-                total_impact += impact;
+                _total_impact += impact;
             }
         }
 
@@ -616,31 +692,45 @@ impl PerformanceAnalyzer {
         if issue_counts.contains_key("Database Query in Loop") {
             recommendations.push("HIGH PRIORITY: Eliminate N+1 query problems with batch operations and proper ORM usage".to_string());
         }
-        
-        if issue_counts.contains_key("Exponential Recursion") || issue_counts.contains_key("Factorial Complexity") {
+
+        if issue_counts.contains_key("Exponential Recursion")
+            || issue_counts.contains_key("Factorial Complexity")
+        {
             recommendations.push("CRITICAL: Implement dynamic programming or iterative solutions for exponential algorithms".to_string());
         }
 
         if issue_counts.contains_key("Network Call in Loop") {
-            recommendations.push("CRITICAL: Implement async/batch processing for network operations".to_string());
+            recommendations.push(
+                "CRITICAL: Implement async/batch processing for network operations".to_string(),
+            );
         }
 
         // Algorithmic recommendations
-        if issue_counts.contains_key("Triple Nested Loop") || issue_counts.contains_key("Quadruple Nested Loop") {
+        if issue_counts.contains_key("Triple Nested Loop")
+            || issue_counts.contains_key("Quadruple Nested Loop")
+        {
             recommendations.push("ALGORITHM: Review data structures and consider preprocessing or caching strategies".to_string());
         }
-        
+
         if issue_counts.contains_key("Double Nested Loop") {
-            recommendations.push("ALGORITHM: Consider hash-based lookups or sorting-based optimizations".to_string());
+            recommendations.push(
+                "ALGORITHM: Consider hash-based lookups or sorting-based optimizations".to_string(),
+            );
         }
 
         // Memory optimization recommendations
         if issue_counts.contains_key("Large Object Creation in Loop") {
-            recommendations.push("MEMORY: Implement object pooling or move allocations outside hot paths".to_string());
+            recommendations.push(
+                "MEMORY: Implement object pooling or move allocations outside hot paths"
+                    .to_string(),
+            );
         }
-        
+
         if issue_counts.contains_key("Memory Leak Pattern") {
-            recommendations.push("MEMORY: Implement proper resource cleanup and bounded collection strategies".to_string());
+            recommendations.push(
+                "MEMORY: Implement proper resource cleanup and bounded collection strategies"
+                    .to_string(),
+            );
         }
 
         // Concurrency recommendations
@@ -650,11 +740,16 @@ impl PerformanceAnalyzer {
 
         // General architectural recommendations
         recommendations.extend(self.get_architectural_recommendations(issues));
-        
+
         // Tool recommendations
-        recommendations.push("MONITORING: Implement APM tools for continuous performance monitoring".to_string());
-        recommendations.push("PROFILING: Use language-specific profilers to validate optimizations".to_string());
-        recommendations.push("TESTING: Implement performance regression tests in CI/CD pipeline".to_string());
+        recommendations.push(
+            "MONITORING: Implement APM tools for continuous performance monitoring".to_string(),
+        );
+        recommendations.push(
+            "PROFILING: Use language-specific profilers to validate optimizations".to_string(),
+        );
+        recommendations
+            .push("TESTING: Implement performance regression tests in CI/CD pipeline".to_string());
 
         recommendations
     }
@@ -724,7 +819,8 @@ impl PerformanceAnalyzer {
 
     /// Detect concurrency bottlenecks
     pub fn detect_concurrency_bottlenecks(&self, content: &str) -> Result<Vec<Value>> {
-        let issues = self.analyze_content(content, &["concurrency_bottlenecks".to_string()], "low")?;
+        let issues =
+            self.analyze_content(content, &["concurrency_bottlenecks".to_string()], "low")?;
 
         Ok(issues
             .into_iter()
@@ -746,22 +842,22 @@ impl PerformanceAnalyzer {
     /// Comprehensive performance analysis
     pub fn comprehensive_analysis(&self, content: &str, language: Option<&str>) -> Result<Value> {
         let mut all_issues = Vec::new();
-        
+
         // Run all analysis types
         let analysis_types = vec![
             "time_complexity".to_string(),
-            "memory_usage".to_string(), 
+            "memory_usage".to_string(),
             "hot_spots".to_string(),
             "concurrency_bottlenecks".to_string(),
             "algorithm_patterns".to_string(),
             "regression_patterns".to_string(),
         ];
-        
+
         for analysis_type in analysis_types {
             let issues = self.analyze_content(content, &[analysis_type], "low")?;
             all_issues.extend(issues);
         }
-        
+
         // Add language-specific analysis if specified
         if let Some(lang) = language {
             if let Some(lang_patterns) = self.language_specific_patterns.get(lang) {
@@ -781,30 +877,33 @@ impl PerformanceAnalyzer {
                 }
             }
         }
-        
+
         // Analyze recursive complexity
         let recursive_analysis = self.analyze_recursive_complexity(content)?;
-        
+
         // Analyze memory patterns
         let memory_patterns = self.analyze_memory_patterns(content)?;
-        
+
         // Generate comprehensive recommendations
         let recommendations = self.get_performance_recommendations(&all_issues);
         let architectural_recommendations = self.get_architectural_recommendations(&all_issues);
-        
+
         // Calculate summary statistics
         let total_issues = all_issues.len();
-        let critical_issues = all_issues.iter().filter(|i| i.severity == "critical").count();
+        let critical_issues = all_issues
+            .iter()
+            .filter(|i| i.severity == "critical")
+            .count();
         let high_issues = all_issues.iter().filter(|i| i.severity == "high").count();
-        let total_impact: f64 = all_issues.iter().filter_map(|i| i.impact_score).sum();
-        
+        let _total_impact: f64 = all_issues.iter().filter_map(|i| i.impact_score).sum();
+
         Ok(serde_json::json!({
             "summary": {
                 "total_issues": total_issues,
                 "critical_issues": critical_issues,
                 "high_issues": high_issues,
-                "total_impact_score": total_impact,
-                "performance_grade": self.calculate_performance_grade(total_impact, total_issues)
+                "total_impact_score": _total_impact,
+                "performance_grade": self.calculate_performance_grade(_total_impact, total_issues)
             },
             "issues": all_issues.iter().map(|i| serde_json::json!({
                 "type": i.issue_type,
@@ -823,10 +922,14 @@ impl PerformanceAnalyzer {
             "language_specific": language.unwrap_or("generic")
         }))
     }
-    
+
     fn calculate_performance_grade(&self, total_impact: f64, issue_count: usize) -> String {
-        let average_impact = if issue_count > 0 { total_impact / issue_count as f64 } else { 0.0 };
-        
+        let average_impact = if issue_count > 0 {
+            total_impact / issue_count as f64
+        } else {
+            0.0
+        };
+
         match average_impact {
             x if x >= 8.0 => "F - Critical Performance Issues".to_string(),
             x if x >= 6.0 => "D - Significant Performance Issues".to_string(),
@@ -851,13 +954,16 @@ mod tests {
     fn test_enhanced_nested_loop_detection() {
         let analyzer = PerformanceAnalyzer::new();
 
-        let code = "for i in range(n): for j in range(n): for k in range(n): for l in range(n): pass";
+        let code =
+            "for i in range(n): for j in range(n): for k in range(n): for l in range(n): pass";
         let issues = analyzer
             .analyze_content(code, &["time_complexity".to_string()], "low")
             .unwrap();
 
         assert!(!issues.is_empty());
-        assert!(issues.iter().any(|i| i.issue_type == "Quadruple Nested Loop"));
+        assert!(issues
+            .iter()
+            .any(|i| i.issue_type == "Quadruple Nested Loop"));
     }
 
     #[test]
@@ -890,8 +996,10 @@ mod tests {
         let analyzer = PerformanceAnalyzer::new();
 
         let code = "for i in range(n): for j in range(n): query('SELECT * FROM table')";
-        let result = analyzer.comprehensive_analysis(code, Some("python")).unwrap();
-        
+        let result = analyzer
+            .comprehensive_analysis(code, Some("python"))
+            .unwrap();
+
         assert!(result.get("summary").is_some());
         assert!(result.get("issues").is_some());
         assert!(result.get("recommendations").is_some());
@@ -903,16 +1011,22 @@ mod tests {
 
         let code = "for i in range(n): obj = new LargeObject()";
         let patterns = analyzer.analyze_memory_patterns(code).unwrap();
-        
+
         assert!(!patterns.is_empty());
     }
 
     #[test]
     fn test_performance_grade_calculation() {
         let analyzer = PerformanceAnalyzer::new();
-        
-        assert_eq!(analyzer.calculate_performance_grade(10.0, 1), "F - Critical Performance Issues");
-        assert_eq!(analyzer.calculate_performance_grade(1.0, 1), "A - Good Performance");
+
+        assert_eq!(
+            analyzer.calculate_performance_grade(10.0, 1),
+            "F - Critical Performance Issues"
+        );
+        assert_eq!(
+            analyzer.calculate_performance_grade(1.0, 1),
+            "A - Good Performance"
+        );
     }
 
     #[test]
@@ -960,18 +1074,16 @@ mod tests {
     fn test_enhanced_performance_recommendations() {
         let analyzer = PerformanceAnalyzer::new();
 
-        let issues = vec![
-            PerformanceIssue {
-                issue_type: "Database Query in Loop".to_string(),
-                severity: "critical".to_string(),
-                description: "Test".to_string(),
-                location: None,
-                recommendation: "Test".to_string(),
-                complexity_estimate: Some("O(n)".to_string()),
-                impact_score: Some(9.0),
-                optimization_effort: Some("Medium".to_string()),
-            }
-        ];
+        let issues = vec![PerformanceIssue {
+            issue_type: "Database Query in Loop".to_string(),
+            severity: "critical".to_string(),
+            description: "Test".to_string(),
+            location: None,
+            recommendation: "Test".to_string(),
+            complexity_estimate: Some("O(n)".to_string()),
+            impact_score: Some(9.0),
+            optimization_effort: Some("Medium".to_string()),
+        }];
 
         let recommendations = analyzer.get_performance_recommendations(&issues);
         assert!(!recommendations.is_empty());

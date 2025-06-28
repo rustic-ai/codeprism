@@ -65,16 +65,18 @@ pub struct DuplicateSavings {
 /// Advanced duplicate analyzer with AST and semantic analysis
 pub struct DuplicateAnalyzer {
     /// Cache for parsed AST structures
+    #[allow(dead_code)]
     ast_cache: HashMap<String, AstNode>,
-    /// Patterns for semantic understanding
-    semantic_patterns: HashMap<String, Vec<String>>,
-    /// Language-specific analyzers
+    /// Language-specific analyzers for different programming languages
     language_analyzers: HashMap<String, LanguageAnalyzer>,
+    /// Semantic patterns for identifying functional similarities
+    semantic_patterns: HashMap<String, Vec<String>>,
 }
 
 #[derive(Debug, Clone)]
 struct LanguageAnalyzer {
     keywords: Vec<String>,
+    #[allow(dead_code)]
     operators: Vec<String>,
     control_structures: Vec<String>,
     comment_patterns: Vec<String>,
@@ -328,7 +330,7 @@ impl DuplicateAnalyzer {
         let lines: Vec<&str> = content.lines().collect();
         let mut root_children = Vec::new();
 
-        for (i, line) in lines.iter().enumerate() {
+        for line in lines.iter() {
             let trimmed = line.trim();
             if trimmed.is_empty() || self.is_comment_line(trimmed, language) {
                 continue;
@@ -385,7 +387,7 @@ impl DuplicateAnalyzer {
         let mut normalized = line.to_string();
 
         // Remove language-specific syntax while preserving structure
-        if let Some(analyzer) = self.language_analyzers.get(language) {
+        if let Some(_analyzer) = self.language_analyzers.get(language) {
             // Replace identifiers with placeholders
             normalized = regex::Regex::new(r"\b[a-zA-Z_][a-zA-Z0-9_]*\b")
                 .unwrap()
@@ -595,8 +597,8 @@ impl DuplicateAnalyzer {
     /// Find pattern-based duplicates (design patterns, common code structures)
     fn find_pattern_duplicates(
         &self,
-        file_contents: &HashMap<std::path::PathBuf, String>,
-        similarity_threshold: f64,
+        _file_contents: &HashMap<std::path::PathBuf, String>,
+        _similarity_threshold: f64,
     ) -> Result<Vec<DuplicateResult>> {
         let duplicates = Vec::new();
         // Pattern-based detection would analyze for common design patterns
@@ -640,10 +642,10 @@ impl DuplicateAnalyzer {
 
     fn calculate_semantic_similarity(&self, content1: &str, content2: &str) -> f64 {
         let mut similarity_score = 0.0;
-        let mut pattern_matches = 0;
+        let mut _pattern_matches = 0;
         let mut total_patterns = 0;
 
-        for (pattern_type, patterns) in &self.semantic_patterns {
+        for patterns in self.semantic_patterns.values() {
             total_patterns += patterns.len();
 
             let count1 = patterns
@@ -656,7 +658,7 @@ impl DuplicateAnalyzer {
                 .sum::<usize>();
 
             if count1 > 0 && count2 > 0 {
-                pattern_matches += patterns.len();
+                _pattern_matches += patterns.len();
                 similarity_score += (count1.min(count2) as f64) / (count1.max(count2) as f64);
             }
         }

@@ -633,12 +633,12 @@ mod tests {
     fn test_client_optimizations() {
         let claude_opts = ClientType::Claude.get_optimizations();
         assert_eq!(claude_opts.max_response_size, 100_000);
-        assert_eq!(claude_opts.supports_streaming, true);
+        assert!(claude_opts.supports_streaming);
         assert_eq!(claude_opts.batch_size_limit, 10);
 
         let cursor_opts = ClientType::Cursor.get_optimizations();
         assert_eq!(cursor_opts.max_response_size, 50_000);
-        assert_eq!(cursor_opts.supports_streaming, false);
+        assert!(!cursor_opts.supports_streaming);
         assert_eq!(cursor_opts.batch_size_limit, 5);
     }
 

@@ -36,10 +36,338 @@ pub struct InheritanceInfo {
     pub metaclass: Option<String>,
 }
 
+/// Python security assessment
+#[derive(Debug, Clone)]
+pub struct PythonSecurityAssessment {
+    pub level: SecurityLevel,
+    pub vulnerabilities_detected: Vec<SecurityVulnerability>,
+    pub security_features: Vec<SecurityFeature>,
+    pub recommendations: Vec<String>,
+}
+
+/// Security levels
+#[derive(Debug, Clone)]
+pub enum SecurityLevel {
+    High,       // Well-secured with multiple layers
+    Medium,     // Basic security measures present
+    Low,        // Minimal security implementation
+    Vulnerable, // Security issues detected
+}
+
+/// Security vulnerability information
+#[derive(Debug, Clone)]
+pub struct SecurityVulnerability {
+    pub vulnerability_type: VulnerabilityType,
+    pub severity: VulnerabilitySeverity,
+    pub description: String,
+    pub location: String,
+    pub recommendation: String,
+}
+
+/// Security vulnerability types for Python
+#[derive(Debug, Clone)]
+pub enum VulnerabilityType {
+    SqlInjection,             // Raw SQL queries, unsafe ORM usage
+    CommandInjection,         // subprocess, os.system with user input
+    DeserializationAttack,    // pickle, yaml.load without safe_load
+    PathTraversal,            // os.path.join with user input
+    WeakAuthentication,       // Weak password policies, no 2FA
+    InsecureDataTransmission, // HTTP instead of HTTPS
+    DangerousPickle,          // Unsafe pickle usage
+    UnvalidatedInput,         // Missing input validation
+    InsecureRandomness,       // Using random instead of secrets
+    HardcodedSecrets,         // API keys, passwords in code
+}
+
+/// Vulnerability severity levels
+#[derive(Debug, Clone)]
+pub enum VulnerabilitySeverity {
+    Critical,
+    High,
+    Medium,
+    Low,
+    Info,
+}
+
+/// Security feature information
+#[derive(Debug, Clone)]
+pub struct SecurityFeature {
+    pub feature_type: SecurityFeatureType,
+    pub implementation_quality: ImplementationQuality,
+    pub description: String,
+}
+
+/// Security feature types for Python
+#[derive(Debug, Clone)]
+pub enum SecurityFeatureType {
+    Authentication,         // JWT, OAuth, session-based
+    Authorization,          // RBAC, permissions
+    InputValidation,        // Pydantic, Marshmallow, custom validators
+    CsrfProtection,         // Django CSRF, Flask-WTF
+    DataEncryption,         // cryptography, bcrypt, hashlib
+    SecureHeaders,          // Security headers in responses
+    RateLimiting,           // Flask-Limiter, slowapi
+    SqlInjectionPrevention, // Parameterized queries, ORM usage
+}
+
+/// Implementation quality assessment
+#[derive(Debug, Clone)]
+pub enum ImplementationQuality {
+    Excellent,
+    Good,
+    Adequate,
+    Poor,
+    Missing,
+}
+
+/// Python performance analysis
+#[derive(Debug, Clone)]
+pub struct PythonPerformanceAnalysis {
+    pub overall_score: i32,
+    pub optimizations_detected: Vec<PerformanceOptimization>,
+    pub performance_issues: Vec<PerformanceIssue>,
+    pub recommendations: Vec<String>,
+}
+
+/// Performance optimization information
+#[derive(Debug, Clone)]
+pub struct PerformanceOptimization {
+    pub optimization_type: OptimizationType,
+    pub impact_level: ImpactLevel,
+    pub description: String,
+    pub best_practices_followed: bool,
+}
+
+/// Performance optimization types for Python
+#[derive(Debug, Clone)]
+pub enum OptimizationType {
+    ListComprehension,       // Using list comprehensions vs loops
+    GeneratorUsage,          // Using generators for memory efficiency
+    CachingImplementation,   // functools.cache, Redis, memcached
+    DatabaseOptimization,    // Query optimization, connection pooling
+    AsyncAwaitUsage,         // Proper async/await patterns
+    MemoryOptimization,      // __slots__, weak references
+    AlgorithmicOptimization, // Using efficient algorithms and data structures
+}
+
+/// Performance issue information  
+#[derive(Debug, Clone)]
+pub struct PerformanceIssue {
+    pub issue_type: PerformanceIssueType,
+    pub severity: IssueSeverity,
+    pub description: String,
+    pub recommendation: String,
+}
+
+/// Performance issue types for Python
+#[derive(Debug, Clone)]
+pub enum PerformanceIssueType {
+    InEfficientLoops,    // Nested loops, unnecessary iterations
+    MemoryLeaks,         // Circular references, unclosed resources
+    BlockingOperations,  // Sync operations in async context
+    InefficientQueries,  // N+1 queries, missing joins
+    LargeDataStructures, // Loading large datasets into memory
+    UnoptimizedImports,  // Importing heavy modules unnecessarily
+    GilContention,       // Threading inefficiencies
+}
+
+/// Issue severity levels
+#[derive(Debug, Clone)]
+pub enum IssueSeverity {
+    Critical,
+    High,
+    Medium,
+    Low,
+}
+
+/// Impact levels for performance metrics
+#[derive(Debug, Clone)]
+pub enum ImpactLevel {
+    High,     // Significant performance impact
+    Medium,   // Moderate performance impact
+    Low,      // Minor performance impact
+    Positive, // Performance optimization
+}
+
+/// Enhanced Python framework analysis
+#[derive(Debug, Clone)]
+pub struct PythonFrameworkInfo {
+    pub name: String,
+    pub confidence: f32,
+    pub version_detected: Option<String>,
+    pub features_used: Vec<String>,
+    pub best_practices: Vec<String>,
+    pub framework_specific_analysis: FrameworkSpecificAnalysis,
+}
+
+/// Framework-specific analysis
+#[derive(Debug, Clone)]
+pub enum FrameworkSpecificAnalysis {
+    Django(DjangoAnalysis),
+    Flask(FlaskAnalysis),
+    FastAPI(FastAPIAnalysis),
+    Pytest(PytestAnalysis),
+    Celery(CeleryAnalysis),
+}
+
+/// Django-specific analysis
+#[derive(Debug, Clone)]
+pub struct DjangoAnalysis {
+    pub models_analysis: Vec<DjangoModelInfo>,
+    pub views_analysis: Vec<DjangoViewInfo>,
+    pub middleware_usage: Vec<String>,
+    pub security_middleware: Vec<String>,
+    pub signals_usage: Vec<String>,
+    pub admin_customization: bool,
+}
+
+/// Django model information
+#[derive(Debug, Clone)]
+pub struct DjangoModelInfo {
+    pub name: String,
+    pub fields: Vec<DjangoFieldInfo>,
+    pub relationships: Vec<String>,
+    pub custom_managers: bool,
+    pub meta_options: Vec<String>,
+}
+
+/// Django field information
+#[derive(Debug, Clone)]
+pub struct DjangoFieldInfo {
+    pub name: String,
+    pub field_type: String,
+    pub constraints: Vec<String>,
+    pub indexes: bool,
+}
+
+/// Django view information
+#[derive(Debug, Clone)]
+pub struct DjangoViewInfo {
+    pub name: String,
+    pub view_type: DjangoViewType,
+    pub permissions: Vec<String>,
+    pub mixins: Vec<String>,
+}
+
+/// Django view types
+#[derive(Debug, Clone)]
+pub enum DjangoViewType {
+    FunctionBased,
+    ClassBased,
+    GenericView,
+    ViewSet,
+}
+
+/// Flask-specific analysis
+#[derive(Debug, Clone)]
+pub struct FlaskAnalysis {
+    pub blueprints: Vec<FlaskBlueprintInfo>,
+    pub extensions: Vec<String>,
+    pub error_handlers: Vec<String>,
+    pub template_usage: bool,
+    pub session_management: bool,
+}
+
+/// Flask blueprint information
+#[derive(Debug, Clone)]
+pub struct FlaskBlueprintInfo {
+    pub name: String,
+    pub url_prefix: Option<String>,
+    pub routes: Vec<FlaskRouteInfo>,
+}
+
+/// Flask route information
+#[derive(Debug, Clone)]
+pub struct FlaskRouteInfo {
+    pub path: String,
+    pub methods: Vec<String>,
+    pub endpoint: String,
+    pub view_function: String,
+}
+
+/// FastAPI-specific analysis
+#[derive(Debug, Clone)]
+pub struct FastAPIAnalysis {
+    pub router_usage: Vec<FastAPIRouterInfo>,
+    pub dependency_injection: Vec<String>,
+    pub background_tasks: bool,
+    pub websocket_endpoints: Vec<String>,
+    pub middleware: Vec<String>,
+    pub response_models: Vec<String>,
+}
+
+/// FastAPI router information
+#[derive(Debug, Clone)]
+pub struct FastAPIRouterInfo {
+    pub prefix: Option<String>,
+    pub tags: Vec<String>,
+    pub endpoints: Vec<FastAPIEndpointInfo>,
+}
+
+/// FastAPI endpoint information
+#[derive(Debug, Clone)]
+pub struct FastAPIEndpointInfo {
+    pub path: String,
+    pub method: String,
+    pub response_model: Option<String>,
+    pub dependencies: Vec<String>,
+}
+
+/// Pytest-specific analysis
+#[derive(Debug, Clone)]
+pub struct PytestAnalysis {
+    pub fixtures: Vec<PytestFixtureInfo>,
+    pub parametrized_tests: Vec<String>,
+    pub markers: Vec<String>,
+    pub plugins: Vec<String>,
+    pub coverage_setup: bool,
+}
+
+/// Pytest fixture information
+#[derive(Debug, Clone)]
+pub struct PytestFixtureInfo {
+    pub name: String,
+    pub scope: String,
+    pub autouse: bool,
+    pub dependencies: Vec<String>,
+}
+
+/// Celery-specific analysis
+#[derive(Debug, Clone)]
+pub struct CeleryAnalysis {
+    pub tasks: Vec<CeleryTaskInfo>,
+    pub brokers: Vec<String>,
+    pub result_backends: Vec<String>,
+    pub routing: Vec<String>,
+    pub monitoring: bool,
+}
+
+/// Celery task information
+#[derive(Debug, Clone)]
+pub struct CeleryTaskInfo {
+    pub name: String,
+    pub task_type: CeleryTaskType,
+    pub retry_policy: Option<String>,
+    pub rate_limit: Option<String>,
+}
+
+/// Celery task types
+#[derive(Debug, Clone)]
+pub enum CeleryTaskType {
+    Regular,
+    Periodic,
+    Chain,
+    Group,
+    Chord,
+}
+
 /// Python-specific analyzer
 pub struct PythonAnalyzer {
     decorator_patterns: HashMap<String, Vec<DecoratorPattern>>,
     metaclass_patterns: HashMap<String, Vec<MetaclassPattern>>,
+    security_patterns: HashMap<String, Vec<SecurityPattern>>,
+    performance_patterns: HashMap<String, Vec<PerformancePattern>>,
+    framework_patterns: HashMap<String, Vec<FrameworkPattern>>,
 }
 
 #[derive(Debug, Clone)]
@@ -59,11 +387,44 @@ struct MetaclassPattern {
     impact: String,
 }
 
+#[derive(Debug, Clone)]
+struct SecurityPattern {
+    #[allow(dead_code)]
+    name: String,
+    pattern: Regex,
+    vulnerability_type: VulnerabilityType,
+    severity: VulnerabilitySeverity,
+    description: String,
+}
+
+#[derive(Debug, Clone)]
+struct PerformancePattern {
+    #[allow(dead_code)]
+    name: String,
+    pattern: Regex,
+    optimization_type: OptimizationType,
+    impact_level: ImpactLevel,
+    description: String,
+}
+
+#[derive(Debug, Clone)]
+struct FrameworkPattern {
+    #[allow(dead_code)]
+    name: String,
+    pattern: Regex,
+    framework: String,
+    features: Vec<String>,
+    confidence: f32,
+}
+
 impl PythonAnalyzer {
     pub fn new() -> Self {
         let mut analyzer = Self {
             decorator_patterns: HashMap::new(),
             metaclass_patterns: HashMap::new(),
+            security_patterns: HashMap::new(),
+            performance_patterns: HashMap::new(),
+            framework_patterns: HashMap::new(),
         };
         analyzer.initialize_patterns();
         analyzer
@@ -192,6 +553,125 @@ impl PythonAnalyzer {
         ];
         self.metaclass_patterns
             .insert("common".to_string(), metaclass_patterns);
+
+        // Security patterns
+        let security_patterns = vec![
+            SecurityPattern {
+                name: "SQL Injection Risk".to_string(),
+                pattern: Regex::new(r#"(?:execute|raw)\s*\(\s*[f"'].*%.*[f"']"#).unwrap(),
+                vulnerability_type: VulnerabilityType::SqlInjection,
+                severity: VulnerabilitySeverity::High,
+                description: "Potential SQL injection via string formatting".to_string(),
+            },
+            SecurityPattern {
+                name: "Command Injection Risk".to_string(),
+                pattern: Regex::new(r"(?:subprocess|os\.system)\s*\(.*(?:input|request)").unwrap(),
+                vulnerability_type: VulnerabilityType::CommandInjection,
+                severity: VulnerabilitySeverity::Critical,
+                description: "Command injection via user input".to_string(),
+            },
+            SecurityPattern {
+                name: "Unsafe Pickle Usage".to_string(),
+                pattern: Regex::new(r"pickle\.loads?\s*\(").unwrap(),
+                vulnerability_type: VulnerabilityType::DeserializationAttack,
+                severity: VulnerabilitySeverity::High,
+                description: "Unsafe pickle deserialization".to_string(),
+            },
+            SecurityPattern {
+                name: "Hardcoded Secrets".to_string(),
+                pattern: Regex::new(r#"(?:password|secret|key|token)\s*=\s*[f"'][^"']*[f"']"#)
+                    .unwrap(),
+                vulnerability_type: VulnerabilityType::HardcodedSecrets,
+                severity: VulnerabilitySeverity::Medium,
+                description: "Hardcoded credentials in source code".to_string(),
+            },
+        ];
+        self.security_patterns
+            .insert("vulnerabilities".to_string(), security_patterns);
+
+        // Performance patterns
+        let performance_patterns = vec![
+            PerformancePattern {
+                name: "List Comprehension Optimization".to_string(),
+                pattern: Regex::new(r"\[.*for.*in.*\]").unwrap(),
+                optimization_type: OptimizationType::ListComprehension,
+                impact_level: ImpactLevel::Medium,
+                description: "Efficient list comprehension usage".to_string(),
+            },
+            PerformancePattern {
+                name: "Generator Usage".to_string(),
+                pattern: Regex::new(r"\(.*for.*in.*\)").unwrap(),
+                optimization_type: OptimizationType::GeneratorUsage,
+                impact_level: ImpactLevel::High,
+                description: "Memory-efficient generator expression".to_string(),
+            },
+            PerformancePattern {
+                name: "Caching Implementation".to_string(),
+                pattern: Regex::new(r"@(?:lru_cache|cache)").unwrap(),
+                optimization_type: OptimizationType::CachingImplementation,
+                impact_level: ImpactLevel::High,
+                description: "Function result caching".to_string(),
+            },
+            PerformancePattern {
+                name: "Async/Await Usage".to_string(),
+                pattern: Regex::new(r"async\s+def|await\s+").unwrap(),
+                optimization_type: OptimizationType::AsyncAwaitUsage,
+                impact_level: ImpactLevel::High,
+                description: "Asynchronous programming patterns".to_string(),
+            },
+        ];
+        self.performance_patterns
+            .insert("optimizations".to_string(), performance_patterns);
+
+        // Framework patterns
+        let framework_patterns = vec![
+            FrameworkPattern {
+                name: "Django Framework".to_string(),
+                pattern: Regex::new(r"from\s+django|import\s+django").unwrap(),
+                framework: "Django".to_string(),
+                features: vec![
+                    "Models".to_string(),
+                    "Views".to_string(),
+                    "Templates".to_string(),
+                ],
+                confidence: 0.9,
+            },
+            FrameworkPattern {
+                name: "Flask Framework".to_string(),
+                pattern: Regex::new(r"from\s+flask|import\s+flask").unwrap(),
+                framework: "Flask".to_string(),
+                features: vec![
+                    "Routes".to_string(),
+                    "Blueprints".to_string(),
+                    "Templates".to_string(),
+                ],
+                confidence: 0.9,
+            },
+            FrameworkPattern {
+                name: "FastAPI Framework".to_string(),
+                pattern: Regex::new(r"from\s+fastapi|import\s+fastapi").unwrap(),
+                framework: "FastAPI".to_string(),
+                features: vec![
+                    "API Routes".to_string(),
+                    "Dependency Injection".to_string(),
+                    "Validation".to_string(),
+                ],
+                confidence: 0.9,
+            },
+            FrameworkPattern {
+                name: "Pytest Framework".to_string(),
+                pattern: Regex::new(r"import\s+pytest|@pytest").unwrap(),
+                framework: "Pytest".to_string(),
+                features: vec![
+                    "Fixtures".to_string(),
+                    "Parametrization".to_string(),
+                    "Markers".to_string(),
+                ],
+                confidence: 0.8,
+            },
+        ];
+        self.framework_patterns
+            .insert("web_frameworks".to_string(), framework_patterns);
     }
 
     /// Analyze Python decorators
@@ -353,6 +833,426 @@ impl PythonAnalyzer {
         metaclass_pattern
             .captures(bases_str)
             .map(|captures| captures.get(1).unwrap().as_str().to_string())
+    }
+
+    /// Analyze Python security vulnerabilities and features
+    pub fn analyze_security(&self, content: &str) -> Result<PythonSecurityAssessment> {
+        let mut vulnerabilities = Vec::new();
+        let mut security_features = Vec::new();
+
+        // Detect vulnerabilities
+        for patterns in self.security_patterns.values() {
+            for pattern in patterns {
+                for captures in pattern.pattern.captures_iter(content) {
+                    let full_match = captures.get(0).unwrap().as_str();
+
+                    vulnerabilities.push(SecurityVulnerability {
+                        vulnerability_type: pattern.vulnerability_type.clone(),
+                        severity: pattern.severity.clone(),
+                        description: pattern.description.clone(),
+                        location: full_match.to_string(),
+                        recommendation: self
+                            .get_security_recommendation(&pattern.vulnerability_type),
+                    });
+                }
+            }
+        }
+
+        // Detect security features
+        if content.contains("bcrypt") || content.contains("hashlib") {
+            security_features.push(SecurityFeature {
+                feature_type: SecurityFeatureType::DataEncryption,
+                implementation_quality: ImplementationQuality::Good,
+                description: "Password hashing implementation detected".to_string(),
+            });
+        }
+
+        if content.contains("@csrf_exempt") || content.contains("CsrfViewMiddleware") {
+            security_features.push(SecurityFeature {
+                feature_type: SecurityFeatureType::CsrfProtection,
+                implementation_quality: ImplementationQuality::Good,
+                description: "CSRF protection implementation detected".to_string(),
+            });
+        }
+
+        if content.contains("pydantic") || content.contains("marshmallow") {
+            security_features.push(SecurityFeature {
+                feature_type: SecurityFeatureType::InputValidation,
+                implementation_quality: ImplementationQuality::Good,
+                description: "Input validation framework detected".to_string(),
+            });
+        }
+
+        // Determine overall security level
+        let level = self.determine_security_level(&vulnerabilities, &security_features);
+        let recommendations =
+            self.get_security_recommendations(&vulnerabilities, &security_features);
+
+        Ok(PythonSecurityAssessment {
+            level,
+            vulnerabilities_detected: vulnerabilities,
+            security_features,
+            recommendations,
+        })
+    }
+
+    /// Analyze Python performance patterns and issues
+    pub fn analyze_performance(&self, content: &str) -> Result<PythonPerformanceAnalysis> {
+        let mut optimizations = Vec::new();
+        let mut issues = Vec::new();
+
+        // Detect performance optimizations
+        for patterns in self.performance_patterns.values() {
+            for pattern in patterns {
+                for _captures in pattern.pattern.captures_iter(content) {
+                    optimizations.push(PerformanceOptimization {
+                        optimization_type: pattern.optimization_type.clone(),
+                        impact_level: pattern.impact_level.clone(),
+                        description: pattern.description.clone(),
+                        best_practices_followed: true,
+                    });
+                }
+            }
+        }
+
+        // Detect performance issues
+        if content.contains("for") && content.contains("for") && content.matches("for").count() > 1
+        {
+            issues.push(PerformanceIssue {
+                issue_type: PerformanceIssueType::InEfficientLoops,
+                severity: IssueSeverity::Medium,
+                description: "Nested loops detected - consider optimization".to_string(),
+                recommendation: "Use list comprehensions or optimize algorithm".to_string(),
+            });
+        }
+
+        if content.contains("def __del__") {
+            issues.push(PerformanceIssue {
+                issue_type: PerformanceIssueType::MemoryLeaks,
+                severity: IssueSeverity::High,
+                description: "Manual destructor detected - potential memory management issue"
+                    .to_string(),
+                recommendation: "Use context managers or weak references".to_string(),
+            });
+        }
+
+        // Calculate overall score
+        let overall_score = self.calculate_performance_score(&optimizations, &issues);
+        let recommendations = self.get_performance_recommendations(&optimizations, &issues);
+
+        Ok(PythonPerformanceAnalysis {
+            overall_score,
+            optimizations_detected: optimizations,
+            performance_issues: issues,
+            recommendations,
+        })
+    }
+
+    /// Analyze Python frameworks with enhanced details
+    pub fn analyze_frameworks(&self, content: &str) -> Result<Vec<PythonFrameworkInfo>> {
+        let mut frameworks = Vec::new();
+
+        for patterns in self.framework_patterns.values() {
+            for pattern in patterns {
+                if pattern.pattern.is_match(content) {
+                    let framework_specific_analysis = match pattern.framework.as_str() {
+                        "Django" => FrameworkSpecificAnalysis::Django(
+                            self.analyze_django_specifics(content),
+                        ),
+                        "Flask" => {
+                            FrameworkSpecificAnalysis::Flask(self.analyze_flask_specifics(content))
+                        }
+                        "FastAPI" => FrameworkSpecificAnalysis::FastAPI(
+                            self.analyze_fastapi_specifics(content),
+                        ),
+                        "Pytest" => FrameworkSpecificAnalysis::Pytest(
+                            self.analyze_pytest_specifics(content),
+                        ),
+                        _ => continue,
+                    };
+
+                    frameworks.push(PythonFrameworkInfo {
+                        name: pattern.framework.clone(),
+                        confidence: pattern.confidence,
+                        version_detected: None, // Could be enhanced to detect versions
+                        features_used: pattern.features.clone(),
+                        best_practices: self.get_framework_best_practices(&pattern.framework),
+                        framework_specific_analysis,
+                    });
+                }
+            }
+        }
+
+        Ok(frameworks)
+    }
+
+    /// Helper methods for security analysis
+    fn get_security_recommendation(&self, vulnerability_type: &VulnerabilityType) -> String {
+        match vulnerability_type {
+            VulnerabilityType::SqlInjection => {
+                "Use parameterized queries or ORM methods".to_string()
+            }
+            VulnerabilityType::CommandInjection => {
+                "Sanitize user input and avoid shell execution".to_string()
+            }
+            VulnerabilityType::DeserializationAttack => {
+                "Use safe deserialization methods like json.loads".to_string()
+            }
+            VulnerabilityType::HardcodedSecrets => {
+                "Use environment variables or secret management".to_string()
+            }
+            _ => "Review security implementation".to_string(),
+        }
+    }
+
+    fn determine_security_level(
+        &self,
+        vulnerabilities: &[SecurityVulnerability],
+        security_features: &[SecurityFeature],
+    ) -> SecurityLevel {
+        let critical_vulns = vulnerabilities
+            .iter()
+            .filter(|v| matches!(v.severity, VulnerabilitySeverity::Critical))
+            .count();
+        let high_vulns = vulnerabilities
+            .iter()
+            .filter(|v| matches!(v.severity, VulnerabilitySeverity::High))
+            .count();
+
+        if critical_vulns > 0 {
+            SecurityLevel::Vulnerable
+        } else if high_vulns > 2 {
+            SecurityLevel::Low
+        } else if security_features.len() > 2 {
+            SecurityLevel::High
+        } else {
+            SecurityLevel::Medium
+        }
+    }
+
+    fn get_security_recommendations(
+        &self,
+        vulnerabilities: &[SecurityVulnerability],
+        _security_features: &[SecurityFeature],
+    ) -> Vec<String> {
+        let mut recommendations = Vec::new();
+
+        if !vulnerabilities.is_empty() {
+            recommendations.push("Address security vulnerabilities identified in code".to_string());
+        }
+
+        recommendations.push("Implement comprehensive input validation".to_string());
+        recommendations.push("Use secure authentication and authorization".to_string());
+        recommendations.push("Enable security headers and CSRF protection".to_string());
+
+        recommendations
+    }
+
+    /// Helper methods for performance analysis
+    fn calculate_performance_score(
+        &self,
+        optimizations: &[PerformanceOptimization],
+        issues: &[PerformanceIssue],
+    ) -> i32 {
+        let base_score = 50;
+        let optimization_bonus = optimizations.len() as i32 * 10;
+        let issue_penalty = issues
+            .iter()
+            .map(|i| match i.severity {
+                IssueSeverity::Critical => 20,
+                IssueSeverity::High => 15,
+                IssueSeverity::Medium => 10,
+                IssueSeverity::Low => 5,
+            })
+            .sum::<i32>();
+
+        (base_score + optimization_bonus - issue_penalty).clamp(0, 100)
+    }
+
+    fn get_performance_recommendations(
+        &self,
+        _optimizations: &[PerformanceOptimization],
+        issues: &[PerformanceIssue],
+    ) -> Vec<String> {
+        let mut recommendations = Vec::new();
+
+        if !issues.is_empty() {
+            recommendations.push("Address performance issues identified in code".to_string());
+        }
+
+        recommendations.push("Use list comprehensions and generator expressions".to_string());
+        recommendations.push("Implement caching for expensive operations".to_string());
+        recommendations.push("Consider async/await for I/O operations".to_string());
+
+        recommendations
+    }
+
+    /// Framework-specific analysis methods
+    fn analyze_django_specifics(&self, content: &str) -> DjangoAnalysis {
+        DjangoAnalysis {
+            models_analysis: self.extract_django_models(content),
+            views_analysis: self.extract_django_views(content),
+            middleware_usage: self.extract_django_middleware(content),
+            security_middleware: self.extract_django_security_middleware(content),
+            signals_usage: self.extract_django_signals(content),
+            admin_customization: content.contains("admin.site.register")
+                || content.contains("ModelAdmin"),
+        }
+    }
+
+    fn analyze_flask_specifics(&self, content: &str) -> FlaskAnalysis {
+        FlaskAnalysis {
+            blueprints: self.extract_flask_blueprints(content),
+            extensions: self.extract_flask_extensions(content),
+            error_handlers: self.extract_flask_error_handlers(content),
+            template_usage: content.contains("render_template"),
+            session_management: content.contains("session["),
+        }
+    }
+
+    fn analyze_fastapi_specifics(&self, content: &str) -> FastAPIAnalysis {
+        FastAPIAnalysis {
+            router_usage: self.extract_fastapi_routers(content),
+            dependency_injection: self.extract_fastapi_dependencies(content),
+            background_tasks: content.contains("BackgroundTasks"),
+            websocket_endpoints: self.extract_fastapi_websockets(content),
+            middleware: self.extract_fastapi_middleware(content),
+            response_models: self.extract_fastapi_response_models(content),
+        }
+    }
+
+    fn analyze_pytest_specifics(&self, content: &str) -> PytestAnalysis {
+        PytestAnalysis {
+            fixtures: self.extract_pytest_fixtures(content),
+            parametrized_tests: self.extract_pytest_parametrized(content),
+            markers: self.extract_pytest_markers(content),
+            plugins: self.extract_pytest_plugins(content),
+            coverage_setup: content.contains("pytest-cov") || content.contains("coverage"),
+        }
+    }
+
+    // Simplified extraction methods (can be enhanced with more complex parsing)
+    fn extract_django_models(&self, content: &str) -> Vec<DjangoModelInfo> {
+        let model_pattern = Regex::new(r"class\s+(\w+)\s*\([^)]*Model[^)]*\)").unwrap();
+        model_pattern
+            .captures_iter(content)
+            .map(|captures| {
+                let model_name = captures.get(1).unwrap().as_str().to_string();
+                DjangoModelInfo {
+                    name: model_name,
+                    fields: Vec::new(), // Simplified
+                    relationships: Vec::new(),
+                    custom_managers: false,
+                    meta_options: Vec::new(),
+                }
+            })
+            .collect()
+    }
+
+    fn extract_django_views(&self, _content: &str) -> Vec<DjangoViewInfo> {
+        Vec::new() // Simplified implementation
+    }
+
+    fn extract_django_middleware(&self, _content: &str) -> Vec<String> {
+        Vec::new() // Simplified implementation
+    }
+
+    fn extract_django_security_middleware(&self, content: &str) -> Vec<String> {
+        let mut middleware = Vec::new();
+        if content.contains("SecurityMiddleware") {
+            middleware.push("SecurityMiddleware".to_string());
+        }
+        if content.contains("CsrfViewMiddleware") {
+            middleware.push("CsrfViewMiddleware".to_string());
+        }
+        middleware
+    }
+
+    fn extract_django_signals(&self, content: &str) -> Vec<String> {
+        let mut signals = Vec::new();
+        if content.contains("post_save") {
+            signals.push("post_save".to_string());
+        }
+        if content.contains("pre_save") {
+            signals.push("pre_save".to_string());
+        }
+        signals
+    }
+
+    fn extract_flask_blueprints(&self, _content: &str) -> Vec<FlaskBlueprintInfo> {
+        Vec::new() // Simplified implementation
+    }
+
+    fn extract_flask_extensions(&self, content: &str) -> Vec<String> {
+        let mut extensions = Vec::new();
+        if content.contains("Flask-Login") {
+            extensions.push("Flask-Login".to_string());
+        }
+        if content.contains("Flask-SQLAlchemy") {
+            extensions.push("Flask-SQLAlchemy".to_string());
+        }
+        extensions
+    }
+
+    fn extract_flask_error_handlers(&self, _content: &str) -> Vec<String> {
+        Vec::new() // Simplified implementation
+    }
+
+    fn extract_fastapi_routers(&self, _content: &str) -> Vec<FastAPIRouterInfo> {
+        Vec::new() // Simplified implementation
+    }
+
+    fn extract_fastapi_dependencies(&self, _content: &str) -> Vec<String> {
+        Vec::new() // Simplified implementation
+    }
+
+    fn extract_fastapi_websockets(&self, _content: &str) -> Vec<String> {
+        Vec::new() // Simplified implementation
+    }
+
+    fn extract_fastapi_middleware(&self, _content: &str) -> Vec<String> {
+        Vec::new() // Simplified implementation
+    }
+
+    fn extract_fastapi_response_models(&self, _content: &str) -> Vec<String> {
+        Vec::new() // Simplified implementation
+    }
+
+    fn extract_pytest_fixtures(&self, _content: &str) -> Vec<PytestFixtureInfo> {
+        Vec::new() // Simplified implementation
+    }
+
+    fn extract_pytest_parametrized(&self, _content: &str) -> Vec<String> {
+        Vec::new() // Simplified implementation
+    }
+
+    fn extract_pytest_markers(&self, _content: &str) -> Vec<String> {
+        Vec::new() // Simplified implementation
+    }
+
+    fn extract_pytest_plugins(&self, _content: &str) -> Vec<String> {
+        Vec::new() // Simplified implementation
+    }
+
+    fn get_framework_best_practices(&self, framework: &str) -> Vec<String> {
+        match framework {
+            "Django" => vec![
+                "Use Django ORM instead of raw SQL".to_string(),
+                "Implement proper authentication and authorization".to_string(),
+                "Use Django forms for input validation".to_string(),
+            ],
+            "Flask" => vec![
+                "Use blueprints for application modularity".to_string(),
+                "Implement proper error handling".to_string(),
+                "Use Flask-WTF for form handling".to_string(),
+            ],
+            "FastAPI" => vec![
+                "Use Pydantic models for request/response validation".to_string(),
+                "Implement proper dependency injection".to_string(),
+                "Use async/await for I/O operations".to_string(),
+            ],
+            _ => Vec::new(),
+        }
     }
 
     /// Get Python-specific recommendations

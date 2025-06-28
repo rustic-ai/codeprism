@@ -361,6 +361,173 @@ pub enum CeleryTaskType {
     Chord,
 }
 
+/// Python type hint analysis result
+#[derive(Debug, Clone)]
+pub struct PythonTypeHintAnalysis {
+    pub overall_coverage: f32,
+    pub type_coverage_score: TypeCoverageScore,
+    pub type_hints_detected: Vec<TypeHintInfo>,
+    pub type_safety_issues: Vec<TypeSafetyIssue>,
+    pub modern_type_features: Vec<ModernTypeFeature>,
+    pub recommendations: Vec<String>,
+}
+
+/// Type coverage scoring
+#[derive(Debug, Clone)]
+pub enum TypeCoverageScore {
+    Excellent, // 90%+ coverage
+    Good,      // 70-89% coverage
+    Fair,      // 50-69% coverage
+    Poor,      // 30-49% coverage
+    Minimal,   // <30% coverage
+}
+
+/// Type hint information
+#[derive(Debug, Clone)]
+pub struct TypeHintInfo {
+    pub location: String,
+    pub hint_type: TypeHintType,
+    pub complexity: TypeComplexity,
+    pub is_generic: bool,
+    pub has_constraints: bool,
+    pub python_version_required: String,
+}
+
+/// Type hint types
+#[derive(Debug, Clone)]
+#[allow(clippy::enum_variant_names)]
+pub enum TypeHintType {
+    SimpleType(String),           // int, str, bool
+    UnionType(Vec<String>),       // Union[str, int] or str | int
+    GenericType(GenericTypeInfo), // List[T], Dict[K, V]
+    ProtocolType(String),         // Protocol for structural typing
+    LiteralType(Vec<String>),     // Literal['value1', 'value2']
+    CallableType(CallableTypeInfo), // Callable[[int, str], bool]
+    TypeVarType(TypeVarInfo),     // TypeVar constraints and bounds
+    OptionalType(String),         // Optional[str] or str | None
+    FinalType(String),            // Final[int]
+    TypedDictType(TypedDictInfo), // TypedDict for structured dicts
+}
+
+/// Generic type information
+#[derive(Debug, Clone)]
+pub struct GenericTypeInfo {
+    pub base_type: String,      // List, Dict, Set, etc.
+    pub type_parameters: Vec<String>, // [T] or [K, V]
+    pub is_covariant: bool,
+    pub is_contravariant: bool,
+}
+
+/// Callable type information
+#[derive(Debug, Clone)]
+pub struct CallableTypeInfo {
+    pub parameter_types: Vec<String>,
+    pub return_type: String,
+    pub is_async: bool,
+}
+
+/// TypeVar information
+#[derive(Debug, Clone)]
+pub struct TypeVarInfo {
+    pub name: String,
+    pub bounds: Vec<String>,
+    pub constraints: Vec<String>,
+    pub covariant: bool,
+    pub contravariant: bool,
+}
+
+/// TypedDict information
+#[derive(Debug, Clone)]
+pub struct TypedDictInfo {
+    pub name: String,
+    pub fields: Vec<TypedDictField>,
+    pub total: bool, // Whether all fields are required
+}
+
+/// TypedDict field information
+#[derive(Debug, Clone)]
+pub struct TypedDictField {
+    pub name: String,
+    pub field_type: String,
+    pub required: bool,
+}
+
+/// Type complexity assessment
+#[derive(Debug, Clone)]
+pub enum TypeComplexity {
+    Simple,    // Basic types like int, str
+    Moderate,  // Union types, Optional
+    Complex,   // Generic types with multiple parameters
+    Advanced,  // Complex nested generics, Protocols
+}
+
+/// Type safety issues
+#[derive(Debug, Clone)]
+pub struct TypeSafetyIssue {
+    pub issue_type: TypeSafetyIssueType,
+    pub severity: TypeSafetySeverity,
+    pub location: String,
+    pub description: String,
+    pub recommendation: String,
+}
+
+/// Type safety issue types
+#[derive(Debug, Clone)]
+pub enum TypeSafetyIssueType {
+    AnyTypeOveruse,           // Too many Any types
+    MissingTypeHints,         // Functions without type hints
+    InconsistentTypes,        // Type inconsistencies
+    TypeIgnoreOveruse,        // Too many # type: ignore comments
+    WrongTypeHintSyntax,      // Incorrect type hint syntax
+    DeprecatedTypingSyntax,   // Using old typing syntax
+    UnreachableCode,          // Dead code due to type narrowing
+    TypeVarianceIssue,        // Covariance/contravariance problems
+}
+
+/// Type safety severity levels
+#[derive(Debug, Clone)]
+pub enum TypeSafetySeverity {
+    Error,   // Type errors that would cause runtime issues
+    Warning, // Type inconsistencies that should be addressed
+    Info,    // Suggestions for improvement
+}
+
+/// Modern type features (Python 3.8+)
+#[derive(Debug, Clone)]
+pub struct ModernTypeFeature {
+    pub feature_type: ModernTypeFeatureType,
+    pub python_version: String,
+    pub usage_count: usize,
+    pub description: String,
+    pub is_best_practice: bool,
+}
+
+/// Modern type feature types
+#[derive(Debug, Clone)]
+pub enum ModernTypeFeatureType {
+    PositionalOnlyParams,  // def func(arg, /) -> str:
+    UnionSyntaxPy310,      // str | int instead of Union[str, int]
+    TypedDict,             // TypedDict for structured dictionaries
+    FinalType,             // Final[int] = 42
+    LiteralType,           // Literal['red', 'green', 'blue']
+    ProtocolType,          // Protocol for structural typing
+    TypeGuard,             // TypeGuard for type narrowing
+    OverloadDecorator,     // @overload for function overloading
+    GenericAlias,          // list[int] instead of List[int] (Python 3.9+)
+    ParamSpec,             // ParamSpec for callable signatures (Python 3.10+)
+    TypeVarTuple,          // TypeVarTuple for variadic generics (Python 3.11+)
+}
+
+/// Pattern for type hint detection
+#[derive(Debug, Clone)]
+struct TypeHintPattern {
+    name: String,
+    pattern: Regex,
+    hint_type: String,
+    complexity: TypeComplexity,
+    python_version: String,
+}
+
 /// Python-specific analyzer
 pub struct PythonAnalyzer {
     decorator_patterns: HashMap<String, Vec<DecoratorPattern>>,
@@ -368,6 +535,7 @@ pub struct PythonAnalyzer {
     security_patterns: HashMap<String, Vec<SecurityPattern>>,
     performance_patterns: HashMap<String, Vec<PerformancePattern>>,
     framework_patterns: HashMap<String, Vec<FrameworkPattern>>,
+    type_hint_patterns: HashMap<String, Vec<TypeHintPattern>>,
 }
 
 #[derive(Debug, Clone)]
@@ -425,6 +593,7 @@ impl PythonAnalyzer {
             security_patterns: HashMap::new(),
             performance_patterns: HashMap::new(),
             framework_patterns: HashMap::new(),
+            type_hint_patterns: HashMap::new(),
         };
         analyzer.initialize_patterns();
         analyzer
@@ -672,6 +841,96 @@ impl PythonAnalyzer {
         ];
         self.framework_patterns
             .insert("web_frameworks".to_string(), framework_patterns);
+
+        // Type hint patterns
+        let type_hint_patterns = vec![
+            TypeHintPattern {
+                name: "Union Type".to_string(),
+                pattern: Regex::new(r"Union\[([^]]+)\]").unwrap(),
+                hint_type: "union".to_string(),
+                complexity: TypeComplexity::Moderate,
+                python_version: "3.5+".to_string(),
+            },
+            TypeHintPattern {
+                name: "Union Type (PEP 604)".to_string(),
+                pattern: Regex::new(r"(\w+)\s*\|\s*(\w+)").unwrap(),
+                hint_type: "union_new".to_string(),
+                complexity: TypeComplexity::Moderate,
+                python_version: "3.10+".to_string(),
+            },
+            TypeHintPattern {
+                name: "Optional Type".to_string(),
+                pattern: Regex::new(r"Optional\[([^]]+)\]").unwrap(),
+                hint_type: "optional".to_string(),
+                complexity: TypeComplexity::Moderate,
+                python_version: "3.5+".to_string(),
+            },
+            TypeHintPattern {
+                name: "Generic List".to_string(),
+                pattern: Regex::new(r"List\[([^]]+)\]").unwrap(),
+                hint_type: "generic_list".to_string(),
+                complexity: TypeComplexity::Complex,
+                python_version: "3.5+".to_string(),
+            },
+            TypeHintPattern {
+                name: "Generic Dict".to_string(),
+                pattern: Regex::new(r"Dict\[([^]]+),\s*([^]]+)\]").unwrap(),
+                hint_type: "generic_dict".to_string(),
+                complexity: TypeComplexity::Complex,
+                python_version: "3.5+".to_string(),
+            },
+            TypeHintPattern {
+                name: "Callable Type".to_string(),
+                pattern: Regex::new(r"Callable\[\[([^]]*)\],\s*([^]]+)\]").unwrap(),
+                hint_type: "callable".to_string(),
+                complexity: TypeComplexity::Advanced,
+                python_version: "3.5+".to_string(),
+            },
+            TypeHintPattern {
+                name: "TypeVar".to_string(),
+                pattern: Regex::new(r#"TypeVar\s*\(\s*["'](\w+)["']"#).unwrap(),
+                hint_type: "typevar".to_string(),
+                complexity: TypeComplexity::Advanced,
+                python_version: "3.5+".to_string(),
+            },
+            TypeHintPattern {
+                name: "Protocol".to_string(),
+                pattern: Regex::new(r"class\s+\w+\s*\([^)]*Protocol[^)]*\)").unwrap(),
+                hint_type: "protocol".to_string(),
+                complexity: TypeComplexity::Advanced,
+                python_version: "3.8+".to_string(),
+            },
+            TypeHintPattern {
+                name: "Literal Type".to_string(),
+                pattern: Regex::new(r"Literal\[([^]]+)\]").unwrap(),
+                hint_type: "literal".to_string(),
+                complexity: TypeComplexity::Moderate,
+                python_version: "3.8+".to_string(),
+            },
+            TypeHintPattern {
+                name: "Final Type".to_string(),
+                pattern: Regex::new(r"Final\[([^]]+)\]").unwrap(),
+                hint_type: "final".to_string(),
+                complexity: TypeComplexity::Moderate,
+                python_version: "3.8+".to_string(),
+            },
+            TypeHintPattern {
+                name: "TypedDict".to_string(),
+                pattern: Regex::new(r"class\s+(\w+)\s*\(\s*TypedDict\s*\)").unwrap(),
+                hint_type: "typeddict".to_string(),
+                complexity: TypeComplexity::Complex,
+                python_version: "3.8+".to_string(),
+            },
+            TypeHintPattern {
+                name: "Generic Alias (Python 3.9+)".to_string(),
+                pattern: Regex::new(r"\b(list|dict|set|tuple)\s*\[([^]]+)\]").unwrap(),
+                hint_type: "generic_alias".to_string(),
+                complexity: TypeComplexity::Simple,
+                python_version: "3.9+".to_string(),
+            },
+        ];
+        self.type_hint_patterns
+            .insert("type_hints".to_string(), type_hint_patterns);
     }
 
     /// Analyze Python decorators
@@ -984,6 +1243,313 @@ impl PythonAnalyzer {
         }
 
         Ok(frameworks)
+    }
+
+    /// Analyze Python type hints comprehensively
+    pub fn analyze_type_hints(&self, content: &str) -> Result<PythonTypeHintAnalysis> {
+        let mut type_hints_detected = Vec::new();
+        let mut type_safety_issues = Vec::new();
+        let mut modern_type_features = Vec::new();
+
+        // Detect type hints using patterns
+        for patterns in self.type_hint_patterns.values() {
+            for pattern in patterns {
+                for captures in pattern.pattern.captures_iter(content) {
+                    let full_match = captures.get(0).unwrap().as_str();
+                    
+                    let hint_type = self.parse_type_hint_type(&pattern.hint_type, &captures);
+                    let is_generic = self.is_generic_type(&pattern.hint_type);
+                    let has_constraints = self.has_type_constraints(&pattern.hint_type);
+
+                    type_hints_detected.push(TypeHintInfo {
+                        location: full_match.to_string(),
+                        hint_type,
+                        complexity: pattern.complexity.clone(),
+                        is_generic,
+                        has_constraints,
+                        python_version_required: pattern.python_version.clone(),
+                    });
+
+                    // Check for modern type features
+                    if pattern.python_version.starts_with("3.8")
+                        || pattern.python_version.starts_with("3.9")
+                        || pattern.python_version.starts_with("3.10")
+                    {
+                        let feature_type = self.get_modern_feature_type(&pattern.hint_type);
+                        if let Some(feature_type) = feature_type {
+                            modern_type_features.push(ModernTypeFeature {
+                                feature_type,
+                                python_version: pattern.python_version.clone(),
+                                usage_count: 1,
+                                description: format!("Modern type feature: {}", pattern.name),
+                                is_best_practice: true,
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        // Detect type safety issues
+        self.detect_type_safety_issues(content, &mut type_safety_issues);
+
+        // Calculate type coverage
+        let overall_coverage = self.calculate_type_coverage(content, &type_hints_detected);
+        let type_coverage_score = self.get_coverage_score(overall_coverage);
+
+        // Generate recommendations
+        let recommendations = self.get_type_hint_recommendations(
+            &type_hints_detected,
+            &type_safety_issues,
+            overall_coverage,
+        );
+
+        Ok(PythonTypeHintAnalysis {
+            overall_coverage,
+            type_coverage_score,
+            type_hints_detected,
+            type_safety_issues,
+            modern_type_features,
+            recommendations,
+        })
+    }
+
+    /// Helper methods for type hint analysis
+    fn parse_type_hint_type(&self, hint_type: &str, captures: &regex::Captures) -> TypeHintType {
+        match hint_type {
+            "union" => {
+                let types_str = captures.get(1).unwrap().as_str();
+                let union_types = types_str.split(',').map(|s| s.trim().to_string()).collect();
+                TypeHintType::UnionType(union_types)
+            }
+            "union_new" => {
+                let type1 = captures.get(1).unwrap().as_str().to_string();
+                let type2 = captures.get(2).unwrap().as_str().to_string();
+                TypeHintType::UnionType(vec![type1, type2])
+            }
+            "optional" => {
+                let inner_type = captures.get(1).unwrap().as_str().to_string();
+                TypeHintType::OptionalType(inner_type)
+            }
+            "generic_list" => {
+                let element_type = captures.get(1).unwrap().as_str().to_string();
+                TypeHintType::GenericType(GenericTypeInfo {
+                    base_type: "List".to_string(),
+                    type_parameters: vec![element_type],
+                    is_covariant: true,
+                    is_contravariant: false,
+                })
+            }
+            "generic_dict" => {
+                let key_type = captures.get(1).unwrap().as_str().to_string();
+                let value_type = captures.get(2).unwrap().as_str().to_string();
+                TypeHintType::GenericType(GenericTypeInfo {
+                    base_type: "Dict".to_string(),
+                    type_parameters: vec![key_type, value_type],
+                    is_covariant: false,
+                    is_contravariant: false,
+                })
+            }
+            "callable" => {
+                let params_str = captures.get(1).unwrap().as_str();
+                let return_type = captures.get(2).unwrap().as_str().to_string();
+                let parameter_types = if params_str.is_empty() {
+                    Vec::new()
+                } else {
+                    params_str.split(',').map(|s| s.trim().to_string()).collect()
+                };
+                TypeHintType::CallableType(CallableTypeInfo {
+                    parameter_types,
+                    return_type,
+                    is_async: false,
+                })
+            }
+            "typevar" => {
+                let var_name = captures.get(1).unwrap().as_str().to_string();
+                TypeHintType::TypeVarType(TypeVarInfo {
+                    name: var_name,
+                    bounds: Vec::new(),
+                    constraints: Vec::new(),
+                    covariant: false,
+                    contravariant: false,
+                })
+            }
+            "protocol" => {
+                TypeHintType::ProtocolType("Protocol".to_string())
+            }
+            "literal" => {
+                let values_str = captures.get(1).unwrap().as_str();
+                let literal_values = values_str.split(',').map(|s| s.trim().to_string()).collect();
+                TypeHintType::LiteralType(literal_values)
+            }
+            "final" => {
+                let final_type = captures.get(1).unwrap().as_str().to_string();
+                TypeHintType::FinalType(final_type)
+            }
+            "typeddict" => {
+                let class_name = captures.get(1).unwrap().as_str().to_string();
+                TypeHintType::TypedDictType(TypedDictInfo {
+                    name: class_name,
+                    fields: Vec::new(), // Would need more parsing for actual fields
+                    total: true,
+                })
+            }
+            "generic_alias" => {
+                let base_type = captures.get(1).unwrap().as_str().to_string();
+                let element_type = captures.get(2).unwrap().as_str().to_string();
+                TypeHintType::GenericType(GenericTypeInfo {
+                    base_type,
+                    type_parameters: vec![element_type],
+                    is_covariant: true,
+                    is_contravariant: false,
+                })
+            }
+            _ => TypeHintType::SimpleType("Unknown".to_string()),
+        }
+    }
+
+    fn is_generic_type(&self, hint_type: &str) -> bool {
+        matches!(hint_type, "generic_list" | "generic_dict" | "generic_alias")
+    }
+
+    fn has_type_constraints(&self, hint_type: &str) -> bool {
+        matches!(hint_type, "typevar" | "protocol" | "literal")
+    }
+
+    fn get_modern_feature_type(&self, hint_type: &str) -> Option<ModernTypeFeatureType> {
+        match hint_type {
+            "union_new" => Some(ModernTypeFeatureType::UnionSyntaxPy310),
+            "typeddict" => Some(ModernTypeFeatureType::TypedDict),
+            "final" => Some(ModernTypeFeatureType::FinalType),
+            "literal" => Some(ModernTypeFeatureType::LiteralType),
+            "protocol" => Some(ModernTypeFeatureType::ProtocolType),
+            "generic_alias" => Some(ModernTypeFeatureType::GenericAlias),
+            _ => None,
+        }
+    }
+
+    fn detect_type_safety_issues(&self, content: &str, issues: &mut Vec<TypeSafetyIssue>) {
+        // Detect Any type overuse
+        let any_count = content.matches("Any").count();
+        if any_count > 5 {
+            issues.push(TypeSafetyIssue {
+                issue_type: TypeSafetyIssueType::AnyTypeOveruse,
+                severity: TypeSafetySeverity::Warning,
+                location: "Multiple locations".to_string(),
+                description: format!("Found {} uses of Any type", any_count),
+                recommendation: "Consider using more specific type hints".to_string(),
+            });
+        }
+
+        // Detect missing type hints
+        let func_pattern = Regex::new(r"def\s+\w+\s*\([^)]*\)\s*:").unwrap();
+        let typed_func_pattern = Regex::new(r"def\s+\w+\s*\([^)]*\)\s*->\s*\w+:").unwrap();
+        
+        let total_functions = func_pattern.find_iter(content).count();
+        let typed_functions = typed_func_pattern.find_iter(content).count();
+        
+        if total_functions > typed_functions && total_functions > 0 {
+            let missing_hints = total_functions - typed_functions;
+            issues.push(TypeSafetyIssue {
+                issue_type: TypeSafetyIssueType::MissingTypeHints,
+                severity: TypeSafetySeverity::Warning,
+                location: "Function definitions".to_string(),
+                description: format!("{} functions missing return type hints", missing_hints),
+                recommendation: "Add return type annotations to functions".to_string(),
+            });
+        }
+
+        // Detect type: ignore overuse
+        let ignore_count = content.matches("# type: ignore").count();
+        if ignore_count > 3 {
+            issues.push(TypeSafetyIssue {
+                issue_type: TypeSafetyIssueType::TypeIgnoreOveruse,
+                severity: TypeSafetySeverity::Info,
+                location: "Multiple locations".to_string(),
+                description: format!("Found {} type: ignore comments", ignore_count),
+                recommendation: "Review and fix type issues instead of ignoring them".to_string(),
+            });
+        }
+
+        // Detect deprecated typing syntax
+        if content.contains("typing.List") || content.contains("typing.Dict") {
+            issues.push(TypeSafetyIssue {
+                issue_type: TypeSafetyIssueType::DeprecatedTypingSyntax,
+                severity: TypeSafetySeverity::Info,
+                location: "Import statements".to_string(),
+                description: "Using deprecated typing imports".to_string(),
+                recommendation: "Use built-in generics (list, dict) for Python 3.9+".to_string(),
+            });
+        }
+    }
+
+    fn calculate_type_coverage(&self, content: &str, _type_hints: &[TypeHintInfo]) -> f32 {
+        let func_pattern = Regex::new(r"def\s+\w+").unwrap();
+        let total_functions = func_pattern.find_iter(content).count();
+        
+        if total_functions == 0 {
+            return 0.0;
+        }
+
+        // Count functions with type annotations (parameter or return type hints)
+        let typed_func_pattern = Regex::new(r"def\s+\w+\s*\([^)]*:\s*\w+|def\s+\w+\s*\([^)]*\)\s*->\s*\w+").unwrap();
+        let typed_functions = typed_func_pattern.find_iter(content).count();
+        
+        (typed_functions as f32 / total_functions as f32) * 100.0
+    }
+
+    fn get_coverage_score(&self, coverage: f32) -> TypeCoverageScore {
+        match coverage {
+            score if score >= 90.0 => TypeCoverageScore::Excellent,
+            score if score >= 70.0 => TypeCoverageScore::Good,
+            score if score >= 50.0 => TypeCoverageScore::Fair,
+            score if score >= 30.0 => TypeCoverageScore::Poor,
+            _ => TypeCoverageScore::Minimal,
+        }
+    }
+
+    fn get_type_hint_recommendations(
+        &self,
+        type_hints: &[TypeHintInfo],
+        issues: &[TypeSafetyIssue],
+        coverage: f32,
+    ) -> Vec<String> {
+        let mut recommendations = Vec::new();
+
+        if coverage < 70.0 {
+            recommendations.push("Increase type hint coverage for better type safety".to_string());
+        }
+
+        if !issues.is_empty() {
+            recommendations.push("Address type safety issues identified in the code".to_string());
+        }
+
+        let has_modern_features = type_hints.iter().any(|h| 
+            h.python_version_required.starts_with("3.8") || 
+            h.python_version_required.starts_with("3.9") ||
+            h.python_version_required.starts_with("3.10")
+        );
+
+        if !has_modern_features {
+            recommendations.push("Consider using modern Python type features (3.8+)".to_string());
+        }
+
+        let has_complex_types = type_hints.iter().any(|h| 
+            matches!(h.complexity, TypeComplexity::Complex | TypeComplexity::Advanced)
+        );
+
+        if has_complex_types {
+            recommendations.push("Document complex type relationships for maintainability".to_string());
+        }
+
+        if type_hints.iter().any(|h| h.is_generic) {
+            recommendations.push("Ensure generic type constraints are properly defined".to_string());
+        }
+
+        recommendations.push("Use type checkers like mypy for static type validation".to_string());
+        recommendations.push("Consider Protocol types for structural typing".to_string());
+
+        recommendations
     }
 
     /// Helper methods for security analysis
@@ -1399,5 +1965,146 @@ mod tests {
         assert_eq!(mixins.len(), 2);
         assert!(mixins.contains(&"BaseMixin".to_string()));
         assert!(mixins.contains(&"UtilMix".to_string()));
+    }
+
+    #[test]
+    fn test_type_hint_analysis() {
+        let analyzer = PythonAnalyzer::new();
+
+        let code = r#"
+from typing import List, Dict, Union, Optional, Literal, Final
+from typing_extensions import Protocol
+
+def process_data(items: List[str], mapping: Dict[str, int]) -> Optional[str]:
+    return None
+
+def handle_union(value: Union[str, int]) -> str:
+    return str(value)
+
+class MyProtocol(Protocol):
+    def method(self) -> None: ...
+
+CONSTANT: Final[str] = "value"
+MODE: Literal["read", "write"] = "read"
+        "#;
+
+        let result = analyzer.analyze_type_hints(code).unwrap();
+
+        assert!(!result.type_hints_detected.is_empty());
+        assert!(result.type_hints_detected.iter().any(|h| 
+            matches!(h.hint_type, TypeHintType::GenericType(_))
+        ));
+        assert!(result.type_hints_detected.iter().any(|h| 
+            matches!(h.hint_type, TypeHintType::UnionType(_))
+        ));
+        assert!(result.type_hints_detected.iter().any(|h| 
+            matches!(h.hint_type, TypeHintType::OptionalType(_))
+        ));
+        assert!(result.overall_coverage > 0.0);
+    }
+
+    #[test]
+    fn test_modern_type_features() {
+        let analyzer = PythonAnalyzer::new();
+
+        let code = r#"
+from typing import Final, Literal
+from typing_extensions import TypedDict
+
+class UserDict(TypedDict):
+    name: str
+    age: int
+
+CONSTANT: Final[int] = 42
+STATUS: Literal["active", "inactive"] = "active"
+
+# Python 3.10+ union syntax
+def process(value: str | int) -> str | None:
+    return None
+        "#;
+
+        let result = analyzer.analyze_type_hints(code).unwrap();
+
+        assert!(!result.modern_type_features.is_empty());
+        assert!(result.modern_type_features.iter().any(|f| 
+            matches!(f.feature_type, ModernTypeFeatureType::TypedDict)
+        ));
+        assert!(result.modern_type_features.iter().any(|f| 
+            matches!(f.feature_type, ModernTypeFeatureType::FinalType)
+        ));
+        assert!(result.modern_type_features.iter().any(|f| 
+            matches!(f.feature_type, ModernTypeFeatureType::LiteralType)
+        ));
+    }
+
+    #[test]
+    fn test_type_safety_issues() {
+        let analyzer = PythonAnalyzer::new();
+
+        let code = r#"
+from typing import Any
+
+def untyped_function():
+    return "hello"
+
+def another_untyped():
+    pass
+
+def bad_any_usage(x: Any, y: Any, z: Any, a: Any, b: Any, c: Any) -> Any:
+    return x
+
+# type: ignore
+# type: ignore  
+# type: ignore
+# type: ignore
+        "#;
+
+        let result = analyzer.analyze_type_hints(code).unwrap();
+
+        assert!(!result.type_safety_issues.is_empty());
+        assert!(result.type_safety_issues.iter().any(|issue| 
+            matches!(issue.issue_type, TypeSafetyIssueType::AnyTypeOveruse)
+        ));
+        assert!(result.type_safety_issues.iter().any(|issue| 
+            matches!(issue.issue_type, TypeSafetyIssueType::MissingTypeHints)
+        ));
+        assert!(result.type_safety_issues.iter().any(|issue| 
+            matches!(issue.issue_type, TypeSafetyIssueType::TypeIgnoreOveruse)
+        ));
+    }
+
+    #[test] 
+    fn test_type_coverage_calculation() {
+        let analyzer = PythonAnalyzer::new();
+
+        // High coverage code
+        let high_coverage_code = r#"
+def typed_func1(x: int) -> str:
+    return str(x)
+
+def typed_func2(y: str) -> int:
+    return len(y)
+        "#;
+
+        let result = analyzer.analyze_type_hints(high_coverage_code).unwrap();
+        assert!(result.overall_coverage > 50.0);
+        assert!(matches!(result.type_coverage_score, 
+            TypeCoverageScore::Good | TypeCoverageScore::Excellent | TypeCoverageScore::Fair
+        ));
+
+        // Low coverage code
+        let low_coverage_code = r#"
+def untyped_func1():
+    return "hello"
+
+def untyped_func2():
+    return 42
+
+def typed_func(x: int) -> str:
+    return str(x)
+        "#;
+
+        let result = analyzer.analyze_type_hints(low_coverage_code).unwrap();
+        assert!(result.overall_coverage < 100.0);
     }
 }

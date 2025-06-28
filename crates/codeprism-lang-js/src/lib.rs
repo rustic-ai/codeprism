@@ -9,8 +9,9 @@ mod types;
 
 pub use adapter::{parse_file, JavaScriptLanguageParser, ParseResultConverter};
 pub use analysis::{
-    ComponentType, HookInfo, JavaScriptAnalyzer, ModernFeatureType, ModernJsFeatureInfo,
-    NodeJsPatternInfo, NodePatternType, PropsInfo, ReactComponentInfo, RouteInfo,
+    ComponentType, ContextInfo, DatabasePatternInfo, FrameworkInfo, HookInfo, JavaScriptAnalyzer,
+    ModernFeatureType, ModernJsFeatureInfo, NodeJsPatternInfo, NodePatternType, PropsInfo,
+    ReactComponentInfo, RouteInfo, StateManagementInfo,
 };
 pub use error::{Error, Result};
 pub use parser::{JavaScriptParser, ParseContext, ParseResult};

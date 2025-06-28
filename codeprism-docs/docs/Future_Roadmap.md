@@ -108,15 +108,25 @@ The current 18-tool implementation provides comprehensive code analysis capabili
 
 The current modular architecture supports easy extension:
 
-```
-tools/
-├── core/          # Navigation and repository operations  
-├── search/        # Content and symbol discovery
-├── analysis/      # Code quality and complexity analysis
-├── workflow/      # Orchestration and batch processing
-└── quality/       # [Future] Quality analysis tools
-└── security/      # [Future] Security analysis tools
-└── performance/   # [Future] Performance analysis tools
+```mermaid
+graph TD
+    Tools[tools/]
+    
+    Tools --> Core["core/<br/><small>Navigation and repository operations</small>"]
+    Tools --> Search["search/<br/><small>Content and symbol discovery</small>"]
+    Tools --> Analysis["analysis/<br/><small>Code quality and complexity analysis</small>"]
+    Tools --> Workflow["workflow/<br/><small>Orchestration and batch processing</small>"]
+    Tools --> Quality["quality/<br/><small>[Future] Quality analysis tools</small>"]
+    Tools --> Security["security/<br/><small>[Future] Security analysis tools</small>"]
+    Tools --> Performance["performance/<br/><small>[Future] Performance analysis tools</small>"]
+    
+    classDef current fill:#2e8555,stroke:#1c1e21,stroke-width:2px,color:#fff
+    classDef future fill:#f39c12,stroke:#1c1e21,stroke-width:2px,color:#fff
+    classDef root fill:#9b59b6,stroke:#1c1e21,stroke-width:2px,color:#fff
+    
+    class Core,Search,Analysis,Workflow current
+    class Quality,Security,Performance future
+    class Tools root
 ```
 
 Each new tool category can be developed independently while leveraging the existing:

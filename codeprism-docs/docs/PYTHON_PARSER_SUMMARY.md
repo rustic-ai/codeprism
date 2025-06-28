@@ -7,22 +7,41 @@ Successfully implemented **Phase 2.2: Python Parser** for the CodeCodePrism code
 ## Implementation Details
 
 ### 📁 Project Structure
-```
-crates/codeprism-lang-python/
-├── src/
-│   ├── lib.rs              # Module exports and public API
-│   ├── types.rs            # Type definitions (Node, Edge, Span, etc.)
-│   ├── error.rs            # Error handling types
-│   ├── parser.rs           # Main parser implementation
-│   ├── ast_mapper.rs       # CST to U-AST conversion
-│   └── adapter.rs          # Integration adapter
-├── tests/
-│   ├── fixtures/
-│   │   ├── simple.py       # Basic Python test file
-│   │   └── class_example.py # Complex class-based test file
-│   └── integration_tests.rs # Integration test suite
-├── Cargo.toml              # Dependencies and configuration
-└── build.rs                # Build-time setup
+
+```mermaid
+graph TD
+    Root[crates/codeprism-lang-python/]
+    
+    Root --> SrcDir[src/]
+    Root --> TestsDir[tests/]
+    Root --> CargoToml[Cargo.toml]
+    Root --> BuildRs[build.rs]
+    
+    SrcDir --> LibRs["lib.rs<br/><small>Module exports and public API</small>"]
+    SrcDir --> TypesRs["types.rs<br/><small>Type definitions (Node, Edge, Span, etc.)</small>"]
+    SrcDir --> ErrorRs["error.rs<br/><small>Error handling types</small>"]
+    SrcDir --> ParserRs["parser.rs<br/><small>Main parser implementation</small>"]
+    SrcDir --> AstMapperRs["ast_mapper.rs<br/><small>CST to U-AST conversion</small>"]
+    SrcDir --> AdapterRs["adapter.rs<br/><small>Integration adapter</small>"]
+    
+    TestsDir --> FixturesDir[fixtures/]
+    TestsDir --> IntegrationRs["integration_tests.rs<br/><small>Integration test suite</small>"]
+    
+    FixturesDir --> SimplePy["simple.py<br/><small>Basic Python test file</small>"]
+    FixturesDir --> ClassPy["class_example.py<br/><small>Complex class-based test file</small>"]
+    
+    CargoToml --> TomlDesc["Dependencies and configuration"]
+    BuildRs --> BuildDesc["Build-time setup"]
+    
+    classDef sourceFiles fill:#2e8555,stroke:#1c1e21,stroke-width:2px,color:#fff
+    classDef testFiles fill:#f39c12,stroke:#1c1e21,stroke-width:2px,color:#fff
+    classDef configFiles fill:#e74c3c,stroke:#1c1e21,stroke-width:2px,color:#fff
+    classDef dirFiles fill:#9b59b6,stroke:#1c1e21,stroke-width:2px,color:#fff
+    
+    class LibRs,TypesRs,ErrorRs,ParserRs,AstMapperRs,AdapterRs sourceFiles
+    class IntegrationRs,SimplePy,ClassPy testFiles
+    class CargoToml,BuildRs configFiles
+    class SrcDir,TestsDir,FixturesDir dirFiles
 ```
 
 ### 🔧 Core Components

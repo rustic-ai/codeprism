@@ -242,12 +242,87 @@ The CodePrism MCP server is now fully production-ready for:
 
 The MCP server is organized into modular categories:
 
-```
-tools/
-├── core/          # Navigation and repository operations
-├── search/        # Content and symbol discovery
-├── analysis/      # Code quality and complexity analysis
-└── workflow/      # Orchestration and batch processing
+```mermaid
+graph TD
+    Tools[CodePrism MCP Tools<br/>23 Production-Ready Tools]
+    
+    subgraph "Core Navigation & Understanding (4 tools)"
+        Core1[repository_stats]
+        Core2[explain_symbol]
+        Core3[trace_path]
+        Core4[find_dependencies]
+    end
+    
+    subgraph "Search & Discovery (4 tools)"
+        Search1[search_symbols]
+        Search2[search_content]
+        Search3[find_files]
+        Search4[content_stats]
+    end
+    
+    subgraph "Analysis Tools (11 tools)"
+        subgraph "Production Milestone 2 (4 tools)"
+            Prod1[find_unused_code v2.0.0]
+            Prod2[analyze_security v2.0.0]
+            Prod3[analyze_performance v2.0.0]
+            Prod4[analyze_api_surface v2.0.0]
+        end
+        
+        subgraph "Core Analysis (7 tools)"
+            Analysis1[analyze_complexity]
+            Analysis2[trace_data_flow]
+            Analysis3[analyze_transitive_dependencies]
+            Analysis4[detect_patterns]
+            Analysis5[trace_inheritance]
+            Analysis6[analyze_decorators]
+            Analysis7[find_duplicates]
+        end
+    end
+    
+    subgraph "Workflow & Orchestration (4 tools)"
+        Workflow1[suggest_analysis_workflow]
+        Workflow2[batch_analysis]
+        Workflow3[optimize_workflow]
+        Workflow4[find_references]
+    end
+    
+    Tools --> Core1
+    Tools --> Core2
+    Tools --> Core3
+    Tools --> Core4
+    Tools --> Search1
+    Tools --> Search2
+    Tools --> Search3
+    Tools --> Search4
+    Tools --> Prod1
+    Tools --> Prod2
+    Tools --> Prod3
+    Tools --> Prod4
+    Tools --> Analysis1
+    Tools --> Analysis2
+    Tools --> Analysis3
+    Tools --> Analysis4
+    Tools --> Analysis5
+    Tools --> Analysis6
+    Tools --> Analysis7
+    Tools --> Workflow1
+    Tools --> Workflow2
+    Tools --> Workflow3
+    Tools --> Workflow4
+    
+    classDef prodReady fill:#2ecc71,stroke:#27ae60,stroke-width:3px,color:#fff
+    classDef core fill:#3498db,stroke:#2980b9,stroke-width:2px,color:#fff
+    classDef search fill:#e67e22,stroke:#d35400,stroke-width:2px,color:#fff
+    classDef analysis fill:#9b59b6,stroke:#8e44ad,stroke-width:2px,color:#fff
+    classDef workflow fill:#f39c12,stroke:#e67e22,stroke-width:2px,color:#fff
+    classDef root fill:#34495e,stroke:#2c3e50,stroke-width:3px,color:#fff
+    
+    class Prod1,Prod2,Prod3,Prod4 prodReady
+    class Core1,Core2,Core3,Core4 core
+    class Search1,Search2,Search3,Search4 search
+    class Analysis1,Analysis2,Analysis3,Analysis4,Analysis5,Analysis6,Analysis7 analysis
+    class Workflow1,Workflow2,Workflow3,Workflow4 workflow
+    class Tools root
 ```
 
 Each tool provides:

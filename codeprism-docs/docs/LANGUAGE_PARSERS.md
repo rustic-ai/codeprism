@@ -112,6 +112,61 @@ impl LanguageParser for LanguageParserAdapter {
 
 ## Implementation Steps
 
+### Parser Implementation Workflow
+
+```mermaid
+graph TD
+    Start[Start Parser Implementation] --> Step1[Create Crate Structure]
+    Step1 --> Step2[Implement Error Types]
+    Step2 --> Step3[Define Language Types]
+    Step3 --> Step4[Implement Main Parser]
+    Step4 --> Step5[Implement AST Mapper]
+    Step5 --> Step6[Create Integration Adapter]
+    Step6 --> Step7[Write Tests]
+    Step7 --> Step8[Add Benchmarks]
+    Step8 --> Step9[Integration Testing]
+    Step9 --> Complete[Parser Complete]
+
+    subgraph "Core Components"
+        Step4 --> Parser[LanguageParser]
+        Step5 --> Mapper[AstMapper]
+        Step6 --> Adapter[ParserAdapter]
+    end
+
+    subgraph "Tree-sitter Integration"
+        TSGrammar[Tree-sitter Grammar] --> Step4
+        TSGrammar --> Incremental[Incremental Parsing]
+        Incremental --> Step5
+    end
+
+    subgraph "Universal AST"
+        Step5 --> Nodes[Extract Nodes]
+        Step5 --> Edges[Extract Edges]
+        Nodes --> UAST[Universal AST]
+        Edges --> UAST
+    end
+
+    subgraph "Quality Assurance"
+        Step7 --> UnitTests[Unit Tests]
+        Step7 --> IntegrationTests[Integration Tests]
+        Step8 --> PerfTests[Performance Tests]
+    end
+
+    classDef stepNode fill:#3498db,stroke:#2980b9,stroke-width:2px,color:#fff
+    classDef componentNode fill:#2ecc71,stroke:#27ae60,stroke-width:2px,color:#fff
+    classDef treeSitterNode fill:#e67e22,stroke:#d35400,stroke-width:2px,color:#fff
+    classDef astNode fill:#9b59b6,stroke:#8e44ad,stroke-width:2px,color:#fff
+    classDef testNode fill:#f39c12,stroke:#e67e22,stroke-width:2px,color:#fff
+    classDef completeNode fill:#e74c3c,stroke:#c0392b,stroke-width:3px,color:#fff
+
+    class Step1,Step2,Step3,Step4,Step5,Step6,Step7,Step8,Step9 stepNode
+    class Parser,Mapper,Adapter componentNode
+    class TSGrammar,Incremental treeSitterNode
+    class Nodes,Edges,UAST astNode
+    class UnitTests,IntegrationTests,PerfTests testNode
+    class Complete completeNode
+```
+
 ### Step 1: Create Crate Structure
 
 ```bash

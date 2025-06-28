@@ -46,6 +46,62 @@ This means for most repositories, you can simply run:
 
 **New feature! 🎯** You can now control how dependencies are handled:
 
+#### Decision Tree: Choose Your Dependency Mode
+
+```mermaid
+graph TD
+    Start[Start Repository Analysis] --> Size{Repository Size}
+    
+    Size -->|< 1,000 files| Small[Small Repository]
+    Size -->|1,000 - 10,000 files| Medium[Medium Repository]
+    Size -->|> 10,000 files| Large[Large Repository]
+    
+    Small --> UseCase1{Primary Use Case?}
+    UseCase1 -->|Learning/Exploration| SmartMode1[Use Smart Mode]
+    UseCase1 -->|Production Analysis| CompleteMode1[Use Complete Mode]
+    
+    Medium --> Memory1{Available Memory?}
+    Memory1 -->|< 4GB| MinimalMode1[Use Minimal Mode]
+    Memory1 -->|4-8GB| SmartMode2[Use Smart Mode]
+    Memory1 -->|> 8GB| MemoryCheck1{Need Full Dependencies?}
+    MemoryCheck1 -->|Yes| CompleteMode2[Use Complete Mode]
+    MemoryCheck1 -->|No| SmartMode3[Use Smart Mode]
+    
+    Large --> Performance{Performance Priority?}
+    Performance -->|Speed Critical| MinimalMode2[Use Minimal Mode]
+    Performance -->|Balanced| SmartMode4[Use Smart Mode]
+    Performance -->|Completeness Critical| MemoryCheck2{Memory Available?}
+    MemoryCheck2 -->|Yes, 8GB+| CompleteMode3[Use Complete Mode]
+    MemoryCheck2 -->|No| SmartMode5[Use Smart Mode]
+    
+    SmartMode1 --> SmartDesc["✨ Smart Mode<br/>--smart-deps<br/>Balanced approach"]
+    SmartMode2 --> SmartDesc
+    SmartMode3 --> SmartDesc
+    SmartMode4 --> SmartDesc
+    SmartMode5 --> SmartDesc
+    
+    MinimalMode1 --> MinimalDesc["⚡ Minimal Mode<br/>Default<br/>Fast & focused"]
+    MinimalMode2 --> MinimalDesc
+    
+    CompleteMode1 --> CompleteDesc["🔍 Complete Mode<br/>--include-deps<br/>Full intelligence"]
+    CompleteMode2 --> CompleteDesc
+    CompleteMode3 --> CompleteDesc
+    
+    classDef startNode fill:#34495e,stroke:#2c3e50,stroke-width:3px,color:#fff
+    classDef decisionNode fill:#3498db,stroke:#2980b9,stroke-width:2px,color:#fff
+    classDef sizeNode fill:#e67e22,stroke:#d35400,stroke-width:2px,color:#fff
+    classDef minimalNode fill:#2ecc71,stroke:#27ae60,stroke-width:2px,color:#fff
+    classDef smartNode fill:#f39c12,stroke:#e67e22,stroke-width:2px,color:#fff
+    classDef completeNode fill:#9b59b6,stroke:#8e44ad,stroke-width:2px,color:#fff
+    
+    class Start startNode
+    class Size,UseCase1,Memory1,MemoryCheck1,MemoryCheck2,Performance decisionNode
+    class Small,Medium,Large sizeNode
+    class MinimalMode1,MinimalMode2,MinimalDesc minimalNode
+    class SmartMode1,SmartMode2,SmartMode3,SmartMode4,SmartMode5,SmartDesc smartNode
+    class CompleteMode1,CompleteMode2,CompleteMode3,CompleteDesc completeNode
+```
+
 #### 1. Minimal (Default) - Fast but Limited
 ```bash
 ./target/release/codeprism-mcp /path/to/repo

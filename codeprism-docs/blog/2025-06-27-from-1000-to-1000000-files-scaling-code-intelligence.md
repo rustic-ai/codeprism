@@ -33,6 +33,43 @@ c840e44 2025-06-16 fix: Symbol search and explain symbol works correctly now
 
 One of our most humbling moments came during CI/CD implementation. We encountered a memory allocation issue that attempted to allocate **93 terabytes** of memory during code coverage testing:
 
+#### Memory Crisis Resolution Timeline
+
+```mermaid
+timeline
+    title CodePrism Memory Crisis Resolution
+    
+    section Problem Discovery
+        June 24, 2025 : CI/CD Failure
+                       : 93TB Memory Allocation
+                       : tarpaulin Coverage Tool
+                       : Production Build Broken
+    
+    section Root Cause Analysis  
+        June 24-25, 2025 : Identified Recursive Async Bug
+                          : build_tree_recursive Function
+                          : Insufficient Bounds Checking
+                          : Infinite Recursion Pattern
+    
+    section Immediate Fix
+        June 25, 2025 : Disabled Failing Test
+                      : Emergency CI/CD Patch
+                      : commit 0f05c72
+                      : Production Stability Restored
+    
+    section Systematic Solution
+        June 25-26, 2025 : Comprehensive Error Handling
+                          : Circuit Breaker Pattern
+                          : Recursive Depth Limits
+                          : Memory Monitoring
+    
+    section Production Hardening
+        June 27, 2025 : Smart Dependency Scanning
+                      : Batch Processing Optimization
+                      : Memory-Safe Defaults
+                      : 4GB Memory Limits
+```
+
 ```bash
 # From commit 0f05c72 (June 24, 2025)
 commit 0f05c72 wip: disable failing test to address memory allocation issue

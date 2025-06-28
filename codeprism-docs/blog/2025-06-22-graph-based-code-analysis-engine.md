@@ -73,6 +73,69 @@ Traditional ASTs represent code at a single point in time. When you modify a fil
 
 CodePrism's Universal AST solves these problems by creating a **language-agnostic graph representation** of code structures:
 
+### Universal AST Conversion Process
+
+```mermaid
+graph TD
+    subgraph Sources ["🔤 Language Sources"]
+        PY[Python Source]
+        JS[JavaScript Source]
+        TS[TypeScript Source]
+        RS[Rust Source]
+    end
+    
+    subgraph Parsers ["⚙️ Language Parsers"]
+        PyParser[Python Parser<br/>tree-sitter-python]
+        JsParser[JavaScript Parser<br/>tree-sitter-javascript]
+        TsParser[TypeScript Parser<br/>tree-sitter-typescript]
+        RsParser[Rust Parser<br/>tree-sitter-rust]
+    end
+    
+    subgraph ASTs ["🌳 Language-Specific ASTs"]
+        PyAST[Python AST<br/>ClassDef, FunctionDef]
+        JsAST[JavaScript AST<br/>ClassDeclaration, FunctionDeclaration]
+        TsAST[TypeScript AST<br/>ClassDeclaration, FunctionDeclaration]
+        RsAST[Rust AST<br/>ItemStruct, ItemFn]
+    end
+    
+    subgraph Universal ["🎯 Universal AST"]
+        UAST[Universal Nodes<br/>Class, Function, Module<br/>Language-Agnostic]
+    end
+    
+    subgraph Output ["🕸️ Code Graph"]
+        Graph[Code Graph<br/>Nodes + Edges<br/>Cross-Language Intelligence]
+    end
+    
+    PY --> PyParser
+    JS --> JsParser
+    TS --> TsParser
+    RS --> RsParser
+    
+    PyParser --> PyAST
+    JsParser --> JsAST
+    TsParser --> TsAST
+    RsParser --> RsAST
+    
+    PyAST --> UAST
+    JsAST --> UAST
+    TsAST --> UAST
+    RsAST --> UAST
+    
+    UAST --> Graph
+    
+    classDef sourceNode fill:#e74c3c,stroke:#c0392b,stroke-width:2px,color:#fff
+    classDef parserNode fill:#3498db,stroke:#2980b9,stroke-width:2px,color:#fff
+    classDef astNode fill:#f39c12,stroke:#e67e22,stroke-width:2px,color:#fff
+    classDef universalNode fill:#2ecc71,stroke:#27ae60,stroke-width:3px,color:#fff
+    classDef graphNode fill:#9b59b6,stroke:#8e44ad,stroke-width:3px,color:#fff
+    
+    class PY,JS,TS,RS sourceNode
+    class PyParser,JsParser,TsParser,RsParser parserNode
+    class PyAST,JsAST,TsAST,RsAST astNode
+    class UAST universalNode
+    class Graph graphNode
+```
+
 ### **Universal Node Types**
 
 Instead of language-specific AST nodes, we use universal concepts:

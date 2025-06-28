@@ -806,31 +806,49 @@ impl AstMapper {
 
 A complete language parser crate should follow this structure:
 
-```
-codeprism-lang-mylang/
-├── Cargo.toml                 # Dependencies and metadata
-├── build.rs                   # Build script for grammar compilation
-├── README.md                  # Parser documentation
-├── src/
-│   ├── lib.rs                # Public API and exports
-│   ├── parser.rs             # Main parser implementation
-│   ├── ast_mapper.rs         # Tree-sitter to U-AST mapping
-│   ├── adapter.rs            # MCP integration adapter
-│   ├── types.rs              # Type definitions and re-exports
-│   └── error.rs              # Error handling
-├── tests/
-│   ├── fixtures/             # Test source files
-│   │   ├── simple.mylang    # Basic language features
-│   │   ├── complex.mylang   # Advanced features
-│   │   ├── edge_cases.mylang # Error conditions
-│   │   └── large.mylang     # Performance testing
-│   ├── integration_test.rs   # Integration tests
-│   ├── unit_tests.rs         # Unit tests
-│   └── regression_tests.rs   # Regression tests
-├── benches/
-│   └── parse_benchmark.rs    # Performance benchmarks
-└── examples/
-    └── parse_example.rs       # Usage examples
+```mermaid
+graph TD
+    Root[codeprism-lang-mylang/]
+    
+    Root --> CargoToml["Cargo.toml<br/><small>Dependencies and metadata</small>"]
+    Root --> BuildRs["build.rs<br/><small>Build script for grammar compilation</small>"]
+    Root --> ReadmeFile["README.md<br/><small>Parser documentation</small>"]
+    Root --> SrcDir[src/]
+    Root --> TestsDir[tests/]
+    Root --> BenchesDir[benches/]
+    Root --> ExamplesDir[examples/]
+    
+    SrcDir --> LibRs["lib.rs<br/><small>Public API and exports</small>"]
+    SrcDir --> ParserRs["parser.rs<br/><small>Main parser implementation</small>"]
+    SrcDir --> AstMapperRs["ast_mapper.rs<br/><small>Tree-sitter to U-AST mapping</small>"]
+    SrcDir --> AdapterRs["adapter.rs<br/><small>MCP integration adapter</small>"]
+    SrcDir --> TypesRs["types.rs<br/><small>Type definitions and re-exports</small>"]
+    SrcDir --> ErrorRs["error.rs<br/><small>Error handling</small>"]
+    
+    TestsDir --> FixturesDir[fixtures/]
+    TestsDir --> IntegrationRs["integration_test.rs<br/><small>Integration tests</small>"]
+    TestsDir --> UnitRs["unit_tests.rs<br/><small>Unit tests</small>"]
+    TestsDir --> RegressionRs["regression_tests.rs<br/><small>Regression tests</small>"]
+    
+    FixturesDir --> SimpleLang["simple.mylang<br/><small>Basic language features</small>"]
+    FixturesDir --> ComplexLang["complex.mylang<br/><small>Advanced features</small>"]
+    FixturesDir --> EdgeLang["edge_cases.mylang<br/><small>Error conditions</small>"]
+    FixturesDir --> LargeLang["large.mylang<br/><small>Performance testing</small>"]
+    
+    BenchesDir --> BenchRs["parse_benchmark.rs<br/><small>Performance benchmarks</small>"]
+    ExamplesDir --> ExampleRs["parse_example.rs<br/><small>Usage examples</small>"]
+    
+    classDef sourceFiles fill:#2e8555,stroke:#1c1e21,stroke-width:2px,color:#fff
+    classDef testFiles fill:#f39c12,stroke:#1c1e21,stroke-width:2px,color:#fff
+    classDef configFiles fill:#e74c3c,stroke:#1c1e21,stroke-width:2px,color:#fff
+    classDef dirFiles fill:#9b59b6,stroke:#1c1e21,stroke-width:2px,color:#fff
+    classDef benchFiles fill:#1abc9c,stroke:#1c1e21,stroke-width:2px,color:#fff
+    
+    class LibRs,ParserRs,AstMapperRs,AdapterRs,TypesRs,ErrorRs sourceFiles
+    class IntegrationRs,UnitRs,RegressionRs,SimpleLang,ComplexLang,EdgeLang,LargeLang testFiles
+    class CargoToml,BuildRs,ReadmeFile configFiles
+    class SrcDir,TestsDir,FixturesDir,BenchesDir,ExamplesDir dirFiles
+    class BenchRs,ExampleRs benchFiles
 ```
 
 ### Cargo.toml Template

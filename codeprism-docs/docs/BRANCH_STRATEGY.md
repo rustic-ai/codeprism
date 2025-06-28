@@ -83,6 +83,41 @@ graph TD
     C -->|Bug| D[Create fix/* branch]
     C -->|Feature| E[Create feature/* branch]
     C -->|Enhancement| F[Create improvement/* branch]
+    C -->|Experiment| G[Create experiment/* branch]
+    
+    D --> H[Implement Fix]
+    E --> I[Develop Feature]
+    F --> J[Make Enhancement]
+    G --> K[Run Experiment]
+    
+    H --> L[Run Tests]
+    I --> L
+    J --> L
+    K --> M{Experiment Success?}
+    
+    L --> N{Tests Pass?}
+    N -->|Yes| O[Create PR]
+    N -->|No| P[Fix Issues]
+    P --> L
+    
+    M -->|Yes| O
+    M -->|No| Q[Archive Branch]
+    
+    O --> R[Auto Review]
+    R --> S[Merge to Develop]
+    S --> T[Deploy to Main]
+    
+    classDef issueNode fill:#e74c3c,stroke:#c0392b,stroke-width:2px,color:#fff
+    classDef branchNode fill:#3498db,stroke:#2980b9,stroke-width:2px,color:#fff
+    classDef processNode fill:#2ecc71,stroke:#27ae60,stroke-width:2px,color:#fff
+    classDef testNode fill:#f39c12,stroke:#e67e22,stroke-width:2px,color:#fff
+    classDef deployNode fill:#9b59b6,stroke:#8e44ad,stroke-width:2px,color:#fff
+    
+    class A,B issueNode
+    class D,E,F,G branchNode
+    class H,I,J,K,R processNode
+    class L,N,M testNode
+    class O,S,T deployNode
 ```
 
 ### 2. **Autonomous Development** 🤖

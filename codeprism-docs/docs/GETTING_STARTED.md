@@ -65,6 +65,44 @@ cargo build --release
 
 ## 🔧 Step 2: Configure MCP Clients
 
+### Setup Workflow Overview
+
+```mermaid
+graph TD
+    Start[Choose MCP Client] --> Claude{Claude Desktop}
+    Start --> Cursor{Cursor}
+    Start --> VSCode{VS Code}
+    
+    Claude --> ClaudeConfig[Locate claude_desktop_config.json]
+    ClaudeConfig --> ClaudeEdit[Edit Configuration]
+    ClaudeEdit --> ClaudeRestart[Restart Claude Desktop]
+    ClaudeRestart --> ClaudeTest[Test with 🔨 icon]
+    
+    Cursor --> CursorConfig[Create .cursor/mcp.json]
+    CursorConfig --> CursorEnable[Enable MCP in Settings]
+    CursorEnable --> CursorRestart[Restart Cursor]
+    CursorRestart --> CursorTest[Test with MCP tools]
+    
+    VSCode --> VSCodeEnable[Enable chat.mcp.enabled]
+    VSCodeEnable --> VSCodeConfig[Add MCP Server]
+    VSCodeConfig --> VSCodeAgent[Use Agent Mode]
+    VSCodeAgent --> VSCodeTest[Test in Copilot Chat]
+    
+    ClaudeTest --> Success[✅ Ready to use CodePrism]
+    CursorTest --> Success
+    VSCodeTest --> Success
+    
+    classDef clientNode fill:#3498db,stroke:#2980b9,stroke-width:2px,color:#fff
+    classDef configNode fill:#e67e22,stroke:#d35400,stroke-width:2px,color:#fff
+    classDef testNode fill:#2ecc71,stroke:#27ae60,stroke-width:2px,color:#fff
+    classDef successNode fill:#9b59b6,stroke:#8e44ad,stroke-width:3px,color:#fff
+    
+    class Claude,Cursor,VSCode clientNode
+    class ClaudeConfig,ClaudeEdit,CursorConfig,CursorEnable,VSCodeEnable,VSCodeConfig configNode
+    class ClaudeTest,CursorTest,VSCodeTest testNode
+    class Success successNode
+```
+
 ## Claude Desktop Setup
 
 ### 1. Locate Configuration File
@@ -380,6 +418,62 @@ This repository has both Python and JavaScript. How do they interact?
 ```
 
 ## 🐛 Troubleshooting
+
+### Troubleshooting Decision Tree
+
+```mermaid
+graph TD
+    Problem[Having Issues?] --> Type{What's the Problem?}
+    
+    Type -->|Server not starting| ServerIssue[Server Issues]
+    Type -->|Server not appearing in client| ClientIssue[Client Issues]
+    Type -->|Tools not working| ToolIssue[Tool Issues]
+    
+    ServerIssue --> CheckBinary{Binary Executable?}
+    CheckBinary -->|No| FixBinary[chmod +x codeprism-mcp]
+    CheckBinary -->|Yes| CheckPath{Correct Path?}
+    CheckPath -->|No| FixPath[Update config with absolute path]
+    CheckPath -->|Yes| CheckRepo{Repository Exists?}
+    CheckRepo -->|No| FixRepo[Create/fix repository path]
+    
+    ClientIssue --> WhichClient{Which Client?}
+    WhichClient -->|Claude Desktop| ClaudeSteps[1. Check JSON syntax<br/>2. Restart Claude completely<br/>3. Look for 🔨 icon]
+    WhichClient -->|Cursor| CursorSteps[1. Enable MCP in settings<br/>2. Check .cursor/mcp.json<br/>3. Restart Cursor]
+    WhichClient -->|VS Code| VSCodeSteps[1. Enable chat.mcp.enabled<br/>2. Run 'MCP: List Servers'<br/>3. Check Output panel]
+    
+    ToolIssue --> CheckLogs{Check Logs?}
+    CheckLogs --> LogLocation[Claude: ~/Library/Logs/Claude/<br/>VS Code: Output > MCP<br/>Cursor: View > Output]
+    
+    FixBinary --> TestBinary[Test: ./codeprism-mcp --help]
+    FixPath --> TestConfig[Test configuration]
+    FixRepo --> TestRepo[Test with simple repo]
+    ClaudeSteps --> ClaudeTest[Test with simple query]
+    CursorSteps --> CursorTest[Test MCP tools]
+    VSCodeSteps --> VSCodeTest[Test in Agent mode]
+    LogLocation --> AnalyzeLogs[Analyze error messages]
+    
+    TestBinary --> Success[✅ Working!]
+    TestConfig --> Success
+    TestRepo --> Success
+    ClaudeTest --> Success
+    CursorTest --> Success
+    VSCodeTest --> Success
+    AnalyzeLogs --> Success
+    
+    classDef problemNode fill:#e74c3c,stroke:#c0392b,stroke-width:3px,color:#fff
+    classDef decisionNode fill:#3498db,stroke:#2980b9,stroke-width:2px,color:#fff
+    classDef issueNode fill:#f39c12,stroke:#e67e22,stroke-width:2px,color:#fff
+    classDef solutionNode fill:#2ecc71,stroke:#27ae60,stroke-width:2px,color:#fff
+    classDef testNode fill:#9b59b6,stroke:#8e44ad,stroke-width:2px,color:#fff
+    classDef successNode fill:#27ae60,stroke:#229954,stroke-width:3px,color:#fff
+    
+    class Problem problemNode
+    class Type,CheckBinary,CheckPath,CheckRepo,WhichClient,CheckLogs decisionNode
+    class ServerIssue,ClientIssue,ToolIssue issueNode
+    class FixBinary,FixPath,FixRepo,ClaudeSteps,CursorSteps,VSCodeSteps,LogLocation solutionNode
+    class TestBinary,TestConfig,TestRepo,ClaudeTest,CursorTest,VSCodeTest,AnalyzeLogs testNode
+    class Success successNode
+```
 
 ### Common Issues
 

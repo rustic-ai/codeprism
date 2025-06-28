@@ -403,8 +403,45 @@ pub fn parse(&mut self, context: &ParseContext) -> Result<ParseResult> {
 
 ### Data Flow
 
-```
-File Change → Watcher → Parser → AST → Patch → Storage → MCP Server → LLM
+```mermaid
+graph LR
+    FC[File Change] --> FW[File Watcher]
+    FW --> P[Parser Engine]
+    P --> AST[Universal AST]
+    AST --> GP[Graph Patch]
+    GP --> S[Storage Layer]
+    S --> MCP[MCP Server]
+    MCP --> LLM[LLM Assistant]
+    
+    subgraph "File System"
+        FC
+    end
+    
+    subgraph "Core Engine"
+        FW
+        P
+        AST
+    end
+    
+    subgraph "Graph Processing"
+        GP
+        S
+    end
+    
+    subgraph "MCP Layer"
+        MCP
+        LLM
+    end
+    
+    classDef fileSystem fill:#e74c3c,stroke:#c0392b,stroke-width:2px,color:#fff
+    classDef coreEngine fill:#2ecc71,stroke:#27ae60,stroke-width:2px,color:#fff
+    classDef graphProcessing fill:#3498db,stroke:#2980b9,stroke-width:2px,color:#fff
+    classDef mcpLayer fill:#9b59b6,stroke:#8e44ad,stroke-width:2px,color:#fff
+    
+    class FC fileSystem
+    class FW,P,AST coreEngine
+    class GP,S graphProcessing
+    class MCP,LLM mcpLayer
 ```
 
 ### Thread Safety

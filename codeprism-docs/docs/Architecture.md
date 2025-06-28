@@ -23,57 +23,64 @@ CodeCodePrism is a **MCP-compliant** graph-first code intelligence system design
 
 ### **MCP-Optimized Architecture**
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                   MCP-Compliant CodeCodePrism                      │
-├─────────────────────────────────────────────────────────────┤
-│  MCP Clients                                                │
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐           │
-│  │   Claude    │ │   Cursor    │ │  VS Code    │           │
-│  │  Desktop    │ │   Editor    │ │  Copilot    │           │
-│  └─────────────┘ └─────────────┘ └─────────────┘           │
-│         │               │               │                 │
-│         └───────────────┼───────────────┘                 │
-│                         ▼ (JSON-RPC 2.0)                 │
-│  ┌─────────────────────────────────────────────────────────┐ │
-│  │              CodeCodePrism MCP Server                           │ │
-│  │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐       │ │
-│  │  │ Resources   │ │   Tools     │ │  Prompts    │       │ │
-│  │  │ Manager     │ │ Manager     │ │ Manager     │       │ │
-│  │  └─────────────┘ └─────────────┘ └─────────────┘       │ │
-│  │                                                         │ │
-│  │  ┌─────────────────────────────────────────────────────┐ │ │
-│  │  │              JSON-RPC 2.0 Transport                │ │ │
-│  │  │  ┌─────────────┐ ┌─────────────┐                   │ │ │
-│  │  │  │   stdio     │ │ HTTP + SSE  │                   │ │ │
-│  │  │  │ (Primary)   │ │ (Optional)  │                   │ │ │
-│  │  │  └─────────────┘ └─────────────┘                   │ │ │
-│  │  └─────────────────────────────────────────────────────┘ │ │
-│  └─────────────────────────────────────────────────────────┘ │
-│                         │                                   │
-│                         ▼                                   │
-│  ┌─────────────────────────────────────────────────────────┐ │
-│  │          Repository Manager                             │ │
-│  │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐       │ │
-│  │  │ Repository  │ │   Parser    │ │ File        │       │ │
-│  │  │  Scanner    │ │   Engine    │ │ Watcher     │       │ │
-│  │  └─────────────┘ └─────────────┘ └─────────────┘       │ │
-│  │                                                         │ │
-│  │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐       │ │
-│  │  │ Bulk        │ │   Pipeline  │ │ Language    │       │ │
-│  │  │ Indexer     │ │ Integration │ │ Parsers     │       │ │
-│  │  └─────────────┘ └─────────────┘ └─────────────┘       │ │
-│  └─────────────────────────────────────────────────────────┘ │
-│                         │                                   │
-│                         ▼                                   │
-│  ┌─────────────────────────────────────────────────────────┐ │
-│  │      In-Memory Graph + Optional Persistence             │ │
-│  │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐       │ │
-│  │  │  DashMap    │ │  LRU Cache  │ │ Optional    │       │ │
-│  │  │ (Live Graph)│ │ (Parsed AST)│ │ File Cache  │       │ │
-│  │  └─────────────┘ └─────────────┘ └─────────────┘       │ │
-│  └─────────────────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph "MCP-Compliant CodePrism"
+        subgraph "Client Layer"
+            Claude[Claude Desktop]
+            Cursor[Cursor Editor]
+            VSCode[VS Code Copilot]
+        end
+        
+        subgraph "CodePrism MCP Server"
+            subgraph "Core Components"
+                RM[Resources Manager]
+                TM[Tools Manager]
+                PM[Prompts Manager]
+            end
+            
+            subgraph "JSON-RPC 2.0 Transport"
+                STDIO[stdio - Primary]
+                HTTP[HTTP + SSE - Optional]
+            end
+        end
+        
+        subgraph "Repository Manager"
+            RS[Repository Scanner]
+            PE[Parser Engine]
+            FW[File Watcher]
+            BI[Bulk Indexer]
+            PI[Pipeline Integration]
+            LP[Language Parsers]
+        end
+        
+        subgraph "Storage Layer"
+            DM[DashMap - Live Graph]
+            LRU[LRU Cache - Parsed AST]
+            FC[Optional File Cache]
+        end
+    end
+    
+    Claude --> RM
+    Cursor --> RM
+    VSCode --> RM
+    
+    RM --> STDIO
+    TM --> STDIO
+    PM --> STDIO
+    
+    STDIO --> RS
+    HTTP --> RS
+    
+    RS --> DM
+    PE --> LRU
+    FW --> DM
+    BI --> DM
+    PI --> FC
+    LP --> LRU
+    
+    DM --> FC
+    LRU --> FC
 ```
 
 **Key Architectural Changes**:
@@ -454,20 +461,31 @@ impl MemoryManager {
 
 ### **Caching Strategy (Simplified)**
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                 MCP-Optimized Caching                      │
-├─────────────────────────────────────────────────────────────┤
-│  L1: In-Process Memory (Primary)                           │
-│  ├─ Live Graph: DashMap (thread-safe)                      │
-│  ├─ Parse Cache: LRU (recent files)                        │
-│  └─ Query Cache: HashMap (common queries)                  │
-├─────────────────────────────────────────────────────────────┤
-│  L2: Optional File Cache (Secondary)                       │
-│  ├─ Serialized Graph: bincode format                       │
-│  ├─ Parse Results: msgpack format                          │
-│  └─ Statistics: JSON format                                │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph "MCP-Optimized Caching Architecture"
+        subgraph "L1: In-Process Memory (Primary)"
+            LG[Live Graph<br/>DashMap - thread-safe]
+            PC[Parse Cache<br/>LRU - recent files]
+            QC[Query Cache<br/>HashMap - common queries]
+        end
+        
+        subgraph "L2: Optional File Cache (Secondary)"
+            SG[Serialized Graph<br/>bincode format]
+            PR[Parse Results<br/>msgpack format]
+            ST[Statistics<br/>JSON format]
+        end
+    end
+    
+    LG -.-> SG
+    PC -.-> PR
+    QC -.-> ST
+    
+    classDef primary fill:#2e8555,stroke:#1c1e21,stroke-width:2px,color:#fff
+    classDef secondary fill:#f1f3f4,stroke:#606770,stroke-width:2px,color:#1c1e21
+    
+    class LG,PC,QC primary
+    class SG,PR,ST secondary
 ```
 
 ## Security Architecture

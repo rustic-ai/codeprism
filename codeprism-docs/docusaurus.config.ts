@@ -36,6 +36,13 @@ const config: Config = {
     locales: ['en'],
   },
 
+  themes: ['@docusaurus/theme-mermaid'],
+  // In order for Mermaid code blocks to work in Markdown,
+  // you also need to enable the Remark plugin with this option
+  markdown: {
+    mermaid: true,
+  },
+
   presets: [
     [
       'classic',
@@ -189,6 +196,22 @@ const config: Config = {
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
+    },
+    mermaid: {
+      theme: {light: 'neutral', dark: 'dark'},
+      options: {
+        // Increase the maximum text length
+        maxTextSize: 50000,
+        // Set theme variables for better styling
+        themeVariables: {
+          primaryColor: '#2e8555',
+          primaryTextColor: '#1c1e21',
+          primaryBorderColor: '#2e8555',
+          lineColor: '#606770',
+          secondaryColor: '#f1f3f4',
+          tertiaryColor: '#ffffff',
+        },
+      },
     },
   } satisfies Preset.ThemeConfig,
 };

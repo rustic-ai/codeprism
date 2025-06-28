@@ -345,22 +345,52 @@ impl RustAnalyzer {
                         if call_node.name.contains("push_str") || call_node.name.contains("push") {
                             string_pushes += 1;
                         }
-
-                        // Detect string concatenation in loops
-                        if call_node.name.contains("+") && string_pushes > 2 {
-                            issues.push(PerformanceIssue {
-                                issue_type: PerformanceIssueType::StringConcatenation,
-                                location: call_node.span.clone(),
-                                description: "Multiple string operations detected".to_string(),
-                                suggestion: Some(
-                                    "Consider using String::with_capacity() or format! macro"
-                                        .to_string(),
-                                ),
-                                impact: PerformanceImpact::Medium,
-                            });
-                        }
                     }
                 }
+            }
+
+            // If we have multiple string push operations, it's a performance issue
+            if string_pushes >= 3 {
+                issues.push(PerformanceIssue {
+                    issue_type: PerformanceIssueType::StringConcatenation,
+                    location: function_node.span.clone(),
+                    description: format!(
+                        "Multiple string operations detected: {} push operations",
+                        string_pushes
+                    ),
+                    suggestion: Some(
+                        "Consider using String::with_capacity() or format! macro".to_string(),
+                    ),
+                    impact: PerformanceImpact::Medium,
+                });
+            }
+        }
+
+        // Fallback: Check entire function content for string patterns if scope_map is empty
+        if !self.scope_map.contains_key(&function_node.id)
+            || self.scope_map.get(&function_node.id).unwrap().is_empty()
+        {
+            let mut push_str_count = 0;
+
+            for node in &self.nodes {
+                if matches!(node.kind, NodeKind::Call) && node.name.contains("push_str") {
+                    push_str_count += 1;
+                }
+            }
+
+            if push_str_count >= 3 {
+                issues.push(PerformanceIssue {
+                    issue_type: PerformanceIssueType::StringConcatenation,
+                    location: function_node.span.clone(),
+                    description: format!(
+                        "Multiple string operations detected: {} push_str calls",
+                        push_str_count
+                    ),
+                    suggestion: Some(
+                        "Consider using String::with_capacity() or format! macro".to_string(),
+                    ),
+                    impact: PerformanceImpact::Medium,
+                });
             }
         }
 
@@ -659,6 +689,27 @@ impl RustAnalyzer {
             }
         }
 
+        // Fallback: Check for transmute calls globally if scope_map is empty
+        if !self.scope_map.contains_key(&function_node.id)
+            || self.scope_map.get(&function_node.id).unwrap().is_empty()
+        {
+            for node in &self.nodes {
+                if matches!(node.kind, NodeKind::Call) && node.name.contains("transmute") {
+                    issues.push(SafetyIssue {
+                        issue_type: SafetyIssueType::TypeTransmutation,
+                        location: function_node.span.clone(),
+                        description: "Type transmutation is extremely dangerous".to_string(),
+                        rationale: None,
+                        mitigation: Some(
+                            "Validate size and alignment requirements, consider safer alternatives"
+                                .to_string(),
+                        ),
+                        risk_level: RiskLevel::Critical,
+                    });
+                }
+            }
+        }
+
         issues
     }
 
@@ -735,6 +786,32 @@ impl RustAnalyzer {
                     description: format!(
                         "Function acquires {} locks, potential deadlock risk",
                         mutex_calls.len()
+                    ),
+                    suggestion: Some(
+                        "Ensure consistent lock ordering or use try_lock with timeouts".to_string(),
+                    ),
+                    severity: ConcurrencySeverity::High,
+                });
+            }
+        }
+
+        // Fallback: Check for multiple lock calls globally if scope_map is empty
+        if !self.scope_map.contains_key(&function_node.id)
+            || self.scope_map.get(&function_node.id).unwrap().is_empty()
+        {
+            let lock_calls: Vec<&Node> = self
+                .nodes
+                .iter()
+                .filter(|n| matches!(n.kind, NodeKind::Call) && n.name.contains("lock"))
+                .collect();
+
+            if lock_calls.len() > 1 {
+                issues.push(ConcurrencyIssue {
+                    issue_type: ConcurrencyIssueType::DeadlockPotential,
+                    location: function_node.span.clone(),
+                    description: format!(
+                        "Multiple mutex locks detected ({}), potential deadlock risk",
+                        lock_calls.len()
                     ),
                     suggestion: Some(
                         "Ensure consistent lock ordering or use try_lock with timeouts".to_string(),

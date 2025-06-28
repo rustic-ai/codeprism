@@ -451,12 +451,12 @@ impl RustAnalyzer {
                 return true;
             }
         }
-        
+
         // Check function name for unsafe
         if function_node.name.contains("unsafe") {
             return true;
         }
-        
+
         // Check if it's a method with unsafe in metadata
         if matches!(function_node.kind, NodeKind::Method) {
             if let Some(metadata) = function_node.metadata.as_object() {
@@ -476,7 +476,7 @@ impl RustAnalyzer {
                 }
             }
         }
-        
+
         false
     }
 

@@ -1331,7 +1331,7 @@ async fn find_unused_imports(
     Ok(unused_imports)
 }
 
-/// Find dead code blocks in the codebase
+/// Enhanced dead code detection with comprehensive analysis capabilities
 async fn find_dead_code_blocks(
     server: &CodePrismMcpServer,
     confidence_threshold: f64,
@@ -1351,40 +1351,24 @@ async fn find_dead_code_blocks(
             continue;
         }
 
-        // Look for unreachable code patterns
-        let function_name = &function.name;
-        let mut confidence = 0.0;
-        let mut indicators = Vec::new();
-
-        // Check for common dead code patterns in function names
-        if function_name.contains("deprecated")
-            || function_name.contains("unused")
-            || function_name.contains("old")
-            || function_name.contains("temp")
-            || function_name.contains("test")
-        {
-            confidence += 0.6;
-            indicators.push("Function name suggests deprecated or temporary code".to_string());
-        }
-
-        // Check if function has no callers and is not an entry point
-        let references = server.graph_query().find_references(&function.id)?;
-        let call_count = references
-            .iter()
-            .filter(|r| matches!(r.edge_kind, codeprism_core::EdgeKind::Calls))
-            .count();
-
-        if call_count == 0 && !function_name.starts_with("main") && !function_name.starts_with("__")
-        {
-            confidence += 0.4;
-            indicators.push("Function has no callers and is not an entry point".to_string());
-        }
-
-        if confidence >= confidence_threshold {
+        let mut analysis_result = DeadCodeAnalysis::new(function.clone());
+        
+        // Perform comprehensive dead code analysis
+        analyze_function_usage(server, &mut analysis_result).await?;
+        analyze_reflection_patterns(server, &mut analysis_result).await?;
+        analyze_framework_patterns(server, &mut analysis_result).await?;
+        analyze_dynamic_dispatch(server, &mut analysis_result).await?;
+        analyze_api_boundaries(server, &mut analysis_result).await?;
+        analyze_unreachable_code(server, &mut analysis_result).await?;
+        
+        if analysis_result.confidence >= confidence_threshold {
+            let impact_analysis = perform_impact_analysis(server, &analysis_result).await?;
+            let removal_suggestions = generate_removal_suggestions(&analysis_result, &impact_analysis);
+            
             dead_code_blocks.push(serde_json::json!({
                 "id": function.id.to_hex(),
                 "name": function.name,
-                "kind": "DeadCodeBlock",
+                "kind": analysis_result.dead_code_type,
                 "file": function.file.display().to_string(),
                 "location": {
                     "start_line": function.span.start_line,
@@ -1392,15 +1376,544 @@ async fn find_dead_code_blocks(
                     "start_column": function.span.start_column,
                     "end_column": function.span.end_column
                 },
-                "confidence": confidence,
-                "indicators": indicators,
+                "confidence": analysis_result.confidence,
+                "dead_code_category": analysis_result.category,
+                "indicators": analysis_result.indicators,
                 "lines_of_code": function.span.end_line - function.span.start_line + 1,
-                "potential_savings": "Remove dead code block to eliminate unreachable code"
+                "potential_savings": format!("Remove {} to eliminate {} code", analysis_result.dead_code_type.to_lowercase(), analysis_result.category),
+                "framework_context": analysis_result.framework_context,
+                "cross_language_usage": analysis_result.cross_language_usage,
+                "dynamic_usage_patterns": analysis_result.dynamic_patterns,
+                "impact_analysis": impact_analysis,
+                "removal_suggestions": removal_suggestions,
+                "safety_score": analysis_result.safety_score
             }));
         }
     }
 
     Ok(dead_code_blocks)
+}
+
+/// Enhanced dead code analysis structure
+#[derive(Debug, Clone)]
+struct DeadCodeAnalysis {
+    function: codeprism_core::Node,
+    confidence: f64,
+    dead_code_type: String,
+    category: String,
+    indicators: Vec<String>,
+    framework_context: Vec<String>,
+    cross_language_usage: Vec<String>,
+    dynamic_patterns: Vec<String>,
+    safety_score: f64,
+    risk_factors: Vec<String>,
+}
+
+impl DeadCodeAnalysis {
+    fn new(function: codeprism_core::Node) -> Self {
+        Self {
+            function,
+            confidence: 0.0,
+            dead_code_type: "Unknown".to_string(),
+            category: "Potentially Dead".to_string(),
+            indicators: Vec::new(),
+            framework_context: Vec::new(),
+            cross_language_usage: Vec::new(),
+            dynamic_patterns: Vec::new(),
+            safety_score: 1.0,
+            risk_factors: Vec::new(),
+        }
+    }
+}
+
+/// Analyze function usage patterns with enhanced detection
+async fn analyze_function_usage(
+    server: &CodePrismMcpServer,
+    analysis: &mut DeadCodeAnalysis,
+) -> Result<()> {
+    let function_name = &analysis.function.name;
+    
+    // Basic usage analysis
+    let references = server.graph_query().find_references(&analysis.function.id)?;
+    let call_count = references
+        .iter()
+        .filter(|r| matches!(r.edge_kind, codeprism_core::EdgeKind::Calls))
+        .count();
+
+    if call_count == 0 {
+        analysis.confidence += 0.4;
+        analysis.indicators.push("No direct function calls found".to_string());
+        
+        // Check if it's an entry point
+        if function_name.starts_with("main") 
+            || function_name.starts_with("__")
+            || function_name == "init"
+            || function_name.contains("entry")
+            || function_name.contains("bootstrap") {
+            analysis.confidence -= 0.6;
+            analysis.indicators.push("Identified as potential entry point".to_string());
+            analysis.safety_score -= 0.3;
+        }
+    } else {
+        analysis.indicators.push(format!("{} direct calls found", call_count));
+    }
+
+    // Enhanced naming pattern analysis
+    let function_name_lower = function_name.to_lowercase();
+    
+    // Legacy/deprecated patterns
+    if function_name_lower.contains("deprecated")
+        || function_name_lower.contains("unused")
+        || function_name_lower.contains("old")
+        || function_name_lower.contains("legacy")
+        || function_name_lower.contains("obsolete") {
+        analysis.confidence += 0.7;
+        analysis.dead_code_type = "Legacy Function".to_string();
+        analysis.category = "Deprecated Code".to_string();
+        analysis.indicators.push("Function name indicates deprecated/legacy code".to_string());
+    }
+    
+    // Temporary/debug patterns
+    if function_name_lower.contains("temp")
+        || function_name_lower.contains("tmp")
+        || function_name_lower.contains("debug")
+        || function_name_lower.contains("test_")
+        || function_name_lower.contains("_test")
+        || function_name_lower.contains("draft") {
+        analysis.confidence += 0.6;
+        analysis.dead_code_type = "Temporary Function".to_string();
+        analysis.category = "Debug/Test Code".to_string();
+        analysis.indicators.push("Function name suggests temporary or debug code".to_string());
+    }
+
+    // Version-specific patterns
+    if function_name_lower.contains("_v1")
+        || function_name_lower.contains("_old")
+        || function_name_lower.contains("_backup")
+        || function_name_lower.contains("_copy") {
+        analysis.confidence += 0.5;
+        analysis.dead_code_type = "Versioned Function".to_string();
+        analysis.category = "Superseded Code".to_string();
+        analysis.indicators.push("Function appears to be an old version".to_string());
+    }
+
+    Ok(())
+}
+
+/// Analyze reflection and dynamic loading patterns
+async fn analyze_reflection_patterns(
+    server: &CodePrismMcpServer,
+    analysis: &mut DeadCodeAnalysis,
+) -> Result<()> {
+    let function_name = &analysis.function.name;
+    
+    // Check for functions that might be called via reflection
+    let reflection_patterns = vec![
+        // Java reflection patterns
+        ("Class.forName", "Java reflection"),
+        ("Method.invoke", "Java method invocation"),
+        ("Constructor.newInstance", "Java constructor reflection"),
+        
+        // Python reflection patterns  
+        ("getattr", "Python dynamic attribute access"),
+        ("__getattribute__", "Python attribute access"),
+        ("exec", "Python dynamic execution"),
+        ("eval", "Python expression evaluation"),
+        
+        // JavaScript patterns
+        ("Function.prototype.call", "JavaScript dynamic call"),
+        ("Function.prototype.apply", "JavaScript dynamic apply"),
+        ("eval", "JavaScript dynamic evaluation"),
+        
+        // C# reflection patterns
+        ("Type.GetMethod", "C# reflection"),
+        ("MethodInfo.Invoke", "C# method invocation"),
+        
+        // General patterns
+        ("dynamic", "Dynamic typing/loading"),
+        ("runtime", "Runtime loading"),
+    ];
+
+    // Search for reflection usage in the codebase
+    let all_functions = server
+        .graph_store()
+        .get_nodes_by_kind(codeprism_core::NodeKind::Function);
+
+    for other_function in all_functions {
+        let other_name_lower = other_function.name.to_lowercase();
+        
+        for (pattern, description) in &reflection_patterns {
+            if other_name_lower.contains(&pattern.to_lowercase()) {
+                // Check if this function might reference our target function by name
+                if other_function.name.contains(function_name) {
+                    analysis.confidence -= 0.4;
+                    analysis.dynamic_patterns.push(format!("{}: {}", description, other_function.name));
+                    analysis.indicators.push(format!("Potential dynamic usage via {}", description));
+                    analysis.safety_score -= 0.2;
+                }
+            }
+        }
+    }
+
+    // Check for string literals that might contain function names (simplified)
+    if function_name.len() > 3 {
+        // This is a simplified check - in production, would parse string literals
+        analysis.dynamic_patterns.push("String literal analysis placeholder".to_string());
+    }
+
+    Ok(())
+}
+
+/// Analyze framework-specific patterns
+async fn analyze_framework_patterns(
+    server: &CodePrismMcpServer,
+    analysis: &mut DeadCodeAnalysis,
+) -> Result<()> {
+    let function_name = &analysis.function.name;
+    let function_name_lower = function_name.to_lowercase();
+    let file_path = analysis.function.file.to_string_lossy();
+    
+    // Web framework patterns
+    if function_name_lower.contains("handler")
+        || function_name_lower.contains("controller")
+        || function_name_lower.contains("endpoint")
+        || function_name_lower.contains("route")
+        || function_name_lower.starts_with("get_")
+        || function_name_lower.starts_with("post_")
+        || function_name_lower.starts_with("put_")
+        || function_name_lower.starts_with("delete_") {
+        analysis.confidence -= 0.5;
+        analysis.framework_context.push("Web framework handler".to_string());
+        analysis.indicators.push("Identified as web framework handler/controller".to_string());
+        analysis.safety_score -= 0.4;
+    }
+
+    // Test framework patterns
+    if function_name_lower.starts_with("test_")
+        || function_name_lower.contains("_test")
+        || function_name_lower.starts_with("spec_")
+        || function_name_lower.contains("should_")
+        || file_path.contains("test") {
+        if file_path.contains("test") {
+            // In test files, test functions are expected
+            analysis.confidence -= 0.3;
+            analysis.framework_context.push("Test framework function".to_string());
+        } else {
+            // Test functions outside test directories might be dead
+            analysis.confidence += 0.2;
+            analysis.framework_context.push("Test function in non-test file".to_string());
+        }
+    }
+
+    // Database/ORM patterns  
+    if function_name_lower.contains("migration")
+        || function_name_lower.contains("seed")
+        || function_name_lower.contains("fixture")
+        || function_name_lower.starts_with("up_")
+        || function_name_lower.starts_with("down_") {
+        analysis.confidence -= 0.4;
+        analysis.framework_context.push("Database migration/ORM function".to_string());
+        analysis.safety_score -= 0.3;
+    }
+
+    // Event/callback patterns
+    if function_name_lower.starts_with("on_")
+        || function_name_lower.contains("callback")
+        || function_name_lower.contains("listener")
+        || function_name_lower.contains("handler")
+        || function_name_lower.ends_with("_event") {
+        analysis.confidence -= 0.4;
+        analysis.framework_context.push("Event callback function".to_string());
+        analysis.safety_score -= 0.3;
+    }
+
+    // CLI/Command patterns
+    if function_name_lower.starts_with("cmd_")
+        || function_name_lower.contains("command")
+        || function_name_lower.contains("cli_")
+        || function_name_lower.starts_with("do_") {
+        analysis.confidence -= 0.3;
+        analysis.framework_context.push("CLI command function".to_string());
+        analysis.safety_score -= 0.2;
+    }
+
+    // Plugin/Extension patterns
+    if function_name_lower.contains("plugin")
+        || function_name_lower.contains("extension")
+        || function_name_lower.contains("hook")
+        || function_name_lower.contains("filter") {
+        analysis.confidence -= 0.5;
+        analysis.framework_context.push("Plugin/extension function".to_string());
+        analysis.safety_score -= 0.4;
+    }
+
+    Ok(())
+}
+
+/// Analyze dynamic dispatch patterns
+async fn analyze_dynamic_dispatch(
+    server: &CodePrismMcpServer,
+    analysis: &mut DeadCodeAnalysis,
+) -> Result<()> {
+    let function_name = &analysis.function.name;
+    
+    // Check for interface/trait implementations via classes with Implements edges
+    let classes = server
+        .graph_store()
+        .get_nodes_by_kind(codeprism_core::NodeKind::Class);
+    
+    for class in classes {
+        let class_dependencies = server
+            .graph_query()
+            .find_dependencies(&class.id, codeprism_core::graph::DependencyType::Direct)?;
+        
+        for dep in class_dependencies {
+            // Check if this is an Implements edge
+            if matches!(dep.edge_kind, codeprism_core::EdgeKind::Implements) && dep.target_node.name == *function_name {
+                analysis.confidence -= 0.5;
+                analysis.dynamic_patterns.push(format!("Implements interface: {}", class.name));
+                analysis.indicators.push("Function implements interface (potential dynamic dispatch)".to_string());
+                analysis.safety_score -= 0.3;
+                break;
+            }
+        }
+    }
+
+    // Check for virtual/override patterns
+    let function_name_lower = function_name.to_lowercase();
+    if function_name_lower.contains("virtual")
+        || function_name_lower.contains("override")
+        || function_name_lower.contains("abstract") {
+        analysis.confidence -= 0.4;
+        analysis.dynamic_patterns.push("Virtual/override method".to_string());
+        analysis.safety_score -= 0.3;
+    }
+
+    Ok(())
+}
+
+/// Analyze cross-language API boundaries
+async fn analyze_api_boundaries(
+    server: &CodePrismMcpServer,
+    analysis: &mut DeadCodeAnalysis,
+) -> Result<()> {
+    let function_name = &analysis.function.name;
+    let function_name_lower = function_name.to_lowercase();
+    
+    // C/C++ export patterns
+    if function_name_lower.starts_with("extern")
+        || function_name_lower.contains("export")
+        || function_name_lower.contains("api_")
+        || function_name_lower.starts_with("c_") {
+        analysis.confidence -= 0.6;
+        analysis.cross_language_usage.push("C API export".to_string());
+        analysis.safety_score -= 0.4;
+    }
+
+    // JNI patterns
+    if function_name_lower.starts_with("java_")
+        || function_name_lower.contains("jni_")
+        || function_name_lower.contains("_jni") {
+        analysis.confidence -= 0.6;
+        analysis.cross_language_usage.push("JNI function".to_string());
+        analysis.safety_score -= 0.4;
+    }
+
+    // Python C extension patterns
+    if function_name_lower.starts_with("py_")
+        || function_name_lower.contains("python_")
+        || function_name_lower.contains("_py") {
+        analysis.confidence -= 0.6;
+        analysis.cross_language_usage.push("Python C extension".to_string());
+        analysis.safety_score -= 0.4;
+    }
+
+    // FFI patterns
+    if function_name_lower.contains("ffi")
+        || function_name_lower.contains("foreign")
+        || function_name_lower.contains("native") {
+        analysis.confidence -= 0.5;
+        analysis.cross_language_usage.push("Foreign function interface".to_string());
+        analysis.safety_score -= 0.3;
+    }
+
+    // Check file extensions for cross-language indicators
+    let file_path = analysis.function.file.to_string_lossy();
+    if file_path.ends_with(".h") || file_path.ends_with(".hpp") {
+        // Header files often contain API declarations
+        analysis.confidence -= 0.3;
+        analysis.cross_language_usage.push("Header file declaration".to_string());
+        analysis.safety_score -= 0.2;
+    }
+
+    Ok(())
+}
+
+/// Analyze unreachable code patterns
+async fn analyze_unreachable_code(
+    server: &CodePrismMcpServer,
+    analysis: &mut DeadCodeAnalysis,
+) -> Result<()> {
+    let function = &analysis.function;
+    
+    // Check for functions in unreachable modules/files
+    let file_path = function.file.to_string_lossy();
+    
+    // Check if the entire module might be unused
+    let module_functions = server
+        .graph_store()
+        .get_nodes_by_kind(codeprism_core::NodeKind::Function)
+        .into_iter()
+        .filter(|f| f.file == function.file)
+        .collect::<Vec<_>>();
+    
+    let mut unused_count = 0;
+    for module_function in &module_functions {
+        let references = server.graph_query().find_references(&module_function.id)?;
+        let call_count = references
+            .iter()
+            .filter(|r| matches!(r.edge_kind, codeprism_core::EdgeKind::Calls))
+            .count();
+        if call_count == 0 {
+            unused_count += 1;
+        }
+    }
+    
+    if module_functions.len() > 1 && unused_count as f64 / module_functions.len() as f64 > 0.8 {
+        analysis.confidence += 0.3;
+        analysis.indicators.push("Function is in a mostly unused module".to_string());
+        analysis.category = "Unreachable Module".to_string();
+    }
+
+    // Check for conditional compilation flags that might make code unreachable
+    if file_path.contains("debug") && !file_path.contains("test") {
+        analysis.indicators.push("Function in debug-specific code".to_string());
+        analysis.confidence += 0.2;
+    }
+
+    if file_path.contains("experimental") || file_path.contains("prototype") {
+        analysis.indicators.push("Function in experimental/prototype code".to_string());
+        analysis.confidence += 0.4;
+        analysis.category = "Experimental Code".to_string();
+    }
+
+    Ok(())
+}
+
+/// Perform impact analysis for safe removal
+async fn perform_impact_analysis(
+    server: &CodePrismMcpServer,
+    analysis: &DeadCodeAnalysis,
+) -> Result<serde_json::Value> {
+    let function = &analysis.function;
+    
+    // Analyze dependencies that would be affected
+    let dependencies = server
+        .graph_query()
+        .find_dependencies(&function.id, codeprism_core::graph::DependencyType::Direct)?;
+    
+    let mut impacted_files = std::collections::HashSet::new();
+    let mut impacted_modules = std::collections::HashSet::new();
+    
+    for dep in &dependencies {
+        impacted_files.insert(dep.target_node.file.to_string_lossy().to_string());
+        if let Some(parent) = dep.target_node.file.parent() {
+            impacted_modules.insert(parent.to_string_lossy().to_string());
+        }
+    }
+
+    // Calculate removal complexity
+    let complexity_score = match dependencies.len() {
+        0 => "Low",
+        1..=5 => "Medium", 
+        _ => "High"
+    };
+
+    // Estimate effort required
+    let lines_of_code = function.span.end_line - function.span.start_line + 1;
+    let effort_estimate = match (lines_of_code, dependencies.len()) {
+        (0..=10, 0..=2) => "5 minutes",
+        (0..=50, 0..=5) => "15 minutes", 
+        (0..=100, 0..=10) => "30 minutes",
+        _ => "1+ hours"
+    };
+
+    Ok(serde_json::json!({
+        "impact_scope": {
+            "affected_files": impacted_files.len(),
+            "affected_modules": impacted_modules.len(),
+            "total_dependencies": dependencies.len()
+        },
+        "removal_complexity": complexity_score,
+        "estimated_effort": effort_estimate,
+        "risk_level": if analysis.safety_score > 0.7 { "Low" } else if analysis.safety_score > 0.4 { "Medium" } else { "High" },
+        "safety_considerations": analysis.risk_factors,
+        "testing_recommendations": generate_testing_recommendations(analysis)
+    }))
+}
+
+/// Generate safe removal suggestions
+fn generate_removal_suggestions(
+    analysis: &DeadCodeAnalysis,
+    impact_analysis: &serde_json::Value,
+) -> Vec<String> {
+    let mut suggestions = Vec::new();
+    
+    // Risk-based suggestions
+    if analysis.safety_score > 0.8 {
+        suggestions.push("✅ Safe to remove - low risk of unintended consequences".to_string());
+        suggestions.push("Consider automated removal as part of code cleanup".to_string());
+    } else if analysis.safety_score > 0.5 {
+        suggestions.push("⚠️ Moderate risk - manual review recommended".to_string());
+        suggestions.push("Remove after verifying no dynamic references exist".to_string());
+    } else {
+        suggestions.push("🚨 High risk - thorough analysis required".to_string());
+        suggestions.push("Consider deprecation before removal".to_string());
+    }
+
+    // Framework-specific suggestions
+    if !analysis.framework_context.is_empty() {
+        suggestions.push(format!("Framework context detected: {:?}", analysis.framework_context));
+        suggestions.push("Verify framework conventions before removal".to_string());
+    }
+
+    // Cross-language suggestions
+    if !analysis.cross_language_usage.is_empty() {
+        suggestions.push("Cross-language usage detected - check all language bindings".to_string());
+    }
+
+    // Batch operation suggestions
+    let complexity = impact_analysis.get("removal_complexity").and_then(|v| v.as_str()).unwrap_or("Unknown");
+    match complexity {
+        "Low" => suggestions.push("Can be included in automated batch removal".to_string()),
+        "Medium" => suggestions.push("Group with similar functions for batch review".to_string()),
+        "High" => suggestions.push("Handle individually with careful planning".to_string()),
+        _ => {}
+    }
+
+    suggestions
+}
+
+/// Generate testing recommendations based on analysis
+fn generate_testing_recommendations(analysis: &DeadCodeAnalysis) -> Vec<String> {
+    let mut recommendations = Vec::new();
+    
+    if !analysis.framework_context.is_empty() {
+        recommendations.push("Run framework-specific test suite".to_string());
+    }
+    
+    if !analysis.cross_language_usage.is_empty() {
+        recommendations.push("Test cross-language bindings and integrations".to_string());
+    }
+    
+    if analysis.safety_score < 0.5 {
+        recommendations.push("Comprehensive integration testing required".to_string());
+        recommendations.push("Monitor production metrics after removal".to_string());
+    } else {
+        recommendations.push("Standard unit test coverage sufficient".to_string());
+    }
+
+    recommendations
 }
 
 /// Generate recommendations for unused code cleanup

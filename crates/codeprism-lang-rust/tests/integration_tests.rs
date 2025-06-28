@@ -88,9 +88,8 @@ fn test_enum_parsing() {
 #[test]
 fn test_use_statements() {
     let mut parser = RustParser::new();
-    let context = create_test_context(
-        "use std::collections::HashMap;\nuse serde::{Serialize, Deserialize};",
-    );
+    let context =
+        create_test_context("use std::collections::HashMap;\nuse serde::{Serialize, Deserialize};");
 
     let result = parser.parse(&context).unwrap();
 
@@ -134,7 +133,7 @@ fn test_ownership_patterns() {
     let has_ownership_metadata = param_nodes.iter().any(|node| {
         node.metadata
             .as_object()
-            .map_or(false, |metadata| metadata.contains_key("ownership"))
+            .is_some_and(|metadata| metadata.contains_key("ownership"))
     });
     assert!(has_ownership_metadata);
 }
@@ -156,7 +155,7 @@ fn test_lifetime_annotations() {
         .collect();
 
     // Should have at least one lifetime node
-    assert!(lifetime_nodes.len() >= 1);
+    assert!(!lifetime_nodes.is_empty());
 
     // Check for 'a lifetime
     let has_a_lifetime = lifetime_nodes.iter().any(|node| node.name.contains("'a"));
@@ -189,7 +188,7 @@ fn test_trait_bounds_and_impl() {
 
     // Check impl metadata
     let impl_node = &impl_nodes[0];
-    assert!(impl_node.metadata.as_object().map_or(false, |metadata| {
+    assert!(impl_node.metadata.as_object().is_some_and(|metadata| {
         metadata.get("impl_type") == Some(&serde_json::Value::String("trait_impl".to_string()))
     }));
 }
@@ -197,7 +196,8 @@ fn test_trait_bounds_and_impl() {
 #[test]
 fn test_derive_attributes() {
     let mut parser = RustParser::new();
-    let context = create_test_context("#[derive(Debug, Clone, PartialEq)]\nstruct Point { x: i32, y: i32 }");
+    let context =
+        create_test_context("#[derive(Debug, Clone, PartialEq)]\nstruct Point { x: i32, y: i32 }");
 
     let result = parser.parse(&context).unwrap();
 
@@ -208,12 +208,12 @@ fn test_derive_attributes() {
         .filter(|n| matches!(n.kind, NodeKind::Attribute))
         .collect();
 
-    assert!(attr_nodes.len() >= 1);
+    assert!(!attr_nodes.is_empty());
 
     // Check for derive attribute with traits
     let has_derive_attr = attr_nodes.iter().any(|node| {
         node.name.contains("derive")
-            && node.metadata.as_object().map_or(false, |metadata| {
+            && node.metadata.as_object().is_some_and(|metadata| {
                 metadata.get("attribute_type")
                     == Some(&serde_json::Value::String("derive".to_string()))
             })
@@ -276,19 +276,40 @@ fn test_complex_rust_features() {
         const DEFAULT_SIZE: usize = 1024;
         static mut GLOBAL_COUNTER: i32 = 0;
     "#;
-    
+
     let context = create_test_context(complex_code);
     let result = parser.parse(&context).unwrap();
 
     // Verify various node types are present
     assert!(result.nodes.iter().any(|n| matches!(n.kind, NodeKind::Use)));
-    assert!(result.nodes.iter().any(|n| matches!(n.kind, NodeKind::Struct)));
-    assert!(result.nodes.iter().any(|n| matches!(n.kind, NodeKind::Trait)));
-    assert!(result.nodes.iter().any(|n| matches!(n.kind, NodeKind::Impl)));
-    assert!(result.nodes.iter().any(|n| matches!(n.kind, NodeKind::Function)));
-    assert!(result.nodes.iter().any(|n| matches!(n.kind, NodeKind::Const)));
-    assert!(result.nodes.iter().any(|n| matches!(n.kind, NodeKind::Static)));
-    assert!(result.nodes.iter().any(|n| matches!(n.kind, NodeKind::Attribute)));
+    assert!(result
+        .nodes
+        .iter()
+        .any(|n| matches!(n.kind, NodeKind::Struct)));
+    assert!(result
+        .nodes
+        .iter()
+        .any(|n| matches!(n.kind, NodeKind::Trait)));
+    assert!(result
+        .nodes
+        .iter()
+        .any(|n| matches!(n.kind, NodeKind::Impl)));
+    assert!(result
+        .nodes
+        .iter()
+        .any(|n| matches!(n.kind, NodeKind::Function)));
+    assert!(result
+        .nodes
+        .iter()
+        .any(|n| matches!(n.kind, NodeKind::Const)));
+    assert!(result
+        .nodes
+        .iter()
+        .any(|n| matches!(n.kind, NodeKind::Static)));
+    assert!(result
+        .nodes
+        .iter()
+        .any(|n| matches!(n.kind, NodeKind::Attribute)));
 }
 
 #[test]
@@ -304,10 +325,12 @@ fn test_rust_analyzer_integration() {
     // Test trait implementation analysis
     let trait_impls = analyzer.analyze_trait_implementations();
     assert!(!trait_impls.is_empty());
-    
-    let display_impl = trait_impls.iter().find(|impl_| impl_.trait_name == "Display");
+
+    let display_impl = trait_impls
+        .iter()
+        .find(|impl_| impl_.trait_name == "Display");
     assert!(display_impl.is_some());
-    
+
     if let Some(impl_) = display_impl {
         assert_eq!(impl_.type_name, "String");
     }
@@ -343,4 +366,4 @@ fn test_incremental_parsing() {
 
     assert_eq!(func1.name, "foo");
     assert_eq!(func2.name, "foo");
-} 
+}

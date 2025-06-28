@@ -558,11 +558,9 @@ impl AstMapper {
         &self,
         node: &tree_sitter::Node,
     ) -> Result<(String, Option<String>, String)> {
-        let trait_name = if let Some(trait_node) = node.child_by_field_name("trait") {
-            Some(self.get_node_text(&trait_node))
-        } else {
-            None
-        };
+        let trait_name = node
+            .child_by_field_name("trait")
+            .map(|trait_node| self.get_node_text(&trait_node));
 
         let type_name = if let Some(type_node) = node.child_by_field_name("type") {
             self.get_node_text(&type_node)
@@ -762,7 +760,7 @@ impl AstMapper {
 
         // Add return type
         if let Some(return_type_node) = node.child_by_field_name("return_type") {
-            signature.push_str(" ");
+            signature.push(' ');
             signature.push_str(&self.get_node_text(&return_type_node));
         }
 

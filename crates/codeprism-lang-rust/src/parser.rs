@@ -288,7 +288,7 @@ mod tests {
         let has_ownership_metadata = param_nodes.iter().any(|node| {
             node.metadata
                 .as_object()
-                .map_or(false, |metadata| metadata.contains_key("ownership"))
+                .is_some_and(|metadata| metadata.contains_key("ownership"))
         });
         assert!(has_ownership_metadata);
     }
@@ -313,7 +313,7 @@ mod tests {
             .collect();
 
         // Should have at least one lifetime node
-        assert!(lifetime_nodes.len() >= 1);
+        assert!(!lifetime_nodes.is_empty());
 
         // Check for 'a lifetime
         let has_a_lifetime = lifetime_nodes.iter().any(|node| node.name.contains("'a"));
@@ -349,7 +349,7 @@ mod tests {
 
         // Check impl metadata
         let impl_node = &impl_nodes[0];
-        assert!(impl_node.metadata.as_object().map_or(false, |metadata| {
+        assert!(impl_node.metadata.as_object().is_some_and(|metadata| {
             metadata.get("impl_type") == Some(&serde_json::Value::String("trait_impl".to_string()))
         }));
     }
@@ -374,12 +374,12 @@ mod tests {
             .filter(|n| matches!(n.kind, crate::types::NodeKind::Attribute))
             .collect();
 
-        assert!(attr_nodes.len() >= 1);
+        assert!(!attr_nodes.is_empty());
 
         // Check for derive attribute with traits
         let has_derive_attr = attr_nodes.iter().any(|node| {
             node.name.contains("derive")
-                && node.metadata.as_object().map_or(false, |metadata| {
+                && node.metadata.as_object().is_some_and(|metadata| {
                     metadata.get("attribute_type")
                         == Some(&serde_json::Value::String("derive".to_string()))
                 })

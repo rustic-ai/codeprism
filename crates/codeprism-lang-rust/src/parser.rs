@@ -254,4 +254,166 @@ mod tests {
         assert_eq!(func1.name, "foo");
         assert_eq!(func2.name, "foo");
     }
+
+    #[test]
+    fn test_ownership_patterns() {
+        let mut parser = RustParser::new();
+        let context = ParseContext {
+            repo_id: "test_repo".to_string(),
+            file_path: PathBuf::from("test.rs"),
+            old_tree: None,
+            content: "fn process_data(data: Vec<String>, buffer: &mut [u8], reference: &str) -> &str { reference }".to_string(),
+        };
+
+        let result = parser.parse(&context).unwrap();
+
+        // Should have function and parameter nodes
+        let func_nodes: Vec<_> = result
+            .nodes
+            .iter()
+            .filter(|n| matches!(n.kind, crate::types::NodeKind::Function))
+            .collect();
+        assert_eq!(func_nodes.len(), 1);
+
+        let param_nodes: Vec<_> = result
+            .nodes
+            .iter()
+            .filter(|n| matches!(n.kind, crate::types::NodeKind::Parameter))
+            .collect();
+
+        // Should have parameters with ownership information
+        assert!(param_nodes.len() >= 3);
+
+        // Check that at least one parameter has ownership metadata
+        let has_ownership_metadata = param_nodes.iter().any(|node| {
+            node.metadata
+                .as_object()
+                .map_or(false, |metadata| metadata.contains_key("ownership"))
+        });
+        assert!(has_ownership_metadata);
+    }
+
+    #[test]
+    fn test_lifetime_annotations() {
+        let mut parser = RustParser::new();
+        let context = ParseContext {
+            repo_id: "test_repo".to_string(),
+            file_path: PathBuf::from("test.rs"),
+            old_tree: None,
+            content: "fn longest<'a>(x: &'a str, y: &'a str) -> &'a str { if x.len() > y.len() { x } else { y } }".to_string(),
+        };
+
+        let result = parser.parse(&context).unwrap();
+
+        // Should have lifetime nodes
+        let lifetime_nodes: Vec<_> = result
+            .nodes
+            .iter()
+            .filter(|n| matches!(n.kind, crate::types::NodeKind::Lifetime))
+            .collect();
+
+        // Should have at least one lifetime node
+        assert!(lifetime_nodes.len() >= 1);
+
+        // Check for 'a lifetime
+        let has_a_lifetime = lifetime_nodes.iter().any(|node| node.name.contains("'a"));
+        assert!(has_a_lifetime);
+    }
+
+    #[test]
+    fn test_trait_bounds_and_impl() {
+        let mut parser = RustParser::new();
+        let context = ParseContext {
+            repo_id: "test_repo".to_string(),
+            file_path: PathBuf::from("test.rs"),
+            old_tree: None,
+            content: "trait Clone { fn clone(&self) -> Self; }\nstruct Point { x: i32, y: i32 }\nimpl Clone for Point { fn clone(&self) -> Self { *self } }".to_string(),
+        };
+
+        let result = parser.parse(&context).unwrap();
+
+        // Should have trait and impl nodes
+        let trait_nodes: Vec<_> = result
+            .nodes
+            .iter()
+            .filter(|n| matches!(n.kind, crate::types::NodeKind::Trait))
+            .collect();
+        assert_eq!(trait_nodes.len(), 1);
+
+        let impl_nodes: Vec<_> = result
+            .nodes
+            .iter()
+            .filter(|n| matches!(n.kind, crate::types::NodeKind::Impl))
+            .collect();
+        assert_eq!(impl_nodes.len(), 1);
+
+        // Check impl metadata
+        let impl_node = &impl_nodes[0];
+        assert!(impl_node.metadata.as_object().map_or(false, |metadata| {
+            metadata.get("impl_type") == Some(&serde_json::Value::String("trait_impl".to_string()))
+        }));
+    }
+
+    #[test]
+    fn test_derive_attributes() {
+        let mut parser = RustParser::new();
+        let context = ParseContext {
+            repo_id: "test_repo".to_string(),
+            file_path: PathBuf::from("test.rs"),
+            old_tree: None,
+            content: "#[derive(Debug, Clone, PartialEq)]\nstruct Point { x: i32, y: i32 }"
+                .to_string(),
+        };
+
+        let result = parser.parse(&context).unwrap();
+
+        // Should have attribute nodes
+        let attr_nodes: Vec<_> = result
+            .nodes
+            .iter()
+            .filter(|n| matches!(n.kind, crate::types::NodeKind::Attribute))
+            .collect();
+
+        assert!(attr_nodes.len() >= 1);
+
+        // Check for derive attribute with traits
+        let has_derive_attr = attr_nodes.iter().any(|node| {
+            node.name.contains("derive")
+                && node.metadata.as_object().map_or(false, |metadata| {
+                    metadata.get("attribute_type")
+                        == Some(&serde_json::Value::String("derive".to_string()))
+                })
+        });
+        assert!(has_derive_attr);
+    }
+
+    #[test]
+    fn test_macro_invocations() {
+        let mut parser = RustParser::new();
+        let context = ParseContext {
+            repo_id: "test_repo".to_string(),
+            file_path: PathBuf::from("test.rs"),
+            old_tree: None,
+            content: "fn main() { println!(\"Hello, world!\"); vec![1, 2, 3]; }".to_string(),
+        };
+
+        let result = parser.parse(&context).unwrap();
+
+        // Should have call nodes for macro invocations
+        let call_nodes: Vec<_> = result
+            .nodes
+            .iter()
+            .filter(|n| matches!(n.kind, crate::types::NodeKind::Call))
+            .collect();
+
+        // Should have at least println! and vec! macro calls
+        assert!(call_nodes.len() >= 2);
+
+        // Check for macro call names
+        let has_println = call_nodes.iter().any(|node| node.name.contains("println!"));
+        let has_vec = call_nodes.iter().any(|node| node.name.contains("vec!"));
+
+        assert!(has_println);
+        assert!(has_vec);
+    }
 }

@@ -192,3 +192,8 @@ milestone:
   label: Milestone
   permalink: /milestone
   description: Posts about project milestones and major achievements
+
+design-decisions:
+  label: Design Decisions
+  permalink: /design-decisions
+  description: Posts about architectural decisions and design trade-offs

@@ -148,15 +148,13 @@ impl Default for DevTools {
 }
 
 /// Configuration for development tools
-#[derive(Debug, Clone)]
-#[derive(Default)]
+#[derive(Debug, Clone, Default)]
 pub struct DevToolsConfig {
     pub visualization: ast_visualizer::VisualizationConfig,
     pub validation: parser_validator::ValidationConfig,
     pub profiling: performance_profiler::ProfilingConfig,
     pub graphviz: graphviz_export::GraphVizConfig,
 }
-
 
 /// Comprehensive analysis report combining all dev tools outputs
 #[derive(Debug)]

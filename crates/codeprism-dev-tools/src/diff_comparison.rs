@@ -375,7 +375,10 @@ impl AstDiff {
             ));
         }
 
-        if !self.config.ignore_spans && (old_node.span.start_byte != new_node.span.start_byte || old_node.span.end_byte != new_node.span.end_byte) {
+        if !self.config.ignore_spans
+            && (old_node.span.start_byte != new_node.span.start_byte
+                || old_node.span.end_byte != new_node.span.end_byte)
+        {
             changes.push(format!(
                 "Span changed: {}..{} -> {}..{}",
                 old_node.span.start_byte,

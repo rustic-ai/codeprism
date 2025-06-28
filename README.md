@@ -23,11 +23,12 @@ A production-ready, high-performance code intelligence server implementing the M
 
 ## 🚀 Current Status: Production Ready
 
-**✅ 18 Production-Ready Tools** - 100% success rate, no failed tools  
+**✅ 20 Production-Ready Tools** - 100% success rate, no failed tools  
 **✅ Full MCP Compliance** - JSON-RPC 2.0 with complete protocol implementation  
 **✅ Multi-Language Support** - JavaScript/TypeScript + Python with advanced analysis  
 **✅ Semantic APIs** - User-friendly parameter names, no cryptic IDs required  
 **✅ Environment Integration** - Automatic repository detection via `REPOSITORY_PATH`  
+**✅ Parser Development Tools** - Complete debugging and development toolkit
 
 ## 💝 Primary Sponsor
 
@@ -45,11 +46,19 @@ Dragonscale Industries Inc supports the development of cutting-edge AI-powered c
 
 ## 🌟 Key Features
 
-### **18 Advanced Analysis Tools**
+### **20 Advanced Analysis Tools**
 - **Core Navigation** (4 tools): Repository stats, symbol explanation, path tracing, dependency analysis
 - **Search & Discovery** (4 tools): Symbol search, content search, file finding, content statistics  
-- **Analysis Tools** (6 tools): Complexity analysis, data flow tracing, pattern detection, inheritance analysis
+- **Analysis Tools** (8 tools): Complexity analysis, data flow tracing, pattern detection, inheritance analysis, security analysis, performance analysis, API surface analysis, unused code detection
 - **Workflow Orchestration** (4 tools): Batch processing, workflow suggestions, optimization guidance
+
+### **Parser Development Tools** 
+- **AST Visualization**: Pretty-print syntax trees with multiple formats (Tree, JSON, GraphViz)
+- **Parser Validation**: Comprehensive validation of nodes, edges, and spans with detailed reports
+- **Development REPL**: Interactive command-line interface for parser development and testing
+- **Performance Profiling**: Real-time parsing performance metrics with bottleneck detection
+- **AST Diff Analysis**: Compare parse results between parser versions with change impact analysis
+- **GraphViz Export**: Visual AST diagrams with configurable styling and clustering
 
 ### **Advanced Python Analysis**
 - **Inheritance Tracing**: Complete hierarchy analysis with metaclass support
@@ -72,14 +81,14 @@ Dragonscale Industries Inc supports the development of cutting-edge AI-powered c
                                                  │
                                     ┌────────────┴────────────┐
                     ┌───────────────▼───────────────▼─────────────────┐
-                    │              18 MCP Tools                      │
+                    │              20 MCP Tools                      │
                     │  ┌─────────────┐  ┌─────────────────────────┐   │
                     │  │    Core     │  │     Search & Discovery  │   │
                     │  │ Navigation  │  │        4 tools          │   │
                     │  │   4 tools   │  └─────────────────────────┘   │
                     │  └─────────────┘  ┌─────────────────────────┐   │
                     │  ┌─────────────┐  │       Analysis          │   │
-                    │  │  Workflow   │  │       6 tools           │   │
+                    │  │  Workflow   │  │       8 tools           │   │
                     │  │ 4 tools     │  │                         │   │
                     │  └─────────────┘  └─────────────────────────┘   │
                     └─────────────────────────────────────────────────┘
@@ -170,6 +179,10 @@ export REPOSITORY_PATH=/path/to/your/repository
 - `detect_patterns` - Architectural and design pattern recognition
 - `trace_inheritance` - Python inheritance hierarchy with metaclass analysis
 - `analyze_decorators` - Python decorator analysis with framework detection
+- `find_unused_code` - Detect unused functions, variables, and imports with confidence scoring
+- `analyze_security` - Security vulnerability detection with CVSS scoring and OWASP mapping
+- `analyze_performance` - Performance analysis with time complexity and memory usage detection
+- `analyze_api_surface` - API surface analysis with versioning compliance and breaking change detection
 
 ### **Workflow & Orchestration**
 - `suggest_analysis_workflow` - Intelligent analysis guidance for specific goals
@@ -289,7 +302,8 @@ Your support helps us:
 - **Query Speed**: Sub-millisecond for most symbol and content searches
 
 **Test Coverage:**
-- **18/18 tools working** (100% success rate)
+- **20/20 tools working** (100% success rate)
+- **425 comprehensive tests** across all crates and parser debugging tools
 - **Comprehensive testing** against real-world repositories
 - **Full MCP protocol compliance** verified
 

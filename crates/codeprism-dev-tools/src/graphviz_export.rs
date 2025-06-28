@@ -123,8 +123,7 @@ impl Default for EdgeStyle {
 }
 
 /// GraphViz options for specific exports
-#[derive(Debug, Clone)]
-#[derive(Default)]
+#[derive(Debug, Clone, Default)]
 pub struct GraphVizOptions {
     pub title: Option<String>,
     pub subtitle: Option<String>,
@@ -135,7 +134,6 @@ pub struct GraphVizOptions {
     pub cluster_by_file: bool,
     pub show_spans: bool,
 }
-
 
 impl GraphVizExporter {
     /// Create a new GraphViz exporter with default configuration

@@ -1,13 +1,15 @@
-# Getting Started with CodeCodePrism - MCP Integration Guide
+# Getting Started with CodePrism - MCP Integration Guide
 
-This guide walks you through setting up codeprism with the three major MCP clients: Claude Desktop, Cursor, and VS Code. By the end, you'll have a powerful AI assistant with graph-first code intelligence for your repositories.
+This guide walks you through setting up CodePrism with the three major MCP clients: Claude Desktop, Cursor, and VS Code. By the end, you'll have a powerful AI assistant with graph-first code intelligence for your repositories.
 
 ## 🎯 What You'll Achieve
 
+- **20 production-ready analysis tools** including security, performance, and API analysis
 - **AI assistants** that understand your code structure, not just text
 - **Real-time analysis** of your repositories with automatic updates
 - **Cross-language intelligence** for JavaScript, TypeScript, and Python projects
 - **Graph-based insights** about dependencies, function calls, and relationships
+- **Parser development tools** for advanced debugging and AST analysis
 
 ## 📋 Prerequisites
 
@@ -33,7 +35,7 @@ rustc --version  # Should be 1.82.0 or higher
 git --version
 ```
 
-## 🚀 Step 1: Install CodeCodePrism
+## 🚀 Step 1: Install CodePrism
 
 ### Option A: Build from Source (Recommended)
 ```bash

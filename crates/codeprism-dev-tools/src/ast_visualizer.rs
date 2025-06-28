@@ -615,7 +615,6 @@ mod tests {
     use tree_sitter::Parser;
 
     fn create_test_parser() -> Parser {
-        
         // For testing, we'll use a simple language grammar
         // In real usage, this would use the appropriate language
         Parser::new()

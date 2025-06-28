@@ -4,8 +4,9 @@ This document provides detailed API documentation for all CodeCodePrism componen
 
 ## Table of Contents
 
-- [Core Library (codeprism`)](#core-librarycodeprism)
+- [Core Library (`codeprism`)](#core-librarycodeprism)
 - [JavaScript/TypeScript Parser (`codeprism-lang-js`)](#javascripttypescript-parser-codeprism-lang-js)
+- [Parser Development Tools (`codeprism-dev-tools`)](#parser-development-tools-codeprism-dev-tools)
 - [MCP Server (`codeprism-mcp`)](#mcp-server-codeprism-mcp)
 - [Error Handling](#error-handling)
 - [Examples](#examples)
@@ -465,6 +466,513 @@ The JavaScript/TypeScript parser supports:
 - **Imports/Exports**: ES6 modules, CommonJS requires
 - **Calls**: Function calls, method calls
 - **TypeScript**: Basic type annotations, interfaces
+
+## Parser Development Tools (`codeprism-dev-tools`)
+
+The parser development tools crate provides essential debugging and development utilities for CodePrism parser development.
+
+### Main Types
+
+#### `DevTools`
+
+Main facade providing access to all development utilities.
+
+```rust
+pub struct DevTools {
+    // Internal components
+}
+
+impl DevTools {
+    /// Create a new DevTools instance with default configuration
+    pub fn new() -> Self
+
+    /// Create a DevTools instance with custom configuration
+    pub fn with_config(config: DevToolsConfig) -> Self
+
+    /// Get access to the AST visualizer
+    pub fn visualizer(&self) -> &AstVisualizer
+
+    /// Get access to the parser validator
+    pub fn validator(&self) -> &ParserValidator
+
+    /// Get access to the performance profiler
+    pub fn profiler(&self) -> &PerformanceProfiler
+
+    /// Get access to the GraphViz exporter
+    pub fn exporter(&self) -> &GraphVizExporter
+
+    /// Start an interactive development REPL
+    pub async fn start_repl(&self, language: Option<&str>) -> Result<()>
+
+    /// Perform a comprehensive analysis of a parse result
+    pub fn analyze_parse_result(
+        &self,
+        parse_result: &codeprism_core::ParseResult,
+        source: &str,
+    ) -> Result<AnalysisReport>
+
+    /// Compare two parse results and generate a diff report
+    pub fn compare_parse_results(
+        &self,
+        old_result: &codeprism_core::ParseResult,
+        new_result: &codeprism_core::ParseResult,
+        source: &str,
+    ) -> Result<DiffReport>
+}
+```
+
+**Example:**
+```rust
+use codeprism_dev_tools::DevTools;
+
+// Create dev tools with default configuration
+let dev_tools = DevTools::new();
+
+// Analyze a parse result
+let report = dev_tools.analyze_parse_result(&parse_result, &source_code)?;
+println!("{}", report.format_report());
+
+// Start interactive REPL for Python development
+dev_tools.start_repl(Some("python")).await?;
+```
+
+#### `AstVisualizer`
+
+Pretty-print syntax trees with configurable formatting.
+
+```rust
+pub struct AstVisualizer {
+    // Internal configuration
+}
+
+impl AstVisualizer {
+    /// Create a new visualizer with default configuration
+    pub fn new() -> Self
+
+    /// Create a visualizer with custom configuration
+    pub fn with_config(config: VisualizationConfig) -> Self
+
+    /// Visualize a tree-sitter tree
+    pub fn visualize_tree(&self, tree: &Tree, source: &str) -> Result<String>
+
+    /// Visualize in a specific format
+    pub fn visualize_with_format(
+        &self,
+        tree: &Tree,
+        source: &str,
+        format: VisualizationFormat,
+    ) -> Result<String>
+
+    /// Generate statistics about the AST
+    pub fn generate_statistics(&self, tree: &Tree, source: &str) -> Result<AstStatistics>
+
+    /// Compare two ASTs and highlight differences
+    pub fn compare_asts(&self, old_node: &Node, new_node: &Node, source: &str) -> Result<String>
+}
+```
+
+**Supported Formats:**
+```rust
+#[derive(Debug, Clone, Copy)]
+pub enum VisualizationFormat {
+    Tree,        // Traditional tree format with Unicode box characters
+    List,        // Flat list format
+    Json,        // JSON representation
+    SExpression, // S-expression format (Lisp-like)
+    Compact,     // Condensed format for large trees
+}
+```
+
+#### `ParserValidator`
+
+Comprehensive validation tools for parser output.
+
+```rust
+pub struct ParserValidator {
+    // Internal configuration
+}
+
+impl ParserValidator {
+    /// Create a new validator with default configuration
+    pub fn new() -> Self
+
+    /// Create a validator with custom configuration
+    pub fn with_config(config: ValidationConfig) -> Self
+
+    /// Perform comprehensive validation of a parse result
+    pub fn validate_complete(
+        &self,
+        parse_result: &ParseResult,
+        source: &str,
+    ) -> Result<ValidationReport>
+
+    /// Validate only span overlaps
+    pub fn validate_spans(&self, nodes: &[Node]) -> Result<Vec<ValidationError>>
+
+    /// Validate edge consistency
+    pub fn validate_edges(&self, nodes: &[Node], edges: &[Edge]) -> Result<Vec<ValidationError>>
+}
+```
+
+**Validation Report:**
+```rust
+pub struct ValidationReport {
+    pub errors: Vec<ValidationError>,
+    pub warnings: Vec<ValidationWarning>,
+    pub statistics: ValidationStatistics,
+    pub is_valid: bool,
+}
+
+impl ValidationReport {
+    /// Check if the validation passed (no errors)
+    pub fn is_valid(&self) -> bool
+
+    /// Get all validation errors
+    pub fn errors(&self) -> &[ValidationError]
+
+    /// Get all validation warnings
+    pub fn warnings(&self) -> &[ValidationWarning]
+
+    /// Generate a summary report
+    pub fn summary(&self) -> String
+}
+```
+
+#### `GraphVizExporter`
+
+Export ASTs to GraphViz DOT format for visual analysis.
+
+```rust
+pub struct GraphVizExporter {
+    // Internal configuration
+}
+
+impl GraphVizExporter {
+    /// Create a new exporter with default configuration
+    pub fn new() -> Self
+
+    /// Create an exporter with custom configuration
+    pub fn with_config(config: GraphVizConfig) -> Self
+
+    /// Export nodes and edges to GraphViz DOT format
+    pub fn export_nodes_and_edges(&self, nodes: &[Node], edges: &[Edge]) -> Result<String>
+
+    /// Export with custom options
+    pub fn export_with_options(
+        &self,
+        nodes: &[Node],
+        edges: &[Edge],
+        options: &GraphVizOptions,
+    ) -> Result<String>
+
+    /// Export a tree-sitter tree to DOT format
+    pub fn export_tree(&self, tree: &Tree, source: &str) -> Result<String>
+}
+```
+
+**GraphViz Options:**
+```rust
+pub struct GraphVizOptions {
+    pub title: Option<String>,
+    pub subtitle: Option<String>,
+    pub highlight_nodes: Vec<String>,
+    pub highlight_edges: Vec<String>,
+    pub filter_node_types: Option<Vec<NodeKind>>,
+    pub filter_edge_types: Option<Vec<EdgeKind>>,
+    pub cluster_by_file: bool,
+    pub show_spans: bool,
+}
+```
+
+#### `PerformanceProfiler`
+
+Real-time parsing performance metrics with bottleneck detection.
+
+```rust
+pub struct PerformanceProfiler {
+    // Internal metrics storage
+}
+
+impl PerformanceProfiler {
+    /// Create a new profiler with default configuration
+    pub fn new() -> Self
+
+    /// Create a profiler with custom configuration
+    pub fn with_config(config: ProfilingConfig) -> Self
+
+    /// Start a new profiling session
+    pub fn start_session(&mut self)
+
+    /// Record a performance metric
+    pub fn record_metric(
+        &mut self,
+        metric_type: MetricType,
+        value: f64,
+        unit: &str,
+        context: Option<String>,
+    )
+
+    /// Generate performance summary
+    pub fn generate_summary(&self) -> PerformanceSummary
+
+    /// Analyze performance bottlenecks
+    pub fn analyze_bottlenecks(&self) -> Vec<PerformanceBottleneck>
+
+    /// Get performance recommendations
+    pub fn get_recommendations(&self) -> Vec<String>
+}
+```
+
+**Metric Types:**
+```rust
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MetricType {
+    ParseTime,     // Time to parse a file
+    MemoryUsage,   // Memory consumption
+    NodeCreation,  // Number of nodes created
+    EdgeCreation,  // Number of edges created
+    FileSize,      // Size of file being parsed
+}
+```
+
+#### `AstDiff`
+
+Compare parse results between parser versions with detailed change analysis.
+
+```rust
+pub struct AstDiff {
+    // Internal configuration
+}
+
+impl AstDiff {
+    /// Create a new AST diff analyzer
+    pub fn new() -> Self
+
+    /// Create with custom configuration
+    pub fn with_config(config: DiffConfig) -> Self
+
+    /// Compare two parse results
+    pub fn compare(
+        &self,
+        old_result: &ParseResult,
+        new_result: &ParseResult,
+        source: &str,
+    ) -> Result<DiffReport>
+
+    /// Compare only nodes
+    pub fn compare_nodes(&self, old_nodes: &[Node], new_nodes: &[Node]) -> Result<Vec<DiffType>>
+
+    /// Compare only edges
+    pub fn compare_edges(&self, old_edges: &[Edge], new_edges: &[Edge]) -> Result<Vec<DiffType>>
+}
+```
+
+**Diff Report:**
+```rust
+pub struct DiffReport {
+    pub differences: Vec<DiffType>,
+    pub statistics: DiffStatistics,
+    pub similarity_score: f64,
+    pub is_significant_change: bool,
+    pub summary: String,
+}
+
+impl DiffReport {
+    /// Format the report for display
+    pub fn format_report(&self) -> String
+
+    /// Get only the significant differences
+    pub fn significant_differences(&self) -> Vec<&DiffType>
+}
+```
+
+#### `DevRepl`
+
+Interactive command-line interface for parser development and testing.
+
+```rust
+pub struct DevRepl {
+    // Internal state
+}
+
+impl DevRepl {
+    /// Create a new REPL for the specified language
+    pub fn new(language: Option<&str>) -> Result<Self>
+
+    /// Set the AST visualizer
+    pub fn set_visualizer(&mut self, visualizer: AstVisualizer)
+
+    /// Set the parser validator
+    pub fn set_validator(&mut self, validator: ParserValidator)
+
+    /// Set the performance profiler
+    pub fn set_profiler(&mut self, profiler: PerformanceProfiler)
+
+    /// Set the GraphViz exporter
+    pub fn set_exporter(&mut self, exporter: GraphVizExporter)
+
+    /// Run the interactive REPL
+    pub async fn run(&mut self) -> Result<()>
+
+    /// Execute a single command
+    pub async fn execute_command(&mut self, command: &str) -> ReplResult
+}
+```
+
+**REPL Commands:**
+```rust
+#[derive(Debug, Clone)]
+pub enum ReplCommand {
+    Parse { source: String },
+    Load { file_path: String },
+    Show { what: ShowTarget },
+    Set { option: String, value: String },
+    Export { format: ExportFormat, output: Option<String> },
+    Compare { old_source: String, new_source: String },
+    Profile { command: String },
+    Help,
+    Clear,
+    History,
+    Exit,
+}
+```
+
+### Configuration Types
+
+#### `DevToolsConfig`
+
+Main configuration for all development tools.
+
+```rust
+#[derive(Debug, Clone, Default)]
+pub struct DevToolsConfig {
+    pub visualization: VisualizationConfig,
+    pub validation: ValidationConfig,
+    pub profiling: ProfilingConfig,
+    pub graphviz: GraphVizConfig,
+}
+```
+
+#### `VisualizationConfig`
+
+Configuration for AST visualization.
+
+```rust
+#[derive(Debug, Clone)]
+pub struct VisualizationConfig {
+    pub show_positions: bool,
+    pub show_byte_ranges: bool,
+    pub show_text_content: bool,
+    pub max_text_length: usize,
+    pub max_depth: usize,
+    pub color_scheme: ColorScheme,
+}
+```
+
+#### `ValidationConfig`
+
+Configuration for parser validation.
+
+```rust
+#[derive(Debug, Clone)]
+pub struct ValidationConfig {
+    pub check_span_overlaps: bool,
+    pub check_edge_consistency: bool,
+    pub check_unreachable_nodes: bool,
+    pub check_text_coverage: bool,
+    pub check_duplicate_nodes: bool,
+    pub min_span_size: usize,
+    pub max_parsing_time_ms: u64,
+    pub check_syntax_tree_structure: bool,
+}
+```
+
+### Example Usage
+
+#### Basic AST Visualization
+
+```rust
+use codeprism_dev_tools::{AstVisualizer, VisualizationFormat};
+
+let visualizer = AstVisualizer::new();
+
+// Parse some code
+let source = "function hello() { return 'world'; }";
+let parse_result = parser.parse_source(&source)?;
+
+// Visualize the AST
+let tree_output = visualizer.visualize_tree(&parse_result.tree, &source)?;
+println!("{}", tree_output);
+
+// Try different formats
+let json_output = visualizer.visualize_with_format(
+    &parse_result.tree,
+    &source,
+    VisualizationFormat::Json,
+)?;
+```
+
+#### Parser Validation
+
+```rust
+use codeprism_dev_tools::ParserValidator;
+
+let validator = ParserValidator::new();
+
+// Validate a parse result
+let report = validator.validate_complete(&parse_result, &source)?;
+
+if !report.is_valid() {
+    println!("Validation failed:");
+    for error in report.errors() {
+        println!("  - {}", error);
+    }
+}
+
+println!("Validation summary:\n{}", report.summary());
+```
+
+#### Performance Profiling
+
+```rust
+use codeprism_dev_tools::{PerformanceProfiler, MetricType};
+
+let mut profiler = PerformanceProfiler::new();
+
+// Start profiling session
+profiler.start_session();
+
+// Record metrics during parsing
+let start = std::time::Instant::now();
+let parse_result = parser.parse_source(&source)?;
+let duration = start.elapsed();
+
+profiler.record_metric(
+    MetricType::ParseTime,
+    duration.as_millis() as f64,
+    "ms",
+    Some("test_file.js".to_string()),
+);
+
+// Analyze results
+let summary = profiler.generate_summary();
+let bottlenecks = profiler.analyze_bottlenecks();
+let recommendations = profiler.get_recommendations();
+```
+
+#### Interactive Development
+
+```rust
+use codeprism_dev_tools::DevRepl;
+
+// Start an interactive REPL for JavaScript
+let mut repl = DevRepl::new(Some("javascript"))?;
+repl.run().await?;
+
+// Or execute specific commands
+let result = repl.execute_command("parse function test() {}").await?;
+println!("{}", result.output);
+```
 
 ## MCP Server (`codeprism-mcp`)
 

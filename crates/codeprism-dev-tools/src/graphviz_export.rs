@@ -538,7 +538,7 @@ mod tests {
     use codeprism_core::{EdgeKind, Language, NodeKind, Span};
     use std::path::PathBuf;
 
-    fn create_test_node(id: u64, name: &str, kind: NodeKind) -> Node {
+    fn create_test_node(_id: u64, name: &str, kind: NodeKind) -> Node {
         let path = PathBuf::from("test.rs");
         let span = Span::new(0, 10, 1, 1, 1, 10);
         let repo_id = "test_repo";

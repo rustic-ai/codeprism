@@ -339,18 +339,12 @@ impl PerformanceProfiler {
 
     /// Analyze performance for bottlenecks and trends
     fn analyze_performance(&self) -> PerformanceAnalysis {
-        let mut analysis = PerformanceAnalysis::default();
-
-        // Identify bottlenecks
-        analysis.bottlenecks = self.identify_bottlenecks();
-
-        // Analyze trends
-        analysis.trends = self.analyze_trends();
-
-        // Calculate efficiency score
-        analysis.efficiency_score = self.calculate_efficiency_score();
-
-        analysis
+        PerformanceAnalysis {
+            bottlenecks: self.identify_bottlenecks(),
+            trends: self.analyze_trends(),
+            efficiency_score: self.calculate_efficiency_score(),
+            ..Default::default()
+        }
     }
 
     /// Identify performance bottlenecks

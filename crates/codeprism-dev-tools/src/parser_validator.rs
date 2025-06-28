@@ -121,16 +121,17 @@ impl ParserValidator {
     pub fn validate_complete(
         &self,
         parse_result: &ParseResult,
-        source: &str,
+        _source: &str,
     ) -> Result<ValidationReport> {
         let start_time = std::time::Instant::now();
 
         let mut errors = Vec::new();
         let warnings = Vec::new();
-        let mut statistics = ValidationStatistics::default();
-
-        statistics.total_nodes = parse_result.nodes.len();
-        statistics.total_edges = parse_result.edges.len();
+        let mut statistics = ValidationStatistics {
+            total_nodes: parse_result.nodes.len(),
+            total_edges: parse_result.edges.len(),
+            ..Default::default()
+        };
 
         // Basic validation checks (simplified for initial implementation)
         if self.config.check_span_overlaps {
@@ -158,7 +159,7 @@ impl ParserValidator {
         errors: &mut Vec<ValidationError>,
     ) -> Result<()> {
         for (i, node1) in nodes.iter().enumerate() {
-            for (j, node2) in nodes.iter().enumerate().skip(i + 1) {
+            for (_j, node2) in nodes.iter().enumerate().skip(i + 1) {
                 let start1 = node1.span.start_byte;
                 let end1 = node1.span.end_byte;
                 let start2 = node2.span.start_byte;

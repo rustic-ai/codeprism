@@ -239,7 +239,7 @@ impl AstVisualizer {
     }
 
     /// Visualize in list format
-    fn visualize_list_format(&self, node: &Node, source: &str) -> Result<String> {
+    fn visualize_list_format(&self, node: &Node, _source: &str) -> Result<String> {
         let mut output = String::new();
         let mut cursor = node.walk();
         let mut depth = 0;
@@ -494,6 +494,7 @@ impl AstVisualizer {
     }
 
     /// Recursively collect AST statistics
+    #[allow(clippy::only_used_in_recursion)]
     fn collect_statistics(&self, node: &Node, stats: &mut AstStatistics, depth: usize) {
         stats.total_nodes += 1;
         stats.max_depth = stats.max_depth.max(depth);
@@ -521,7 +522,7 @@ impl AstVisualizer {
     }
 
     /// Compare two ASTs and highlight differences
-    pub fn compare_asts(&self, old_node: &Node, new_node: &Node, source: &str) -> Result<String> {
+    pub fn compare_asts(&self, old_node: &Node, new_node: &Node, _source: &str) -> Result<String> {
         let mut output = String::new();
         output.push_str("=== AST Comparison ===\n\n");
 
@@ -614,6 +615,7 @@ mod tests {
     use super::*;
     use tree_sitter::Parser;
 
+    #[allow(dead_code)]
     fn create_test_parser() -> Parser {
         // For testing, we'll use a simple language grammar
         // In real usage, this would use the appropriate language
@@ -629,9 +631,11 @@ mod tests {
 
     #[test]
     fn test_custom_config() {
-        let mut config = VisualizationConfig::default();
-        config.max_depth = 10;
-        config.show_positions = false;
+        let config = VisualizationConfig {
+            max_depth: 10,
+            show_positions: false,
+            ..Default::default()
+        };
 
         let visualizer = AstVisualizer::with_config(config);
         assert_eq!(visualizer.config.max_depth, 10);
@@ -648,8 +652,10 @@ mod tests {
 
     #[test]
     fn test_format_node_type_without_colors() {
-        let mut config = VisualizationConfig::default();
-        config.use_colors = false;
+        let config = VisualizationConfig {
+            use_colors: false,
+            ..Default::default()
+        };
         let visualizer = AstVisualizer::with_config(config);
 
         let formatted = visualizer.format_node_type("function_definition");
@@ -658,11 +664,13 @@ mod tests {
 
     #[test]
     fn test_ast_statistics_display() {
-        let mut stats = AstStatistics::default();
-        stats.total_nodes = 100;
-        stats.named_nodes = 80;
-        stats.unnamed_nodes = 20;
-        stats.max_depth = 5;
+        let mut stats = AstStatistics {
+            total_nodes: 100,
+            named_nodes: 80,
+            unnamed_nodes: 20,
+            max_depth: 5,
+            ..Default::default()
+        };
         stats.node_type_counts.insert("function".to_string(), 10);
         stats.node_type_counts.insert("identifier".to_string(), 30);
 

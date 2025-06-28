@@ -124,7 +124,7 @@ impl AstDiff {
         &self,
         old_result: &ParseResult,
         new_result: &ParseResult,
-        source: &str,
+        _source: &str,
     ) -> Result<DiffReport> {
         let mut differences = Vec::new();
         let mut statistics = DiffStatistics::default();
@@ -392,6 +392,7 @@ impl AstDiff {
     }
 
     /// Calculate tree depth
+    #[allow(clippy::only_used_in_recursion)]
     fn calculate_tree_depth(&self, node: &tree_sitter::Node) -> usize {
         let mut max_depth = 0;
         for i in 0..node.child_count() {
@@ -613,7 +614,7 @@ mod tests {
     use codeprism_core::{NodeKind, Span};
     use std::path::PathBuf;
 
-    fn create_test_node(id: u64, name: &str, kind: NodeKind) -> codeprism_core::Node {
+    fn create_test_node(_id: u64, name: &str, kind: NodeKind) -> codeprism_core::Node {
         let path = PathBuf::from("test.rs");
         let span = Span::new(0, 10, 1, 1, 1, 10);
         let repo_id = "test_repo";
@@ -648,8 +649,10 @@ mod tests {
 
     #[test]
     fn test_node_key_ignoring_ids() {
-        let mut config = DiffConfig::default();
-        config.ignore_node_ids = true;
+        let config = DiffConfig {
+            ignore_node_ids: true,
+            ..Default::default()
+        };
         let diff = AstDiff::with_config(config);
 
         let node1 = create_test_node(1, "test", NodeKind::Function);

@@ -14,8 +14,9 @@ use tracing::{debug, info, warn};
 use crate::{
     prompts::{GetPromptParams, ListPromptsParams, PromptManager},
     protocol::{
-        CancellationParams, CancellationToken, ClientInfo, InitializeParams, InitializeResult,
-        JsonRpcError, JsonRpcNotification, JsonRpcRequest, JsonRpcResponse, ServerInfo,
+        CancellationParams, CancellationToken, ClientInfo, ClientOptimizations, ClientType,
+        InitializeParams, InitializeResult, JsonRpcError, JsonRpcNotification, JsonRpcRequest,
+        JsonRpcResponse, ServerInfo, VersionNegotiation, DEFAULT_PROTOCOL_VERSION,
     },
     resources::{ListResourcesParams, ReadResourceParams, ResourceManager},
     tools::{CallToolParams, ListToolsParams, ToolRegistry},
@@ -95,6 +96,11 @@ pub struct McpServer {
     server_info: ServerInfo,
     /// Client information (set during initialization)
     client_info: Option<ClientInfo>,
+    /// Client type and optimizations
+    client_type: Option<ClientType>,
+    client_optimizations: ClientOptimizations,
+    /// Version negotiation result
+    version_negotiation: Option<VersionNegotiation>,
     /// Core CodePrism server instance
     codeprism_server: Arc<RwLock<CodePrismMcpServer>>,
     /// Resource manager
@@ -120,12 +126,15 @@ impl McpServer {
 
         Ok(Self {
             state: ServerState::Uninitialized,
-            protocol_version: "2024-11-05".to_string(),
+            protocol_version: DEFAULT_PROTOCOL_VERSION.to_string(),
             server_info: ServerInfo {
                 name: "codeprism-mcp".to_string(),
                 version: "0.1.0".to_string(),
             },
             client_info: None,
+            client_type: None,
+            client_optimizations: ClientOptimizations::default(),
+            version_negotiation: None,
             codeprism_server,
             resource_manager,
             tool_registry,
@@ -161,12 +170,15 @@ impl McpServer {
 
         Ok(Self {
             state: ServerState::Uninitialized,
-            protocol_version: "2024-11-05".to_string(),
+            protocol_version: DEFAULT_PROTOCOL_VERSION.to_string(),
             server_info: ServerInfo {
                 name: "codeprism-mcp".to_string(),
                 version: "0.1.0".to_string(),
             },
             client_info: None,
+            client_type: None,
+            client_optimizations: ClientOptimizations::default(),
+            version_negotiation: None,
             codeprism_server,
             resource_manager,
             tool_registry,
@@ -364,21 +376,50 @@ impl McpServer {
             params.client_info.name, params.client_info.version
         );
 
-        // Store client info
-        self.client_info = Some(params.client_info);
+        // Perform version negotiation
+        let negotiation = VersionNegotiation::negotiate(&params.protocol_version);
 
-        // Check protocol version compatibility
-        if params.protocol_version != self.protocol_version {
-            warn!(
-                "Protocol version mismatch: client={}, server={}",
-                params.protocol_version, self.protocol_version
-            );
+        // Check if the negotiation is acceptable
+        if !negotiation.is_acceptable() {
+            return Err(JsonRpcError::new(
+                -32600,
+                format!(
+                    "Incompatible protocol version. Client: {}, Server supports: {:?}",
+                    params.protocol_version, negotiation.server_versions
+                ),
+                None,
+            ));
         }
+
+        // Log any warnings from version negotiation
+        for warning in &negotiation.warnings {
+            warn!("Version negotiation: {}", warning);
+        }
+
+        // Detect client type and set optimizations
+        let client_type = ClientType::from_client_info(&params.client_info);
+        let client_optimizations = client_type.get_optimizations();
+
+        info!(
+            "Client detected: {:?}, applying optimizations: max_response_size={}, timeout={}s",
+            client_type,
+            client_optimizations.max_response_size,
+            client_optimizations.preferred_timeout.as_secs()
+        );
+
+        // Store client info, type, and negotiation results
+        self.client_info = Some(params.client_info);
+        self.client_type = Some(client_type);
+        self.client_optimizations = client_optimizations.clone();
+        self.version_negotiation = Some(negotiation.clone());
+
+        // Update timeout based on client optimizations
+        self.default_timeout = client_optimizations.preferred_timeout;
 
         // Create initialize result
         let server = self.codeprism_server.read().await;
         let result = InitializeResult {
-            protocol_version: self.protocol_version.clone(),
+            protocol_version: negotiation.agreed_version,
             capabilities: server.capabilities().clone(),
             server_info: self.server_info.clone(),
         };

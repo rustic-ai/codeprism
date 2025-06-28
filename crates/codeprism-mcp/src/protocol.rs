@@ -9,6 +9,231 @@ use std::sync::Arc;
 use tokio::sync::Notify;
 use tokio::time::Duration;
 
+/// Supported MCP protocol versions
+pub const SUPPORTED_PROTOCOL_VERSIONS: &[&str] = &[
+    "2024-11-05", // Latest supported version
+    "2024-10-07", // Previous stable version
+    "2024-09-01", // Legacy compatibility
+];
+
+/// Current default protocol version
+pub const DEFAULT_PROTOCOL_VERSION: &str = "2024-11-05";
+
+/// Client types we can detect and optimize for
+#[derive(Debug, Clone, PartialEq)]
+pub enum ClientType {
+    Claude,
+    Cursor,
+    VSCode,
+    Unknown(String),
+}
+
+impl ClientType {
+    /// Detect client type from client info
+    pub fn from_client_info(client_info: &ClientInfo) -> Self {
+        let name_lower = client_info.name.to_lowercase();
+
+        if name_lower.contains("claude") {
+            Self::Claude
+        } else if name_lower.contains("cursor") {
+            Self::Cursor
+        } else if name_lower.contains("vscode") || name_lower.contains("vs code") {
+            Self::VSCode
+        } else {
+            Self::Unknown(client_info.name.clone())
+        }
+    }
+
+    /// Get client-specific optimizations
+    pub fn get_optimizations(&self) -> ClientOptimizations {
+        match self {
+            Self::Claude => ClientOptimizations {
+                max_response_size: 100_000,
+                supports_streaming: true,
+                preferred_timeout: Duration::from_secs(30),
+                batch_size_limit: 10,
+            },
+            Self::Cursor => ClientOptimizations {
+                max_response_size: 50_000,
+                supports_streaming: false,
+                preferred_timeout: Duration::from_secs(15),
+                batch_size_limit: 5,
+            },
+            Self::VSCode => ClientOptimizations {
+                max_response_size: 75_000,
+                supports_streaming: true,
+                preferred_timeout: Duration::from_secs(20),
+                batch_size_limit: 7,
+            },
+            Self::Unknown(_) => ClientOptimizations::default(),
+        }
+    }
+}
+
+/// Client-specific optimization settings
+#[derive(Debug, Clone)]
+pub struct ClientOptimizations {
+    pub max_response_size: usize,
+    pub supports_streaming: bool,
+    pub preferred_timeout: Duration,
+    pub batch_size_limit: usize,
+}
+
+impl Default for ClientOptimizations {
+    fn default() -> Self {
+        Self {
+            max_response_size: 75_000,
+            supports_streaming: false,
+            preferred_timeout: Duration::from_secs(30),
+            batch_size_limit: 5,
+        }
+    }
+}
+
+/// Protocol version negotiation result
+#[derive(Debug, Clone)]
+pub struct VersionNegotiation {
+    pub agreed_version: String,
+    pub client_version: String,
+    pub server_versions: Vec<String>,
+    pub compatibility_level: CompatibilityLevel,
+    pub warnings: Vec<String>,
+}
+
+/// Compatibility level between client and server
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum CompatibilityLevel {
+    /// Incompatible - connection should be rejected
+    Incompatible,
+    /// Limited compatibility - some features may not work
+    Limited,
+    /// Compatible with minor differences
+    Compatible,
+    /// Full compatibility - same version
+    Full,
+}
+
+impl VersionNegotiation {
+    /// Negotiate protocol version between client and server
+    pub fn negotiate(client_version: &str) -> Self {
+        let server_versions: Vec<String> = SUPPORTED_PROTOCOL_VERSIONS
+            .iter()
+            .map(|v| v.to_string())
+            .collect();
+        let mut warnings = Vec::new();
+
+        // Check if client version is supported
+        let (agreed_version, compatibility_level) =
+            if SUPPORTED_PROTOCOL_VERSIONS.contains(&client_version) {
+                (client_version.to_string(), CompatibilityLevel::Full)
+            } else {
+                // Try to find a compatible version
+                let parsed_client = parse_version(client_version);
+                let mut best_match = None;
+                let mut best_compatibility = CompatibilityLevel::Incompatible;
+
+                for &server_version in SUPPORTED_PROTOCOL_VERSIONS {
+                    let parsed_server = parse_version(server_version);
+                    let compatibility = determine_compatibility(&parsed_client, &parsed_server);
+
+                    if compatibility > best_compatibility {
+                        best_match = Some(server_version.to_string());
+                        best_compatibility = compatibility;
+                    }
+                }
+
+                match best_match {
+                    Some(version) => {
+                        warnings.push(format!(
+                        "Client version {} not directly supported, using {} with {} compatibility",
+                        client_version, version,
+                        match best_compatibility {
+                            CompatibilityLevel::Full => "full",
+                            CompatibilityLevel::Compatible => "high",
+                            CompatibilityLevel::Limited => "limited",
+                            CompatibilityLevel::Incompatible => "no",
+                        }
+                    ));
+                        (version, best_compatibility)
+                    }
+                    None => {
+                        warnings.push(format!(
+                            "Client version {} is incompatible with supported versions: {:?}",
+                            client_version, SUPPORTED_PROTOCOL_VERSIONS
+                        ));
+                        (
+                            DEFAULT_PROTOCOL_VERSION.to_string(),
+                            CompatibilityLevel::Incompatible,
+                        )
+                    }
+                }
+            };
+
+        Self {
+            agreed_version,
+            client_version: client_version.to_string(),
+            server_versions,
+            compatibility_level,
+            warnings,
+        }
+    }
+
+    /// Check if this negotiation allows the connection
+    pub fn is_acceptable(&self) -> bool {
+        self.compatibility_level != CompatibilityLevel::Incompatible
+    }
+}
+
+/// Parsed version components
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+struct ParsedVersion {
+    year: u32,
+    month: u32,
+    day: u32,
+}
+
+/// Parse a version string in YYYY-MM-DD format
+fn parse_version(version: &str) -> ParsedVersion {
+    let parts: Vec<&str> = version.split('-').collect();
+    if parts.len() == 3 {
+        ParsedVersion {
+            year: parts[0].parse().unwrap_or(0),
+            month: parts[1].parse().unwrap_or(0),
+            day: parts[2].parse().unwrap_or(0),
+        }
+    } else {
+        ParsedVersion {
+            year: 0,
+            month: 0,
+            day: 0,
+        }
+    }
+}
+
+/// Determine compatibility level between two versions
+fn determine_compatibility(client: &ParsedVersion, server: &ParsedVersion) -> CompatibilityLevel {
+    if client == server {
+        return CompatibilityLevel::Full;
+    }
+
+    // Same year and month = compatible
+    if client.year == server.year && client.month == server.month {
+        return CompatibilityLevel::Compatible;
+    }
+
+    // Within 6 months = limited compatibility
+    let client_days = client.year * 365 + client.month * 30 + client.day;
+    let server_days = server.year * 365 + server.month * 30 + server.day;
+    let diff_days = (client_days as i32 - server_days as i32).abs();
+
+    if diff_days <= 180 {
+        // ~6 months
+        CompatibilityLevel::Limited
+    } else {
+        CompatibilityLevel::Incompatible
+    }
+}
+
 /// JSON-RPC 2.0 Request message
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JsonRpcRequest {
@@ -363,5 +588,145 @@ mod tests {
 
         assert_eq!(params.protocol_version, deserialized.protocol_version);
         assert_eq!(params.client_info.name, deserialized.client_info.name);
+    }
+
+    #[test]
+    fn test_client_type_detection() {
+        let claude_client = ClientInfo {
+            name: "Claude Desktop".to_string(),
+            version: "1.0.0".to_string(),
+        };
+        assert_eq!(
+            ClientType::from_client_info(&claude_client),
+            ClientType::Claude
+        );
+
+        let cursor_client = ClientInfo {
+            name: "Cursor Editor".to_string(),
+            version: "2.0.0".to_string(),
+        };
+        assert_eq!(
+            ClientType::from_client_info(&cursor_client),
+            ClientType::Cursor
+        );
+
+        let vscode_client = ClientInfo {
+            name: "VS Code".to_string(),
+            version: "1.80.0".to_string(),
+        };
+        assert_eq!(
+            ClientType::from_client_info(&vscode_client),
+            ClientType::VSCode
+        );
+
+        let unknown_client = ClientInfo {
+            name: "Custom Client".to_string(),
+            version: "1.0.0".to_string(),
+        };
+        assert_eq!(
+            ClientType::from_client_info(&unknown_client),
+            ClientType::Unknown("Custom Client".to_string())
+        );
+    }
+
+    #[test]
+    fn test_client_optimizations() {
+        let claude_opts = ClientType::Claude.get_optimizations();
+        assert_eq!(claude_opts.max_response_size, 100_000);
+        assert_eq!(claude_opts.supports_streaming, true);
+        assert_eq!(claude_opts.batch_size_limit, 10);
+
+        let cursor_opts = ClientType::Cursor.get_optimizations();
+        assert_eq!(cursor_opts.max_response_size, 50_000);
+        assert_eq!(cursor_opts.supports_streaming, false);
+        assert_eq!(cursor_opts.batch_size_limit, 5);
+    }
+
+    #[test]
+    fn test_version_negotiation_exact_match() {
+        let negotiation = VersionNegotiation::negotiate("2024-11-05");
+
+        assert_eq!(negotiation.agreed_version, "2024-11-05");
+        assert_eq!(negotiation.compatibility_level, CompatibilityLevel::Full);
+        assert!(negotiation.warnings.is_empty());
+        assert!(negotiation.is_acceptable());
+    }
+
+    #[test]
+    fn test_version_negotiation_compatible() {
+        let negotiation = VersionNegotiation::negotiate("2024-11-01");
+
+        assert_eq!(
+            negotiation.compatibility_level,
+            CompatibilityLevel::Compatible
+        );
+        assert!(negotiation.is_acceptable());
+        assert!(!negotiation.warnings.is_empty());
+    }
+
+    #[test]
+    fn test_version_negotiation_limited() {
+        let negotiation = VersionNegotiation::negotiate("2024-08-15");
+
+        assert_eq!(negotiation.compatibility_level, CompatibilityLevel::Limited);
+        assert!(negotiation.is_acceptable());
+    }
+
+    #[test]
+    fn test_version_negotiation_incompatible() {
+        let negotiation = VersionNegotiation::negotiate("2023-01-01");
+
+        assert_eq!(
+            negotiation.compatibility_level,
+            CompatibilityLevel::Incompatible
+        );
+        assert!(!negotiation.is_acceptable());
+    }
+
+    #[test]
+    fn test_parse_version() {
+        let parsed = parse_version("2024-11-05");
+        assert_eq!(parsed.year, 2024);
+        assert_eq!(parsed.month, 11);
+        assert_eq!(parsed.day, 5);
+
+        let invalid = parse_version("invalid");
+        assert_eq!(invalid.year, 0);
+        assert_eq!(invalid.month, 0);
+        assert_eq!(invalid.day, 0);
+    }
+
+    #[test]
+    fn test_compatibility_determination() {
+        let v1 = parse_version("2024-11-05");
+        let v2 = parse_version("2024-11-05");
+        assert_eq!(determine_compatibility(&v1, &v2), CompatibilityLevel::Full);
+
+        let v3 = parse_version("2024-11-01");
+        assert_eq!(
+            determine_compatibility(&v1, &v3),
+            CompatibilityLevel::Compatible
+        );
+
+        let v4 = parse_version("2024-08-01");
+        assert_eq!(
+            determine_compatibility(&v1, &v4),
+            CompatibilityLevel::Limited
+        );
+
+        let v5 = parse_version("2023-01-01");
+        assert_eq!(
+            determine_compatibility(&v1, &v5),
+            CompatibilityLevel::Incompatible
+        );
+    }
+
+    #[test]
+    fn test_cancellation_token() {
+        let token = CancellationToken::new(serde_json::Value::Number(1.into()));
+        assert!(!token.is_cancelled());
+
+        token.cancel();
+        assert!(token.is_cancelled());
     }
 }

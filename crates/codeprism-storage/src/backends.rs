@@ -86,9 +86,9 @@ impl GraphStorage for InMemoryGraphStorage {
         if let Some(graph) = graphs.get_mut(repo_id) {
             graph.nodes.retain(|n| !node_ids.contains(&n.id));
             // Also remove edges that reference deleted nodes
-            graph.edges.retain(|e| {
-                !node_ids.contains(&e.source) && !node_ids.contains(&e.target)
-            });
+            graph
+                .edges
+                .retain(|e| !node_ids.contains(&e.source) && !node_ids.contains(&e.target));
         }
         Ok(())
     }
@@ -97,9 +97,9 @@ impl GraphStorage for InMemoryGraphStorage {
         let mut graphs = self.graphs.lock().unwrap();
         if let Some(graph) = graphs.get_mut(repo_id) {
             graph.edges.retain(|e| {
-                !edge_refs.iter().any(|er| {
-                    er.source == e.source && er.target == e.target && er.kind == e.kind
-                })
+                !edge_refs
+                    .iter()
+                    .any(|er| er.source == e.source && er.target == e.target && er.kind == e.kind)
             });
         }
         Ok(())
@@ -146,12 +146,12 @@ impl FileGraphStorage {
         let storage = Self {
             data_path: data_path.to_path_buf(),
         };
-        
+
         // Ensure the data directory exists
         fs::create_dir_all(&storage.data_path)
             .await
             .context("Failed to create data directory")?;
-        
+
         Ok(storage)
     }
 
@@ -171,38 +171,38 @@ impl GraphStorage for FileGraphStorage {
     async fn store_graph(&self, graph: &SerializableGraph) -> Result<()> {
         let graph_path = self.graph_file_path(&graph.repo_id);
         let metadata_path = self.metadata_file_path(&graph.repo_id);
-        
+
         // Serialize and write graph
-        let graph_json = serde_json::to_string_pretty(graph)
-            .context("Failed to serialize graph")?;
+        let graph_json =
+            serde_json::to_string_pretty(graph).context("Failed to serialize graph")?;
         fs::write(&graph_path, graph_json)
             .await
             .with_context(|| format!("Failed to write graph to {:?}", graph_path))?;
-        
+
         // Serialize and write metadata separately for efficiency
         let metadata_json = serde_json::to_string_pretty(&graph.metadata)
             .context("Failed to serialize metadata")?;
         fs::write(&metadata_path, metadata_json)
             .await
             .with_context(|| format!("Failed to write metadata to {:?}", metadata_path))?;
-        
+
         Ok(())
     }
 
     async fn load_graph(&self, repo_id: &str) -> Result<Option<SerializableGraph>> {
         let graph_path = self.graph_file_path(repo_id);
-        
+
         if !graph_path.exists() {
             return Ok(None);
         }
-        
+
         let graph_json = fs::read_to_string(&graph_path)
             .await
             .with_context(|| format!("Failed to read graph from {:?}", graph_path))?;
-        
-        let graph: SerializableGraph = serde_json::from_str(&graph_json)
-            .context("Failed to deserialize graph")?;
-        
+
+        let graph: SerializableGraph =
+            serde_json::from_str(&graph_json).context("Failed to deserialize graph")?;
+
         Ok(Some(graph))
     }
 
@@ -216,10 +216,10 @@ impl GraphStorage for FileGraphStorage {
                     graph.nodes.push(new_node.clone());
                 }
             }
-            
+
             // Update timestamp
             graph.metadata.last_updated = SystemTime::now();
-            
+
             self.store_graph(&graph).await?;
         }
         Ok(())
@@ -239,10 +239,10 @@ impl GraphStorage for FileGraphStorage {
                     graph.edges.push(new_edge.clone());
                 }
             }
-            
+
             // Update timestamp
             graph.metadata.last_updated = SystemTime::now();
-            
+
             self.store_graph(&graph).await?;
         }
         Ok(())
@@ -252,13 +252,13 @@ impl GraphStorage for FileGraphStorage {
         if let Some(mut graph) = self.load_graph(repo_id).await? {
             graph.nodes.retain(|n| !node_ids.contains(&n.id));
             // Also remove edges that reference deleted nodes
-            graph.edges.retain(|e| {
-                !node_ids.contains(&e.source) && !node_ids.contains(&e.target)
-            });
-            
+            graph
+                .edges
+                .retain(|e| !node_ids.contains(&e.source) && !node_ids.contains(&e.target));
+
             // Update timestamp
             graph.metadata.last_updated = SystemTime::now();
-            
+
             self.store_graph(&graph).await?;
         }
         Ok(())
@@ -267,14 +267,14 @@ impl GraphStorage for FileGraphStorage {
     async fn delete_edges(&self, repo_id: &str, edge_refs: &[EdgeReference]) -> Result<()> {
         if let Some(mut graph) = self.load_graph(repo_id).await? {
             graph.edges.retain(|e| {
-                !edge_refs.iter().any(|er| {
-                    er.source == e.source && er.target == e.target && er.kind == e.kind
-                })
+                !edge_refs
+                    .iter()
+                    .any(|er| er.source == e.source && er.target == e.target && er.kind == e.kind)
             });
-            
+
             // Update timestamp
             graph.metadata.last_updated = SystemTime::now();
-            
+
             self.store_graph(&graph).await?;
         }
         Ok(())
@@ -282,30 +282,30 @@ impl GraphStorage for FileGraphStorage {
 
     async fn get_graph_metadata(&self, repo_id: &str) -> Result<Option<GraphMetadata>> {
         let metadata_path = self.metadata_file_path(repo_id);
-        
+
         if !metadata_path.exists() {
             return Ok(None);
         }
-        
+
         let metadata_json = fs::read_to_string(&metadata_path)
             .await
             .with_context(|| format!("Failed to read metadata from {:?}", metadata_path))?;
-        
-        let metadata: GraphMetadata = serde_json::from_str(&metadata_json)
-            .context("Failed to deserialize metadata")?;
-        
+
+        let metadata: GraphMetadata =
+            serde_json::from_str(&metadata_json).context("Failed to deserialize metadata")?;
+
         Ok(Some(metadata))
     }
 
     async fn update_graph_metadata(&self, repo_id: &str, metadata: &GraphMetadata) -> Result<()> {
         let metadata_path = self.metadata_file_path(repo_id);
-        
-        let metadata_json = serde_json::to_string_pretty(metadata)
-            .context("Failed to serialize metadata")?;
+
+        let metadata_json =
+            serde_json::to_string_pretty(metadata).context("Failed to serialize metadata")?;
         fs::write(&metadata_path, metadata_json)
             .await
             .with_context(|| format!("Failed to write metadata to {:?}", metadata_path))?;
-        
+
         Ok(())
     }
 
@@ -314,7 +314,7 @@ impl GraphStorage for FileGraphStorage {
         let mut entries = fs::read_dir(&self.data_path)
             .await
             .context("Failed to read data directory")?;
-        
+
         while let Some(entry) = entries.next_entry().await? {
             if let Some(file_name) = entry.file_name().to_str() {
                 if file_name.ends_with(".graph.json") {
@@ -323,27 +323,27 @@ impl GraphStorage for FileGraphStorage {
                 }
             }
         }
-        
+
         Ok(repos)
     }
 
     async fn delete_graph(&self, repo_id: &str) -> Result<()> {
         let graph_path = self.graph_file_path(repo_id);
         let metadata_path = self.metadata_file_path(repo_id);
-        
+
         // Remove both files if they exist
         if graph_path.exists() {
             fs::remove_file(&graph_path)
                 .await
                 .with_context(|| format!("Failed to remove graph file {:?}", graph_path))?;
         }
-        
+
         if metadata_path.exists() {
             fs::remove_file(&metadata_path)
                 .await
                 .with_context(|| format!("Failed to remove metadata file {:?}", metadata_path))?;
         }
-        
+
         Ok(())
     }
 
@@ -355,6 +355,7 @@ impl GraphStorage for FileGraphStorage {
 
 /// SQLite-based graph storage implementation
 pub struct SqliteGraphStorage {
+    #[allow(dead_code)]
     db_path: PathBuf,
     connection: Arc<AsyncMutex<Connection>>,
 }
@@ -366,26 +367,26 @@ impl SqliteGraphStorage {
         fs::create_dir_all(data_path)
             .await
             .context("Failed to create data directory")?;
-        
+
         let db_path = data_path.join("codeprism.db");
         let connection = Connection::open(&db_path)
             .with_context(|| format!("Failed to open SQLite database at {:?}", db_path))?;
-        
+
         let storage = Self {
             db_path: db_path.clone(),
             connection: Arc::new(AsyncMutex::new(connection)),
         };
-        
+
         // Initialize database schema
         storage.init_schema().await?;
-        
+
         Ok(storage)
     }
 
     /// Initialize the database schema
     async fn init_schema(&self) -> Result<()> {
         let conn = self.connection.lock().await;
-        
+
         conn.execute(
             "CREATE TABLE IF NOT EXISTS graphs (
                 repo_id TEXT PRIMARY KEY,
@@ -395,7 +396,7 @@ impl SqliteGraphStorage {
             )",
             [],
         )?;
-        
+
         conn.execute(
             "CREATE TABLE IF NOT EXISTS nodes (
                 repo_id TEXT NOT NULL,
@@ -407,7 +408,7 @@ impl SqliteGraphStorage {
             )",
             [],
         )?;
-        
+
         conn.execute(
             "CREATE TABLE IF NOT EXISTS edges (
                 repo_id TEXT NOT NULL,
@@ -421,7 +422,7 @@ impl SqliteGraphStorage {
             )",
             [],
         )?;
-        
+
         conn.execute(
             "CREATE TABLE IF NOT EXISTS metadata (
                 repo_id TEXT PRIMARY KEY,
@@ -431,13 +432,25 @@ impl SqliteGraphStorage {
             )",
             [],
         )?;
-        
+
         // Create indices for better performance
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_nodes_repo_id ON nodes(repo_id)", [])?;
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_edges_repo_id ON edges(repo_id)", [])?;
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_edges_source ON edges(source)", [])?;
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_edges_target ON edges(target)", [])?;
-        
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_nodes_repo_id ON nodes(repo_id)",
+            [],
+        )?;
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_edges_repo_id ON edges(repo_id)",
+            [],
+        )?;
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_edges_source ON edges(source)",
+            [],
+        )?;
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_edges_target ON edges(target)",
+            [],
+        )?;
+
         Ok(())
     }
 
@@ -449,6 +462,7 @@ impl SqliteGraphStorage {
     }
 
     /// Convert Unix timestamp to SystemTime
+    #[allow(dead_code)]
     fn timestamp_to_system_time(timestamp: i64) -> SystemTime {
         std::time::UNIX_EPOCH + std::time::Duration::from_secs(timestamp as u64)
     }
@@ -459,107 +473,96 @@ impl GraphStorage for SqliteGraphStorage {
     async fn store_graph(&self, graph: &SerializableGraph) -> Result<()> {
         let conn = self.connection.lock().await;
         let now = Self::system_time_to_timestamp(SystemTime::now());
-        
+
         // Serialize the entire graph
-        let graph_data = bincode::serialize(graph)
-            .context("Failed to serialize graph")?;
-        
+        let graph_data = bincode::serialize(graph).context("Failed to serialize graph")?;
+
         // Store the graph
         conn.execute(
             "INSERT OR REPLACE INTO graphs (repo_id, data, created_at, updated_at) VALUES (?1, ?2, ?3, ?4)",
             params![graph.repo_id, graph_data, now, now],
         )?;
-        
+
         // Store metadata separately for efficient queries
-        let metadata_data = bincode::serialize(&graph.metadata)
-            .context("Failed to serialize metadata")?;
-        
+        let metadata_data =
+            bincode::serialize(&graph.metadata).context("Failed to serialize metadata")?;
+
         conn.execute(
             "INSERT OR REPLACE INTO metadata (repo_id, data, updated_at) VALUES (?1, ?2, ?3)",
             params![graph.repo_id, metadata_data, now],
         )?;
-        
+
         // Store nodes individually for incremental updates
         for node in &graph.nodes {
-            let node_data = bincode::serialize(node)
-                .context("Failed to serialize node")?;
-            
+            let node_data = bincode::serialize(node).context("Failed to serialize node")?;
+
             conn.execute(
                 "INSERT OR REPLACE INTO nodes (repo_id, node_id, data, updated_at) VALUES (?1, ?2, ?3, ?4)",
                 params![graph.repo_id, node.id, node_data, now],
             )?;
         }
-        
+
         // Store edges individually for incremental updates
         for edge in &graph.edges {
-            let edge_data = bincode::serialize(edge)
-                .context("Failed to serialize edge")?;
-            
+            let edge_data = bincode::serialize(edge).context("Failed to serialize edge")?;
+
             conn.execute(
                 "INSERT OR REPLACE INTO edges (repo_id, source, target, kind, data, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
                 params![graph.repo_id, edge.source, edge.target, edge.kind, edge_data, now],
             )?;
         }
-        
+
         Ok(())
     }
 
     async fn load_graph(&self, repo_id: &str) -> Result<Option<SerializableGraph>> {
         let conn = self.connection.lock().await;
-        
+
         // Check if graph exists
         let mut stmt = conn.prepare("SELECT 1 FROM graphs WHERE repo_id = ?1")?;
         let exists = stmt.exists([repo_id])?;
-        
+
         if !exists {
             return Ok(None);
         }
-        
+
         // Load metadata
         let mut metadata_stmt = conn.prepare("SELECT data FROM metadata WHERE repo_id = ?1")?;
-        let metadata_result: Result<Vec<u8>, rusqlite::Error> = metadata_stmt.query_row([repo_id], |row| {
-            Ok(row.get(0)?)
-        });
-        
+        let metadata_result: Result<Vec<u8>, rusqlite::Error> =
+            metadata_stmt.query_row([repo_id], |row| row.get(0));
+
         let metadata = match metadata_result {
             Ok(metadata_data) => {
-                bincode::deserialize(&metadata_data)
-                    .context("Failed to deserialize metadata")?
+                bincode::deserialize(&metadata_data).context("Failed to deserialize metadata")?
             }
             Err(rusqlite::Error::QueryReturnedNoRows) => return Ok(None),
             Err(e) => return Err(e.into()),
         };
-        
+
         // Load nodes
         let mut nodes = Vec::new();
         let mut node_stmt = conn.prepare("SELECT data FROM nodes WHERE repo_id = ?1")?;
-        let node_rows = node_stmt.query_map([repo_id], |row| {
-            let data: Vec<u8> = row.get(0)?;
-            Ok(data)
-        })?;
-        
+        let node_rows = node_stmt.query_map([repo_id], |row| row.get::<_, Vec<u8>>(0))?;
+
         for row in node_rows {
             let node_data = row?;
-            let node: SerializableNode = bincode::deserialize(&node_data)
-                .context("Failed to deserialize node")?;
+            let node: SerializableNode =
+                bincode::deserialize(&node_data).context("Failed to deserialize node")?;
             nodes.push(node);
         }
-        
+
         // Load edges
         let mut edges = Vec::new();
         let mut edge_stmt = conn.prepare("SELECT data FROM edges WHERE repo_id = ?1")?;
-        let edge_rows = edge_stmt.query_map([repo_id], |row| {
-            let data: Vec<u8> = row.get(0)?;
-            Ok(data)
-        })?;
-        
+        let edge_rows = edge_stmt.query_map([repo_id], |row| row.get::<_, Vec<u8>>(0))?;
+
         for row in edge_rows {
             let edge_data = row?;
-            let edge: SerializableEdge = bincode::deserialize(&edge_data)
-                .context("Failed to deserialize edge")?;
+            let edge: SerializableEdge =
+                bincode::deserialize(&edge_data).context("Failed to deserialize edge")?;
             edges.push(edge);
         }
-        
+
         // Construct graph
         let graph = SerializableGraph {
             repo_id: repo_id.to_string(),
@@ -567,111 +570,108 @@ impl GraphStorage for SqliteGraphStorage {
             edges,
             metadata,
         };
-        
+
         Ok(Some(graph))
     }
 
     async fn update_nodes(&self, repo_id: &str, nodes: &[SerializableNode]) -> Result<()> {
         let conn = self.connection.lock().await;
         let now = Self::system_time_to_timestamp(SystemTime::now());
-        
+
         for node in nodes {
-            let node_data = bincode::serialize(node)
-                .context("Failed to serialize node")?;
-            
+            let node_data = bincode::serialize(node).context("Failed to serialize node")?;
+
             conn.execute(
                 "INSERT OR REPLACE INTO nodes (repo_id, node_id, data, updated_at) VALUES (?1, ?2, ?3, ?4)",
                 params![repo_id, node.id, node_data, now],
             )?;
         }
-        
+
         // Update the graph's updated_at timestamp
         conn.execute(
             "UPDATE graphs SET updated_at = ?1 WHERE repo_id = ?2",
             params![now, repo_id],
         )?;
-        
+
         Ok(())
     }
 
     async fn update_edges(&self, repo_id: &str, edges: &[SerializableEdge]) -> Result<()> {
         let conn = self.connection.lock().await;
         let now = Self::system_time_to_timestamp(SystemTime::now());
-        
+
         for edge in edges {
-            let edge_data = bincode::serialize(edge)
-                .context("Failed to serialize edge")?;
-            
+            let edge_data = bincode::serialize(edge).context("Failed to serialize edge")?;
+
             conn.execute(
                 "INSERT OR REPLACE INTO edges (repo_id, source, target, kind, data, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
                 params![repo_id, edge.source, edge.target, edge.kind, edge_data, now],
             )?;
         }
-        
+
         // Update the graph's updated_at timestamp
         conn.execute(
             "UPDATE graphs SET updated_at = ?1 WHERE repo_id = ?2",
             params![now, repo_id],
         )?;
-        
+
         Ok(())
     }
 
     async fn delete_nodes(&self, repo_id: &str, node_ids: &[String]) -> Result<()> {
         let conn = self.connection.lock().await;
         let now = Self::system_time_to_timestamp(SystemTime::now());
-        
+
         for node_id in node_ids {
             // Delete the node
             conn.execute(
                 "DELETE FROM nodes WHERE repo_id = ?1 AND node_id = ?2",
                 params![repo_id, node_id],
             )?;
-            
+
             // Delete edges that reference this node
             conn.execute(
                 "DELETE FROM edges WHERE repo_id = ?1 AND (source = ?2 OR target = ?2)",
                 params![repo_id, node_id],
             )?;
         }
-        
+
         // Update the graph's updated_at timestamp
         conn.execute(
             "UPDATE graphs SET updated_at = ?1 WHERE repo_id = ?2",
             params![now, repo_id],
         )?;
-        
+
         Ok(())
     }
 
     async fn delete_edges(&self, repo_id: &str, edge_refs: &[EdgeReference]) -> Result<()> {
         let conn = self.connection.lock().await;
         let now = Self::system_time_to_timestamp(SystemTime::now());
-        
+
         for edge_ref in edge_refs {
             conn.execute(
                 "DELETE FROM edges WHERE repo_id = ?1 AND source = ?2 AND target = ?3 AND kind = ?4",
                 params![repo_id, edge_ref.source, edge_ref.target, edge_ref.kind],
             )?;
         }
-        
+
         // Update the graph's updated_at timestamp
         conn.execute(
             "UPDATE graphs SET updated_at = ?1 WHERE repo_id = ?2",
             params![now, repo_id],
         )?;
-        
+
         Ok(())
     }
 
     async fn get_graph_metadata(&self, repo_id: &str) -> Result<Option<GraphMetadata>> {
         let conn = self.connection.lock().await;
-        
+
         let mut stmt = conn.prepare("SELECT data FROM metadata WHERE repo_id = ?1")?;
-        let metadata_result: Result<Vec<u8>, rusqlite::Error> = stmt.query_row([repo_id], |row| {
-            Ok(row.get(0)?)
-        });
-        
+        let metadata_result: Result<Vec<u8>, rusqlite::Error> =
+            stmt.query_row([repo_id], |row| row.get::<_, Vec<u8>>(0));
+
         match metadata_result {
             Ok(metadata_data) => {
                 let metadata: GraphMetadata = bincode::deserialize(&metadata_data)
@@ -686,49 +686,46 @@ impl GraphStorage for SqliteGraphStorage {
     async fn update_graph_metadata(&self, repo_id: &str, metadata: &GraphMetadata) -> Result<()> {
         let conn = self.connection.lock().await;
         let now = Self::system_time_to_timestamp(SystemTime::now());
-        
-        let metadata_data = bincode::serialize(metadata)
-            .context("Failed to serialize metadata")?;
-        
+
+        let metadata_data = bincode::serialize(metadata).context("Failed to serialize metadata")?;
+
         conn.execute(
             "INSERT OR REPLACE INTO metadata (repo_id, data, updated_at) VALUES (?1, ?2, ?3)",
             params![repo_id, metadata_data, now],
         )?;
-        
+
         Ok(())
     }
 
     async fn list_repositories(&self) -> Result<Vec<String>> {
         let conn = self.connection.lock().await;
-        
+
         let mut stmt = conn.prepare("SELECT repo_id FROM graphs ORDER BY repo_id")?;
-        let rows = stmt.query_map([], |row| {
-            Ok(row.get::<_, String>(0)?)
-        })?;
-        
+        let rows = stmt.query_map([], |row| row.get::<_, String>(0))?;
+
         let mut repos = Vec::new();
         for row in rows {
             repos.push(row?);
         }
-        
+
         Ok(repos)
     }
 
     async fn delete_graph(&self, repo_id: &str) -> Result<()> {
         let conn = self.connection.lock().await;
-        
+
         // Delete from graphs table (CASCADE will handle related tables)
         conn.execute("DELETE FROM graphs WHERE repo_id = ?1", [repo_id])?;
-        
+
         Ok(())
     }
 
     async fn graph_exists(&self, repo_id: &str) -> Result<bool> {
         let conn = self.connection.lock().await;
-        
+
         let mut stmt = conn.prepare("SELECT 1 FROM graphs WHERE repo_id = ?1")?;
         let exists = stmt.exists([repo_id])?;
-        
+
         Ok(exists)
     }
 }
@@ -906,12 +903,12 @@ impl AnalysisStorage for FileAnalysisStorage {
 mod tests {
     use super::*;
     use crate::graph::SerializableSpan;
-    use tempfile::tempdir;
     use std::path::PathBuf;
+    use tempfile::tempdir;
 
     fn create_test_graph() -> SerializableGraph {
         let mut graph = SerializableGraph::new("test_repo".to_string());
-        
+
         // Add test nodes
         let node1 = SerializableNode::new(
             "node1".to_string(),
@@ -927,7 +924,7 @@ mod tests {
                 end_column: 10,
             },
         );
-        
+
         let node2 = SerializableNode::new(
             "node2".to_string(),
             "TestStruct".to_string(),
@@ -942,14 +939,18 @@ mod tests {
                 end_column: 15,
             },
         );
-        
+
         graph.add_node(node1);
         graph.add_node(node2);
-        
+
         // Add test edges
-        let edge = SerializableEdge::new("node1".to_string(), "node2".to_string(), "calls".to_string());
+        let edge = SerializableEdge::new(
+            "node1".to_string(),
+            "node2".to_string(),
+            "calls".to_string(),
+        );
         graph.add_edge(edge);
-        
+
         graph.update_metadata();
         graph
     }
@@ -958,7 +959,7 @@ mod tests {
     async fn test_in_memory_storage() {
         let storage = InMemoryGraphStorage::new();
         let graph = create_test_graph();
-        
+
         // Test store and load
         storage.store_graph(&graph).await.unwrap();
         let loaded = storage.load_graph("test_repo").await.unwrap();
@@ -967,7 +968,7 @@ mod tests {
         assert_eq!(loaded_graph.repo_id, "test_repo");
         assert_eq!(loaded_graph.nodes.len(), 2);
         assert_eq!(loaded_graph.edges.len(), 1);
-        
+
         // Test update nodes
         let new_node = SerializableNode::new(
             "node3".to_string(),
@@ -983,25 +984,31 @@ mod tests {
                 end_column: 5,
             },
         );
-        storage.update_nodes("test_repo", &[new_node]).await.unwrap();
-        
+        storage
+            .update_nodes("test_repo", &[new_node])
+            .await
+            .unwrap();
+
         let updated = storage.load_graph("test_repo").await.unwrap().unwrap();
         assert_eq!(updated.nodes.len(), 3);
-        
+
         // Test delete nodes
-        storage.delete_nodes("test_repo", &["node1".to_string()]).await.unwrap();
+        storage
+            .delete_nodes("test_repo", &["node1".to_string()])
+            .await
+            .unwrap();
         let after_delete = storage.load_graph("test_repo").await.unwrap().unwrap();
         assert_eq!(after_delete.nodes.len(), 2);
         assert_eq!(after_delete.edges.len(), 0); // Edge should be deleted too
-        
+
         // Test list repositories
         let repos = storage.list_repositories().await.unwrap();
         assert!(repos.contains(&"test_repo".to_string()));
-        
+
         // Test graph exists
         assert!(storage.graph_exists("test_repo").await.unwrap());
         assert!(!storage.graph_exists("nonexistent").await.unwrap());
-        
+
         // Test delete graph
         storage.delete_graph("test_repo").await.unwrap();
         assert!(!storage.graph_exists("test_repo").await.unwrap());
@@ -1012,7 +1019,7 @@ mod tests {
         let temp_dir = tempdir().unwrap();
         let storage = FileGraphStorage::new(temp_dir.path()).await.unwrap();
         let graph = create_test_graph();
-        
+
         // Test store and load
         storage.store_graph(&graph).await.unwrap();
         let loaded = storage.load_graph("test_repo").await.unwrap();
@@ -1021,18 +1028,25 @@ mod tests {
         assert_eq!(loaded_graph.repo_id, "test_repo");
         assert_eq!(loaded_graph.nodes.len(), 2);
         assert_eq!(loaded_graph.edges.len(), 1);
-        
+
         // Test metadata operations
         let metadata = storage.get_graph_metadata("test_repo").await.unwrap();
         assert!(metadata.is_some());
-        
+
         let mut new_metadata = metadata.unwrap();
         new_metadata.version = 42;
-        storage.update_graph_metadata("test_repo", &new_metadata).await.unwrap();
-        
-        let updated_metadata = storage.get_graph_metadata("test_repo").await.unwrap().unwrap();
+        storage
+            .update_graph_metadata("test_repo", &new_metadata)
+            .await
+            .unwrap();
+
+        let updated_metadata = storage
+            .get_graph_metadata("test_repo")
+            .await
+            .unwrap()
+            .unwrap();
         assert_eq!(updated_metadata.version, 42);
-        
+
         // Test incremental updates
         let new_node = SerializableNode::new(
             "node3".to_string(),
@@ -1048,26 +1062,36 @@ mod tests {
                 end_column: 5,
             },
         );
-        storage.update_nodes("test_repo", &[new_node]).await.unwrap();
-        
+        storage
+            .update_nodes("test_repo", &[new_node])
+            .await
+            .unwrap();
+
         let updated = storage.load_graph("test_repo").await.unwrap().unwrap();
         assert_eq!(updated.nodes.len(), 3);
-        
+
         // Test edge updates
-        let new_edge = SerializableEdge::new("node2".to_string(), "node3".to_string(), "references".to_string());
-        storage.update_edges("test_repo", &[new_edge]).await.unwrap();
-        
+        let new_edge = SerializableEdge::new(
+            "node2".to_string(),
+            "node3".to_string(),
+            "references".to_string(),
+        );
+        storage
+            .update_edges("test_repo", &[new_edge])
+            .await
+            .unwrap();
+
         let updated = storage.load_graph("test_repo").await.unwrap().unwrap();
         assert_eq!(updated.edges.len(), 2);
-        
+
         // Test list repositories
         let repos = storage.list_repositories().await.unwrap();
         assert!(repos.contains(&"test_repo".to_string()));
-        
+
         // Test graph exists
         assert!(storage.graph_exists("test_repo").await.unwrap());
         assert!(!storage.graph_exists("nonexistent").await.unwrap());
-        
+
         // Test delete operations
         let edge_refs = vec![EdgeReference {
             source: "node1".to_string(),
@@ -1075,10 +1099,10 @@ mod tests {
             kind: "calls".to_string(),
         }];
         storage.delete_edges("test_repo", &edge_refs).await.unwrap();
-        
+
         let after_edge_delete = storage.load_graph("test_repo").await.unwrap().unwrap();
         assert_eq!(after_edge_delete.edges.len(), 1);
-        
+
         // Test delete graph
         storage.delete_graph("test_repo").await.unwrap();
         assert!(!storage.graph_exists("test_repo").await.unwrap());
@@ -1089,7 +1113,7 @@ mod tests {
         let temp_dir = tempdir().unwrap();
         let storage = SqliteGraphStorage::new(temp_dir.path()).await.unwrap();
         let graph = create_test_graph();
-        
+
         // Test store and load
         storage.store_graph(&graph).await.unwrap();
         let loaded = storage.load_graph("test_repo").await.unwrap();
@@ -1098,18 +1122,25 @@ mod tests {
         assert_eq!(loaded_graph.repo_id, "test_repo");
         assert_eq!(loaded_graph.nodes.len(), 2);
         assert_eq!(loaded_graph.edges.len(), 1);
-        
+
         // Test metadata operations
         let metadata = storage.get_graph_metadata("test_repo").await.unwrap();
         assert!(metadata.is_some());
-        
+
         let mut new_metadata = metadata.unwrap();
         new_metadata.version = 42;
-        storage.update_graph_metadata("test_repo", &new_metadata).await.unwrap();
-        
-        let updated_metadata = storage.get_graph_metadata("test_repo").await.unwrap().unwrap();
+        storage
+            .update_graph_metadata("test_repo", &new_metadata)
+            .await
+            .unwrap();
+
+        let updated_metadata = storage
+            .get_graph_metadata("test_repo")
+            .await
+            .unwrap()
+            .unwrap();
         assert_eq!(updated_metadata.version, 42);
-        
+
         // Test incremental updates
         let new_node = SerializableNode::new(
             "node3".to_string(),
@@ -1125,26 +1156,36 @@ mod tests {
                 end_column: 5,
             },
         );
-        storage.update_nodes("test_repo", &[new_node]).await.unwrap();
-        
+        storage
+            .update_nodes("test_repo", &[new_node])
+            .await
+            .unwrap();
+
         let updated = storage.load_graph("test_repo").await.unwrap().unwrap();
         assert_eq!(updated.nodes.len(), 3);
-        
+
         // Test edge updates
-        let new_edge = SerializableEdge::new("node2".to_string(), "node3".to_string(), "references".to_string());
-        storage.update_edges("test_repo", &[new_edge]).await.unwrap();
-        
+        let new_edge = SerializableEdge::new(
+            "node2".to_string(),
+            "node3".to_string(),
+            "references".to_string(),
+        );
+        storage
+            .update_edges("test_repo", &[new_edge])
+            .await
+            .unwrap();
+
         let updated = storage.load_graph("test_repo").await.unwrap().unwrap();
         assert_eq!(updated.edges.len(), 2);
-        
+
         // Test list repositories
         let repos = storage.list_repositories().await.unwrap();
         assert!(repos.contains(&"test_repo".to_string()));
-        
+
         // Test graph exists
         assert!(storage.graph_exists("test_repo").await.unwrap());
         assert!(!storage.graph_exists("nonexistent").await.unwrap());
-        
+
         // Test delete operations
         let edge_refs = vec![EdgeReference {
             source: "node1".to_string(),
@@ -1152,16 +1193,19 @@ mod tests {
             kind: "calls".to_string(),
         }];
         storage.delete_edges("test_repo", &edge_refs).await.unwrap();
-        
+
         let after_edge_delete = storage.load_graph("test_repo").await.unwrap().unwrap();
         assert_eq!(after_edge_delete.edges.len(), 1);
-        
+
         // Test delete nodes (should also remove related edges)
-        storage.delete_nodes("test_repo", &["node3".to_string()]).await.unwrap();
+        storage
+            .delete_nodes("test_repo", &["node3".to_string()])
+            .await
+            .unwrap();
         let after_node_delete = storage.load_graph("test_repo").await.unwrap().unwrap();
         assert_eq!(after_node_delete.nodes.len(), 2);
         assert_eq!(after_node_delete.edges.len(), 0); // Edge to node3 should be deleted
-        
+
         // Test delete graph
         storage.delete_graph("test_repo").await.unwrap();
         assert!(!storage.graph_exists("test_repo").await.unwrap());
@@ -1173,13 +1217,13 @@ mod tests {
         let invalid_path = PathBuf::from("/invalid/path/that/should/not/exist");
         let result = FileGraphStorage::new(&invalid_path).await;
         assert!(result.is_err());
-        
+
         // Test loading non-existent graph
         let temp_dir = tempdir().unwrap();
         let storage = FileGraphStorage::new(temp_dir.path()).await.unwrap();
         let result = storage.load_graph("nonexistent").await.unwrap();
         assert!(result.is_none());
-        
+
         // Test SQLite with read-only directory (if possible)
         let temp_dir = tempdir().unwrap();
         let storage = SqliteGraphStorage::new(temp_dir.path()).await.unwrap();
@@ -1190,10 +1234,10 @@ mod tests {
     #[tokio::test]
     async fn test_concurrent_access() {
         use tokio::task;
-        
+
         let temp_dir = tempdir().unwrap();
         let storage = Arc::new(SqliteGraphStorage::new(temp_dir.path()).await.unwrap());
-        
+
         // Test concurrent writes
         let mut handles = Vec::new();
         for i in 0..10 {
@@ -1205,16 +1249,16 @@ mod tests {
             });
             handles.push(handle);
         }
-        
+
         // Wait for all writes to complete
         for handle in handles {
             handle.await.unwrap();
         }
-        
+
         // Verify all graphs were stored
         let repos = storage.list_repositories().await.unwrap();
         assert_eq!(repos.len(), 10);
-        
+
         // Test concurrent reads
         let mut handles = Vec::new();
         for i in 0..10 {
@@ -1227,7 +1271,7 @@ mod tests {
             });
             handles.push(handle);
         }
-        
+
         // Wait for all reads to complete
         for handle in handles {
             handle.await.unwrap();

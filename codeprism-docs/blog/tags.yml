@@ -177,3 +177,18 @@ dependency-scanning:
   label: Dependency Scanning
   permalink: /dependency-scanning
   description: Posts about scanning and managing code dependencies
+
+rust:
+  label: Rust
+  permalink: /rust
+  description: Posts about Rust programming language and development
+
+storage:
+  label: Storage
+  permalink: /storage
+  description: Posts about data storage, persistence, and storage systems
+
+milestone:
+  label: Milestone
+  permalink: /milestone
+  description: Posts about project milestones and major achievements

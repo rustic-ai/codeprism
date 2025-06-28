@@ -1115,6 +1115,431 @@ struct DependencyPattern {
     extraction_method: String,
 }
 
+/// Modern Python features analysis result
+#[derive(Debug, Clone)]
+pub struct ModernPythonFeatureAnalysis {
+    pub overall_modernity_score: i32,
+    pub python_version_detected: PythonVersionDetected,
+    pub dataclass_features: Vec<DataclassInfo>,
+    pub context_manager_features: Vec<ContextManagerInfo>,
+    pub fstring_features: Vec<FStringInfo>,
+    pub pattern_matching_features: Vec<PatternMatchingInfo>,
+    pub generator_features: Vec<GeneratorInfo>,
+    pub decorator_features: Vec<ModernDecoratorInfo>,
+    pub modern_syntax_features: Vec<ModernSyntaxInfo>,
+    pub recommendations: Vec<String>,
+}
+
+/// Python version detection
+#[derive(Debug, Clone)]
+pub struct PythonVersionDetected {
+    pub minimum_version: String,
+    pub features_by_version: Vec<VersionFeature>,
+    pub compatibility_issues: Vec<CompatibilityIssue>,
+}
+
+/// Version-specific feature
+#[derive(Debug, Clone)]
+pub struct VersionFeature {
+    pub feature_name: String,
+    pub python_version: String,
+    pub usage_count: usize,
+    pub is_best_practice: bool,
+}
+
+/// Compatibility issue
+#[derive(Debug, Clone)]
+pub struct CompatibilityIssue {
+    pub issue_type: CompatibilityIssueType,
+    pub severity: CompatibilitySeverity,
+    pub feature_name: String,
+    pub required_version: String,
+    pub description: String,
+    pub recommendation: String,
+}
+
+/// Compatibility issue types
+#[derive(Debug, Clone)]
+pub enum CompatibilityIssueType {
+    VersionMismatch,    // Feature requires newer Python version
+    DeprecatedFeature,  // Feature is deprecated
+    SyntaxError,        // Syntax not supported in target version
+    ImportError,        // Module not available in target version
+    BehaviorChange,     // Feature behavior changed between versions
+}
+
+/// Compatibility severity
+#[derive(Debug, Clone)]
+pub enum CompatibilitySeverity {
+    Critical,  // Code will not run
+    High,      // Major functionality affected
+    Medium,    // Minor issues or warnings
+    Low,       // Style or performance recommendations
+    Info,      // Informational only
+}
+
+/// Dataclass analysis information
+#[derive(Debug, Clone)]
+pub struct DataclassInfo {
+    pub class_name: String,
+    pub dataclass_type: DataclassType,
+    pub fields: Vec<DataclassField>,
+    pub features_used: Vec<DataclassFeature>,
+    pub complexity: FeatureComplexity,
+    pub best_practices_score: i32,
+    pub recommendations: Vec<String>,
+}
+
+/// Dataclass types
+#[derive(Debug, Clone)]
+pub enum DataclassType {
+    StandardDataclass,  // @dataclass
+    PydanticModel,      // Pydantic BaseModel
+    NamedTuple,         // typing.NamedTuple
+    AttrsClass,         // attrs @attr.s
+    SimpleNamespace,    // types.SimpleNamespace
+}
+
+/// Dataclass field information
+#[derive(Debug, Clone)]
+pub struct DataclassField {
+    pub name: String,
+    pub field_type: String,
+    pub has_default: bool,
+    pub is_optional: bool,
+    pub validation_rules: Vec<String>,
+    pub metadata: Vec<String>,
+}
+
+/// Dataclass features
+#[derive(Debug, Clone, PartialEq)]
+pub enum DataclassFeature {
+    FrozenClass,        // frozen=True
+    InitGeneration,     // init=True/False
+    ReprGeneration,     // repr=True/False
+    EqGeneration,       // eq=True/False
+    OrderGeneration,    // order=True
+    HashGeneration,     // unsafe_hash=True
+    SlotsUsage,         // __slots__
+    PostInitProcessing, // __post_init__
+    FieldFactories,     // default_factory
+    KwOnlyFields,       // kw_only fields
+}
+
+/// Context manager analysis information
+#[derive(Debug, Clone)]
+pub struct ContextManagerInfo {
+    pub context_type: ContextManagerType,
+    pub usage_pattern: ContextUsagePattern,
+    pub resource_management: ResourceManagementQuality,
+    pub error_handling: ContextErrorHandling,
+    pub is_async: bool,
+    pub nested_level: usize,
+    pub best_practices_followed: bool,
+}
+
+/// Context manager types
+#[derive(Debug, Clone)]
+pub enum ContextManagerType {
+    BuiltInFileManager,     // open() with statement
+    CustomContextManager,   // Custom __enter__/__exit__
+    ContextlibManager,      // @contextmanager decorator
+    AsyncContextManager,    // async __aenter__/__aexit__
+    DatabaseConnection,     // DB connection managers
+    LockManager,            // Threading/asyncio locks
+    TemporaryResource,      // tempfile, temporary dirs
+    ExceptionSuppression,   // contextlib.suppress
+}
+
+/// Context usage patterns
+#[derive(Debug, Clone)]
+pub enum ContextUsagePattern {
+    SingleContext,      // Single with statement
+    MultipleContexts,   // Multiple with variables
+    NestedContexts,     // Nested with statements
+    AsyncContext,       // async with
+    ConditionalContext, // with in conditional blocks
+    LoopContext,        // with in loops
+}
+
+/// Resource management quality
+#[derive(Debug, Clone)]
+pub enum ResourceManagementQuality {
+    Excellent,  // Proper resource cleanup, error handling
+    Good,       // Good resource management with minor issues
+    Adequate,   // Basic resource management
+    Poor,       // Resource leaks possible
+    Dangerous,  // Major resource management issues
+}
+
+/// Context error handling
+#[derive(Debug, Clone)]
+pub enum ContextErrorHandling {
+    Comprehensive,  // Full exception handling
+    Basic,          // Basic error handling
+    Minimal,        // Minimal error handling
+    None,           // No error handling
+}
+
+/// F-string analysis information
+#[derive(Debug, Clone)]
+pub struct FStringInfo {
+    pub expression: String,
+    pub complexity: FStringComplexity,
+    pub features_used: Vec<FStringFeature>,
+    pub performance_impact: PerformanceImpact,
+    pub formatting_quality: FormattingQuality,
+    pub readability_score: i32,
+}
+
+/// F-string complexity levels
+#[derive(Debug, Clone)]
+pub enum FStringComplexity {
+    Simple,     // Basic variable interpolation
+    Moderate,   // Simple expressions and formatting
+    Complex,    // Complex expressions, nested calls
+    Advanced,   // Very complex expressions, performance concerns
+}
+
+/// F-string features
+#[derive(Debug, Clone, PartialEq)]
+pub enum FStringFeature {
+    BasicInterpolation,     // f"{variable}"
+    ExpressionEvaluation,   // f"{expression()}"
+    FormatSpecifiers,       // f"{value:.2f}"
+    ConversionFlags,        // f"{value!r}"
+    NestedFormatting,       // f"{f'{inner}'}"
+    MultilineString,        // Multiline f-strings
+    RawFString,             // rf"string"
+    ComplexExpressions,     // f"{complex.expression}"
+}
+
+/// Performance impact assessment
+#[derive(Debug, Clone)]
+pub enum PerformanceImpact {
+    Positive,   // Better performance than alternatives
+    Neutral,    // Similar performance
+    Negative,   // Worse performance
+    Critical,   // Significantly worse performance
+}
+
+/// Formatting quality assessment
+#[derive(Debug, Clone)]
+pub enum FormattingQuality {
+    Excellent,  // Clear, readable, appropriate formatting
+    Good,       // Good formatting with minor issues
+    Adequate,   // Basic formatting, functional
+    Poor,       // Poor formatting choices
+    Unreadable, // Very poor formatting, hard to read
+}
+
+/// Pattern matching analysis (Python 3.10+)
+#[derive(Debug, Clone)]
+pub struct PatternMatchingInfo {
+    pub match_statement: String,
+    pub pattern_types: Vec<PatternType>,
+    pub complexity: PatternComplexity,
+    pub has_guards: bool,
+    pub is_exhaustive: bool,
+    pub performance_characteristics: MatchPerformance,
+    pub best_practices_score: i32,
+}
+
+/// Pattern types in match statements
+#[derive(Debug, Clone)]
+pub enum PatternType {
+    LiteralPattern,         // case 42:
+    VariablePattern,        // case x:
+    WildcardPattern,        // case _:
+    ValuePattern,           // case Color.RED:
+    GroupPattern,           // case (x, y):
+    SequencePattern,        // case [x, *rest]:
+    MappingPattern,         // case {"key": value}:
+    ClassPattern,           // case Point(x, y):
+    OrPattern,              // case x | y:
+    AsPattern,              // case x as y:
+    GuardedPattern,         // case x if condition:
+}
+
+/// Pattern matching complexity
+#[derive(Debug, Clone)]
+pub enum PatternComplexity {
+    Simple,     // Basic literal/variable patterns
+    Moderate,   // Some structured patterns
+    Complex,    // Complex nested patterns
+    Advanced,   // Very complex patterns with guards
+}
+
+/// Match statement performance characteristics
+#[derive(Debug, Clone)]
+pub enum MatchPerformance {
+    Optimal,    // Efficient pattern matching
+    Good,       // Good performance
+    Fair,       // Adequate performance
+    Poor,       // Inefficient patterns
+    Critical,   // Very poor performance
+}
+
+/// Generator analysis information
+#[derive(Debug, Clone)]
+pub struct GeneratorInfo {
+    pub generator_type: GeneratorType,
+    pub usage_pattern: GeneratorUsagePattern,
+    pub memory_efficiency: MemoryEfficiency,
+    pub complexity: GeneratorComplexity,
+    pub is_async: bool,
+    pub yield_analysis: YieldAnalysis,
+    pub optimization_opportunities: Vec<String>,
+}
+
+/// Generator types
+#[derive(Debug, Clone)]
+pub enum GeneratorType {
+    GeneratorFunction,      // def func(): yield
+    GeneratorExpression,    // (x for x in iterable)
+    AsyncGenerator,         // async def func(): yield
+    Comprehension,          // List/dict/set comprehensions
+    IteratorProtocol,       // __iter__, __next__
+}
+
+/// Generator usage patterns
+#[derive(Debug, Clone)]
+pub enum GeneratorUsagePattern {
+    SimpleIteration,        // Basic iteration
+    DataTransformation,     // Data processing pipeline
+    LazyEvaluation,         // Lazy computation
+    InfiniteSequence,       // Infinite generators
+    Coroutine,              // Coroutine patterns
+    Pipeline,               // Chained generators
+}
+
+/// Memory efficiency assessment
+#[derive(Debug, Clone)]
+pub enum MemoryEfficiency {
+    Excellent,  // Very memory efficient
+    Good,       // Good memory usage
+    Adequate,   // Acceptable memory usage
+    Poor,       // Inefficient memory usage
+    Critical,   // Very poor memory usage
+}
+
+/// Generator complexity
+#[derive(Debug, Clone)]
+pub enum GeneratorComplexity {
+    Simple,     // Basic yield statements
+    Moderate,   // Some control flow
+    Complex,    // Complex logic, multiple yields
+    Advanced,   // Very complex generators
+}
+
+/// Yield analysis
+#[derive(Debug, Clone)]
+pub struct YieldAnalysis {
+    pub yield_count: usize,
+    pub has_yield_from: bool,
+    pub has_send_values: bool,
+    pub has_throw_values: bool,
+    pub has_close_handling: bool,
+}
+
+/// Modern decorator analysis
+#[derive(Debug, Clone)]
+pub struct ModernDecoratorInfo {
+    pub decorator_name: String,
+    pub decorator_category: DecoratorCategory,
+    pub usage_pattern: DecoratorUsagePattern,
+    pub complexity: DecoratorComplexity,
+    pub is_factory: bool,
+    pub is_async: bool,
+    pub parameters: Vec<String>,
+    pub best_practices_score: i32,
+}
+
+/// Decorator categories
+#[derive(Debug, Clone)]
+pub enum DecoratorCategory {
+    BuiltIn,            // @property, @staticmethod, @classmethod
+    FunctoolsDecorator, // @wraps, @singledispatch, @cache
+    AsyncDecorator,     // Async-related decorators
+    DataValidation,     // Pydantic, dataclass validators
+    WebFramework,       // Flask, FastAPI decorators
+    Testing,            // pytest, unittest decorators
+    Performance,        // @lru_cache, timing decorators
+    Custom,             // Custom user decorators
+}
+
+/// Decorator usage patterns
+#[derive(Debug, Clone)]
+pub enum DecoratorUsagePattern {
+    SingleDecorator,    // Single decorator
+    StackedDecorators,  // Multiple decorators
+    ParameterizedDecorator, // Decorator with parameters
+    ConditionalDecorator,   // Conditional application
+    DynamicDecorator,   // Runtime decoration
+}
+
+/// Decorator complexity
+#[derive(Debug, Clone)]
+pub enum DecoratorComplexity {
+    Simple,     // Basic decorators
+    Moderate,   // Parameterized decorators
+    Complex,    // Complex decorator logic
+    Advanced,   // Very complex decorator patterns
+}
+
+/// Modern syntax features
+#[derive(Debug, Clone)]
+pub struct ModernSyntaxInfo {
+    pub feature_type: ModernSyntaxType,
+    pub python_version: String,
+    pub usage_count: usize,
+    pub complexity: SyntaxComplexity,
+    pub best_practices_followed: bool,
+    pub migration_suggestions: Vec<String>,
+}
+
+/// Modern syntax types
+#[derive(Debug, Clone)]
+pub enum ModernSyntaxType {
+    WalrusOperator,         // := (Python 3.8+)
+    PositionalOnlyParams,   // def func(a, /, b) (Python 3.8+)
+    TypeUnionOperator,      // int | str (Python 3.10+)
+    ExceptionGroups,        // except* (Python 3.11+)
+    GenericTypeHints,       // list[int] (Python 3.9+)
+    StringPrefixChaining,   // rf"string" (Python 3.6+)
+    DictUnionOperator,      // dict1 | dict2 (Python 3.9+)
+    RemovePrefix,           // str.removeprefix() (Python 3.9+)
+    ContextVars,            // contextvars (Python 3.7+)
+}
+
+/// Syntax complexity
+#[derive(Debug, Clone)]
+pub enum SyntaxComplexity {
+    Simple,     // Basic usage
+    Moderate,   // Standard usage
+    Complex,    // Advanced usage
+    Expert,     // Expert-level usage
+}
+
+/// Feature complexity assessment
+#[derive(Debug, Clone)]
+pub enum FeatureComplexity {
+    Simple,     // Basic feature usage
+    Moderate,   // Standard feature usage
+    Complex,    // Advanced feature usage
+    Expert,     // Expert-level feature usage
+}
+
+/// Pattern for modern feature detection
+#[derive(Debug, Clone)]
+struct ModernFeaturePattern {
+    name: String,
+    pattern: Regex,
+    feature_type: String,
+    python_version: String,
+    complexity: FeatureComplexity,
+}
+
 /// Python-specific analyzer
 pub struct PythonAnalyzer {
     decorator_patterns: HashMap<String, Vec<DecoratorPattern>>,
@@ -1125,6 +1550,7 @@ pub struct PythonAnalyzer {
     type_hint_patterns: HashMap<String, Vec<TypeHintPattern>>,
     async_patterns: HashMap<String, Vec<AsyncPattern>>,
     dependency_patterns: HashMap<String, Vec<DependencyPattern>>,
+    modern_feature_patterns: HashMap<String, Vec<ModernFeaturePattern>>,
 }
 
 #[derive(Debug, Clone)]
@@ -1185,6 +1611,7 @@ impl PythonAnalyzer {
             type_hint_patterns: HashMap::new(),
             async_patterns: HashMap::new(),
             dependency_patterns: HashMap::new(),
+            modern_feature_patterns: HashMap::new(),
         };
         analyzer.initialize_patterns();
         analyzer
@@ -1736,6 +2163,192 @@ impl PythonAnalyzer {
             },
         ];
         self.dependency_patterns.insert("imports".to_string(), import_patterns);
+
+        // Modern Python feature patterns
+        let dataclass_patterns = vec![
+            ModernFeaturePattern {
+                name: "Dataclass Decorator".to_string(),
+                pattern: Regex::new(r"@dataclass").unwrap(),
+                feature_type: "dataclass".to_string(),
+                python_version: "3.7+".to_string(),
+                complexity: FeatureComplexity::Moderate,
+            },
+            ModernFeaturePattern {
+                name: "Pydantic Model".to_string(),
+                pattern: Regex::new(r"class\s+\w+\(BaseModel\)").unwrap(),
+                feature_type: "dataclass".to_string(),
+                python_version: "3.6+".to_string(),
+                complexity: FeatureComplexity::Complex,
+            },
+            ModernFeaturePattern {
+                name: "Named Tuple".to_string(),
+                pattern: Regex::new(r"NamedTuple|namedtuple").unwrap(),
+                feature_type: "dataclass".to_string(),
+                python_version: "3.6+".to_string(),
+                complexity: FeatureComplexity::Simple,
+            },
+            ModernFeaturePattern {
+                name: "Slots Usage".to_string(),
+                pattern: Regex::new(r"__slots__\s*=").unwrap(),
+                feature_type: "dataclass".to_string(),
+                python_version: "3.0+".to_string(),
+                complexity: FeatureComplexity::Moderate,
+            },
+        ];
+        self.modern_feature_patterns.insert("dataclass".to_string(), dataclass_patterns);
+
+        let context_manager_patterns = vec![
+            ModernFeaturePattern {
+                name: "With Statement".to_string(),
+                pattern: Regex::new(r"(?m)^(\s*)with\s+").unwrap(),
+                feature_type: "context_manager".to_string(),
+                python_version: "2.5+".to_string(),
+                complexity: FeatureComplexity::Simple,
+            },
+            ModernFeaturePattern {
+                name: "Async With".to_string(),
+                pattern: Regex::new(r"(?m)^(\s*)async\s+with\s+").unwrap(),
+                feature_type: "context_manager".to_string(),
+                python_version: "3.5+".to_string(),
+                complexity: FeatureComplexity::Complex,
+            },
+            ModernFeaturePattern {
+                name: "Context Manager Protocol".to_string(),
+                pattern: Regex::new(r"__enter__|__exit__").unwrap(),
+                feature_type: "context_manager".to_string(),
+                python_version: "2.5+".to_string(),
+                complexity: FeatureComplexity::Complex,
+            },
+            ModernFeaturePattern {
+                name: "Contextlib Manager".to_string(),
+                pattern: Regex::new(r"@contextmanager").unwrap(),
+                feature_type: "context_manager".to_string(),
+                python_version: "2.5+".to_string(),
+                complexity: FeatureComplexity::Moderate,
+            },
+        ];
+        self.modern_feature_patterns.insert("context_manager".to_string(), context_manager_patterns);
+
+        let fstring_patterns = vec![
+            ModernFeaturePattern {
+                name: "F-String Basic".to_string(),
+                pattern: Regex::new(r#"f["'][^"']*\{[^}]+\}[^"']*["']"#).unwrap(),
+                feature_type: "fstring".to_string(),
+                python_version: "3.6+".to_string(),
+                complexity: FeatureComplexity::Simple,
+            },
+            ModernFeaturePattern {
+                name: "F-String Complex".to_string(),
+                pattern: Regex::new(r#"f["'][^"']*\{[^}]*\([^)]*\)[^}]*\}[^"']*["']"#).unwrap(),
+                feature_type: "fstring".to_string(),
+                python_version: "3.6+".to_string(),
+                complexity: FeatureComplexity::Complex,
+            },
+            ModernFeaturePattern {
+                name: "Raw F-String".to_string(),
+                pattern: Regex::new(r#"rf["']|fr["']"#).unwrap(),
+                feature_type: "fstring".to_string(),
+                python_version: "3.6+".to_string(),
+                complexity: FeatureComplexity::Moderate,
+            },
+        ];
+        self.modern_feature_patterns.insert("fstring".to_string(), fstring_patterns);
+
+        let pattern_matching_patterns = vec![
+            ModernFeaturePattern {
+                name: "Match Statement".to_string(),
+                pattern: Regex::new(r"(?m)^(\s*)match\s+").unwrap(),
+                feature_type: "pattern_matching".to_string(),
+                python_version: "3.10+".to_string(),
+                complexity: FeatureComplexity::Complex,
+            },
+            ModernFeaturePattern {
+                name: "Case Pattern".to_string(),
+                pattern: Regex::new(r"(?m)^(\s*)case\s+").unwrap(),
+                feature_type: "pattern_matching".to_string(),
+                python_version: "3.10+".to_string(),
+                complexity: FeatureComplexity::Complex,
+            },
+            ModernFeaturePattern {
+                name: "Guard Pattern".to_string(),
+                pattern: Regex::new(r"case\s+.*\s+if\s+").unwrap(),
+                feature_type: "pattern_matching".to_string(),
+                python_version: "3.10+".to_string(),
+                complexity: FeatureComplexity::Expert,
+            },
+        ];
+        self.modern_feature_patterns.insert("pattern_matching".to_string(), pattern_matching_patterns);
+
+        let generator_patterns = vec![
+            ModernFeaturePattern {
+                name: "Generator Function".to_string(),
+                pattern: Regex::new(r"def\s+\w+.*?yield").unwrap(),
+                feature_type: "generator".to_string(),
+                python_version: "2.2+".to_string(),
+                complexity: FeatureComplexity::Moderate,
+            },
+            ModernFeaturePattern {
+                name: "Generator Expression".to_string(),
+                pattern: Regex::new(r"\([^)]*for\s+\w+\s+in\s+[^)]*\)").unwrap(),
+                feature_type: "generator".to_string(),
+                python_version: "2.4+".to_string(),
+                complexity: FeatureComplexity::Simple,
+            },
+            ModernFeaturePattern {
+                name: "Async Generator".to_string(),
+                pattern: Regex::new(r"async\s+def\s+\w+.*?yield").unwrap(),
+                feature_type: "generator".to_string(),
+                python_version: "3.6+".to_string(),
+                complexity: FeatureComplexity::Expert,
+            },
+            ModernFeaturePattern {
+                name: "Yield From".to_string(),
+                pattern: Regex::new(r"yield\s+from\s+").unwrap(),
+                feature_type: "generator".to_string(),
+                python_version: "3.3+".to_string(),
+                complexity: FeatureComplexity::Complex,
+            },
+        ];
+        self.modern_feature_patterns.insert("generator".to_string(), generator_patterns);
+
+        let modern_syntax_patterns = vec![
+            ModernFeaturePattern {
+                name: "Walrus Operator".to_string(),
+                pattern: Regex::new(r":=").unwrap(),
+                feature_type: "modern_syntax".to_string(),
+                python_version: "3.8+".to_string(),
+                complexity: FeatureComplexity::Moderate,
+            },
+            ModernFeaturePattern {
+                name: "Positional Only Parameters".to_string(),
+                pattern: Regex::new(r"def\s+\w+\([^)]*,\s*/\s*[,)]").unwrap(),
+                feature_type: "modern_syntax".to_string(),
+                python_version: "3.8+".to_string(),
+                complexity: FeatureComplexity::Complex,
+            },
+            ModernFeaturePattern {
+                name: "Union Type Operator".to_string(),
+                pattern: Regex::new(r"\w+\s*\|\s*\w+").unwrap(),
+                feature_type: "modern_syntax".to_string(),
+                python_version: "3.10+".to_string(),
+                complexity: FeatureComplexity::Moderate,
+            },
+            ModernFeaturePattern {
+                name: "Dictionary Union".to_string(),
+                pattern: Regex::new(r"\w+\s*\|\s*\{").unwrap(),
+                feature_type: "modern_syntax".to_string(),
+                python_version: "3.9+".to_string(),
+                complexity: FeatureComplexity::Simple,
+            },
+            ModernFeaturePattern {
+                name: "Generic Type Hints".to_string(),
+                pattern: Regex::new(r"list\[|dict\[|set\[|tuple\[").unwrap(),
+                feature_type: "modern_syntax".to_string(),
+                python_version: "3.9+".to_string(),
+                complexity: FeatureComplexity::Moderate,
+            },
+        ];
+        self.modern_feature_patterns.insert("modern_syntax".to_string(), modern_syntax_patterns);
     }
 
     /// Analyze Python decorators
@@ -2419,7 +3032,7 @@ impl PythonAnalyzer {
         }
 
         // Detect deprecated packages
-        let deprecated_packages = vec!["imp", "optparse", "platform", "distutils"];
+        let deprecated_packages = ["imp", "optparse", "platform", "distutils"];
         for dep in dependencies {
             if deprecated_packages.contains(&dep.name.as_str()) {
                 issues.push(DependencyIssue {
@@ -2632,7 +3245,7 @@ impl PythonAnalyzer {
         }
 
         // Check for deprecated modules
-        let deprecated_modules = vec!["imp", "optparse", "platform.dist"];
+        let deprecated_modules = ["imp", "optparse", "platform.dist"];
         if deprecated_modules.iter().any(|&dep| module_name.contains(dep)) {
             issues.push(ImportIssue::DeprecatedImport);
         }
@@ -2747,7 +3360,7 @@ impl PythonAnalyzer {
 
         score += (pinned_ratio * 20.0) as i32;
 
-        score.max(0).min(100)
+        score.clamp(0, 100)
     }
 
     fn get_dependency_recommendations(
@@ -2802,6 +3415,928 @@ impl PythonAnalyzer {
         recommendations.push("Set up automated dependency updates with Dependabot".to_string());
 
         recommendations
+    }
+
+    /// Analyze modern Python features comprehensively
+    pub fn analyze_modern_features(&self, content: &str) -> Result<ModernPythonFeatureAnalysis> {
+        let mut dataclass_features = Vec::new();
+        let mut context_manager_features = Vec::new();
+        let mut fstring_features = Vec::new();
+        let mut pattern_matching_features = Vec::new();
+        let mut generator_features = Vec::new();
+        let mut decorator_features = Vec::new();
+        let mut modern_syntax_features = Vec::new();
+
+        // Analyze dataclasses
+        self.analyze_dataclasses(content, &mut dataclass_features);
+
+        // Analyze context managers
+        self.analyze_context_managers(content, &mut context_manager_features);
+
+        // Analyze f-strings
+        self.analyze_fstrings(content, &mut fstring_features);
+
+        // Analyze pattern matching
+        self.analyze_pattern_matching(content, &mut pattern_matching_features);
+
+        // Analyze generators
+        self.analyze_generators(content, &mut generator_features);
+
+        // Analyze modern decorators
+        self.analyze_modern_decorators(content, &mut decorator_features);
+
+        // Analyze modern syntax
+        self.analyze_modern_syntax(content, &mut modern_syntax_features);
+
+        // Detect Python version and compatibility
+        let python_version_detected = self.detect_python_version(content);
+
+        // Calculate overall modernity score
+        let overall_modernity_score = self.calculate_modernity_score(
+            &dataclass_features,
+            &context_manager_features,
+            &fstring_features,
+            &pattern_matching_features,
+            &generator_features,
+            &decorator_features,
+            &modern_syntax_features,
+        );
+
+        // Generate recommendations
+        let recommendations = self.get_modern_feature_recommendations(
+            &dataclass_features,
+            &context_manager_features,
+            &fstring_features,
+            &pattern_matching_features,
+            &generator_features,
+            &decorator_features,
+            &modern_syntax_features,
+            &python_version_detected,
+        );
+
+        Ok(ModernPythonFeatureAnalysis {
+            overall_modernity_score,
+            python_version_detected,
+            dataclass_features,
+            context_manager_features,
+            fstring_features,
+            pattern_matching_features,
+            generator_features,
+            decorator_features,
+            modern_syntax_features,
+            recommendations,
+        })
+    }
+
+    /// Analyze dataclass usage patterns
+    fn analyze_dataclasses(&self, content: &str, dataclass_features: &mut Vec<DataclassInfo>) {
+        if let Some(patterns) = self.modern_feature_patterns.get("dataclass") {
+            for pattern in patterns {
+                for captures in pattern.pattern.captures_iter(content) {
+                    let full_match = captures.get(0).unwrap().as_str();
+
+                    let dataclass_type = match pattern.name.as_str() {
+                        "Dataclass Decorator" => DataclassType::StandardDataclass,
+                        "Pydantic Model" => DataclassType::PydanticModel,
+                        "Named Tuple" => DataclassType::NamedTuple,
+                        _ => DataclassType::StandardDataclass,
+                    };
+
+                    let class_name = self.extract_dataclass_name(full_match, content);
+                    let fields = self.analyze_dataclass_fields(content, &class_name);
+                    let features_used = self.detect_dataclass_features(content, &class_name);
+                    let complexity = self.assess_dataclass_complexity(&fields, &features_used);
+                    let best_practices_score = self.score_dataclass_best_practices(&fields, &features_used);
+                    let recommendations = self.get_dataclass_recommendations(&features_used, best_practices_score);
+
+                    dataclass_features.push(DataclassInfo {
+                        class_name,
+                        dataclass_type,
+                        fields,
+                        features_used,
+                        complexity,
+                        best_practices_score,
+                        recommendations,
+                    });
+                }
+            }
+        }
+    }
+
+    /// Analyze context manager usage
+    fn analyze_context_managers(&self, content: &str, context_features: &mut Vec<ContextManagerInfo>) {
+        if let Some(patterns) = self.modern_feature_patterns.get("context_manager") {
+            for pattern in patterns {
+                for captures in pattern.pattern.captures_iter(content) {
+                    let full_match = captures.get(0).unwrap().as_str();
+
+                    let context_type = match pattern.name.as_str() {
+                        "With Statement" => ContextManagerType::BuiltInFileManager,
+                        "Async With" => ContextManagerType::AsyncContextManager,
+                        "Context Manager Protocol" => ContextManagerType::CustomContextManager,
+                        "Contextlib Manager" => ContextManagerType::ContextlibManager,
+                        _ => ContextManagerType::BuiltInFileManager,
+                    };
+
+                    let usage_pattern = self.analyze_context_usage_pattern(content, full_match);
+                    let resource_management = self.assess_resource_management_quality(content, full_match);
+                    let error_handling = self.assess_context_error_handling(content, full_match);
+                    let is_async = pattern.name.contains("Async");
+                    let nested_level = self.calculate_context_nesting_level(content, full_match);
+                    let best_practices_followed = self.check_context_best_practices(content, full_match);
+
+                    context_features.push(ContextManagerInfo {
+                        context_type,
+                        usage_pattern,
+                        resource_management,
+                        error_handling,
+                        is_async,
+                        nested_level,
+                        best_practices_followed,
+                    });
+                }
+            }
+        }
+    }
+
+    /// Analyze f-string usage
+    fn analyze_fstrings(&self, content: &str, fstring_features: &mut Vec<FStringInfo>) {
+        if let Some(patterns) = self.modern_feature_patterns.get("fstring") {
+            for pattern in patterns {
+                for captures in pattern.pattern.captures_iter(content) {
+                    let expression = captures.get(0).unwrap().as_str().to_string();
+
+                    let complexity = self.assess_fstring_complexity(&expression);
+                    let features_used = self.detect_fstring_features(&expression);
+                    let performance_impact = self.assess_fstring_performance(&expression, &features_used);
+                    let formatting_quality = self.assess_formatting_quality(&expression);
+                    let readability_score = self.calculate_fstring_readability(&expression);
+
+                    fstring_features.push(FStringInfo {
+                        expression,
+                        complexity,
+                        features_used,
+                        performance_impact,
+                        formatting_quality,
+                        readability_score,
+                    });
+                }
+            }
+        }
+    }
+
+    /// Analyze pattern matching (Python 3.10+)
+    fn analyze_pattern_matching(&self, content: &str, pattern_features: &mut Vec<PatternMatchingInfo>) {
+        if let Some(patterns) = self.modern_feature_patterns.get("pattern_matching") {
+            // Look for complete match statements
+            let match_regex = Regex::new(r"match\s+[^:]+:(.*?)(?=\n\S|\n*$)").unwrap();
+            for captures in match_regex.captures_iter(content) {
+                let match_statement = captures.get(0).unwrap().as_str().to_string();
+                
+                let pattern_types = self.analyze_match_patterns(&match_statement);
+                let complexity = self.assess_pattern_complexity(&pattern_types);
+                let has_guards = match_statement.contains("if ");
+                let is_exhaustive = self.check_pattern_exhaustiveness(&match_statement);
+                let performance_characteristics = self.assess_match_performance(&pattern_types, &match_statement);
+                let best_practices_score = self.score_pattern_best_practices(&pattern_types, has_guards, is_exhaustive);
+
+                pattern_features.push(PatternMatchingInfo {
+                    match_statement,
+                    pattern_types,
+                    complexity,
+                    has_guards,
+                    is_exhaustive,
+                    performance_characteristics,
+                    best_practices_score,
+                });
+            }
+        }
+    }
+
+    /// Analyze generator patterns
+    fn analyze_generators(&self, content: &str, generator_features: &mut Vec<GeneratorInfo>) {
+        if let Some(patterns) = self.modern_feature_patterns.get("generator") {
+            for pattern in patterns {
+                for captures in pattern.pattern.captures_iter(content) {
+                    let full_match = captures.get(0).unwrap().as_str();
+
+                    let generator_type = match pattern.name.as_str() {
+                        "Generator Function" => GeneratorType::GeneratorFunction,
+                        "Generator Expression" => GeneratorType::GeneratorExpression,
+                        "Async Generator" => GeneratorType::AsyncGenerator,
+                        _ => GeneratorType::GeneratorFunction,
+                    };
+
+                    let usage_pattern = self.classify_generator_usage_pattern(content, full_match);
+                    let memory_efficiency = self.assess_generator_memory_efficiency(content, full_match);
+                    let complexity = self.assess_generator_complexity(content, full_match);
+                    let is_async = pattern.name.contains("Async");
+                    let yield_analysis = self.analyze_yield_usage(content, full_match);
+                    let optimization_opportunities = self.identify_generator_optimizations(content, full_match);
+
+                    generator_features.push(GeneratorInfo {
+                        generator_type,
+                        usage_pattern,
+                        memory_efficiency,
+                        complexity,
+                        is_async,
+                        yield_analysis,
+                        optimization_opportunities,
+                    });
+                }
+            }
+        }
+    }
+
+    /// Analyze modern decorator usage
+    fn analyze_modern_decorators(&self, content: &str, decorator_features: &mut Vec<ModernDecoratorInfo>) {
+        let decorator_regex = Regex::new(r"@(\w+)(?:\([^)]*\))?").unwrap();
+        for captures in decorator_regex.captures_iter(content) {
+            let decorator_name = captures.get(1).unwrap().as_str().to_string();
+            let full_decorator = captures.get(0).unwrap().as_str();
+
+            let decorator_category = self.classify_decorator_category(&decorator_name);
+            let usage_pattern = self.analyze_decorator_usage_pattern(content, full_decorator);
+            let complexity = self.assess_decorator_complexity(full_decorator);
+            let is_factory = full_decorator.contains('(');
+            let is_async = content.contains(&format!("async def")) && content.contains(&decorator_name);
+            let parameters = self.extract_decorator_parameters(full_decorator);
+            let best_practices_score = self.score_decorator_best_practices(&decorator_category, &usage_pattern);
+
+            decorator_features.push(ModernDecoratorInfo {
+                decorator_name,
+                decorator_category,
+                usage_pattern,
+                complexity,
+                is_factory,
+                is_async,
+                parameters,
+                best_practices_score,
+            });
+        }
+    }
+
+    /// Analyze modern syntax features
+    fn analyze_modern_syntax(&self, content: &str, syntax_features: &mut Vec<ModernSyntaxInfo>) {
+        if let Some(patterns) = self.modern_feature_patterns.get("modern_syntax") {
+            for pattern in patterns {
+                let usage_count = pattern.pattern.find_iter(content).count();
+                if usage_count > 0 {
+                    let feature_type = match pattern.name.as_str() {
+                        "Walrus Operator" => ModernSyntaxType::WalrusOperator,
+                        "Positional Only Parameters" => ModernSyntaxType::PositionalOnlyParams,
+                        "Union Type Operator" => ModernSyntaxType::TypeUnionOperator,
+                        "Dictionary Union" => ModernSyntaxType::DictUnionOperator,
+                        "Generic Type Hints" => ModernSyntaxType::GenericTypeHints,
+                        _ => ModernSyntaxType::WalrusOperator,
+                    };
+
+                    let complexity = self.assess_syntax_complexity(content, &pattern.pattern);
+                    let best_practices_followed = self.check_syntax_best_practices(content, &feature_type);
+                    let migration_suggestions = self.get_syntax_migration_suggestions(&feature_type, usage_count);
+
+                    syntax_features.push(ModernSyntaxInfo {
+                        feature_type,
+                        python_version: pattern.python_version.clone(),
+                        usage_count,
+                        complexity,
+                        best_practices_followed,
+                        migration_suggestions,
+                    });
+                }
+            }
+        }
+    }
+
+    /// Detect minimum Python version required
+    fn detect_python_version(&self, content: &str) -> PythonVersionDetected {
+        let mut features_by_version = Vec::new();
+        let mut compatibility_issues = Vec::new();
+        let mut minimum_version = "3.6".to_string(); // Default modern minimum
+
+        // Check for version-specific features
+        for (category, patterns) in &self.modern_feature_patterns {
+            for pattern in patterns {
+                if pattern.pattern.is_match(content) {
+                    let version_required = pattern.python_version.clone();
+                    
+                    // Update minimum version if this feature requires newer version
+                    if self.is_newer_version(&version_required, &minimum_version) {
+                        minimum_version = version_required.clone();
+                    }
+
+                    features_by_version.push(VersionFeature {
+                        feature_name: pattern.name.clone(),
+                        python_version: version_required,
+                        usage_count: pattern.pattern.find_iter(content).count(),
+                        is_best_practice: matches!(pattern.complexity, FeatureComplexity::Simple | FeatureComplexity::Moderate),
+                    });
+                }
+            }
+        }
+
+        // Check for compatibility issues
+        if content.contains("print ") && !content.contains("print(") {
+            compatibility_issues.push(CompatibilityIssue {
+                issue_type: CompatibilityIssueType::SyntaxError,
+                severity: CompatibilitySeverity::Critical,
+                feature_name: "Print Statement".to_string(),
+                required_version: "2.x".to_string(),
+                description: "Print statement syntax not supported in Python 3".to_string(),
+                recommendation: "Use print() function instead".to_string(),
+            });
+        }
+
+        PythonVersionDetected {
+            minimum_version,
+            features_by_version,
+            compatibility_issues,
+        }
+    }
+
+    /// Helper methods for modern feature analysis
+    fn extract_dataclass_name(&self, _match: &str, content: &str) -> String {
+        // Look for class definition near the dataclass decorator
+        if let Some(class_match) = Regex::new(r"class\s+(\w+)").unwrap().find(content) {
+            if let Some(captures) = Regex::new(r"class\s+(\w+)").unwrap().captures(class_match.as_str()) {
+                return captures.get(1).unwrap().as_str().to_string();
+            }
+        }
+        "UnknownClass".to_string()
+    }
+
+    fn analyze_dataclass_fields(&self, content: &str, class_name: &str) -> Vec<DataclassField> {
+        // Simplified field analysis - in production this would parse the class body
+        let mut fields = Vec::new();
+        
+        // Look for field annotations in the class
+        let field_regex = Regex::new(&format!(r"class\s+{}.*?(\w+):\s*(\w+)", class_name)).unwrap();
+        for captures in field_regex.captures_iter(content) {
+            if captures.len() >= 3 {
+                let field_name = captures.get(1).unwrap().as_str().to_string();
+                let field_type = captures.get(2).unwrap().as_str().to_string();
+                
+                fields.push(DataclassField {
+                    name: field_name,
+                    field_type,
+                    has_default: false,
+                    is_optional: false,
+                    validation_rules: Vec::new(),
+                    metadata: Vec::new(),
+                });
+            }
+        }
+        
+        fields
+    }
+
+    fn detect_dataclass_features(&self, content: &str, _class_name: &str) -> Vec<DataclassFeature> {
+        let mut features = Vec::new();
+        
+        if content.contains("frozen=True") {
+            features.push(DataclassFeature::FrozenClass);
+        }
+        if content.contains("__slots__") {
+            features.push(DataclassFeature::SlotsUsage);
+        }
+        if content.contains("__post_init__") {
+            features.push(DataclassFeature::PostInitProcessing);
+        }
+        if content.contains("default_factory") {
+            features.push(DataclassFeature::FieldFactories);
+        }
+        
+        features
+    }
+
+    fn assess_dataclass_complexity(&self, fields: &[DataclassField], features: &[DataclassFeature]) -> FeatureComplexity {
+        let complexity_score = fields.len() + features.len() * 2;
+        
+        match complexity_score {
+            0..=3 => FeatureComplexity::Simple,
+            4..=8 => FeatureComplexity::Moderate,
+            9..=15 => FeatureComplexity::Complex,
+            _ => FeatureComplexity::Expert,
+        }
+    }
+
+    fn score_dataclass_best_practices(&self, _fields: &[DataclassField], features: &[DataclassFeature]) -> i32 {
+        let mut score = 60; // Base score
+        
+        // Add points for good practices
+        if features.contains(&DataclassFeature::FrozenClass) {
+            score += 15; // Immutability is good
+        }
+        if features.contains(&DataclassFeature::SlotsUsage) {
+            score += 10; // Memory optimization
+        }
+        if features.contains(&DataclassFeature::PostInitProcessing) {
+            score += 10; // Proper initialization
+        }
+        
+        score.min(100)
+    }
+
+    fn get_dataclass_recommendations(&self, features: &[DataclassFeature], score: i32) -> Vec<String> {
+        let mut recommendations = Vec::new();
+        
+        if score < 70 {
+            recommendations.push("Consider using dataclass best practices".to_string());
+        }
+        
+        if !features.contains(&DataclassFeature::SlotsUsage) {
+            recommendations.push("Consider using __slots__ for memory optimization".to_string());
+        }
+        
+        if !features.contains(&DataclassFeature::FrozenClass) {
+            recommendations.push("Consider making dataclass frozen for immutability".to_string());
+        }
+        
+        recommendations
+    }
+
+    /// Calculate overall modernity score
+    fn calculate_modernity_score(
+        &self,
+        dataclass_features: &[DataclassInfo],
+        context_manager_features: &[ContextManagerInfo],
+        fstring_features: &[FStringInfo],
+        pattern_matching_features: &[PatternMatchingInfo],
+        generator_features: &[GeneratorInfo],
+        decorator_features: &[ModernDecoratorInfo],
+        modern_syntax_features: &[ModernSyntaxInfo],
+    ) -> i32 {
+        let mut score = 50; // Base score
+
+        // Add points for modern features
+        score += (dataclass_features.len() * 8).min(20);
+        score += (context_manager_features.len() * 5).min(15);
+        score += (fstring_features.len() * 3).min(10);
+        score += (pattern_matching_features.len() * 10).min(20);
+        score += (generator_features.len() * 4).min(12);
+        score += (decorator_features.len() * 2).min(10);
+        score += (modern_syntax_features.len() * 3).min(13);
+
+        score.min(100)
+    }
+
+    /// Generate modern feature recommendations
+    fn get_modern_feature_recommendations(
+        &self,
+        dataclass_features: &[DataclassInfo],
+        context_manager_features: &[ContextManagerInfo],
+        fstring_features: &[FStringInfo],
+        _pattern_matching_features: &[PatternMatchingInfo],
+        generator_features: &[GeneratorInfo],
+        _decorator_features: &[ModernDecoratorInfo],
+        modern_syntax_features: &[ModernSyntaxInfo],
+        python_version: &PythonVersionDetected,
+    ) -> Vec<String> {
+        let mut recommendations = Vec::new();
+
+        if dataclass_features.is_empty() {
+            recommendations.push("Consider using @dataclass for data classes instead of manual __init__".to_string());
+        }
+
+        if context_manager_features.is_empty() {
+            recommendations.push("Use context managers (with statements) for resource management".to_string());
+        }
+
+        if fstring_features.is_empty() {
+            recommendations.push("Consider using f-strings for string formatting instead of .format()".to_string());
+        }
+
+        if generator_features.is_empty() {
+            recommendations.push("Consider using generators for memory-efficient iteration".to_string());
+        }
+
+        // Version-specific recommendations
+        if self.is_version_supported("3.10", &python_version.minimum_version) {
+            recommendations.push("Consider using pattern matching (match/case) for complex conditionals".to_string());
+        }
+
+        if self.is_version_supported("3.8", &python_version.minimum_version) {
+            let has_walrus = modern_syntax_features.iter()
+                .any(|f| matches!(f.feature_type, ModernSyntaxType::WalrusOperator));
+            if !has_walrus {
+                recommendations.push("Consider using walrus operator (:=) for assignment expressions".to_string());
+            }
+        }
+
+        recommendations
+    }
+
+    /// Analyze context usage pattern
+    fn analyze_context_usage_pattern(&self, content: &str, _context_match: &str) -> ContextUsagePattern {
+        if content.contains("async with") {
+            ContextUsagePattern::AsyncContext
+        } else if content.matches("with").count() > 1 {
+            ContextUsagePattern::MultipleContexts
+        } else {
+            ContextUsagePattern::SingleContext
+        }
+    }
+
+    /// Assess resource management quality
+    fn assess_resource_management_quality(&self, content: &str, _context_match: &str) -> ResourceManagementQuality {
+        let has_error_handling = content.contains("try") || content.contains("except");
+        let has_finally = content.contains("finally");
+        let has_proper_cleanup = content.contains("close()") || content.contains("__exit__");
+
+        match (has_error_handling, has_finally, has_proper_cleanup) {
+            (true, true, true) => ResourceManagementQuality::Excellent,
+            (true, _, true) => ResourceManagementQuality::Good,
+            (true, _, _) => ResourceManagementQuality::Adequate,
+            (false, _, true) => ResourceManagementQuality::Poor,
+            _ => ResourceManagementQuality::Dangerous,
+        }
+    }
+
+    /// Assess context error handling
+    fn assess_context_error_handling(&self, content: &str, _context_match: &str) -> ContextErrorHandling {
+        if content.contains("except") && content.contains("finally") {
+            ContextErrorHandling::Comprehensive
+        } else if content.contains("except") {
+            ContextErrorHandling::Basic
+        } else if content.contains("try") {
+            ContextErrorHandling::Minimal
+        } else {
+            ContextErrorHandling::None
+        }
+    }
+
+    /// Calculate context nesting level
+    fn calculate_context_nesting_level(&self, content: &str, _context_match: &str) -> usize {
+        // Count nested with statements (simplified)
+        let with_count = content.matches("with").count();
+        if with_count > 3 {
+            3 // Cap at 3 for simplicity
+        } else {
+            with_count
+        }
+    }
+
+    /// Check context best practices
+    fn check_context_best_practices(&self, content: &str, _context_match: &str) -> bool {
+        // Check for good practices
+        let has_appropriate_error_handling = content.contains("except");
+        let not_overly_nested = self.calculate_context_nesting_level(content, _context_match) <= 2;
+        let has_resource_cleanup = content.contains("close") || content.contains("__exit__");
+
+        has_appropriate_error_handling && not_overly_nested && has_resource_cleanup
+    }
+
+    /// Helper methods for f-string analysis
+    fn assess_fstring_complexity(&self, expression: &str) -> FStringComplexity {
+        let brace_count = expression.matches('{').count();
+        let has_function_calls = expression.contains('(');
+        let has_format_spec = expression.contains(':');
+
+        match (brace_count, has_function_calls, has_format_spec) {
+            (1, false, false) => FStringComplexity::Simple,
+            (1..=2, _, true) | (1..=2, true, _) => FStringComplexity::Moderate,
+            (3..=5, _, _) => FStringComplexity::Complex,
+            _ => FStringComplexity::Advanced,
+        }
+    }
+
+    fn detect_fstring_features(&self, expression: &str) -> Vec<FStringFeature> {
+        let mut features = Vec::new();
+
+        if expression.contains('{') && expression.contains('}') {
+            features.push(FStringFeature::BasicInterpolation);
+        }
+        if expression.contains('(') {
+            features.push(FStringFeature::ExpressionEvaluation);
+        }
+        if expression.contains(':') {
+            features.push(FStringFeature::FormatSpecifiers);
+        }
+        if expression.contains('!') {
+            features.push(FStringFeature::ConversionFlags);
+        }
+        if expression.starts_with("rf") || expression.starts_with("fr") {
+            features.push(FStringFeature::RawFString);
+        }
+
+        features
+    }
+
+    fn assess_fstring_performance(&self, _expression: &str, features: &[FStringFeature]) -> PerformanceImpact {
+        if features.contains(&FStringFeature::ComplexExpressions) {
+            PerformanceImpact::Negative
+        } else if features.contains(&FStringFeature::ExpressionEvaluation) {
+            PerformanceImpact::Neutral
+        } else {
+            PerformanceImpact::Positive
+        }
+    }
+
+    fn assess_formatting_quality(&self, expression: &str) -> FormattingQuality {
+        let length = expression.len();
+        let complexity = self.assess_fstring_complexity(expression);
+
+        match (length, complexity) {
+            (0..=50, FStringComplexity::Simple) => FormattingQuality::Excellent,
+            (0..=100, FStringComplexity::Moderate) => FormattingQuality::Good,
+            (0..=150, FStringComplexity::Complex) => FormattingQuality::Adequate,
+            (0..=200, _) => FormattingQuality::Poor,
+            _ => FormattingQuality::Unreadable,
+        }
+    }
+
+    fn calculate_fstring_readability(&self, expression: &str) -> i32 {
+        let mut score = 100;
+
+        if expression.len() > 100 {
+            score -= 20;
+        }
+        if expression.matches('{').count() > 3 {
+            score -= 15;
+        }
+        if expression.contains("()") {
+            score -= 10;
+        }
+
+        score.max(0)
+    }
+
+    /// Version comparison helper
+    fn is_newer_version(&self, version1: &str, version2: &str) -> bool {
+        // Simple version comparison (would be more sophisticated in production)
+        let v1 = version1.trim_end_matches('+');
+        let v2 = version2.trim_end_matches('+');
+        v1 > v2
+    }
+
+    fn is_version_supported(&self, required: &str, current: &str) -> bool {
+        // Check if current version supports the required version
+        self.is_newer_version(current, required) || current == required
+    }
+
+    /// Pattern matching helper methods
+    fn analyze_match_patterns(&self, match_statement: &str) -> Vec<PatternType> {
+        let mut patterns = Vec::new();
+        
+        if match_statement.contains("case _:") {
+            patterns.push(PatternType::WildcardPattern);
+        }
+        if match_statement.contains("case ") && match_statement.contains("if ") {
+            patterns.push(PatternType::GuardedPattern);
+        }
+        if match_statement.contains("case [") {
+            patterns.push(PatternType::SequencePattern);
+        }
+        if match_statement.contains("case {") {
+            patterns.push(PatternType::MappingPattern);
+        }
+        if match_statement.contains(" | ") {
+            patterns.push(PatternType::OrPattern);
+        }
+        
+        if patterns.is_empty() {
+            patterns.push(PatternType::LiteralPattern);
+        }
+        
+        patterns
+    }
+
+    fn assess_pattern_complexity(&self, patterns: &[PatternType]) -> PatternComplexity {
+        let complexity_score = patterns.len() + 
+            patterns.iter().map(|p| match p {
+                PatternType::GuardedPattern => 3,
+                PatternType::SequencePattern | PatternType::MappingPattern => 2,
+                PatternType::OrPattern => 2,
+                _ => 1,
+            }).sum::<usize>();
+
+        match complexity_score {
+            0..=3 => PatternComplexity::Simple,
+            4..=8 => PatternComplexity::Moderate,
+            9..=15 => PatternComplexity::Complex,
+            _ => PatternComplexity::Advanced,
+        }
+    }
+
+    fn check_pattern_exhaustiveness(&self, match_statement: &str) -> bool {
+        match_statement.contains("case _:") || match_statement.contains("case default:")
+    }
+
+    fn assess_match_performance(&self, patterns: &[PatternType], _match_statement: &str) -> MatchPerformance {
+        let has_complex_patterns = patterns.iter().any(|p| matches!(
+            p, 
+            PatternType::GuardedPattern | PatternType::SequencePattern | PatternType::MappingPattern
+        ));
+        
+        if has_complex_patterns && patterns.len() > 10 {
+            MatchPerformance::Poor
+        } else if has_complex_patterns {
+            MatchPerformance::Fair
+        } else if patterns.len() <= 5 {
+            MatchPerformance::Optimal
+        } else {
+            MatchPerformance::Good
+        }
+    }
+
+    fn score_pattern_best_practices(&self, patterns: &[PatternType], has_guards: bool, is_exhaustive: bool) -> i32 {
+        let mut score = 70;
+        
+        if is_exhaustive {
+            score += 20;
+        }
+        if has_guards {
+            score += 10; // Guards can be good for complex logic
+        }
+        if patterns.len() <= 5 {
+            score += 10; // Simple patterns are better
+        }
+        
+        score.min(100) as i32
+    }
+
+    /// Generator helper methods
+    fn classify_generator_usage_pattern(&self, content: &str, _generator_match: &str) -> GeneratorUsagePattern {
+        if content.contains("yield from") {
+            GeneratorUsagePattern::Pipeline
+        } else if content.contains("while True") {
+            GeneratorUsagePattern::InfiniteSequence
+        } else if content.contains("map") || content.contains("filter") {
+            GeneratorUsagePattern::DataTransformation
+        } else {
+            GeneratorUsagePattern::SimpleIteration
+        }
+    }
+
+    fn assess_generator_memory_efficiency(&self, content: &str, _generator_match: &str) -> MemoryEfficiency {
+        let has_large_data_structures = content.contains("list(") || content.contains("[") && content.len() > 100;
+        let uses_yield_properly = content.contains("yield") && !content.contains("return [");
+        
+        match (uses_yield_properly, has_large_data_structures) {
+            (true, false) => MemoryEfficiency::Excellent,
+            (true, true) => MemoryEfficiency::Good,
+            (false, false) => MemoryEfficiency::Adequate,
+            (false, true) => MemoryEfficiency::Poor,
+        }
+    }
+
+    fn assess_generator_complexity(&self, content: &str, _generator_match: &str) -> GeneratorComplexity {
+        let yield_count = content.matches("yield").count();
+        let has_complex_logic = content.contains("if") && content.contains("for");
+        let has_nested_loops = content.matches("for").count() > 1;
+        
+        match (yield_count, has_complex_logic, has_nested_loops) {
+            (1, false, false) => GeneratorComplexity::Simple,
+            (1..=3, _, false) => GeneratorComplexity::Moderate,
+            (_, true, true) => GeneratorComplexity::Advanced,
+            _ => GeneratorComplexity::Complex,
+        }
+    }
+
+    fn analyze_yield_usage(&self, content: &str, _generator_match: &str) -> YieldAnalysis {
+        YieldAnalysis {
+            yield_count: content.matches("yield").count(),
+            has_yield_from: content.contains("yield from"),
+            has_send_values: content.contains(".send("),
+            has_throw_values: content.contains(".throw("),
+            has_close_handling: content.contains(".close("),
+        }
+    }
+
+    fn identify_generator_optimizations(&self, content: &str, _generator_match: &str) -> Vec<String> {
+        let mut optimizations = Vec::new();
+        
+        if content.contains("list(") && content.contains("yield") {
+            optimizations.push("Avoid converting generator to list unless necessary".to_string());
+        }
+        
+        if content.matches("for").count() > 2 {
+            optimizations.push("Consider breaking complex generator into smaller functions".to_string());
+        }
+        
+        if !content.contains("yield from") && content.contains("for") && content.contains("yield") {
+            optimizations.push("Consider using 'yield from' for delegating to sub-generators".to_string());
+        }
+        
+        optimizations
+    }
+
+    /// Decorator helper methods
+    fn classify_decorator_category(&self, decorator_name: &str) -> DecoratorCategory {
+        match decorator_name {
+            "property" | "staticmethod" | "classmethod" => DecoratorCategory::BuiltIn,
+            "wraps" | "singledispatch" | "cache" | "lru_cache" => DecoratorCategory::FunctoolsDecorator,
+            "app.route" | "api.route" | "route" => DecoratorCategory::WebFramework,
+            "pytest.fixture" | "pytest.mark" | "unittest.mock" => DecoratorCategory::Testing,
+            "dataclass" | "validator" => DecoratorCategory::DataValidation,
+            _ => DecoratorCategory::Custom,
+        }
+    }
+
+    fn analyze_decorator_usage_pattern(&self, content: &str, decorator: &str) -> DecoratorUsagePattern {
+        let decorator_context = self.get_decorator_context(content, decorator);
+        
+        if decorator_context.contains('@') && decorator_context.matches('@').count() > 1 {
+            DecoratorUsagePattern::StackedDecorators
+        } else if decorator.contains('(') {
+            DecoratorUsagePattern::ParameterizedDecorator
+        } else {
+            DecoratorUsagePattern::SingleDecorator
+        }
+    }
+
+    fn get_decorator_context(&self, content: &str, decorator: &str) -> String {
+        // Get surrounding context for the decorator
+        if let Some(pos) = content.find(decorator) {
+            let start = pos.saturating_sub(100);
+            let end = (pos + decorator.len() + 100).min(content.len());
+            content[start..end].to_string()
+        } else {
+            decorator.to_string()
+        }
+    }
+
+    fn assess_decorator_complexity(&self, decorator: &str) -> DecoratorComplexity {
+        if decorator.contains('(') && decorator.contains(',') {
+            DecoratorComplexity::Complex
+        } else if decorator.contains('(') {
+            DecoratorComplexity::Moderate
+        } else {
+            DecoratorComplexity::Simple
+        }
+    }
+
+    fn score_decorator_best_practices(&self, category: &DecoratorCategory, usage_pattern: &DecoratorUsagePattern) -> i32 {
+        let mut score = 80;
+        
+        match category {
+            DecoratorCategory::BuiltIn => score += 10,
+            DecoratorCategory::FunctoolsDecorator => score += 15,
+            DecoratorCategory::Performance => score += 10,
+            _ => {}
+        }
+        
+        match usage_pattern {
+            DecoratorUsagePattern::SingleDecorator => score += 5,
+            DecoratorUsagePattern::StackedDecorators => score -= 5, // Can be complex
+            _ => {}
+        }
+        
+        score.min(100)
+    }
+
+    /// Modern syntax helper methods
+    fn assess_syntax_complexity(&self, content: &str, pattern: &Regex) -> SyntaxComplexity {
+        let usage_count = pattern.find_iter(content).count();
+        let total_lines = content.lines().count();
+        let usage_density = if total_lines > 0 { usage_count as f32 / total_lines as f32 } else { 0.0 };
+        
+        match usage_density {
+            d if d > 0.1 => SyntaxComplexity::Expert,
+            d if d > 0.05 => SyntaxComplexity::Complex,
+            d if d > 0.01 => SyntaxComplexity::Moderate,
+            _ => SyntaxComplexity::Simple,
+        }
+    }
+
+    fn check_syntax_best_practices(&self, content: &str, feature_type: &ModernSyntaxType) -> bool {
+        match feature_type {
+            ModernSyntaxType::WalrusOperator => {
+                // Check if walrus operator is used appropriately (not overused)
+                content.matches(":=").count() <= content.lines().count() / 10
+            }
+            ModernSyntaxType::PositionalOnlyParams => {
+                // Check if positional-only parameters are used with good reason
+                content.contains("def ") && content.contains("/")
+            }
+            ModernSyntaxType::TypeUnionOperator => {
+                // Check if union operator is used instead of typing.Union
+                !content.contains("typing.Union") || content.contains(" | ")
+            }
+            _ => true, // Default to good practices for other features
+        }
+    }
+
+    fn get_syntax_migration_suggestions(&self, feature_type: &ModernSyntaxType, usage_count: usize) -> Vec<String> {
+        let mut suggestions = Vec::new();
+        
+        match feature_type {
+            ModernSyntaxType::WalrusOperator => {
+                if usage_count > 10 {
+                    suggestions.push("Consider if all walrus operator usages improve readability".to_string());
+                }
+                suggestions.push("Use walrus operator to reduce code duplication in conditions".to_string());
+            }
+            ModernSyntaxType::GenericTypeHints => {
+                suggestions.push("Migrate from typing.List/Dict to built-in list/dict for type hints".to_string());
+            }
+            ModernSyntaxType::TypeUnionOperator => {
+                suggestions.push("Replace typing.Union with | operator for cleaner type hints".to_string());
+            }
+            _ => {}
+        }
+        
+        suggestions
     }
 
     /// Analyze async functions in detail
@@ -4475,5 +6010,165 @@ flask==2.0.1
                 LicenseType::MIT | LicenseType::Apache2 | LicenseType::BSD2Clause | 
                 LicenseType::BSD3Clause | LicenseType::Unknown));
         }
+    }
+
+    #[test]
+    fn test_modern_features_analysis() {
+        let analyzer = PythonAnalyzer::new();
+        let code = r#"
+            from dataclasses import dataclass
+            from typing import Optional
+            import asyncio
+
+            @dataclass
+            class User:
+                name: str
+                age: int = 0
+
+            async def process_data():
+                async with asyncio.timeout(10):
+                    data = [x for x in range(100)]
+                    processed = (item * 2 for item in data)
+                    return f"Processed {len(data)} items"
+
+            def modern_syntax(value: str | int) -> str:
+                if (result := calculate(value)) > 10:
+                    return f"Result: {result:.2f}"
+                return "Too small"
+
+            match value:
+                case int() if value > 100:
+                    print("Large number")
+                case str():
+                    print("String value")
+                case _:
+                    print("Other")
+        "#;
+
+        let analysis = analyzer.analyze_modern_features(code).unwrap();
+        
+        // Should detect dataclass usage
+        assert!(!analysis.dataclass_features.is_empty());
+        
+        // Should detect f-string usage
+        assert!(!analysis.fstring_features.is_empty());
+
+        // Should detect modern syntax (walrus operator, union types)
+        assert!(!analysis.modern_syntax_features.is_empty());
+
+        // Should have a reasonable modernity score
+        assert!(analysis.overall_modernity_score > 50);
+        assert!(analysis.overall_modernity_score <= 100);
+
+        // Should detect appropriate Python version
+        assert!(analysis.python_version_detected.minimum_version.starts_with("3."));
+
+        // Should provide recommendations
+        assert!(!analysis.recommendations.is_empty());
+    }
+
+    #[test]
+    fn test_dataclass_feature_detection() {
+        let analyzer = PythonAnalyzer::new();
+        let code = r#"
+            from dataclasses import dataclass, field
+            from typing import List
+
+            @dataclass(frozen=True)
+            class ImmutableUser:
+                name: str
+                tags: List[str] = field(default_factory=list)
+                
+                def __post_init__(self):
+                    object.__setattr__(self, 'processed', True)
+
+            class SlottedClass:
+                __slots__ = ['x', 'y']
+                
+                def __init__(self, x, y):
+                    self.x = x
+                    self.y = y
+        "#;
+
+        let analysis = analyzer.analyze_modern_features(code).unwrap();
+        
+        assert!(!analysis.dataclass_features.is_empty());
+        let dataclass_info = &analysis.dataclass_features[0];
+        
+        assert_eq!(dataclass_info.dataclass_type, DataclassType::StandardDataclass);
+        assert!(dataclass_info.features_used.contains(&DataclassFeature::FrozenClass));
+        assert!(dataclass_info.features_used.contains(&DataclassFeature::PostInitProcessing));
+        assert!(dataclass_info.features_used.contains(&DataclassFeature::FieldFactories));
+        assert!(dataclass_info.best_practices_score > 70);
+    }
+
+    #[test]
+    fn test_fstring_complexity_analysis() {
+        let analyzer = PythonAnalyzer::new();
+        let code = r#"
+            name = "Alice"
+            value = 42.5
+            
+            # Simple f-string
+            simple = f"Hello {name}"
+            
+            # Complex f-string with formatting
+            complex = f"Value: {value:.2f}, Length: {len(name)}"
+            
+            # Very complex f-string
+            advanced = f"Result: {calculate_result(value) if value > 0 else 'N/A':.3f}"
+        "#;
+
+        let analysis = analyzer.analyze_modern_features(code).unwrap();
+        
+        assert!(!analysis.fstring_features.is_empty());
+        assert!(analysis.fstring_features.len() >= 3);
+        
+        // Should detect different complexity levels
+        let complexities: Vec<_> = analysis.fstring_features.iter()
+            .map(|f| &f.complexity)
+            .collect();
+        
+        assert!(complexities.contains(&&FStringComplexity::Simple));
+        assert!(complexities.contains(&&FStringComplexity::Moderate) || 
+                complexities.contains(&&FStringComplexity::Complex));
+    }
+
+    #[test]
+    fn test_modern_syntax_features() {
+        let analyzer = PythonAnalyzer::new();
+        let code = r#"
+            # Walrus operator (Python 3.8+)
+            if (length := len(data)) > 10:
+                print(f"Long data: {length}")
+
+            # Union type syntax (Python 3.10+)
+            def process(value: str | int | None) -> str | None:
+                return str(value) if value is not None else None
+
+            # Positional-only parameters (Python 3.8+)
+            def func(a, b, /, c, d):
+                return a + b + c + d
+
+            # Modern type hints (Python 3.9+)
+            data: list[dict[str, int]] = []
+            mapping: dict[str, set[int]] = {}
+        "#;
+
+        let analysis = analyzer.analyze_modern_features(code).unwrap();
+        
+        assert!(!analysis.modern_syntax_features.is_empty());
+        
+        let syntax_types: Vec<_> = analysis.modern_syntax_features.iter()
+            .map(|s| &s.feature_type)
+            .collect();
+        
+        assert!(syntax_types.contains(&&ModernSyntaxType::WalrusOperator));
+        assert!(syntax_types.contains(&&ModernSyntaxType::TypeUnionOperator));
+        assert!(syntax_types.contains(&&ModernSyntaxType::PositionalOnlyParams));
+        assert!(syntax_types.contains(&&ModernSyntaxType::GenericTypeHints));
+
+        // Should detect Python 3.10+ as minimum version due to union operator
+        assert!(analysis.python_version_detected.minimum_version >= "3.10");
     }
 }

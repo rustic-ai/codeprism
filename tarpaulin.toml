@@ -1,0 +1,20 @@
+[tool.tarpaulin]
+target_dir = "target/tarpaulin"
+timeout = 300
+count = false
+run-types = [ "Tests" ]
+exclude_files = [
+    "*/tests/*",
+    "*/benches/*", 
+    "*/examples/*",
+    "**/build.rs"
+]
+ignore-panics = true
+ignore-tests = false
+follow-exec = true
+forward-signals = true
+fail-under = 80.0
+engine = "llvm"
+
+[tool.tarpaulin.report]
+out = ["html", "xml", "json"] 

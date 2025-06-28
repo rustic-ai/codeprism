@@ -6,7 +6,7 @@ use std::path::PathBuf;
 #[test]
 fn test_parse_simple_java_class() {
     let mut parser = JavaParser::new();
-    
+
     let java_code = r#"
 package com.example;
 
@@ -39,27 +39,41 @@ public class HelloWorld {
     };
 
     let result = parser.parse(&context).expect("Failed to parse Java file");
-    
+
     // Verify we got some nodes
     assert!(!result.nodes.is_empty());
-    
+
     // Check for expected node types
     let node_kinds: Vec<_> = result.nodes.iter().map(|n| n.kind).collect();
-    
+
     // Should have module, package, imports, class, constructor, method, field
-    assert!(node_kinds.iter().any(|k| matches!(k, codeprism_lang_java::NodeKind::Module)));
-    assert!(node_kinds.iter().any(|k| matches!(k, codeprism_lang_java::NodeKind::Package)));
-    assert!(node_kinds.iter().any(|k| matches!(k, codeprism_lang_java::NodeKind::Import)));
-    assert!(node_kinds.iter().any(|k| matches!(k, codeprism_lang_java::NodeKind::Class)));
-    assert!(node_kinds.iter().any(|k| matches!(k, codeprism_lang_java::NodeKind::Constructor)));
-    assert!(node_kinds.iter().any(|k| matches!(k, codeprism_lang_java::NodeKind::Method)));
-    assert!(node_kinds.iter().any(|k| matches!(k, codeprism_lang_java::NodeKind::Field)));
+    assert!(node_kinds
+        .iter()
+        .any(|k| matches!(k, codeprism_lang_java::NodeKind::Module)));
+    assert!(node_kinds
+        .iter()
+        .any(|k| matches!(k, codeprism_lang_java::NodeKind::Package)));
+    assert!(node_kinds
+        .iter()
+        .any(|k| matches!(k, codeprism_lang_java::NodeKind::Import)));
+    assert!(node_kinds
+        .iter()
+        .any(|k| matches!(k, codeprism_lang_java::NodeKind::Class)));
+    assert!(node_kinds
+        .iter()
+        .any(|k| matches!(k, codeprism_lang_java::NodeKind::Constructor)));
+    assert!(node_kinds
+        .iter()
+        .any(|k| matches!(k, codeprism_lang_java::NodeKind::Method)));
+    assert!(node_kinds
+        .iter()
+        .any(|k| matches!(k, codeprism_lang_java::NodeKind::Field)));
 }
 
 #[test]
 fn test_parse_interface() {
     let mut parser = JavaParser::new();
-    
+
     let java_code = r#"
 package com.example;
 
@@ -78,17 +92,21 @@ public interface Drawable {
         content: java_code.to_string(),
     };
 
-    let result = parser.parse(&context).expect("Failed to parse Java interface");
-    
+    let result = parser
+        .parse(&context)
+        .expect("Failed to parse Java interface");
+
     // Check for interface node
     let node_kinds: Vec<_> = result.nodes.iter().map(|n| n.kind).collect();
-    assert!(node_kinds.iter().any(|k| matches!(k, codeprism_lang_java::NodeKind::Interface)));
+    assert!(node_kinds
+        .iter()
+        .any(|k| matches!(k, codeprism_lang_java::NodeKind::Interface)));
 }
 
 #[test]
 fn test_parse_enum() {
     let mut parser = JavaParser::new();
-    
+
     let java_code = r#"
 package com.example;
 
@@ -109,16 +127,18 @@ public enum Color {
     };
 
     let result = parser.parse(&context).expect("Failed to parse Java enum");
-    
+
     // Check for enum node
     let node_kinds: Vec<_> = result.nodes.iter().map(|n| n.kind).collect();
-    assert!(node_kinds.iter().any(|k| matches!(k, codeprism_lang_java::NodeKind::Enum)));
+    assert!(node_kinds
+        .iter()
+        .any(|k| matches!(k, codeprism_lang_java::NodeKind::Enum)));
 }
 
 #[test]
 fn test_parse_annotations() {
     let mut parser = JavaParser::new();
-    
+
     let java_code = r#"
 package com.example;
 
@@ -142,17 +162,21 @@ public class AnnotatedClass {
         content: java_code.to_string(),
     };
 
-    let result = parser.parse(&context).expect("Failed to parse annotated Java class");
-    
+    let result = parser
+        .parse(&context)
+        .expect("Failed to parse annotated Java class");
+
     // Check for annotation nodes
     let node_kinds: Vec<_> = result.nodes.iter().map(|n| n.kind).collect();
-    assert!(node_kinds.iter().any(|k| matches!(k, codeprism_lang_java::NodeKind::Annotation)));
+    assert!(node_kinds
+        .iter()
+        .any(|k| matches!(k, codeprism_lang_java::NodeKind::Annotation)));
 }
 
 #[test]
 fn test_method_calls() {
     let mut parser = JavaParser::new();
-    
+
     let java_code = r#"
 package com.example;
 
@@ -176,17 +200,21 @@ public class MethodCalls {
         content: java_code.to_string(),
     };
 
-    let result = parser.parse(&context).expect("Failed to parse method calls");
-    
+    let result = parser
+        .parse(&context)
+        .expect("Failed to parse method calls");
+
     // Check for call nodes
     let node_kinds: Vec<_> = result.nodes.iter().map(|n| n.kind).collect();
-    assert!(node_kinds.iter().any(|k| matches!(k, codeprism_lang_java::NodeKind::Call)));
+    assert!(node_kinds
+        .iter()
+        .any(|k| matches!(k, codeprism_lang_java::NodeKind::Call)));
 }
 
 #[test]
 fn test_parser_metadata() {
     let mut parser = JavaParser::new();
-    
+
     let java_code = r#"
 package com.example;
 
@@ -207,14 +235,27 @@ public final class FinalClass {
         content: java_code.to_string(),
     };
 
-    let result = parser.parse(&context).expect("Failed to parse Java class with modifiers");
-    
+    let result = parser
+        .parse(&context)
+        .expect("Failed to parse Java class with modifiers");
+
     // Find the class node and check its metadata
-    let class_node = result.nodes.iter()
+    let class_node = result
+        .nodes
+        .iter()
         .find(|n| matches!(n.kind, codeprism_lang_java::NodeKind::Class))
         .expect("Should have a class node");
-    
+
     let metadata = &class_node.metadata;
-    assert!(metadata.get("is_final").and_then(|v| v.as_bool()).unwrap_or(false));
-    assert_eq!(metadata.get("visibility").and_then(|v| v.as_str()).unwrap_or(""), "public");
-} 
+    assert!(metadata
+        .get("is_final")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false));
+    assert_eq!(
+        metadata
+            .get("visibility")
+            .and_then(|v| v.as_str())
+            .unwrap_or(""),
+        "public"
+    );
+}

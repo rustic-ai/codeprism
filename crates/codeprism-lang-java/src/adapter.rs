@@ -1,6 +1,6 @@
 //! Adapter to integrate Java parser with codeprism
 
-use crate::parser::{ParseContext as JavaParseContext, JavaParser};
+use crate::parser::{JavaParser, ParseContext as JavaParseContext};
 use crate::types as java_types;
 
 /// Adapter that implements codeprism's LanguageParser trait
@@ -46,7 +46,14 @@ pub fn parse_file(
     file_path: std::path::PathBuf,
     content: String,
     old_tree: Option<tree_sitter::Tree>,
-) -> Result<(tree_sitter::Tree, Vec<java_types::Node>, Vec<java_types::Edge>), crate::error::Error> {
+) -> Result<
+    (
+        tree_sitter::Tree,
+        Vec<java_types::Node>,
+        Vec<java_types::Edge>,
+    ),
+    crate::error::Error,
+> {
     let context = JavaParseContext {
         repo_id: repo_id.to_string(),
         file_path,
@@ -58,4 +65,4 @@ pub fn parse_file(
     let result = parser.parse(&context)?;
 
     Ok((result.tree, result.nodes, result.edges))
-} 
+}

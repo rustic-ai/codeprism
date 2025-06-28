@@ -84,4 +84,4 @@ impl Default for JavaParser {
     fn default() -> Self {
         Self::new()
     }
-} 
+}

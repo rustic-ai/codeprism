@@ -7,10 +7,10 @@ mod error;
 mod parser;
 mod types;
 
-pub use adapter::{parse_file, ParseResultConverter, JavaLanguageParser};
-pub use analysis::{JavaAnalyzer, JavaAnalysisResult};
+pub use adapter::{parse_file, JavaLanguageParser, ParseResultConverter};
+pub use analysis::{JavaAnalysisResult, JavaAnalyzer};
 pub use error::{Error, Result};
-pub use parser::{ParseContext, ParseResult, JavaParser};
+pub use parser::{JavaParser, ParseContext, ParseResult};
 pub use types::{Edge, EdgeKind, Language, Node, NodeId, NodeKind, Span};
 
 // Re-export the parser for registration

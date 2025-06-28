@@ -308,4 +308,4 @@ impl Edge {
             kind,
         }
     }
-} 
+}

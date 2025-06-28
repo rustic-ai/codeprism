@@ -42,10 +42,11 @@ impl AstMapper {
     /// Extract nodes and edges from the tree
     pub fn extract(mut self, tree: &Tree) -> Result<(Vec<Node>, Vec<Edge>)> {
         let root = tree.root_node();
-        
+
         // Create module node for the file
         let module_span = Span::from_node(&root);
-        let file_name = self.file_path
+        let file_name = self
+            .file_path
             .file_stem()
             .and_then(|s| s.to_str())
             .unwrap_or("unknown")
@@ -58,7 +59,8 @@ impl AstMapper {
             self.language,
             self.file_path.clone(),
             module_span,
-        ).with_metadata(json!({
+        )
+        .with_metadata(json!({
             "type": "compilation_unit",
             "file_path": self.file_path.display().to_string()
         }));
@@ -74,9 +76,13 @@ impl AstMapper {
     }
 
     /// Process a tree-sitter node recursively
-    fn process_node(&mut self, ts_node: &TSNode, parent_id: Option<NodeId>) -> Result<Option<NodeId>> {
+    fn process_node(
+        &mut self,
+        ts_node: &TSNode,
+        parent_id: Option<NodeId>,
+    ) -> Result<Option<NodeId>> {
         let node_kind = ts_node.kind();
-        
+
         let universal_node = match node_kind {
             "program" => {
                 // Skip program node, already handled as module
@@ -109,7 +115,9 @@ impl AstMapper {
                 self.process_modifiers_annotations(ts_node, parent_id)?;
                 self.process_field_declaration(ts_node)?
             }
-            "annotation" | "marker_annotation" | "normal_annotation" => self.process_annotation(ts_node)?,
+            "annotation" | "marker_annotation" | "normal_annotation" => {
+                self.process_annotation(ts_node)?
+            }
             "method_invocation" => self.process_method_invocation(ts_node)?,
             _ => {
                 // For unhandled node types, still process children
@@ -119,7 +127,8 @@ impl AstMapper {
 
         // Add edge from parent to this node
         if let (Some(parent), Some(node_id)) = (parent_id, &universal_node) {
-            self.edges.push(Edge::new(parent, *node_id, EdgeKind::Contains));
+            self.edges
+                .push(Edge::new(parent, *node_id, EdgeKind::Contains));
         }
 
         // Process children
@@ -133,18 +142,29 @@ impl AstMapper {
     }
 
     /// Process annotations found in modifiers
-    fn process_modifiers_annotations(&mut self, ts_node: &TSNode, parent_id: Option<NodeId>) -> Result<()> {
+    fn process_modifiers_annotations(
+        &mut self,
+        ts_node: &TSNode,
+        parent_id: Option<NodeId>,
+    ) -> Result<()> {
         let mut cursor = ts_node.walk();
-        
+
         for child in ts_node.children(&mut cursor) {
             if child.kind() == "modifiers" {
                 let mut mod_cursor = child.walk();
                 for modifier in child.children(&mut mod_cursor) {
-                    if matches!(modifier.kind(), "annotation" | "marker_annotation" | "normal_annotation") {
+                    if matches!(
+                        modifier.kind(),
+                        "annotation" | "marker_annotation" | "normal_annotation"
+                    ) {
                         if let Some(annotation_id) = self.process_annotation(&modifier)? {
                             // Add edge from parent to annotation
                             if let Some(parent) = parent_id {
-                                self.edges.push(Edge::new(parent, annotation_id, EdgeKind::Annotates));
+                                self.edges.push(Edge::new(
+                                    parent,
+                                    annotation_id,
+                                    EdgeKind::Annotates,
+                                ));
                             }
                         }
                     }
@@ -152,7 +172,7 @@ impl AstMapper {
                 break;
             }
         }
-        
+
         Ok(())
     }
 
@@ -175,7 +195,8 @@ impl AstMapper {
             self.language,
             self.file_path.clone(),
             span,
-        ).with_metadata(json!({
+        )
+        .with_metadata(json!({
             "package_name": package_name,
             "type": "package_declaration"
         }));
@@ -183,7 +204,7 @@ impl AstMapper {
         let node_id = node.id;
         self.nodes.push(node);
         self.node_mappings.insert(ts_node.id(), node_id);
-        
+
         Ok(Some(node_id))
     }
 
@@ -201,7 +222,8 @@ impl AstMapper {
             self.language,
             self.file_path.clone(),
             span,
-        ).with_metadata(json!({
+        )
+        .with_metadata(json!({
             "import_path": import_path,
             "is_static": is_static,
             "is_wildcard": is_wildcard,
@@ -211,7 +233,7 @@ impl AstMapper {
         let node_id = node.id;
         self.nodes.push(node);
         self.node_mappings.insert(ts_node.id(), node_id);
-        
+
         Ok(Some(node_id))
     }
 
@@ -231,7 +253,8 @@ impl AstMapper {
             self.language,
             self.file_path.clone(),
             span,
-        ).with_metadata(json!({
+        )
+        .with_metadata(json!({
             "class_name": class_name,
             "modifiers": modifiers,
             "is_abstract": is_abstract,
@@ -243,7 +266,7 @@ impl AstMapper {
         let node_id = node.id;
         self.nodes.push(node);
         self.node_mappings.insert(ts_node.id(), node_id);
-        
+
         Ok(Some(node_id))
     }
 
@@ -261,7 +284,8 @@ impl AstMapper {
             self.language,
             self.file_path.clone(),
             span,
-        ).with_metadata(json!({
+        )
+        .with_metadata(json!({
             "interface_name": interface_name,
             "modifiers": modifiers,
             "visibility": visibility,
@@ -271,7 +295,7 @@ impl AstMapper {
         let node_id = node.id;
         self.nodes.push(node);
         self.node_mappings.insert(ts_node.id(), node_id);
-        
+
         Ok(Some(node_id))
     }
 
@@ -289,7 +313,8 @@ impl AstMapper {
             self.language,
             self.file_path.clone(),
             span,
-        ).with_metadata(json!({
+        )
+        .with_metadata(json!({
             "enum_name": enum_name,
             "modifiers": modifiers,
             "visibility": visibility,
@@ -299,7 +324,7 @@ impl AstMapper {
         let node_id = node.id;
         self.nodes.push(node);
         self.node_mappings.insert(ts_node.id(), node_id);
-        
+
         Ok(Some(node_id))
     }
 
@@ -325,8 +350,9 @@ impl AstMapper {
             self.language,
             self.file_path.clone(),
             span,
-        ).with_signature(signature)
-         .with_metadata(json!({
+        )
+        .with_signature(signature)
+        .with_metadata(json!({
             "method_name": method_name,
             "modifiers": modifiers,
             "is_static": is_static,
@@ -342,7 +368,7 @@ impl AstMapper {
         let node_id = node.id;
         self.nodes.push(node);
         self.node_mappings.insert(ts_node.id(), node_id);
-        
+
         Ok(Some(node_id))
     }
 
@@ -363,8 +389,9 @@ impl AstMapper {
             self.language,
             self.file_path.clone(),
             span,
-        ).with_signature(signature)
-         .with_metadata(json!({
+        )
+        .with_signature(signature)
+        .with_metadata(json!({
             "constructor_name": constructor_name,
             "modifiers": modifiers,
             "visibility": visibility,
@@ -375,7 +402,7 @@ impl AstMapper {
         let node_id = node.id;
         self.nodes.push(node);
         self.node_mappings.insert(ts_node.id(), node_id);
-        
+
         Ok(Some(node_id))
     }
 
@@ -398,7 +425,8 @@ impl AstMapper {
             self.language,
             self.file_path.clone(),
             span,
-        ).with_metadata(json!({
+        )
+        .with_metadata(json!({
             "field_name": field_name,
             "modifiers": modifiers,
             "is_static": is_static,
@@ -413,7 +441,7 @@ impl AstMapper {
         let node_id = node.id;
         self.nodes.push(node);
         self.node_mappings.insert(ts_node.id(), node_id);
-        
+
         Ok(Some(node_id))
     }
 
@@ -429,7 +457,8 @@ impl AstMapper {
             self.language,
             self.file_path.clone(),
             span,
-        ).with_metadata(json!({
+        )
+        .with_metadata(json!({
             "annotation_name": annotation_name,
             "type": "annotation"
         }));
@@ -437,7 +466,7 @@ impl AstMapper {
         let node_id = node.id;
         self.nodes.push(node);
         self.node_mappings.insert(ts_node.id(), node_id);
-        
+
         Ok(Some(node_id))
     }
 
@@ -453,7 +482,8 @@ impl AstMapper {
             self.language,
             self.file_path.clone(),
             span,
-        ).with_metadata(json!({
+        )
+        .with_metadata(json!({
             "method_name": method_name,
             "type": "method_invocation"
         }));
@@ -461,7 +491,7 @@ impl AstMapper {
         let node_id = node.id;
         self.nodes.push(node);
         self.node_mappings.insert(ts_node.id(), node_id);
-        
+
         Ok(Some(node_id))
     }
 
@@ -531,7 +561,7 @@ impl AstMapper {
     fn extract_modifiers(&self, node: &TSNode) -> Vec<String> {
         let mut modifiers = Vec::new();
         let mut cursor = node.walk();
-        
+
         for child in node.children(&mut cursor) {
             if child.kind() == "modifiers" {
                 let mut mod_cursor = child.walk();
@@ -541,7 +571,7 @@ impl AstMapper {
                 break;
             }
         }
-        
+
         modifiers
     }
 
@@ -582,7 +612,10 @@ impl AstMapper {
     fn extract_return_type(&self, node: &TSNode) -> String {
         let mut cursor = node.walk();
         for child in node.children(&mut cursor) {
-            if matches!(child.kind(), "type_identifier" | "void_type" | "generic_type" | "array_type") {
+            if matches!(
+                child.kind(),
+                "type_identifier" | "void_type" | "generic_type" | "array_type"
+            ) {
                 return self.node_text(&child);
             }
         }
@@ -593,7 +626,7 @@ impl AstMapper {
     fn extract_method_parameters(&self, node: &TSNode) -> Vec<Value> {
         let mut parameters = Vec::new();
         let mut cursor = node.walk();
-        
+
         for child in node.children(&mut cursor) {
             if child.kind() == "formal_parameters" {
                 let mut param_cursor = child.walk();
@@ -607,7 +640,7 @@ impl AstMapper {
                 break;
             }
         }
-        
+
         parameters
     }
 
@@ -615,7 +648,7 @@ impl AstMapper {
     fn extract_parameter_info(&self, param_node: &TSNode) -> Option<Value> {
         let mut param_type = String::new();
         let mut param_name = String::new();
-        
+
         let mut cursor = param_node.walk();
         for child in param_node.children(&mut cursor) {
             match child.kind() {
@@ -628,7 +661,7 @@ impl AstMapper {
                 _ => {}
             }
         }
-        
+
         if !param_name.is_empty() {
             Some(json!({
                 "name": param_name,
@@ -641,31 +674,41 @@ impl AstMapper {
 
     /// Build method signature
     fn build_method_signature(&self, name: &str, params: &[Value], return_type: &str) -> String {
-        let param_strs: Vec<String> = params.iter()
+        let param_strs: Vec<String> = params
+            .iter()
             .filter_map(|p| {
                 if let (Some(name), Some(ptype)) = (p.get("name"), p.get("type")) {
-                    Some(format!("{}: {}", name.as_str().unwrap_or(""), ptype.as_str().unwrap_or("")))
+                    Some(format!(
+                        "{}: {}",
+                        name.as_str().unwrap_or(""),
+                        ptype.as_str().unwrap_or("")
+                    ))
                 } else {
                     None
                 }
             })
             .collect();
-        
+
         format!("{}({}) -> {}", name, param_strs.join(", "), return_type)
     }
 
     /// Build constructor signature
     fn build_constructor_signature(&self, name: &str, params: &[Value]) -> String {
-        let param_strs: Vec<String> = params.iter()
+        let param_strs: Vec<String> = params
+            .iter()
             .filter_map(|p| {
                 if let (Some(name), Some(ptype)) = (p.get("name"), p.get("type")) {
-                    Some(format!("{}: {}", name.as_str().unwrap_or(""), ptype.as_str().unwrap_or("")))
+                    Some(format!(
+                        "{}: {}",
+                        name.as_str().unwrap_or(""),
+                        ptype.as_str().unwrap_or("")
+                    ))
                 } else {
                     None
                 }
             })
             .collect();
-        
+
         format!("{}({})", name, param_strs.join(", "))
     }
 
@@ -689,7 +732,10 @@ impl AstMapper {
     fn extract_field_type(&self, node: &TSNode) -> String {
         let mut cursor = node.walk();
         for child in node.children(&mut cursor) {
-            if matches!(child.kind(), "type_identifier" | "generic_type" | "array_type" | "primitive_type") {
+            if matches!(
+                child.kind(),
+                "type_identifier" | "generic_type" | "array_type" | "primitive_type"
+            ) {
                 return self.node_text(&child);
             }
         }
@@ -726,4 +772,4 @@ impl AstMapper {
         }
         "unknown".to_string()
     }
-} 
+}

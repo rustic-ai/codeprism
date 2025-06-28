@@ -31,21 +31,27 @@ impl JavaAnalyzer {
 
         // Basic issue detection
         if content.contains("System.out.print") {
-            issues.push("Direct console output detected - consider using logging framework".to_string());
+            issues.push(
+                "Direct console output detected - consider using logging framework".to_string(),
+            );
         }
         if content.contains("throws Exception") {
-            issues.push("Generic Exception throwing detected - use specific exceptions".to_string());
+            issues
+                .push("Generic Exception throwing detected - use specific exceptions".to_string());
         }
         if content.contains("String +") {
-            issues.push("String concatenation in loop detected - consider StringBuilder".to_string());
+            issues
+                .push("String concatenation in loop detected - consider StringBuilder".to_string());
         }
 
         // Basic recommendations
         if content.contains("public class") {
-            recommendations.push("Consider adding JavaDoc documentation for public classes".to_string());
+            recommendations
+                .push("Consider adding JavaDoc documentation for public classes".to_string());
         }
         if content.contains("public") && !content.contains("@") {
-            recommendations.push("Consider adding appropriate annotations for public APIs".to_string());
+            recommendations
+                .push("Consider adding appropriate annotations for public APIs".to_string());
         }
 
         JavaAnalysisResult {
@@ -91,7 +97,7 @@ mod tests {
     #[test]
     fn test_pattern_detection() {
         let analyzer = JavaAnalyzer::new();
-        
+
         // Test singleton pattern detection
         let singleton_code = r#"
         public class Singleton {
@@ -102,7 +108,10 @@ mod tests {
         }
         "#;
         let result = analyzer.analyze_code(singleton_code);
-        assert!(result.patterns_detected.iter().any(|p| p.contains("Singleton")));
+        assert!(result
+            .patterns_detected
+            .iter()
+            .any(|p| p.contains("Singleton")));
 
         // Test override pattern detection
         let override_code = r#"
@@ -112,21 +121,30 @@ mod tests {
         }
         "#;
         let result = analyzer.analyze_code(override_code);
-        assert!(result.patterns_detected.iter().any(|p| p.contains("overriding")));
+        assert!(result
+            .patterns_detected
+            .iter()
+            .any(|p| p.contains("overriding")));
     }
 
     #[test]
     fn test_issue_detection() {
         let analyzer = JavaAnalyzer::new();
-        
+
         // Test console output detection
         let console_code = "System.out.println(\"Hello\");";
         let result = analyzer.analyze_code(console_code);
-        assert!(result.issues_found.iter().any(|i| i.contains("console output")));
+        assert!(result
+            .issues_found
+            .iter()
+            .any(|i| i.contains("console output")));
 
         // Test generic exception detection
         let exception_code = "public void method() throws Exception {}";
         let result = analyzer.analyze_code(exception_code);
-        assert!(result.issues_found.iter().any(|i| i.contains("Generic Exception")));
+        assert!(result
+            .issues_found
+            .iter()
+            .any(|i| i.contains("Generic Exception")));
     }
 }

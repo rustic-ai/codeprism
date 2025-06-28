@@ -1,11 +1,163 @@
 //! AST mapper for converting Tree-sitter CST to Universal AST for Rust
 
 use crate::error::Result;
-use crate::types::{Edge, EdgeKind, Language, Node, NodeKind, Span};
+use crate::types::{Edge, EdgeKind, Language, Node, NodeId, NodeKind, Span};
 
 use std::collections::HashMap;
 use std::path::PathBuf;
 use tree_sitter::{Tree, TreeCursor};
+
+/// Comprehensive lifetime information extracted from types
+#[derive(Debug, Clone)]
+pub struct LifetimeInfo {
+    pub lifetimes: Vec<LifetimeAnnotation>,
+    pub elision_applied: bool,
+    pub complexity_score: i32,
+}
+
+/// Individual lifetime annotation with detailed information
+#[derive(Debug, Clone)]
+pub struct LifetimeAnnotation {
+    pub name: String,
+    pub span: Span,
+    pub lifetime_type: LifetimeType,
+    pub constraints: Vec<LifetimeConstraint>,
+    pub variance: LifetimeVariance,
+}
+
+/// Types of lifetime annotations
+#[derive(Debug, Clone, serde::Serialize)]
+pub enum LifetimeType {
+    Explicit,      // 'a
+    Static,        // 'static
+    Elided,        // '_
+    HigherRanked,  // for<'a>
+    Anonymous,     // anonymous lifetime
+}
+
+/// Lifetime constraint information
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct LifetimeConstraint {
+    pub constraint_type: LifetimeConstraintType,
+    pub source_lifetime: String,
+    pub target_lifetime: String,
+    pub source: ConstraintSource,
+}
+
+/// Types of lifetime constraints
+#[derive(Debug, Clone, serde::Serialize)]
+pub enum LifetimeConstraintType {
+    Outlives,   // 'a: 'b
+    Contains,   // 'a contains 'b
+    Equal,      // 'a = 'b
+    Subtype,    // 'a <: 'b
+}
+
+/// Source of a lifetime constraint
+#[derive(Debug, Clone, serde::Serialize)]
+pub enum ConstraintSource {
+    Explicit,   // Written in source code
+    Inferred,   // Inferred by borrow checker
+    Elision,    // From lifetime elision rules
+}
+
+/// Lifetime variance information
+#[derive(Debug, Clone, serde::Serialize)]
+pub enum LifetimeVariance {
+    Covariant,      // Can be shortened
+    Contravariant,  // Can be lengthened
+    Invariant,      // Cannot be changed
+    Bivariant,      // Can be both shortened and lengthened
+}
+
+/// Enhanced lifetime usage tracking
+#[derive(Debug, Clone)]
+pub struct LifetimeUsageInfo {
+    pub name: String,
+    pub scope: LifetimeScope,
+    pub relationships: Vec<LifetimeRelationship>,
+    pub usage_patterns: Vec<LifetimeUsagePattern>,
+    pub complexity_metrics: LifetimeComplexityMetrics,
+}
+
+/// Scope where lifetime is defined/used
+#[derive(Debug, Clone)]
+pub enum LifetimeScope {
+    Function,
+    Struct,
+    Trait,
+    Impl,
+    Block,
+    Module,
+}
+
+/// Lifetime relationships between parameters and return types
+#[derive(Debug, Clone)]
+pub struct LifetimeRelationship {
+    pub relationship_type: LifetimeRelationshipType,
+    pub source: String,
+    pub target: String,
+    pub strength: RelationshipStrength,
+}
+
+/// Types of lifetime relationships
+#[derive(Debug, Clone)]
+pub enum LifetimeRelationshipType {
+    ParameterToReturn,
+    ParameterToParameter,
+    FieldToField,
+    InputToOutput,
+    SelfToReturn,
+}
+
+/// Strength of lifetime relationships
+#[derive(Debug, Clone)]
+pub enum RelationshipStrength {
+    Strong,    // Direct relationship
+    Weak,      // Indirect relationship
+    Inferred,  // Compiler-inferred
+}
+
+/// Lifetime usage patterns
+#[derive(Debug, Clone)]
+pub struct LifetimeUsagePattern {
+    pub pattern_type: LifetimePatternType,
+    pub description: String,
+    pub suggestion: Option<String>,
+    pub severity: LifetimeSeverity,
+}
+
+/// Types of lifetime usage patterns
+#[derive(Debug, Clone)]
+pub enum LifetimePatternType {
+    Optimal,
+    Redundant,
+    Missing,
+    TooRestrictive,
+    Unclear,
+    Complex,
+}
+
+/// Severity of lifetime issues
+#[derive(Debug, Clone)]
+pub enum LifetimeSeverity {
+    Error,
+    Warning,
+    Info,
+    Suggestion,
+}
+
+/// Lifetime complexity metrics
+#[derive(Debug, Clone)]
+pub struct LifetimeComplexityMetrics {
+    pub total_lifetimes: usize,
+    pub explicit_lifetimes: usize,
+    pub elided_lifetimes: usize,
+    pub constraint_count: usize,
+    pub nesting_depth: usize,
+    pub hrtb_count: usize,
+    pub complexity_score: f32,
+}
 
 /// AST mapper for Rust
 pub struct AstMapper {
@@ -182,6 +334,9 @@ impl AstMapper {
                 .push(Edge::new(module_id, struct_node.id, EdgeKind::Contains));
         }
 
+        // Analyze struct lifetime parameters
+        self.analyze_struct_lifetime_parameters(&node, struct_node.id)?;
+
         self.nodes.push(struct_node);
         Ok(())
     }
@@ -279,6 +434,9 @@ impl AstMapper {
         if let Some(trait_name) = trait_name {
             self.create_trait_implementation_edge(impl_node.id, &trait_name, &type_name);
         }
+
+        // Analyze impl block lifetime parameters
+        self.analyze_impl_lifetime_parameters(&node, impl_node.id)?;
 
         self.nodes.push(impl_node);
         Ok(())
@@ -955,12 +1113,20 @@ impl AstMapper {
     fn extract_parameter_lifetimes(
         &mut self,
         params_node: &tree_sitter::Node,
-        _function_id: crate::types::NodeId,
+        function_id: crate::types::NodeId,
     ) -> Result<()> {
-        // This would involve parsing lifetime annotations in parameter types
-        // For now, we'll implement a basic version
-        let _params_text = self.get_node_text(params_node);
-        // TODO: Parse lifetime annotations in parameter types
+        let mut cursor = params_node.walk();
+        if cursor.goto_first_child() {
+            loop {
+                let child = cursor.node();
+                if child.kind() == "parameter" {
+                    self.analyze_parameter_lifetime_annotations(&child, function_id)?;
+                }
+                if !cursor.goto_next_sibling() {
+                    break;
+                }
+            }
+        }
         Ok(())
     }
 
@@ -968,11 +1134,353 @@ impl AstMapper {
     fn extract_return_type_lifetimes(
         &mut self,
         return_type_node: &tree_sitter::Node,
-        _function_id: crate::types::NodeId,
+        function_id: crate::types::NodeId,
     ) -> Result<()> {
-        // This would involve parsing lifetime annotations in return types
-        let _return_type_text = self.get_node_text(return_type_node);
-        // TODO: Parse lifetime annotations in return types
+        self.analyze_return_type_lifetime_annotations(return_type_node, function_id)
+    }
+
+    /// Analyze lifetime annotations in a specific parameter
+    fn analyze_parameter_lifetime_annotations(
+        &mut self,
+        param_node: &tree_sitter::Node,
+        function_id: crate::types::NodeId,
+    ) -> Result<()> {
+        if let Some(type_node) = param_node.child_by_field_name("type") {
+            let lifetime_info = self.extract_lifetime_info_from_type(&type_node)?;
+            
+            for lifetime in lifetime_info.lifetimes {
+                let lifetime_node = Node::new(
+                    &self.repo_id,
+                    NodeKind::Lifetime,
+                    lifetime.name.clone(),
+                    self.language,
+                    self.file_path.clone(),
+                    lifetime.span,
+                )
+                .with_metadata(serde_json::json!({
+                    "context": "parameter",
+                    "parameter_name": self.extract_parameter_name(param_node).unwrap_or_default(),
+                    "lifetime_type": lifetime.lifetime_type,
+                    "constraints": lifetime.constraints
+                }));
+
+                // Create edge from function to lifetime
+                self.edges
+                    .push(Edge::new(function_id, lifetime_node.id, EdgeKind::Contains));
+
+                // Create lifetime constraint edges
+                for constraint in &lifetime.constraints {
+                    self.create_lifetime_constraint_edge(lifetime_node.id, constraint.clone());
+                }
+
+                self.nodes.push(lifetime_node);
+            }
+        }
+        Ok(())
+    }
+
+    /// Analyze lifetime annotations in return type
+    fn analyze_return_type_lifetime_annotations(
+        &mut self,
+        return_type_node: &tree_sitter::Node,
+        function_id: crate::types::NodeId,
+    ) -> Result<()> {
+        let lifetime_info = self.extract_lifetime_info_from_type(return_type_node)?;
+        
+        for lifetime in lifetime_info.lifetimes {
+            let lifetime_node = Node::new(
+                &self.repo_id,
+                NodeKind::Lifetime,
+                lifetime.name.clone(),
+                self.language,
+                self.file_path.clone(),
+                lifetime.span,
+            )
+            .with_metadata(serde_json::json!({
+                "context": "return_type",
+                "lifetime_type": lifetime.lifetime_type,
+                "constraints": lifetime.constraints,
+                "elision_applied": lifetime_info.elision_applied
+            }));
+
+            // Create edge from function to lifetime
+            self.edges
+                .push(Edge::new(function_id, lifetime_node.id, EdgeKind::Contains));
+
+            // Create lifetime constraint edges
+            for constraint in &lifetime.constraints {
+                self.create_lifetime_constraint_edge(lifetime_node.id, constraint.clone());
+            }
+
+            self.nodes.push(lifetime_node);
+        }
+        Ok(())
+    }
+
+    /// Extract comprehensive lifetime information from a type node
+    fn extract_lifetime_info_from_type(&self, type_node: &tree_sitter::Node) -> Result<LifetimeInfo> {
+        let type_text = self.get_node_text(type_node);
+        let mut lifetimes = Vec::new();
+        let mut elision_applied = false;
+
+        // Parse reference types with lifetime annotations
+        let lifetime_pattern = regex::Regex::new(r"&'([a-zA-Z_][a-zA-Z0-9_]*)\b").unwrap();
+        for capture in lifetime_pattern.captures_iter(&type_text) {
+            if let Some(lifetime_match) = capture.get(1) {
+                let lifetime_name = format!("'{}", lifetime_match.as_str());
+                let span = self.create_span_from_text_position(type_node, lifetime_match.start());
+                
+                lifetimes.push(LifetimeAnnotation {
+                    name: lifetime_name,
+                    span,
+                    lifetime_type: LifetimeType::Explicit,
+                    constraints: self.extract_lifetime_constraints(&type_text, lifetime_match.as_str()),
+                    variance: self.determine_lifetime_variance(&type_text, lifetime_match.as_str()),
+                });
+            }
+        }
+
+        // Detect static lifetimes
+        if type_text.contains("&'static") {
+            let span = self.create_span_from_type_node(type_node);
+            lifetimes.push(LifetimeAnnotation {
+                name: "'static".to_string(),
+                span,
+                lifetime_type: LifetimeType::Static,
+                constraints: vec![],
+                variance: LifetimeVariance::Covariant,
+            });
+        }
+
+        // Detect lifetime elision scenarios
+        let reference_pattern = regex::Regex::new(r"&\s*(?:mut\s+)?[^']").unwrap();
+        if reference_pattern.is_match(&type_text) && !type_text.contains("'") {
+            elision_applied = true;
+            let span = self.create_span_from_type_node(type_node);
+            lifetimes.push(LifetimeAnnotation {
+                name: "'_".to_string(), // Elided lifetime
+                span,
+                lifetime_type: LifetimeType::Elided,
+                constraints: vec![],
+                variance: LifetimeVariance::Covariant,
+            });
+        }
+
+        // Parse higher-ranked trait bounds (HRTB)
+        let hrtb_pattern = regex::Regex::new(r"for<'([^>]+)>").unwrap();
+        for capture in hrtb_pattern.captures_iter(&type_text) {
+            if let Some(lifetime_match) = capture.get(1) {
+                let lifetime_name = format!("'{}", lifetime_match.as_str());
+                let span = self.create_span_from_text_position(type_node, lifetime_match.start());
+                
+                lifetimes.push(LifetimeAnnotation {
+                    name: lifetime_name,
+                    span,
+                    lifetime_type: LifetimeType::HigherRanked,
+                    constraints: vec![],
+                    variance: LifetimeVariance::Invariant,
+                });
+            }
+        }
+
+        Ok(LifetimeInfo {
+            lifetimes,
+            elision_applied,
+            complexity_score: self.calculate_lifetime_complexity(&type_text),
+        })
+    }
+
+    /// Extract parameter name from parameter node
+    fn extract_parameter_name(&self, param_node: &tree_sitter::Node) -> Result<String> {
+        if let Some(pattern_node) = param_node.child_by_field_name("pattern") {
+            if pattern_node.kind() == "identifier" {
+                Ok(self.get_node_text(&pattern_node))
+            } else {
+                Ok("_".to_string()) // Complex pattern
+            }
+        } else {
+            Ok("self".to_string()) // Likely self parameter
+        }
+    }
+
+    /// Extract lifetime constraints from type text
+    fn extract_lifetime_constraints(&self, type_text: &str, lifetime_name: &str) -> Vec<LifetimeConstraint> {
+        let mut constraints = Vec::new();
+
+        // Look for explicit lifetime bounds in where clauses or bounds
+        let bound_pattern = regex::Regex::new(&format!(r"'{}:\s*'([a-zA-Z_][a-zA-Z0-9_]*)", lifetime_name)).unwrap();
+        for capture in bound_pattern.captures_iter(type_text) {
+            if let Some(bound_lifetime) = capture.get(1) {
+                constraints.push(LifetimeConstraint {
+                    constraint_type: LifetimeConstraintType::Outlives,
+                    source_lifetime: format!("'{}", lifetime_name),
+                    target_lifetime: format!("'{}", bound_lifetime.as_str()),
+                    source: ConstraintSource::Explicit,
+                });
+            }
+        }
+
+        // Infer constraints from reference nesting
+        if type_text.contains(&format!("&'{}&&", lifetime_name)) {
+            constraints.push(LifetimeConstraint {
+                constraint_type: LifetimeConstraintType::Contains,
+                source_lifetime: format!("'{}", lifetime_name),
+                target_lifetime: "'_".to_string(),
+                source: ConstraintSource::Inferred,
+            });
+        }
+
+        constraints
+    }
+
+    /// Determine lifetime variance from usage context
+    fn determine_lifetime_variance(&self, type_text: &str, lifetime_name: &str) -> LifetimeVariance {
+        // Simplified variance detection
+        if type_text.contains(&format!("&mut {}", lifetime_name)) {
+            LifetimeVariance::Invariant
+        } else if type_text.contains(&format!("&{}", lifetime_name)) {
+            LifetimeVariance::Covariant
+        } else {
+            LifetimeVariance::Contravariant
+        }
+    }
+
+    /// Create span from text position within a node
+    fn create_span_from_text_position(&self, node: &tree_sitter::Node, _position: usize) -> Span {
+        // Simplified span creation - would need more sophisticated parsing for exact positions
+        Span::from_node(node)
+    }
+
+    /// Create span from entire type node
+    fn create_span_from_type_node(&self, node: &tree_sitter::Node) -> Span {
+        Span::from_node(node)
+    }
+
+    /// Calculate complexity score for lifetime usage
+    fn calculate_lifetime_complexity(&self, type_text: &str) -> i32 {
+        let mut complexity = 0;
+        
+        // Count number of lifetime parameters
+        let lifetime_count = type_text.matches("'").count();
+        complexity += lifetime_count as i32;
+        
+        // Add complexity for HRTB
+        if type_text.contains("for<") {
+            complexity += 3;
+        }
+        
+        // Add complexity for nested references
+        let nesting_level = type_text.matches("&").count();
+        complexity += nesting_level as i32;
+        
+        // Add complexity for trait bounds
+        if type_text.contains(":") {
+            complexity += 1;
+        }
+        
+        complexity
+    }
+
+    /// Create lifetime constraint edge
+    fn create_lifetime_constraint_edge(&mut self, lifetime_id: crate::types::NodeId, constraint: LifetimeConstraint) {
+        // Create metadata for the constraint
+        let constraint_metadata = serde_json::json!({
+            "constraint_type": format!("{:?}", constraint.constraint_type),
+            "source_lifetime": constraint.source_lifetime,
+            "target_lifetime": constraint.target_lifetime,
+            "constraint_source": format!("{:?}", constraint.source)
+        });
+
+        // Store constraint information as metadata
+        // In a more sophisticated implementation, we might create actual nodes for constraints
+        // For now, we'll store this information with the lifetime node
+    }
+
+    /// Analyze struct lifetime parameters
+    fn analyze_struct_lifetime_parameters(
+        &mut self,
+        struct_node: &tree_sitter::Node,
+        struct_id: crate::types::NodeId,
+    ) -> Result<()> {
+        if let Some(generics_node) = struct_node.child_by_field_name("type_parameters") {
+            let mut cursor = generics_node.walk();
+            if cursor.goto_first_child() {
+                loop {
+                    let child = cursor.node();
+                    if child.kind() == "lifetime" {
+                        let lifetime_name = self.get_node_text(&child);
+                        let lifetime_span = Span::from_node(&child);
+
+                        let lifetime_node = Node::new(
+                            &self.repo_id,
+                            NodeKind::Lifetime,
+                            lifetime_name.clone(),
+                            self.language,
+                            self.file_path.clone(),
+                            lifetime_span,
+                        )
+                        .with_metadata(serde_json::json!({
+                            "context": "struct_definition",
+                            "lifetime_type": "StructParameter",
+                            "scope": "struct_fields"
+                        }));
+
+                        // Create edge from struct to lifetime
+                        self.edges
+                            .push(Edge::new(struct_id, lifetime_node.id, EdgeKind::Contains));
+
+                        self.nodes.push(lifetime_node);
+                    }
+                    if !cursor.goto_next_sibling() {
+                        break;
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// Analyze impl block lifetime parameters
+    fn analyze_impl_lifetime_parameters(
+        &mut self,
+        impl_node: &tree_sitter::Node,
+        impl_id: crate::types::NodeId,
+    ) -> Result<()> {
+        if let Some(generics_node) = impl_node.child_by_field_name("type_parameters") {
+            let mut cursor = generics_node.walk();
+            if cursor.goto_first_child() {
+                loop {
+                    let child = cursor.node();
+                    if child.kind() == "lifetime" {
+                        let lifetime_name = self.get_node_text(&child);
+                        let lifetime_span = Span::from_node(&child);
+
+                        let lifetime_node = Node::new(
+                            &self.repo_id,
+                            NodeKind::Lifetime,
+                            lifetime_name,
+                            self.language,
+                            self.file_path.clone(),
+                            lifetime_span,
+                        )
+                        .with_metadata(serde_json::json!({
+                            "context": "impl_block",
+                            "lifetime_type": "ImplParameter",
+                            "scope": "impl_methods"
+                        }));
+
+                        // Create edge from impl to lifetime
+                        self.edges
+                            .push(Edge::new(impl_id, lifetime_node.id, EdgeKind::Contains));
+
+                        self.nodes.push(lifetime_node);
+                    }
+                    if !cursor.goto_next_sibling() {
+                        break;
+                    }
+                }
+            }
+        }
         Ok(())
     }
 

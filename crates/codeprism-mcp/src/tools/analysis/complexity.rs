@@ -3,11 +3,13 @@
 use crate::tools_legacy::{CallToolParams, CallToolResult, Tool, ToolContent};
 use crate::CodePrismMcpServer;
 use anyhow::Result;
+use codeprism_analysis::complexity::ComplexityAnalyzer;
 use serde_json::Value;
+use std::path::Path;
 
 /// Analyze complexity for a specific file
 fn analyze_file_complexity(file_path: &str, metrics: &[String], threshold_warnings: bool) -> Value {
-    let path = std::path::Path::new(file_path);
+    let path = Path::new(file_path);
 
     if !path.exists() {
         return serde_json::json!({
@@ -17,66 +19,22 @@ fn analyze_file_complexity(file_path: &str, metrics: &[String], threshold_warnin
         });
     }
 
-    // Read file and calculate basic metrics
-    if let Ok(content) = std::fs::read_to_string(path) {
-        let line_count = content.lines().count();
-        let char_count = content.chars().count();
-        let word_count = content.split_whitespace().count();
+    let analyzer = ComplexityAnalyzer::new();
 
-        // Basic complexity estimation based on file content
-        let estimated_complexity = calculate_basic_complexity(&content);
-
-        let mut result = serde_json::json!({
-            "target": file_path,
-            "file_analysis": {
-                "file_exists": true,
-                "line_count": line_count,
-                "character_count": char_count,
-                "word_count": word_count,
-                "estimated_complexity": estimated_complexity
-            },
-            "metrics": {}
-        });
-
-        // Add requested metrics
-        for metric in metrics {
-            match metric.as_str() {
-                "all" | "basic" => {
-                    result["metrics"]["basic"] = serde_json::json!({
-                        "lines_of_code": line_count,
-                        "complexity_score": estimated_complexity,
-                        "maintainability_index": calculate_maintainability_index(line_count, estimated_complexity)
-                    });
-                }
-                "cyclomatic" => {
-                    result["metrics"]["cyclomatic"] = serde_json::json!({
-                        "estimated_complexity": estimated_complexity,
-                        "note": "Estimated based on control flow indicators"
-                    });
-                }
-                _ => {
-                    result["metrics"][metric] = serde_json::json!({
-                        "status": "not_implemented",
-                        "note": format!("Metric '{}' calculation not yet implemented", metric)
-                    });
-                }
-            }
+    match analyzer.analyze_file_complexity(path, metrics, threshold_warnings) {
+        Ok(mut result) => {
+            // Add target information for consistency
+            result["target"] = serde_json::Value::String(file_path.to_string());
+            result["file_exists"] = serde_json::Value::Bool(true);
+            result
         }
-
-        if threshold_warnings && estimated_complexity > 10 {
-            result["warnings"] = serde_json::json!([format!(
-                "High complexity detected: {} (recommended: < 10)",
-                estimated_complexity
-            )]);
+        Err(e) => {
+            serde_json::json!({
+                "target": file_path,
+                "error": format!("Failed to analyze file: {}", e),
+                "file_exists": true
+            })
         }
-
-        result
-    } else {
-        serde_json::json!({
-            "target": file_path,
-            "error": "Failed to read file",
-            "file_exists": true
-        })
     }
 }
 
@@ -86,104 +44,141 @@ fn analyze_symbol_complexity(
     metrics: &[String],
     threshold_warnings: bool,
 ) -> Value {
-    let symbol_complexity = match node.kind {
-        codeprism_core::NodeKind::Function | codeprism_core::NodeKind::Method => {
-            // Functions typically have higher complexity
-            5 + (node.name.len() / 10) // Simple heuristic
-        }
-        codeprism_core::NodeKind::Class => {
-            // Classes have moderate complexity
-            3 + (node.name.len() / 20)
-        }
-        _ => {
-            // Other symbols have low complexity
-            1
-        }
-    };
+    // For symbol-specific analysis, we need to extract content from the file at the symbol's location
+    let file_path = &node.file;
 
-    let mut result = serde_json::json!({
-        "target": node.name,
-        "symbol_analysis": {
-            "id": node.id.to_hex(),
-            "name": node.name,
-            "kind": format!("{:?}", node.kind),
-            "file": node.file.display().to_string(),
-            "span": {
-                "start_line": node.span.start_line,
-                "end_line": node.span.end_line
-            },
-            "symbol_complexity": symbol_complexity
-        },
-        "metrics": {}
-    });
+    if let Ok(content) = std::fs::read_to_string(file_path) {
+        let lines: Vec<&str> = content.lines().collect();
 
-    // Add requested metrics
-    for metric in metrics {
-        match metric.as_str() {
-            "all" | "basic" => {
-                result["metrics"]["basic"] = serde_json::json!({
-                    "symbol_complexity": symbol_complexity,
-                    "maintainability_index": calculate_maintainability_index(1, symbol_complexity)
-                });
+        // Extract symbol content based on span
+        let start_line = node.span.start_line.saturating_sub(1); // Convert to 0-based
+        let end_line = (node.span.end_line.saturating_sub(1)).min(lines.len().saturating_sub(1));
+
+        if start_line <= end_line && start_line < lines.len() {
+            let symbol_content = lines[start_line..=end_line].join("\n");
+            let symbol_lines = end_line - start_line + 1;
+
+            let analyzer = ComplexityAnalyzer::new();
+            let complexity_metrics = analyzer.calculate_all_metrics(&symbol_content, symbol_lines);
+
+            let mut result = serde_json::json!({
+                "target": node.name,
+                "symbol_analysis": {
+                    "id": node.id.to_hex(),
+                    "name": node.name,
+                    "kind": format!("{:?}", node.kind),
+                    "file": node.file.display().to_string(),
+                    "span": {
+                        "start_line": node.span.start_line,
+                        "end_line": node.span.end_line
+                    },
+                    "lines_of_code": symbol_lines
+                },
+                "metrics": {}
+            });
+
+            // Add requested metrics
+            for metric in metrics {
+                match metric.as_str() {
+                    "all" => {
+                        result["metrics"]["cyclomatic_complexity"] =
+                            complexity_metrics.cyclomatic.into();
+                        result["metrics"]["cognitive_complexity"] =
+                            complexity_metrics.cognitive.into();
+                        result["metrics"]["halstead"] = serde_json::json!({
+                            "volume": complexity_metrics.halstead_volume,
+                            "difficulty": complexity_metrics.halstead_difficulty,
+                            "effort": complexity_metrics.halstead_effort
+                        });
+                        result["metrics"]["maintainability_index"] =
+                            complexity_metrics.maintainability_index.into();
+                    }
+                    "cyclomatic" => {
+                        result["metrics"]["cyclomatic_complexity"] =
+                            complexity_metrics.cyclomatic.into();
+                    }
+                    "cognitive" => {
+                        result["metrics"]["cognitive_complexity"] =
+                            complexity_metrics.cognitive.into();
+                    }
+                    "halstead" => {
+                        result["metrics"]["halstead"] = serde_json::json!({
+                            "volume": complexity_metrics.halstead_volume,
+                            "difficulty": complexity_metrics.halstead_difficulty,
+                            "effort": complexity_metrics.halstead_effort
+                        });
+                    }
+                    "maintainability_index" | "maintainability" => {
+                        result["metrics"]["maintainability_index"] =
+                            complexity_metrics.maintainability_index.into();
+                    }
+                    _ => {
+                        result["metrics"][metric] = serde_json::json!({
+                            "status": "unknown_metric",
+                            "note": format!("Unknown metric '{}'. Available metrics: cyclomatic, cognitive, halstead, maintainability_index, all", metric)
+                        });
+                    }
+                }
             }
-            "cyclomatic" => {
-                result["metrics"]["cyclomatic"] = serde_json::json!({
-                    "estimated_complexity": symbol_complexity,
-                    "note": "Estimated based on symbol type and name"
-                });
+
+            // Add threshold warnings
+            if threshold_warnings {
+                let mut warnings = Vec::new();
+
+                if complexity_metrics.cyclomatic > 10 {
+                    warnings.push(format!(
+                        "High cyclomatic complexity: {} (recommended: < 10)",
+                        complexity_metrics.cyclomatic
+                    ));
+                }
+
+                if complexity_metrics.cognitive > 15 {
+                    warnings.push(format!(
+                        "High cognitive complexity: {} (recommended: < 15)",
+                        complexity_metrics.cognitive
+                    ));
+                }
+
+                if complexity_metrics.maintainability_index < 50.0 {
+                    warnings.push(format!(
+                        "Low maintainability index: {:.1} (recommended: > 50.0)",
+                        complexity_metrics.maintainability_index
+                    ));
+                }
+
+                if !warnings.is_empty() {
+                    result["warnings"] = serde_json::json!(warnings);
+                }
             }
-            _ => {
-                result["metrics"][metric] = serde_json::json!({
-                    "status": "not_implemented",
-                    "note": format!("Metric '{}' calculation not yet implemented for symbols", metric)
-                });
+
+            result
+        } else {
+            serde_json::json!({
+                "target": node.name,
+                "error": "Invalid line range for symbol",
+                "symbol_analysis": {
+                    "id": node.id.to_hex(),
+                    "name": node.name,
+                    "kind": format!("{:?}", node.kind),
+                    "file": node.file.display().to_string(),
+                    "span": {
+                        "start_line": node.span.start_line,
+                        "end_line": node.span.end_line
+                    }
+                }
+            })
+        }
+    } else {
+        serde_json::json!({
+            "target": node.name,
+            "error": "Failed to read symbol's source file",
+            "symbol_analysis": {
+                "id": node.id.to_hex(),
+                "name": node.name,
+                "file": node.file.display().to_string()
             }
-        }
+        })
     }
-
-    if threshold_warnings && symbol_complexity > 5 {
-        result["warnings"] = serde_json::json!([format!(
-            "High symbol complexity: {} (recommended: < 5)",
-            symbol_complexity
-        )]);
-    }
-
-    result
-}
-
-/// Calculate basic complexity estimation from code content
-fn calculate_basic_complexity(content: &str) -> usize {
-    let mut complexity = 1; // Base complexity
-
-    // Count control flow statements
-    for line in content.lines() {
-        let line = line.trim();
-        if line.contains("if ") || line.contains("elif ") {
-            complexity += 1;
-        }
-        if line.contains("for ") || line.contains("while ") {
-            complexity += 1;
-        }
-        if line.contains("try:") || line.contains("except") {
-            complexity += 1;
-        }
-        if line.contains("match ") || line.contains("case ") {
-            complexity += 1;
-        }
-    }
-
-    complexity
-}
-
-/// Calculate maintainability index (simplified)
-fn calculate_maintainability_index(lines: usize, complexity: usize) -> f64 {
-    // Simplified maintainability index calculation
-    let halstead_volume = (lines as f64).log2() * 10.0; // Rough approximation
-    let mi = 171.0
-        - 5.2 * (halstead_volume).log2()
-        - 0.23 * (complexity as f64)
-        - 16.2 * (lines as f64).log2();
-    mi.clamp(0.0, 100.0)
 }
 
 /// List complexity analysis tools
@@ -192,7 +187,7 @@ pub fn list_tools() -> Vec<Tool> {
         Tool {
             name: "analyze_complexity".to_string(),
             title: Some("Analyze Code Complexity".to_string()),
-            description: "Calculate complexity metrics for code elements including cyclomatic, cognitive, and maintainability metrics".to_string(),
+            description: "Calculate comprehensive complexity metrics including cyclomatic, cognitive, Halstead metrics, and maintainability index for code elements".to_string(),
             input_schema: serde_json::json!({
                 "type": "object",
                 "properties": {
@@ -204,18 +199,19 @@ pub fn list_tools() -> Vec<Tool> {
                         "type": "array",
                         "items": {
                             "type": "string",
-                            "enum": ["cyclomatic", "cognitive", "halstead", "maintainability_index", "all"]
+                            "enum": ["cyclomatic", "cognitive", "halstead", "maintainability_index", "maintainability", "all"]
                         },
-                        "description": "Types of complexity metrics to calculate",
+                        "description": "Types of complexity metrics to calculate. 'all' includes all available metrics.",
                         "default": ["all"]
                     },
                     "threshold_warnings": {
                         "type": "boolean",
-                        "description": "Include warnings for metrics exceeding thresholds",
+                        "description": "Include warnings for metrics exceeding recommended thresholds",
                         "default": true
                     }
                 },
-                "required": ["target"]
+                "required": ["target"],
+                "additionalProperties": false
             }),
         }
     ]
@@ -271,22 +267,27 @@ async fn analyze_complexity(
         analyze_file_complexity(target, &metrics, threshold_warnings)
     } else {
         // Try to resolve as symbol name using search, then analyze
-        if let Ok(symbol_results) = server.graph_query().search_symbols(target, None, Some(1)) {
-            if let Some(symbol_result) = symbol_results.first() {
-                analyze_symbol_complexity(&symbol_result.node, &metrics, threshold_warnings)
-            } else {
+        match server.graph_query().search_symbols(target, None, Some(1)) {
+            Ok(symbol_results) => {
+                if let Some(symbol_result) = symbol_results.first() {
+                    analyze_symbol_complexity(&symbol_result.node, &metrics, threshold_warnings)
+                } else {
+                    serde_json::json!({
+                        "target": target,
+                        "error": "Symbol not found",
+                        "suggestion": "Try using a file path or check if the symbol name is correct",
+                        "available_metrics": ["cyclomatic", "cognitive", "halstead", "maintainability_index", "all"]
+                    })
+                }
+            }
+            Err(e) => {
                 serde_json::json!({
                     "target": target,
-                    "error": "Symbol not found",
-                    "suggestion": "Try using a file path or check if the symbol name is correct"
+                    "error": format!("Failed to search for symbol: {}", e),
+                    "suggestion": "Try using a file path instead",
+                    "available_metrics": ["cyclomatic", "cognitive", "halstead", "maintainability_index", "all"]
                 })
             }
-        } else {
-            serde_json::json!({
-                "target": target,
-                "error": "Failed to search for symbol",
-                "suggestion": "Try using a file path instead"
-            })
         }
     };
 

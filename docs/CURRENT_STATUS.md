@@ -5,8 +5,8 @@
 The CodePrism MCP server is now **production-ready** with all placeholder tools removed, Milestone 2 completed, and comprehensive functionality delivered including advanced parser development tools.
 
 **CURRENT RESULTS:**
-- **20 tools total** available and fully functional ✅
-- **20 tools (100%) fully working** with correct implementations ✅  
+- **23 tools total** available and fully functional ✅
+- **23 tools (100%) fully working** with correct implementations ✅  
 - **0 tools (0%) placeholders** - all placeholder tools removed ✅
 - **0 tools (0%) failed** - All parameter issues resolved! 🎉
 - **Repository indexing fully working** with environment variable support ✅
@@ -74,7 +74,7 @@ Complete parser debugging and development toolkit implemented in `codeprism-dev-
    - Lines of code, file type distribution, complexity metrics
    - Use case: Codebase quality assessment
 
-### 📊 **Analysis Tools (8 tools)**
+### �� **Analysis Tools (11 tools)**
 
 9. **`analyze_complexity`** - Analyze code complexity metrics
    - Cyclomatic complexity, maintainability index
@@ -122,21 +122,25 @@ Complete parser debugging and development toolkit implemented in `codeprism-dev-
     - Breaking change detection and documentation coverage analysis
     - Use case: API design and backward compatibility
 
+19. **`find_duplicates`** - Duplicate code pattern detection
+    - Similarity scoring and refactoring recommendations
+    - Use case: Code quality improvement and maintenance
+
 ### 🔄 **Workflow & Orchestration (4 tools)**
 
-19. **`suggest_analysis_workflow`** - Get intelligent analysis recommendations
+20. **`suggest_analysis_workflow`** - Get intelligent analysis recommendations
     - Suggests optimal tool sequences for analysis goals
     - Use case: Guidance for complex analysis tasks
 
-20. **`batch_analysis`** - Execute multiple analysis tools in parallel
+21. **`batch_analysis`** - Execute multiple analysis tools in parallel
     - Parallel execution with result aggregation
     - Use case: Comprehensive codebase analysis
 
-21. **`optimize_workflow`** - Optimize analysis workflows
+22. **`optimize_workflow`** - Optimize analysis workflows
     - Suggests improvements based on analysis history
     - Use case: Improving analysis efficiency
 
-22. **`find_references`** - Find all references to a symbol
+23. **`find_references`** - Find all references to a symbol
     - Complete usage analysis across the codebase
     - Use case: Impact analysis before making changes
 
@@ -203,8 +207,8 @@ Complete parser debugging and development toolkit implemented in `codeprism-dev-
 ## Success Metrics
 
 ### **Implementation Progress**
-- **Before Milestone 2**: 14 working tools, 6 alpha tools
-- **After Milestone 2**: 20 working tools, 0 alpha tools
+- **Before Milestone 2**: 17 working tools, 6 alpha tools
+- **After Milestone 2**: 23 working tools, 0 alpha tools
 - **Success rate**: 100% of available tools are production-ready
 
 ### **Quality Improvements**
@@ -218,7 +222,7 @@ Complete parser debugging and development toolkit implemented in `codeprism-dev-
 
 ### **Testing Coverage**
 - **425 total tests** across all crates (up from 393)
-- **20 MCP tool tests** with 100% success rate
+- **23 MCP tool tests** with 100% success rate
 - **22 parser development tool tests** with full coverage
 - **Comprehensive integration testing** across the entire system
 
@@ -291,7 +295,7 @@ Each tool provides:
 
 ## Conclusion
 
-The CodePrism MCP server now provides **20 production-ready tools** and **comprehensive parser development utilities** that enable both advanced code analysis workflows and productive parser development. With Milestone 2 completed and all alpha tools upgraded to production quality, the server is ready for production use in AI-assisted code analysis applications.
+The CodePrism MCP server now provides **23 production-ready tools** and **comprehensive parser development utilities** that enable both advanced code analysis workflows and productive parser development. With Milestone 2 completed and all alpha tools upgraded to production quality, the server is ready for production use in AI-assisted code analysis applications.
 
 ### **Current Capabilities**
 - ✅ Complete repository analysis and navigation

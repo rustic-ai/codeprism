@@ -4,7 +4,7 @@ This guide walks you through setting up CodePrism with the three major MCP clien
 
 ## 🎯 What You'll Achieve
 
-- **20 production-ready analysis tools** including security, performance, and API analysis
+- **23 production-ready analysis tools** including security, performance, and API analysis
 - **AI assistants** that understand your code structure, not just text
 - **Real-time analysis** of your repositories with automatic updates
 - **Cross-language intelligence** for JavaScript, TypeScript, and Python projects

@@ -1,6 +1,6 @@
 # API Documentation
 
-This document provides detailed API documentation for all CodeCodePrism components.
+This document provides detailed API documentation for all CodePrism components.
 
 ## Table of Contents
 
@@ -1062,7 +1062,7 @@ Provide guidance for code refactoring.
 
 ## Error Handling
 
-All CodeCodePrism components use structured error handling with `thiserror`.
+All CodePrism components use structured error handling with `thiserror`.
 
 ### Core Errors
 
@@ -1298,7 +1298,7 @@ All public APIs are thread-safe:
 
 ## Versioning
 
-CodeCodePrism follows [Semantic Versioning](https://semver.org/):
+CodePrism follows [Semantic Versioning](https://semver.org/):
 
 - **Major**: Breaking API changes
 - **Minor**: New features, backward compatible

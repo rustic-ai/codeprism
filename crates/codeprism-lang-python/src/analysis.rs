@@ -784,6 +784,337 @@ struct AsyncPattern {
     performance_impact: AsyncPerformanceImpact,
 }
 
+/// Python package dependency analysis result
+#[derive(Debug, Clone)]
+pub struct PythonPackageDependencyAnalysis {
+    pub overall_health_score: i32,
+    pub requirements_files: Vec<RequirementsFileInfo>,
+    pub dependencies: Vec<RequirementInfo>,
+    pub dependency_issues: Vec<DependencyIssue>,
+    pub virtual_environments: Vec<VirtualEnvironmentInfo>,
+    pub import_analysis: Vec<ImportAnalysisInfo>,
+    pub security_vulnerabilities: Vec<SecurityVulnerabilityInfo>,
+    pub license_analysis: Vec<LicenseInfo>,
+    pub recommendations: Vec<String>,
+}
+
+/// Requirements file information
+#[derive(Debug, Clone)]
+pub struct RequirementsFileInfo {
+    pub file_path: String,
+    pub file_type: RequirementsFileType,
+    pub dependencies_count: usize,
+    pub has_version_pins: bool,
+    pub has_hashes: bool,
+    pub uses_constraints: bool,
+    pub quality_score: DependencyQualityScore,
+}
+
+/// Requirements file types
+#[derive(Debug, Clone)]
+pub enum RequirementsFileType {
+    RequirementsTxt,    // requirements.txt
+    PyprojectToml,      // pyproject.toml with dependencies
+    SetupPy,            // setup.py with install_requires
+    Pipfile,            // Pipfile for pipenv
+    PipfileLock,        // Pipfile.lock with locked versions
+    PoetryLock,         // poetry.lock for poetry
+    CondaYml,           // environment.yml for conda
+    SetupCfg,           // setup.cfg with install_requires
+}
+
+/// Individual requirement information
+#[derive(Debug, Clone)]
+pub struct RequirementInfo {
+    pub name: String,
+    pub version_spec: String,
+    pub source: RequirementSource,
+    pub is_dev_dependency: bool,
+    pub is_optional: bool,
+    pub extras: Vec<String>,
+    pub markers: Vec<String>,
+    pub metadata: PackageMetadata,
+}
+
+/// Requirement source types
+#[derive(Debug, Clone)]
+pub enum RequirementSource {
+    PyPI,                    // Standard PyPI package
+    Git(String),             // Git repository URL
+    Local(String),           // Local file path
+    URL(String),             // Direct URL
+    VCS(String, String),     // Version control (type, url)
+}
+
+/// Package metadata information
+#[derive(Debug, Clone)]
+pub struct PackageMetadata {
+    pub description: String,
+    pub author: String,
+    pub license: String,
+    pub homepage: Option<String>,
+    pub documentation: Option<String>,
+    pub last_updated: Option<String>,
+    pub download_count: Option<u64>,
+    pub maintenance_status: MaintenanceStatus,
+}
+
+/// Package maintenance status
+#[derive(Debug, Clone)]
+pub enum MaintenanceStatus {
+    Active,      // Recently updated, active development
+    Maintained,  // Occasional updates, bug fixes
+    Stable,      // Mature, infrequent updates
+    Deprecated,  // No longer maintained
+    Abandoned,   // No updates for extended period
+    Unknown,     // Unable to determine status
+}
+
+/// Dependency quality scoring
+#[derive(Debug, Clone)]
+pub enum DependencyQualityScore {
+    Excellent,  // 90-100: Well-managed, secure, up-to-date
+    Good,       // 70-89: Good practices, minor issues
+    Fair,       // 50-69: Adequate, some improvements needed
+    Poor,       // 30-49: Multiple issues, needs attention
+    Critical,   // 0-29: Major problems, immediate action required
+}
+
+/// Dependency issues
+#[derive(Debug, Clone)]
+pub struct DependencyIssue {
+    pub issue_type: DependencyIssueType,
+    pub severity: DependencyIssueSeverity,
+    pub affected_packages: Vec<String>,
+    pub description: String,
+    pub recommendation: String,
+    pub auto_fixable: bool,
+}
+
+/// Dependency issue types
+#[derive(Debug, Clone)]
+pub enum DependencyIssueType {
+    VersionConflict,         // Conflicting version requirements
+    CircularDependency,      // Circular dependency detected
+    UnusedDependency,        // Declared but not imported
+    MissingDependency,       // Imported but not declared
+    SecurityVulnerability,   // Known security issue
+    LicenseIncompatibility,  // Incompatible licenses
+    DeprecatedPackage,       // Package is deprecated
+    UnpinnedVersion,         // Version not pinned for production
+    OutdatedVersion,         // Newer version available
+    DevDependencyInProd,     // Dev dependency in production requirements
+    DuplicateDependency,     // Same package in multiple files
+}
+
+/// Dependency issue severity
+#[derive(Debug, Clone)]
+pub enum DependencyIssueSeverity {
+    Critical,   // Security vulnerabilities, license violations
+    High,       // Version conflicts, missing dependencies
+    Medium,     // Deprecated packages, outdated versions
+    Low,        // Unused dependencies, minor optimizations
+    Info,       // Best practice suggestions
+}
+
+/// Virtual environment information
+#[derive(Debug, Clone)]
+pub struct VirtualEnvironmentInfo {
+    pub env_type: VirtualEnvironmentType,
+    pub location: String,
+    pub python_version: String,
+    pub is_active: bool,
+    pub packages_count: usize,
+    pub env_variables: Vec<EnvironmentVariable>,
+    pub configuration: VirtualEnvironmentConfig,
+}
+
+/// Virtual environment types
+#[derive(Debug, Clone)]
+pub enum VirtualEnvironmentType {
+    Venv,        // Python venv
+    Virtualenv,  // virtualenv package
+    Conda,       // Anaconda/Miniconda
+    Pipenv,      // Pipenv virtual environment
+    Poetry,      // Poetry virtual environment
+    Docker,      // Docker container environment
+    Pyenv,       // pyenv version management
+    Custom(String), // Custom environment type
+}
+
+/// Environment variable information
+#[derive(Debug, Clone)]
+pub struct EnvironmentVariable {
+    pub name: String,
+    pub value: String,
+    pub is_sensitive: bool,
+    pub purpose: EnvironmentVariablePurpose,
+}
+
+/// Environment variable purposes
+#[derive(Debug, Clone)]
+pub enum EnvironmentVariablePurpose {
+    Configuration,  // Application configuration
+    Secret,         // API keys, passwords
+    Path,           // PYTHONPATH, PATH modifications
+    Development,    // Development-specific settings
+    Production,     // Production environment settings
+    Testing,        // Test configuration
+    Unknown,        // Unable to categorize
+}
+
+/// Virtual environment configuration
+#[derive(Debug, Clone)]
+pub struct VirtualEnvironmentConfig {
+    pub isolated: bool,
+    pub system_site_packages: bool,
+    pub pip_version: Option<String>,
+    pub setuptools_version: Option<String>,
+    pub custom_configurations: Vec<String>,
+}
+
+/// Import analysis information
+#[derive(Debug, Clone)]
+pub struct ImportAnalysisInfo {
+    pub import_statement: String,
+    pub import_type: ImportType,
+    pub module_category: ModuleCategory,
+    pub usage_count: usize,
+    pub is_unused: bool,
+    pub import_issues: Vec<ImportIssue>,
+    pub optimization_suggestions: Vec<String>,
+}
+
+/// Import types
+#[derive(Debug, Clone)]
+pub enum ImportType {
+    StandardImport,     // import module
+    FromImport,         // from module import item
+    StarImport,         // from module import *
+    AliasImport,        // import module as alias
+    RelativeImport,     // from .module import item
+    ConditionalImport,  // Import inside if/try block
+    DynamicImport,      // importlib.import_module()
+}
+
+/// Module categories
+#[derive(Debug, Clone)]
+pub enum ModuleCategory {
+    StandardLibrary,    // Built-in Python modules
+    ThirdParty,         // External packages from PyPI
+    Local,              // Local project modules
+    BuiltIn,            // Built-in functions and types
+    Unknown,            // Unable to categorize
+}
+
+/// Import issues
+#[derive(Debug, Clone, PartialEq)]
+pub enum ImportIssue {
+    CircularImport,     // Circular import detected
+    StarImportDangerous, // from module import * is problematic
+    UnusedImport,       // Import not used in code
+    RedundantImport,    // Import duplicated
+    WrongImportOrder,   // PEP 8 import order violation
+    MissingImport,      // Required import not found
+    SlowImport,         // Import is known to be slow
+    DeprecatedImport,   // Importing deprecated module
+}
+
+/// Security vulnerability information
+#[derive(Debug, Clone)]
+pub struct SecurityVulnerabilityInfo {
+    pub cve_id: Option<String>,
+    pub advisory_id: Option<String>,
+    pub package_name: String,
+    pub affected_versions: Vec<String>,
+    pub fixed_version: Option<String>,
+    pub severity: SecurityVulnerabilitySeverity,
+    pub vulnerability_type: VulnerabilityCategory,
+    pub description: String,
+    pub references: Vec<String>,
+    pub published_date: Option<String>,
+    pub last_modified: Option<String>,
+}
+
+/// Security vulnerability severity (CVSS-based)
+#[derive(Debug, Clone)]
+pub enum SecurityVulnerabilitySeverity {
+    Critical,   // CVSS 9.0-10.0
+    High,       // CVSS 7.0-8.9  
+    Medium,     // CVSS 4.0-6.9
+    Low,        // CVSS 0.1-3.9
+    None,       // CVSS 0.0
+    Unknown,    // Severity not available
+}
+
+/// Vulnerability categories
+#[derive(Debug, Clone)]
+pub enum VulnerabilityCategory {
+    CodeExecution,      // Remote or arbitrary code execution
+    SqlInjection,       // SQL injection vulnerabilities
+    XSS,                // Cross-site scripting
+    CSRF,               // Cross-site request forgery
+    PathTraversal,      // Directory traversal attacks
+    Deserialization,    // Unsafe deserialization
+    Cryptographic,      // Cryptographic weaknesses
+    DoS,                // Denial of service
+    PrivilegeEscalation, // Privilege escalation
+    InformationDisclosure, // Information disclosure
+    InputValidation,    // Input validation issues
+    AuthenticationBypass, // Authentication bypass
+    Other(String),      // Other vulnerability types
+}
+
+/// License information
+#[derive(Debug, Clone)]
+pub struct LicenseInfo {
+    pub package_name: String,
+    pub license_type: LicenseType,
+    pub license_text: Option<String>,
+    pub compatibility: LicenseCompatibility,
+    pub commercial_use_allowed: bool,
+    pub distribution_allowed: bool,
+    pub modification_allowed: bool,
+    pub patent_grant: bool,
+    pub copyleft: bool,
+}
+
+/// License types
+#[derive(Debug, Clone)]
+pub enum LicenseType {
+    MIT,
+    Apache2,
+    GPL2,
+    GPL3,
+    BSD2Clause,
+    BSD3Clause,
+    LGPL,
+    Mozilla,
+    Unlicense,
+    Proprietary,
+    Custom(String),
+    Unknown,
+}
+
+/// License compatibility assessment
+#[derive(Debug, Clone)]
+pub enum LicenseCompatibility {
+    Compatible,     // Fully compatible with project license
+    ConditionallyCompatible, // Compatible under certain conditions
+    Incompatible,   // License conflict detected
+    RequiresReview, // Manual review required
+    Unknown,        // Unable to determine compatibility
+}
+
+/// Pattern for dependency detection
+#[derive(Debug, Clone)]
+struct DependencyPattern {
+    name: String,
+    pattern: Regex,
+    file_type: RequirementsFileType,
+    extraction_method: String,
+}
+
 /// Python-specific analyzer
 pub struct PythonAnalyzer {
     decorator_patterns: HashMap<String, Vec<DecoratorPattern>>,
@@ -793,6 +1124,7 @@ pub struct PythonAnalyzer {
     framework_patterns: HashMap<String, Vec<FrameworkPattern>>,
     type_hint_patterns: HashMap<String, Vec<TypeHintPattern>>,
     async_patterns: HashMap<String, Vec<AsyncPattern>>,
+    dependency_patterns: HashMap<String, Vec<DependencyPattern>>,
 }
 
 #[derive(Debug, Clone)]
@@ -852,6 +1184,7 @@ impl PythonAnalyzer {
             framework_patterns: HashMap::new(),
             type_hint_patterns: HashMap::new(),
             async_patterns: HashMap::new(),
+            dependency_patterns: HashMap::new(),
         };
         analyzer.initialize_patterns();
         analyzer
@@ -1328,6 +1661,81 @@ impl PythonAnalyzer {
             },
         ];
         self.async_patterns.insert("modern".to_string(), modern_async_patterns);
+
+        // Dependency analysis patterns
+        let requirements_patterns = vec![
+            DependencyPattern {
+                name: "Requirements.txt".to_string(),
+                pattern: Regex::new(r"(?m)^([a-zA-Z0-9_-]+)([><=!~]+)?([0-9.]+)?").unwrap(),
+                file_type: RequirementsFileType::RequirementsTxt,
+                extraction_method: "line_by_line".to_string(),
+            },
+            DependencyPattern {
+                name: "Pyproject.toml Dependencies".to_string(),
+                pattern: Regex::new(r#"dependencies\s*=\s*\[(.*?)\]"#).unwrap(),
+                file_type: RequirementsFileType::PyprojectToml,
+                extraction_method: "toml_array".to_string(),
+            },
+            DependencyPattern {
+                name: "Setup.py Install Requires".to_string(),
+                pattern: Regex::new(r"install_requires\s*=\s*\[(.*?)\]").unwrap(),
+                file_type: RequirementsFileType::SetupPy,
+                extraction_method: "python_list".to_string(),
+            },
+            DependencyPattern {
+                name: "Pipfile Dependencies".to_string(),
+                pattern: Regex::new(r"\[packages\](.*?)\[").unwrap(),
+                file_type: RequirementsFileType::Pipfile,
+                extraction_method: "toml_section".to_string(),
+            },
+            DependencyPattern {
+                name: "Poetry Lock".to_string(),
+                pattern: Regex::new(r#"name\s*=\s*"([^"]+)""#).unwrap(),
+                file_type: RequirementsFileType::PoetryLock,
+                extraction_method: "toml_blocks".to_string(),
+            },
+            DependencyPattern {
+                name: "Conda Environment".to_string(),
+                pattern: Regex::new(r"dependencies:\s*\n(.*?)(?:\n\w|$)").unwrap(),
+                file_type: RequirementsFileType::CondaYml,
+                extraction_method: "yaml_list".to_string(),
+            },
+        ];
+        self.dependency_patterns.insert("requirements".to_string(), requirements_patterns);
+
+        let import_patterns = vec![
+            DependencyPattern {
+                name: "Standard Import".to_string(),
+                pattern: Regex::new(r"(?m)^import\s+([a-zA-Z_][a-zA-Z0-9_.]*)").unwrap(),
+                file_type: RequirementsFileType::RequirementsTxt, // Placeholder
+                extraction_method: "import_statement".to_string(),
+            },
+            DependencyPattern {
+                name: "From Import".to_string(),
+                pattern: Regex::new(r"(?m)^from\s+([a-zA-Z_][a-zA-Z0-9_.]*)\s+import").unwrap(),
+                file_type: RequirementsFileType::RequirementsTxt, // Placeholder
+                extraction_method: "import_statement".to_string(),
+            },
+            DependencyPattern {
+                name: "Star Import".to_string(),
+                pattern: Regex::new(r"(?m)^from\s+([a-zA-Z_][a-zA-Z0-9_.]*)\s+import\s+\*").unwrap(),
+                file_type: RequirementsFileType::RequirementsTxt, // Placeholder
+                extraction_method: "import_statement".to_string(),
+            },
+            DependencyPattern {
+                name: "Alias Import".to_string(),
+                pattern: Regex::new(r"(?m)^import\s+([a-zA-Z_][a-zA-Z0-9_.]*)\s+as\s+").unwrap(),
+                file_type: RequirementsFileType::RequirementsTxt, // Placeholder
+                extraction_method: "import_statement".to_string(),
+            },
+            DependencyPattern {
+                name: "Relative Import".to_string(),
+                pattern: Regex::new(r"(?m)^from\s+(\.+)([a-zA-Z_][a-zA-Z0-9_.]*)\s+import").unwrap(),
+                file_type: RequirementsFileType::RequirementsTxt, // Placeholder
+                extraction_method: "import_statement".to_string(),
+            },
+        ];
+        self.dependency_patterns.insert("imports".to_string(), import_patterns);
     }
 
     /// Analyze Python decorators
@@ -1765,6 +2173,635 @@ impl PythonAnalyzer {
             modern_async_features,
             recommendations,
         })
+    }
+
+    /// Analyze Python package dependencies comprehensively
+    pub fn analyze_package_dependencies(&self, content: &str) -> Result<PythonPackageDependencyAnalysis> {
+        let mut requirements_files = Vec::new();
+        let mut dependencies = Vec::new();
+        let mut dependency_issues = Vec::new();
+        let mut virtual_environments = Vec::new();
+        let mut import_analysis = Vec::new();
+        let mut security_vulnerabilities = Vec::new();
+        let mut license_analysis = Vec::new();
+
+        // Analyze requirements files
+        self.analyze_requirements_files(content, &mut requirements_files, &mut dependencies);
+
+        // Analyze imports
+        self.analyze_imports(content, &mut import_analysis);
+
+        // Detect dependency issues
+        self.detect_dependency_issues(content, &dependencies, &import_analysis, &mut dependency_issues);
+
+        // Detect virtual environments
+        self.detect_virtual_environments(content, &mut virtual_environments);
+
+        // Perform security vulnerability scanning
+        self.scan_security_vulnerabilities(&dependencies, &mut security_vulnerabilities);
+
+        // Analyze licenses
+        self.analyze_licenses(&dependencies, &mut license_analysis);
+
+        // Calculate overall health score
+        let overall_health_score = self.calculate_dependency_health_score(
+            &requirements_files,
+            &dependencies,
+            &dependency_issues,
+            &security_vulnerabilities,
+        );
+
+        // Generate recommendations
+        let recommendations = self.get_dependency_recommendations(
+            &requirements_files,
+            &dependencies,
+            &dependency_issues,
+            &import_analysis,
+            &security_vulnerabilities,
+        );
+
+        Ok(PythonPackageDependencyAnalysis {
+            overall_health_score,
+            requirements_files,
+            dependencies,
+            dependency_issues,
+            virtual_environments,
+            import_analysis,
+            security_vulnerabilities,
+            license_analysis,
+            recommendations,
+        })
+    }
+
+    /// Analyze requirements files
+    fn analyze_requirements_files(
+        &self,
+        content: &str,
+        requirements_files: &mut Vec<RequirementsFileInfo>,
+        dependencies: &mut Vec<RequirementInfo>,
+    ) {
+        for patterns in self.dependency_patterns.values() {
+            for pattern in patterns {
+                if pattern.extraction_method == "line_by_line" {
+                    // Handle requirements.txt format
+                    for line in content.lines() {
+                        if let Some(captures) = pattern.pattern.captures(line) {
+                            let package_name = captures.get(1).unwrap().as_str();
+                            let version_spec = captures.get(2)
+                                .and_then(|m| captures.get(3).map(|v| format!("{}{}", m.as_str(), v.as_str())))
+                                .unwrap_or_else(|| "*".to_string());
+
+                            dependencies.push(RequirementInfo {
+                                name: package_name.to_string(),
+                                version_spec,
+                                source: RequirementSource::PyPI,
+                                is_dev_dependency: false,
+                                is_optional: false,
+                                extras: Vec::new(),
+                                markers: Vec::new(),
+                                metadata: self.get_package_metadata(package_name),
+                            });
+                        }
+                    }
+
+                    if !dependencies.is_empty() {
+                        requirements_files.push(RequirementsFileInfo {
+                            file_path: "requirements.txt".to_string(),
+                            file_type: RequirementsFileType::RequirementsTxt,
+                            dependencies_count: dependencies.len(),
+                            has_version_pins: dependencies.iter().any(|d| d.version_spec != "*"),
+                            has_hashes: false,
+                            uses_constraints: false,
+                            quality_score: self.assess_requirements_quality(dependencies),
+                        });
+                    }
+                } else if pattern.extraction_method == "toml_array" && content.contains("pyproject.toml") {
+                    // Handle pyproject.toml format
+                    if let Some(captures) = pattern.pattern.captures(content) {
+                        let deps_str = captures.get(1).unwrap().as_str();
+                        for dep in deps_str.split(',') {
+                            let clean_dep = dep.trim().trim_matches('"').trim_matches('\'');
+                            if !clean_dep.is_empty() {
+                                let parts: Vec<&str> = clean_dep.split(['>', '<', '=', '!', '~']).collect();
+                                let package_name = parts[0].trim();
+                                let version_spec = if parts.len() > 1 {
+                                    clean_dep[package_name.len()..].to_string()
+                                } else {
+                                    "*".to_string()
+                                };
+
+                                dependencies.push(RequirementInfo {
+                                    name: package_name.to_string(),
+                                    version_spec,
+                                    source: RequirementSource::PyPI,
+                                    is_dev_dependency: false,
+                                    is_optional: false,
+                                    extras: Vec::new(),
+                                    markers: Vec::new(),
+                                    metadata: self.get_package_metadata(package_name),
+                                });
+                            }
+                        }
+
+                        requirements_files.push(RequirementsFileInfo {
+                            file_path: "pyproject.toml".to_string(),
+                            file_type: RequirementsFileType::PyprojectToml,
+                            dependencies_count: dependencies.len(),
+                            has_version_pins: dependencies.iter().any(|d| d.version_spec != "*"),
+                            has_hashes: false,
+                            uses_constraints: false,
+                            quality_score: self.assess_requirements_quality(dependencies),
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    /// Analyze import statements
+    fn analyze_imports(&self, content: &str, import_analysis: &mut Vec<ImportAnalysisInfo>) {
+        if let Some(import_patterns) = self.dependency_patterns.get("imports") {
+            for pattern in import_patterns {
+                for captures in pattern.pattern.captures_iter(content) {
+                    let module_name = if pattern.name == "Relative Import" && captures.len() > 2 {
+                        format!("{}{}", captures.get(1).unwrap().as_str(), captures.get(2).unwrap().as_str())
+                    } else {
+                        captures.get(1).unwrap().as_str().to_string()
+                    };
+
+                    let import_type = self.classify_import_type(&pattern.name);
+                    let module_category = self.categorize_module(&module_name);
+                    let usage_count = content.matches(&module_name).count();
+                    let is_unused = usage_count <= 1; // Only the import itself
+                    let import_issues = self.detect_import_issues(&pattern.name, &module_name, content);
+
+                    import_analysis.push(ImportAnalysisInfo {
+                        import_statement: captures.get(0).unwrap().as_str().to_string(),
+                        import_type,
+                        module_category,
+                        usage_count,
+                        is_unused,
+                        import_issues,
+                        optimization_suggestions: self.get_import_optimization_suggestions(&pattern.name, &module_name),
+                    });
+                }
+            }
+        }
+    }
+
+    /// Detect dependency issues
+    fn detect_dependency_issues(
+        &self,
+        _content: &str,
+        dependencies: &[RequirementInfo],
+        import_analysis: &[ImportAnalysisInfo],
+        issues: &mut Vec<DependencyIssue>,
+    ) {
+        // Detect unused dependencies
+        for dep in dependencies {
+            let is_imported = import_analysis.iter().any(|imp| {
+                imp.import_statement.contains(&dep.name) || 
+                imp.import_statement.contains(&dep.name.replace("-", "_"))
+            });
+
+            if !is_imported {
+                issues.push(DependencyIssue {
+                    issue_type: DependencyIssueType::UnusedDependency,
+                    severity: DependencyIssueSeverity::Low,
+                    affected_packages: vec![dep.name.clone()],
+                    description: format!("Dependency '{}' declared but not imported", dep.name),
+                    recommendation: "Remove unused dependency or add import statement".to_string(),
+                    auto_fixable: false,
+                });
+            }
+        }
+
+        // Detect missing dependencies
+        for import in import_analysis {
+            if matches!(import.module_category, ModuleCategory::ThirdParty) {
+                let module_root = import.import_statement
+                    .split_whitespace()
+                    .nth(1)
+                    .unwrap_or("")
+                    .split('.')
+                    .next()
+                    .unwrap_or("");
+
+                let is_declared = dependencies.iter().any(|dep| {
+                    dep.name == module_root || dep.name.replace("-", "_") == module_root
+                });
+
+                if !is_declared && !module_root.is_empty() {
+                    issues.push(DependencyIssue {
+                        issue_type: DependencyIssueType::MissingDependency,
+                        severity: DependencyIssueSeverity::High,
+                        affected_packages: vec![module_root.to_string()],
+                        description: format!("Module '{}' imported but not declared as dependency", module_root),
+                        recommendation: "Add missing dependency to requirements".to_string(),
+                        auto_fixable: true,
+                    });
+                }
+            }
+        }
+
+        // Detect unpinned versions
+        for dep in dependencies {
+            if dep.version_spec == "*" || dep.version_spec.is_empty() {
+                issues.push(DependencyIssue {
+                    issue_type: DependencyIssueType::UnpinnedVersion,
+                    severity: DependencyIssueSeverity::Medium,
+                    affected_packages: vec![dep.name.clone()],
+                    description: format!("Dependency '{}' has no version constraint", dep.name),
+                    recommendation: "Pin dependency versions for reproducible builds".to_string(),
+                    auto_fixable: false,
+                });
+            }
+        }
+
+        // Detect deprecated packages
+        let deprecated_packages = vec!["imp", "optparse", "platform", "distutils"];
+        for dep in dependencies {
+            if deprecated_packages.contains(&dep.name.as_str()) {
+                issues.push(DependencyIssue {
+                    issue_type: DependencyIssueType::DeprecatedPackage,
+                    severity: DependencyIssueSeverity::Medium,
+                    affected_packages: vec![dep.name.clone()],
+                    description: format!("Package '{}' is deprecated", dep.name),
+                    recommendation: "Consider migrating to modern alternatives".to_string(),
+                    auto_fixable: false,
+                });
+            }
+        }
+    }
+
+    /// Detect virtual environments
+    fn detect_virtual_environments(&self, content: &str, virtual_environments: &mut Vec<VirtualEnvironmentInfo>) {
+        // Check for virtual environment indicators
+        if content.contains("venv") || content.contains("virtualenv") {
+            virtual_environments.push(VirtualEnvironmentInfo {
+                env_type: VirtualEnvironmentType::Venv,
+                location: "./venv".to_string(),
+                python_version: "3.x".to_string(),
+                is_active: true,
+                packages_count: 0,
+                env_variables: Vec::new(),
+                configuration: VirtualEnvironmentConfig {
+                    isolated: true,
+                    system_site_packages: false,
+                    pip_version: None,
+                    setuptools_version: None,
+                    custom_configurations: Vec::new(),
+                },
+            });
+        }
+
+        if content.contains("conda") || content.contains("environment.yml") {
+            virtual_environments.push(VirtualEnvironmentInfo {
+                env_type: VirtualEnvironmentType::Conda,
+                location: "conda environment".to_string(),
+                python_version: "3.x".to_string(),
+                is_active: true,
+                packages_count: 0,
+                env_variables: Vec::new(),
+                configuration: VirtualEnvironmentConfig {
+                    isolated: true,
+                    system_site_packages: false,
+                    pip_version: None,
+                    setuptools_version: None,
+                    custom_configurations: Vec::new(),
+                },
+            });
+        }
+
+        if content.contains("pipenv") || content.contains("Pipfile") {
+            virtual_environments.push(VirtualEnvironmentInfo {
+                env_type: VirtualEnvironmentType::Pipenv,
+                location: "pipenv environment".to_string(),
+                python_version: "3.x".to_string(),
+                is_active: true,
+                packages_count: 0,
+                env_variables: Vec::new(),
+                configuration: VirtualEnvironmentConfig {
+                    isolated: true,
+                    system_site_packages: false,
+                    pip_version: None,
+                    setuptools_version: None,
+                    custom_configurations: Vec::new(),
+                },
+            });
+        }
+    }
+
+    /// Scan for security vulnerabilities
+    fn scan_security_vulnerabilities(
+        &self,
+        dependencies: &[RequirementInfo],
+        vulnerabilities: &mut Vec<SecurityVulnerabilityInfo>,
+    ) {
+        // Simplified vulnerability database - in production, this would query real databases
+        let known_vulnerabilities = vec![
+            ("urllib3", "1.25.8", "CVE-2020-26137", "Critical"),
+            ("requests", "2.19.1", "CVE-2018-18074", "High"),
+            ("pyyaml", "5.3.1", "CVE-2020-14343", "High"),
+            ("django", "2.2.12", "CVE-2020-13254", "Medium"),
+            ("flask", "1.1.1", "CVE-2019-1010083", "Medium"),
+        ];
+
+        for dep in dependencies {
+            for (vuln_package, vuln_version, cve_id, severity) in &known_vulnerabilities {
+                if dep.name == *vuln_package {
+                    let severity_enum = match *severity {
+                        "Critical" => SecurityVulnerabilitySeverity::Critical,
+                        "High" => SecurityVulnerabilitySeverity::High,
+                        "Medium" => SecurityVulnerabilitySeverity::Medium,
+                        _ => SecurityVulnerabilitySeverity::Low,
+                    };
+
+                    vulnerabilities.push(SecurityVulnerabilityInfo {
+                        cve_id: Some(cve_id.to_string()),
+                        advisory_id: None,
+                        package_name: dep.name.clone(),
+                        affected_versions: vec![vuln_version.to_string()],
+                        fixed_version: Some("Latest".to_string()),
+                        severity: severity_enum,
+                        vulnerability_type: VulnerabilityCategory::CodeExecution,
+                        description: format!("Security vulnerability in {} {}", vuln_package, vuln_version),
+                        references: vec![format!("https://cve.mitre.org/cgi-bin/cvename.cgi?name={}", cve_id)],
+                        published_date: Some("2020-01-01".to_string()),
+                        last_modified: Some("2020-01-01".to_string()),
+                    });
+                }
+            }
+        }
+    }
+
+    /// Analyze package licenses
+    fn analyze_licenses(&self, dependencies: &[RequirementInfo], license_analysis: &mut Vec<LicenseInfo>) {
+        for dep in dependencies {
+            // Use metadata from package
+            let license_type = self.parse_license_type(&dep.metadata.license);
+            let compatibility = self.assess_license_compatibility(&license_type);
+
+            license_analysis.push(LicenseInfo {
+                package_name: dep.name.clone(),
+                license_type: license_type.clone(),
+                license_text: None,
+                compatibility,
+                commercial_use_allowed: self.is_commercial_use_allowed(&license_type),
+                distribution_allowed: self.is_distribution_allowed(&license_type),
+                modification_allowed: self.is_modification_allowed(&license_type),
+                patent_grant: self.has_patent_grant(&license_type),
+                copyleft: self.is_copyleft(&license_type),
+            });
+        }
+    }
+
+    /// Helper methods for dependency analysis
+    fn get_package_metadata(&self, package_name: &str) -> PackageMetadata {
+        // Simplified metadata - in production, this would query PyPI API
+        PackageMetadata {
+            description: format!("Package: {}", package_name),
+            author: "Unknown".to_string(),
+            license: "MIT".to_string(),
+            homepage: None,
+            documentation: None,
+            last_updated: None,
+            download_count: None,
+            maintenance_status: MaintenanceStatus::Unknown,
+        }
+    }
+
+    fn assess_requirements_quality(&self, dependencies: &[RequirementInfo]) -> DependencyQualityScore {
+        let pinned_count = dependencies.iter().filter(|d| d.version_spec != "*").count();
+        let pinned_ratio = if dependencies.is_empty() {
+            0.0
+        } else {
+            pinned_count as f32 / dependencies.len() as f32
+        };
+
+        match pinned_ratio {
+            r if r >= 0.9 => DependencyQualityScore::Excellent,
+            r if r >= 0.7 => DependencyQualityScore::Good,
+            r if r >= 0.5 => DependencyQualityScore::Fair,
+            r if r >= 0.3 => DependencyQualityScore::Poor,
+            _ => DependencyQualityScore::Critical,
+        }
+    }
+
+    fn classify_import_type(&self, pattern_name: &str) -> ImportType {
+        match pattern_name {
+            "Standard Import" => ImportType::StandardImport,
+            "From Import" => ImportType::FromImport,
+            "Star Import" => ImportType::StarImport,
+            "Alias Import" => ImportType::AliasImport,
+            "Relative Import" => ImportType::RelativeImport,
+            _ => ImportType::StandardImport,
+        }
+    }
+
+    fn categorize_module(&self, module_name: &str) -> ModuleCategory {
+        // Standard library modules
+        let stdlib_modules = vec![
+            "os", "sys", "re", "json", "urllib", "http", "datetime", "collections",
+            "itertools", "functools", "pathlib", "typing", "asyncio", "threading",
+            "multiprocessing", "subprocess", "logging", "unittest", "sqlite3",
+        ];
+
+        let root_module = module_name.split('.').next().unwrap_or(module_name);
+
+        if stdlib_modules.contains(&root_module) {
+            ModuleCategory::StandardLibrary
+        } else if root_module.starts_with('.') {
+            ModuleCategory::Local
+        } else {
+            ModuleCategory::ThirdParty
+        }
+    }
+
+    fn detect_import_issues(&self, pattern_name: &str, module_name: &str, content: &str) -> Vec<ImportIssue> {
+        let mut issues = Vec::new();
+
+        if pattern_name == "Star Import" {
+            issues.push(ImportIssue::StarImportDangerous);
+        }
+
+        // Check for circular imports (simplified)
+        if content.contains(&format!("from {} import", module_name)) &&
+           content.contains(&format!("import {}", module_name)) {
+            issues.push(ImportIssue::CircularImport);
+        }
+
+        // Check for deprecated modules
+        let deprecated_modules = vec!["imp", "optparse", "platform.dist"];
+        if deprecated_modules.iter().any(|&dep| module_name.contains(dep)) {
+            issues.push(ImportIssue::DeprecatedImport);
+        }
+
+        issues
+    }
+
+    fn get_import_optimization_suggestions(&self, pattern_name: &str, module_name: &str) -> Vec<String> {
+        let mut suggestions = Vec::new();
+
+        if pattern_name == "Star Import" {
+            suggestions.push("Replace star import with specific imports".to_string());
+        }
+
+        if module_name == "pandas" || module_name == "numpy" {
+            suggestions.push("Consider lazy loading for large libraries".to_string());
+        }
+
+        suggestions
+    }
+
+    fn parse_license_type(&self, license_str: &str) -> LicenseType {
+        match license_str.to_lowercase().as_str() {
+            "mit" => LicenseType::MIT,
+            "apache-2.0" | "apache 2.0" => LicenseType::Apache2,
+            "gpl-2.0" | "gpl v2" => LicenseType::GPL2,
+            "gpl-3.0" | "gpl v3" => LicenseType::GPL3,
+            "bsd-2-clause" => LicenseType::BSD2Clause,
+            "bsd-3-clause" => LicenseType::BSD3Clause,
+            "lgpl" => LicenseType::LGPL,
+            "mozilla" | "mpl-2.0" => LicenseType::Mozilla,
+            "unlicense" => LicenseType::Unlicense,
+            _ => LicenseType::Unknown,
+        }
+    }
+
+    fn assess_license_compatibility(&self, license_type: &LicenseType) -> LicenseCompatibility {
+        match license_type {
+            LicenseType::MIT | LicenseType::Apache2 | LicenseType::BSD2Clause | LicenseType::BSD3Clause => {
+                LicenseCompatibility::Compatible
+            }
+            LicenseType::GPL2 | LicenseType::GPL3 => LicenseCompatibility::RequiresReview,
+            LicenseType::LGPL => LicenseCompatibility::ConditionallyCompatible,
+            _ => LicenseCompatibility::Unknown,
+        }
+    }
+
+    fn is_commercial_use_allowed(&self, license_type: &LicenseType) -> bool {
+        !matches!(license_type, LicenseType::GPL2 | LicenseType::GPL3)
+    }
+
+    fn is_distribution_allowed(&self, license_type: &LicenseType) -> bool {
+        !matches!(license_type, LicenseType::Proprietary)
+    }
+
+    fn is_modification_allowed(&self, license_type: &LicenseType) -> bool {
+        !matches!(license_type, LicenseType::Proprietary)
+    }
+
+    fn has_patent_grant(&self, license_type: &LicenseType) -> bool {
+        matches!(license_type, LicenseType::Apache2 | LicenseType::Mozilla)
+    }
+
+    fn is_copyleft(&self, license_type: &LicenseType) -> bool {
+        matches!(license_type, LicenseType::GPL2 | LicenseType::GPL3 | LicenseType::LGPL)
+    }
+
+    fn calculate_dependency_health_score(
+        &self,
+        requirements_files: &[RequirementsFileInfo],
+        dependencies: &[RequirementInfo],
+        issues: &[DependencyIssue],
+        vulnerabilities: &[SecurityVulnerabilityInfo],
+    ) -> i32 {
+        let mut score = 100;
+
+        // Deduct points for issues
+        for issue in issues {
+            let deduction = match issue.severity {
+                DependencyIssueSeverity::Critical => 20,
+                DependencyIssueSeverity::High => 15,
+                DependencyIssueSeverity::Medium => 10,
+                DependencyIssueSeverity::Low => 5,
+                DependencyIssueSeverity::Info => 2,
+            };
+            score -= deduction;
+        }
+
+        // Deduct points for vulnerabilities
+        for vuln in vulnerabilities {
+            let deduction = match vuln.severity {
+                SecurityVulnerabilitySeverity::Critical => 25,
+                SecurityVulnerabilitySeverity::High => 20,
+                SecurityVulnerabilitySeverity::Medium => 15,
+                SecurityVulnerabilitySeverity::Low => 10,
+                _ => 5,
+            };
+            score -= deduction;
+        }
+
+        // Add points for good practices
+        if !requirements_files.is_empty() {
+            score += 10;
+        }
+
+        let pinned_deps = dependencies.iter().filter(|d| d.version_spec != "*").count();
+        let pinned_ratio = if dependencies.is_empty() {
+            0.0
+        } else {
+            pinned_deps as f32 / dependencies.len() as f32
+        };
+
+        score += (pinned_ratio * 20.0) as i32;
+
+        score.max(0).min(100)
+    }
+
+    fn get_dependency_recommendations(
+        &self,
+        requirements_files: &[RequirementsFileInfo],
+        dependencies: &[RequirementInfo],
+        issues: &[DependencyIssue],
+        import_analysis: &[ImportAnalysisInfo],
+        vulnerabilities: &[SecurityVulnerabilityInfo],
+    ) -> Vec<String> {
+        let mut recommendations = Vec::new();
+
+        if requirements_files.is_empty() {
+            recommendations.push("Create a requirements.txt file to track dependencies".to_string());
+        }
+
+        let unpinned_count = dependencies.iter().filter(|d| d.version_spec == "*").count();
+        if unpinned_count > 0 {
+            recommendations.push(format!(
+                "Pin {} unpinned dependencies for reproducible builds",
+                unpinned_count
+            ));
+        }
+
+        if !vulnerabilities.is_empty() {
+            recommendations.push(format!(
+                "Update {} packages with known security vulnerabilities",
+                vulnerabilities.len()
+            ));
+        }
+
+        let unused_imports = import_analysis.iter().filter(|i| i.is_unused).count();
+        if unused_imports > 0 {
+            recommendations.push(format!("Remove {} unused import statements", unused_imports));
+        }
+
+        let star_imports = import_analysis.iter()
+            .filter(|i| matches!(i.import_type, ImportType::StarImport))
+            .count();
+        if star_imports > 0 {
+            recommendations.push(format!("Replace {} star imports with specific imports", star_imports));
+        }
+
+        let critical_issues = issues.iter()
+            .filter(|i| matches!(i.severity, DependencyIssueSeverity::Critical))
+            .count();
+        if critical_issues > 0 {
+            recommendations.push("Address critical dependency issues immediately".to_string());
+        }
+
+        recommendations.push("Consider using dependency scanning tools like Safety or Bandit".to_string());
+        recommendations.push("Set up automated dependency updates with Dependabot".to_string());
+
+        recommendations
     }
 
     /// Analyze async functions in detail
@@ -3200,5 +4237,243 @@ if __name__ == "__main__":
         
         // Should have recommendations
         assert!(!result.recommendations.is_empty());
+    }
+
+    #[test]
+    fn test_package_dependency_analysis() {
+        let analyzer = PythonAnalyzer::new();
+        let content = r#"
+import requests
+import pandas as pd
+from flask import Flask
+import numpy
+from django.db import models
+
+django>=3.2.0
+requests==2.28.1
+pandas>=1.5.0
+numpy
+flask==2.0.1
+"#;
+
+        let result = analyzer.analyze_package_dependencies(content).unwrap();
+        
+        // Should detect dependencies
+        assert!(!result.dependencies.is_empty());
+        
+        // Should detect imports
+        assert!(!result.import_analysis.is_empty());
+        assert!(result.import_analysis.len() >= 5);
+        
+        // Should have a reasonable health score
+        assert!(result.overall_health_score >= 0);
+        assert!(result.overall_health_score <= 100);
+        
+        // Should detect issues
+        assert!(!result.dependency_issues.is_empty());
+        
+        // Should provide recommendations
+        assert!(!result.recommendations.is_empty());
+    }
+
+    #[test]
+    fn test_dependency_issue_detection() {
+        let analyzer = PythonAnalyzer::new();
+        let content = r#"
+import requests
+import missing_package
+from some_package import *
+
+# Requirements:
+requests==2.28.1
+unused_package==1.0.0
+imp==1.0.0
+django
+"#;
+
+        let result = analyzer.analyze_package_dependencies(content).unwrap();
+        
+        // Should detect unused dependency
+        let unused_issues: Vec<_> = result.dependency_issues.iter()
+            .filter(|issue| matches!(issue.issue_type, DependencyIssueType::UnusedDependency))
+            .collect();
+        assert!(!unused_issues.is_empty());
+        
+        // Should detect missing dependency
+        let missing_issues: Vec<_> = result.dependency_issues.iter()
+            .filter(|issue| matches!(issue.issue_type, DependencyIssueType::MissingDependency))
+            .collect();
+        assert!(!missing_issues.is_empty());
+        
+        // Should detect unpinned version
+        let unpinned_issues: Vec<_> = result.dependency_issues.iter()
+            .filter(|issue| matches!(issue.issue_type, DependencyIssueType::UnpinnedVersion))
+            .collect();
+        assert!(!unpinned_issues.is_empty());
+        
+        // Should detect deprecated package
+        let deprecated_issues: Vec<_> = result.dependency_issues.iter()
+            .filter(|issue| matches!(issue.issue_type, DependencyIssueType::DeprecatedPackage))
+            .collect();
+        assert!(!deprecated_issues.is_empty());
+    }
+
+    #[test]
+    fn test_import_analysis() {
+        let analyzer = PythonAnalyzer::new();
+        let content = r#"
+import os
+import sys
+import requests
+import pandas as pd
+from flask import Flask, render_template
+from mymodule import function
+from .relative import local_function
+from package import *
+import numpy as np
+"#;
+
+        let result = analyzer.analyze_package_dependencies(content).unwrap();
+        
+        // Should categorize imports correctly
+        let stdlib_imports: Vec<_> = result.import_analysis.iter()
+            .filter(|imp| matches!(imp.module_category, ModuleCategory::StandardLibrary))
+            .collect();
+        assert!(stdlib_imports.len() >= 2); // os, sys
+        
+        let third_party_imports: Vec<_> = result.import_analysis.iter()
+            .filter(|imp| matches!(imp.module_category, ModuleCategory::ThirdParty))
+            .collect();
+        assert!(third_party_imports.len() >= 3); // requests, pandas, flask, numpy
+        
+        // Should detect star import issues
+        let star_import_issues: Vec<_> = result.import_analysis.iter()
+            .filter(|imp| imp.import_issues.contains(&ImportIssue::StarImportDangerous))
+            .collect();
+        assert!(!star_import_issues.is_empty());
+        
+        // Should detect different import types
+        let from_imports: Vec<_> = result.import_analysis.iter()
+            .filter(|imp| matches!(imp.import_type, ImportType::FromImport))
+            .collect();
+        assert!(!from_imports.is_empty());
+        
+        let alias_imports: Vec<_> = result.import_analysis.iter()
+            .filter(|imp| matches!(imp.import_type, ImportType::AliasImport))
+            .collect();
+        assert!(!alias_imports.is_empty());
+    }
+
+    #[test]
+    fn test_security_vulnerability_scanning() {
+        let analyzer = PythonAnalyzer::new();
+        let content = r#"
+import urllib3
+import requests
+import pyyaml
+
+urllib3==1.25.8
+requests==2.19.1
+pyyaml==5.3.1
+"#;
+
+        let result = analyzer.analyze_package_dependencies(content).unwrap();
+        
+        // Should detect security vulnerabilities
+        assert!(!result.security_vulnerabilities.is_empty());
+        
+        // Should have vulnerabilities for known packages
+        let urllib3_vulns: Vec<_> = result.security_vulnerabilities.iter()
+            .filter(|vuln| vuln.package_name == "urllib3")
+            .collect();
+        assert!(!urllib3_vulns.is_empty());
+        
+        // Should categorize severity correctly
+        let critical_vulns: Vec<_> = result.security_vulnerabilities.iter()
+            .filter(|vuln| matches!(vuln.severity, SecurityVulnerabilitySeverity::Critical))
+            .collect();
+        assert!(!critical_vulns.is_empty());
+        
+        // Should have CVE information
+        let vulns_with_cve: Vec<_> = result.security_vulnerabilities.iter()
+            .filter(|vuln| vuln.cve_id.is_some())
+            .collect();
+        assert!(!vulns_with_cve.is_empty());
+    }
+
+    #[test]
+    fn test_virtual_environment_detection() {
+        let analyzer = PythonAnalyzer::new();
+        let content = r#"
+# Virtual environment indicators
+python -m venv myenv
+source myenv/bin/activate
+pip install -r requirements.txt
+
+# Conda environment
+conda create -n myproject python=3.9
+conda activate myproject
+
+# Pipenv
+pipenv install requests
+pipenv shell
+"#;
+
+        let result = analyzer.analyze_package_dependencies(content).unwrap();
+        
+        // Should detect virtual environments
+        assert!(!result.virtual_environments.is_empty());
+        
+        // Should detect different environment types
+        let venv_envs: Vec<_> = result.virtual_environments.iter()
+            .filter(|env| matches!(env.env_type, VirtualEnvironmentType::Venv))
+            .collect();
+        assert!(!venv_envs.is_empty());
+        
+        let conda_envs: Vec<_> = result.virtual_environments.iter()
+            .filter(|env| matches!(env.env_type, VirtualEnvironmentType::Conda))
+            .collect();
+        assert!(!conda_envs.is_empty());
+        
+        let pipenv_envs: Vec<_> = result.virtual_environments.iter()
+            .filter(|env| matches!(env.env_type, VirtualEnvironmentType::Pipenv))
+            .collect();
+        assert!(!pipenv_envs.is_empty());
+    }
+
+    #[test]
+    fn test_license_analysis() {
+        let analyzer = PythonAnalyzer::new();
+        let content = r#"
+import requests
+import django
+import flask
+
+requests==2.28.1
+django==4.1.0
+flask==2.0.1
+"#;
+
+        let result = analyzer.analyze_package_dependencies(content).unwrap();
+        
+        // Should analyze licenses
+        assert!(!result.license_analysis.is_empty());
+        
+        // Should have license information for dependencies
+        assert_eq!(result.license_analysis.len(), result.dependencies.len());
+        
+        // Should assess compatibility
+        let compatible_licenses: Vec<_> = result.license_analysis.iter()
+            .filter(|license| matches!(license.compatibility, LicenseCompatibility::Compatible))
+            .collect();
+        assert!(!compatible_licenses.is_empty());
+        
+        // Should have license metadata
+        for license in &result.license_analysis {
+            assert!(!license.package_name.is_empty());
+            assert!(matches!(license.license_type, 
+                LicenseType::MIT | LicenseType::Apache2 | LicenseType::BSD2Clause | 
+                LicenseType::BSD3Clause | LicenseType::Unknown));
+        }
     }
 }

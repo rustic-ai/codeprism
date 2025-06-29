@@ -9,10 +9,10 @@ use tokio::process::{Child, Command};
 use tokio::sync::RwLock;
 use tokio::time::{timeout, Instant};
 
-use crate::protocol::jsonrpc::{JsonRpcRequest, JsonRpcMessage};
-use crate::protocol::messages::{InitializeParams, InitializeResult};
+use crate::protocol::jsonrpc::{JsonRpcMessage, JsonRpcRequest};
 #[cfg(test)]
 use crate::protocol::messages::ClientInfo;
+use crate::protocol::messages::{InitializeParams, InitializeResult};
 
 /// Configuration for MCP server instances
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -90,10 +90,7 @@ pub struct ServerComm {
 
 impl ServerComm {
     /// Create new server communication wrapper
-    pub fn new(
-        stdin: tokio::process::ChildStdin,
-        stdout: tokio::process::ChildStdout,
-    ) -> Self {
+    pub fn new(stdin: tokio::process::ChildStdin, stdout: tokio::process::ChildStdout) -> Self {
         Self {
             writer: BufWriter::new(stdin),
             reader: BufReader::new(stdout),
@@ -102,7 +99,10 @@ impl ServerComm {
     }
 
     /// Send initialization request
-    pub async fn initialize(&mut self, params: InitializeParams) -> Result<InitializeResult, anyhow::Error> {
+    pub async fn initialize(
+        &mut self,
+        params: InitializeParams,
+    ) -> Result<InitializeResult, anyhow::Error> {
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
             id: serde_json::Value::Number(serde_json::Number::from(self.next_request_id())),
@@ -112,11 +112,11 @@ impl ServerComm {
 
         self.send_request(request).await?;
         let response = self.receive_message().await?;
-        
+
         if response.is_error() {
             return Err(anyhow!("Initialize request failed: {:?}", response.error));
         }
-        
+
         if let Some(result) = response.result {
             Ok(serde_json::from_value(result)?)
         } else {
@@ -126,7 +126,8 @@ impl ServerComm {
 
     /// Generate next request ID
     pub fn next_request_id(&self) -> u64 {
-        self.request_id.fetch_add(1, std::sync::atomic::Ordering::SeqCst)
+        self.request_id
+            .fetch_add(1, std::sync::atomic::Ordering::SeqCst)
     }
 
     /// Send a JSON-RPC request
@@ -193,18 +194,19 @@ impl ServerProcess {
         }
 
         // Spawn the process
-        let mut process = cmd.spawn().map_err(|e| {
-            ServerError::StartupFailed(format!("Failed to spawn process: {}", e))
-        })?;
+        let mut process = cmd
+            .spawn()
+            .map_err(|e| ServerError::StartupFailed(format!("Failed to spawn process: {}", e)))?;
 
         let process_id = process
             .id()
             .ok_or_else(|| ServerError::StartupFailed("Failed to get process ID".to_string()))?;
 
         // Setup stdio communication
-        let stdin = process.stdin.take().ok_or_else(|| {
-            ServerError::StartupFailed("Failed to get process stdin".to_string())
-        })?;
+        let stdin = process
+            .stdin
+            .take()
+            .ok_or_else(|| ServerError::StartupFailed("Failed to get process stdin".to_string()))?;
         let stdout = process.stdout.take().ok_or_else(|| {
             ServerError::StartupFailed("Failed to get process stdout".to_string())
         })?;
@@ -254,7 +256,7 @@ impl ServerProcess {
         params: serde_json::Value,
     ) -> Result<JsonRpcMessage, ServerError> {
         let timeout_duration = Duration::from_secs(self.config.request_timeout);
-        
+
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
             id: serde_json::Value::Number(serde_json::Number::from(self.comm.next_request_id())),
@@ -265,7 +267,8 @@ impl ServerProcess {
         let request_result = timeout(timeout_duration, async {
             self.comm.send_request(request).await?;
             self.comm.receive_message().await
-        }).await;
+        })
+        .await;
 
         match request_result {
             Ok(Ok(message)) => {
@@ -460,7 +463,10 @@ impl ReferenceMcpServers {
     pub fn everything_server() -> ServerConfig {
         ServerConfig {
             command: "npx".to_string(),
-            args: vec!["-y".to_string(), "@modelcontextprotocol/server-everything".to_string()],
+            args: vec![
+                "-y".to_string(),
+                "@modelcontextprotocol/server-everything".to_string(),
+            ],
             working_dir: None,
             env_vars: HashMap::new(),
             startup_timeout: 30,
@@ -473,7 +479,10 @@ impl ReferenceMcpServers {
     pub fn memory_server() -> ServerConfig {
         ServerConfig {
             command: "npx".to_string(),
-            args: vec!["-y".to_string(), "@modelcontextprotocol/server-memory".to_string()],
+            args: vec![
+                "-y".to_string(),
+                "@modelcontextprotocol/server-memory".to_string(),
+            ],
             working_dir: None,
             env_vars: HashMap::new(),
             startup_timeout: 30,
@@ -486,7 +495,10 @@ impl ReferenceMcpServers {
     pub fn time_server() -> ServerConfig {
         ServerConfig {
             command: "npx".to_string(),
-            args: vec!["-y".to_string(), "@modelcontextprotocol/server-time".to_string()],
+            args: vec![
+                "-y".to_string(),
+                "@modelcontextprotocol/server-time".to_string(),
+            ],
             working_dir: None,
             env_vars: HashMap::new(),
             startup_timeout: 30,
@@ -533,7 +545,10 @@ impl ReferenceMcpServers {
     pub fn fetch_server() -> ServerConfig {
         ServerConfig {
             command: "npx".to_string(),
-            args: vec!["-y".to_string(), "@modelcontextprotocol/server-fetch".to_string()],
+            args: vec![
+                "-y".to_string(),
+                "@modelcontextprotocol/server-fetch".to_string(),
+            ],
             working_dir: None,
             env_vars: HashMap::new(),
             startup_timeout: 30,
@@ -558,7 +573,6 @@ impl ReferenceMcpServers {
 #[cfg(test)]
 mod tests {
     use super::*;
-
 
     #[tokio::test]
     async fn test_server_config_defaults() {
@@ -585,7 +599,10 @@ mod tests {
 
         let result = ServerProcess::spawn(config).await;
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), ServerError::ConfigurationError(_)));
+        assert!(matches!(
+            result.unwrap_err(),
+            ServerError::ConfigurationError(_)
+        ));
     }
 
     #[tokio::test]
@@ -603,7 +620,11 @@ mod tests {
 
         // First server should succeed (but will fail to actually start without real server)
         let result1 = manager
-            .start_server("test-server".to_string(), config.clone(), init_params.clone())
+            .start_server(
+                "test-server".to_string(),
+                config.clone(),
+                init_params.clone(),
+            )
             .await;
 
         // Second server with same ID should fail with configuration error
@@ -649,11 +670,19 @@ mod tests {
         // Test that all reference server configurations are valid
         let servers = ReferenceMcpServers::all_servers();
         assert!(!servers.is_empty());
-        
+
         for (name, config) in servers {
-            assert!(!config.command.is_empty(), "Server '{}' has empty command", name);
+            assert!(
+                !config.command.is_empty(),
+                "Server '{}' has empty command",
+                name
+            );
             assert!(!config.args.is_empty(), "Server '{}' has no args", name);
-            assert!(config.startup_timeout > 0, "Server '{}' has invalid timeout", name);
+            assert!(
+                config.startup_timeout > 0,
+                "Server '{}' has invalid timeout",
+                name
+            );
         }
     }
 
@@ -662,32 +691,40 @@ mod tests {
         // Test creating reference server configurations
         let memory_config = ReferenceMcpServers::memory_server();
         assert_eq!(memory_config.command, "npx");
-        assert!(memory_config.args.contains(&"@modelcontextprotocol/server-memory".to_string()));
+        assert!(memory_config
+            .args
+            .contains(&"@modelcontextprotocol/server-memory".to_string()));
 
         let time_config = ReferenceMcpServers::time_server();
         assert_eq!(time_config.command, "npx");
-        assert!(time_config.args.contains(&"@modelcontextprotocol/server-time".to_string()));
+        assert!(time_config
+            .args
+            .contains(&"@modelcontextprotocol/server-time".to_string()));
 
         let everything_config = ReferenceMcpServers::everything_server();
         assert_eq!(everything_config.command, "npx");
-        assert!(everything_config.args.contains(&"@modelcontextprotocol/server-everything".to_string()));
+        assert!(everything_config
+            .args
+            .contains(&"@modelcontextprotocol/server-everything".to_string()));
     }
 
     #[tokio::test]
     async fn test_filesystem_server_with_custom_path() {
         let temp_dir = "/tmp/mcp-test";
         let config = ReferenceMcpServers::filesystem_server(temp_dir);
-        
+
         assert_eq!(config.command, "npx");
         assert!(config.args.contains(&temp_dir.to_string()));
-        assert!(config.args.contains(&"@modelcontextprotocol/server-filesystem".to_string()));
+        assert!(config
+            .args
+            .contains(&"@modelcontextprotocol/server-filesystem".to_string()));
     }
 
     #[tokio::test]
     async fn test_git_server_with_repository() {
         let repo_path = ".";
         let config = ReferenceMcpServers::git_server(repo_path);
-        
+
         assert_eq!(config.command, "uvx");
         assert!(config.args.contains(&"mcp-server-git".to_string()));
         assert!(config.args.contains(&"--repository".to_string()));
@@ -697,11 +734,11 @@ mod tests {
     #[tokio::test]
     async fn test_server_manager_with_reference_servers() {
         let manager = ServerManager::with_defaults();
-        
+
         // Test adding multiple server configurations
         let servers = ReferenceMcpServers::all_servers();
         assert!(servers.len() >= 6); // Should have at least 6 reference servers
-        
+
         // Verify manager starts with no servers
         let active_servers = manager.list_servers().await;
         assert!(active_servers.is_empty());
@@ -714,7 +751,7 @@ mod tests {
     async fn test_real_memory_server_integration() {
         let manager = ServerManager::with_defaults();
         let config = ReferenceMcpServers::memory_server();
-        
+
         let init_params = InitializeParams {
             protocol_version: "2024-11-05".to_string(),
             capabilities: crate::protocol::capabilities::McpCapabilities::default(),
@@ -725,20 +762,20 @@ mod tests {
         };
 
         // Attempt to start memory server
-        let result = manager.start_server("memory".to_string(), config, init_params).await;
-        
+        let result = manager
+            .start_server("memory".to_string(), config, init_params)
+            .await;
+
         // If this succeeds, we have a working MCP server!
         if result.is_ok() {
             // Test basic communication
-            let ping_result = manager.send_request(
-                "memory",
-                "ping",
-                serde_json::Value::Null,
-            ).await;
-            
+            let ping_result = manager
+                .send_request("memory", "ping", serde_json::Value::Null)
+                .await;
+
             // Should get a response (might be error if ping not supported)
             assert!(ping_result.is_ok());
-            
+
             // Cleanup
             let _ = manager.stop_server("memory").await;
         } else {
@@ -754,7 +791,7 @@ mod tests {
         let manager = ServerManager::with_defaults();
         let temp_dir = "/tmp";
         let config = ReferenceMcpServers::filesystem_server(temp_dir);
-        
+
         let init_params = InitializeParams {
             protocol_version: "2024-11-05".to_string(),
             capabilities: crate::protocol::capabilities::McpCapabilities::default(),
@@ -764,18 +801,18 @@ mod tests {
             },
         };
 
-        let result = manager.start_server("filesystem".to_string(), config, init_params).await;
-        
+        let result = manager
+            .start_server("filesystem".to_string(), config, init_params)
+            .await;
+
         if result.is_ok() {
             // Test listing resources
-            let resources_result = manager.send_request(
-                "filesystem",
-                "resources/list",
-                serde_json::Value::Null,
-            ).await;
-            
+            let resources_result = manager
+                .send_request("filesystem", "resources/list", serde_json::Value::Null)
+                .await;
+
             assert!(resources_result.is_ok());
-            
+
             // Cleanup
             let _ = manager.stop_server("filesystem").await;
         } else {
@@ -787,14 +824,22 @@ mod tests {
     #[tokio::test]
     async fn test_server_lifecycle() {
         let manager = ServerManager::with_defaults();
-        
+
         // Test server not found error
-        let result = manager.send_request("nonexistent", "ping", serde_json::Value::Null).await;
-        assert!(matches!(result.unwrap_err(), ServerError::ConfigurationError(_)));
-        
+        let result = manager
+            .send_request("nonexistent", "ping", serde_json::Value::Null)
+            .await;
+        assert!(matches!(
+            result.unwrap_err(),
+            ServerError::ConfigurationError(_)
+        ));
+
         // Test stopping non-existent server
         let result = manager.stop_server("nonexistent").await;
-        assert!(matches!(result.unwrap_err(), ServerError::ConfigurationError(_)));
+        assert!(matches!(
+            result.unwrap_err(),
+            ServerError::ConfigurationError(_)
+        ));
     }
 
     // Test server configuration validation
@@ -802,16 +847,20 @@ mod tests {
     async fn test_server_config_edge_cases() {
         // Test configuration with environment variables
         let mut config = ReferenceMcpServers::memory_server();
-        config.env_vars.insert("NODE_ENV".to_string(), "test".to_string());
-        config.env_vars.insert("DEBUG".to_string(), "mcp:*".to_string());
-        
+        config
+            .env_vars
+            .insert("NODE_ENV".to_string(), "test".to_string());
+        config
+            .env_vars
+            .insert("DEBUG".to_string(), "mcp:*".to_string());
+
         assert!(!config.env_vars.is_empty());
         assert_eq!(config.env_vars.get("NODE_ENV"), Some(&"test".to_string()));
-        
+
         // Test configuration with working directory
         let mut config = ReferenceMcpServers::git_server(".");
         config.working_dir = Some("/tmp".to_string());
-        
+
         assert_eq!(config.working_dir, Some("/tmp".to_string()));
     }
 
@@ -819,15 +868,19 @@ mod tests {
     #[tokio::test]
     async fn test_reference_server_performance() {
         use std::time::Instant;
-        
+
         let start = Instant::now();
-        
+
         // Create configurations multiple times to test performance
         for _ in 0..1000 {
             let _configs = ReferenceMcpServers::all_servers();
         }
-        
+
         let duration = start.elapsed();
-        assert!(duration.as_millis() < 100, "Configuration creation too slow: {}ms", duration.as_millis());
+        assert!(
+            duration.as_millis() < 100,
+            "Configuration creation too slow: {}ms",
+            duration.as_millis()
+        );
     }
-} 
+}

@@ -81,4 +81,4 @@ pub enum ServerError {
     ShutdownTimeout,
     #[error("No available server instances")]
     NoAvailableInstances,
-} 
+}

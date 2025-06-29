@@ -12,6 +12,7 @@ pub mod executor;
 pub mod protocol;
 pub mod resources;
 pub mod server;
+pub mod tools;
 pub mod types;
 
 // Re-export main types for convenience
@@ -19,6 +20,7 @@ pub use config::TestConfig;
 pub use executor::TestExecutor;
 pub use protocol::{JsonRpcMessage, McpCapabilities, McpClient, ProtocolValidator};
 pub use resources::{ResourceTester, ResourceValidator};
+pub use tools::{ToolTester, ToolValidator};
 pub use types::{TestCase, TestResult, TestSuite, TestSuiteResult};
 
 use anyhow::Result;

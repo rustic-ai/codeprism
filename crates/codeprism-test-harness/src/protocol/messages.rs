@@ -36,7 +36,7 @@ pub enum McpMethod {
     #[serde(rename = "notifications/resources/updated")]
     ResourcesUpdated,
 
-    // Tools capability  
+    // Tools capability
     #[serde(rename = "tools/list")]
     ToolsList,
     #[serde(rename = "tools/call")]
@@ -517,14 +517,14 @@ pub struct CancelledParams {
 pub struct Resource {
     /// The URI of this resource
     pub uri: String,
-    
+
     /// A human-readable name for this resource
     pub name: String,
-    
+
     /// A description of what this resource contains
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    
+
     /// The MIME type of this resource, if known
     #[serde(skip_serializing_if = "Option::is_none", rename = "mimeType")]
     pub mime_type: Option<String>,
@@ -543,7 +543,7 @@ pub struct ListResourcesParams {
 pub struct ListResourcesResult {
     /// List of available resources
     pub resources: Vec<Resource>,
-    
+
     /// Optional cursor for pagination
     #[serde(skip_serializing_if = "Option::is_none", rename = "nextCursor")]
     pub next_cursor: Option<String>,
@@ -561,15 +561,15 @@ pub struct ReadResourceParams {
 pub struct ResourceContents {
     /// The URI of this resource
     pub uri: String,
-    
+
     /// The MIME type of this resource
     #[serde(rename = "mimeType")]
     pub mime_type: String,
-    
+
     /// The text content of the resource (if text-based)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub text: Option<String>,
-    
+
     /// The base64-encoded binary content (if binary)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub blob: Option<String>,
@@ -617,7 +617,7 @@ pub struct ResourceListChangedNotification {
 pub struct ResourceUpdatedNotification {
     /// The URI of the updated resource
     pub uri: String,
-    
+
     /// Optional metadata about the update
     #[serde(skip_serializing_if = "Option::is_none")]
     pub meta: Option<Value>,
@@ -629,15 +629,15 @@ pub struct ToolInputSchema {
     /// Schema type (typically "object")
     #[serde(rename = "type")]
     pub schema_type: String,
-    
+
     /// Schema properties
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<Value>,
-    
+
     /// Required properties
     #[serde(skip_serializing_if = "Option::is_none")]
     pub required: Option<Vec<String>>,
-    
+
     /// Additional schema properties
     #[serde(flatten)]
     pub additional: HashMap<String, Value>,
@@ -648,10 +648,10 @@ pub struct ToolInputSchema {
 pub struct Tool {
     /// The name of the tool
     pub name: String,
-    
+
     /// A description of what this tool does
     pub description: String,
-    
+
     /// JSON schema for the tool's input
     #[serde(rename = "inputSchema")]
     pub input_schema: ToolInputSchema,
@@ -670,7 +670,7 @@ pub struct ListToolsParams {
 pub struct ListToolsResult {
     /// List of available tools
     pub tools: Vec<Tool>,
-    
+
     /// Optional cursor for pagination
     #[serde(skip_serializing_if = "Option::is_none", rename = "nextCursor")]
     pub next_cursor: Option<String>,
@@ -681,7 +681,7 @@ pub struct ListToolsResult {
 pub struct CallToolParams {
     /// The name of the tool to call
     pub name: String,
-    
+
     /// Arguments to pass to the tool
     #[serde(skip_serializing_if = "Option::is_none")]
     pub arguments: Option<Value>,
@@ -693,11 +693,11 @@ pub struct ToolCallContent {
     /// Content type
     #[serde(rename = "type")]
     pub content_type: String,
-    
+
     /// Text content (for text type)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub text: Option<String>,
-    
+
     /// Additional content properties
     #[serde(flatten)]
     pub additional: HashMap<String, Value>,
@@ -708,7 +708,7 @@ pub struct ToolCallContent {
 pub struct CallToolResult {
     /// The result content
     pub content: Vec<ToolCallContent>,
-    
+
     /// Whether the tool completed successfully
     #[serde(skip_serializing_if = "Option::is_none", rename = "isError")]
     pub is_error: Option<bool>,
@@ -719,10 +719,10 @@ pub struct CallToolResult {
 pub struct Prompt {
     /// The name of the prompt
     pub name: String,
-    
+
     /// A description of what this prompt does
     pub description: String,
-    
+
     /// List of arguments this prompt accepts
     #[serde(skip_serializing_if = "Option::is_none")]
     pub arguments: Option<Vec<PromptArgument>>,
@@ -741,7 +741,7 @@ pub struct ListPromptsParams {
 pub struct ListPromptsResult {
     /// List of available prompts
     pub prompts: Vec<Prompt>,
-    
+
     /// Optional cursor for pagination
     #[serde(skip_serializing_if = "Option::is_none", rename = "nextCursor")]
     pub next_cursor: Option<String>,
@@ -752,13 +752,11 @@ pub struct ListPromptsResult {
 pub struct GetPromptParams {
     /// The name of the prompt to retrieve
     pub name: String,
-    
+
     /// Arguments to pass to the prompt
     #[serde(skip_serializing_if = "Option::is_none")]
     pub arguments: Option<HashMap<String, String>>,
 }
-
-
 
 /// Response from prompts/get
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -766,43 +764,41 @@ pub struct GetPromptResult {
     /// Description of the prompt
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    
+
     /// List of messages in the prompt
     pub messages: Vec<PromptMessage>,
 }
-
-
 
 /// Sampling request parameters
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct CreateMessageParams {
     /// Messages to include in sampling
     pub messages: Vec<SamplingMessage>,
-    
+
     /// Model preferences
     #[serde(skip_serializing_if = "Option::is_none", rename = "modelPreferences")]
     pub model_preferences: Option<ModelPreferences>,
-    
+
     /// System prompt
     #[serde(skip_serializing_if = "Option::is_none", rename = "systemPrompt")]
     pub system_prompt: Option<String>,
-    
+
     /// Whether to include context
     #[serde(skip_serializing_if = "Option::is_none", rename = "includeContext")]
     pub include_context: Option<String>,
-    
+
     /// Temperature for sampling
     #[serde(skip_serializing_if = "Option::is_none")]
     pub temperature: Option<f64>,
-    
+
     /// Maximum tokens
     #[serde(skip_serializing_if = "Option::is_none", rename = "maxTokens")]
     pub max_tokens: Option<u32>,
-    
+
     /// Stop sequences
     #[serde(skip_serializing_if = "Option::is_none", rename = "stopSequences")]
     pub stop_sequences: Option<Vec<String>>,
-    
+
     /// Additional metadata
     #[serde(skip_serializing_if = "Option::is_none")]
     pub metadata: Option<Value>,
@@ -814,13 +810,13 @@ pub struct CreateMessageResult {
     /// The model used for sampling
     #[serde(skip_serializing_if = "Option::is_none")]
     pub model: Option<String>,
-    
+
     /// The role of the response
     pub role: String,
-    
+
     /// The generated content
     pub content: SamplingContent,
-    
+
     /// Stop reason
     #[serde(skip_serializing_if = "Option::is_none", rename = "stopReason")]
     pub stop_reason: Option<String>,

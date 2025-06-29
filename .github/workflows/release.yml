@@ -412,13 +412,10 @@ jobs:
             fi
           }
           
-          # Publish crates in dependency order
-          echo "=== Phase 1: Independent crates ==="
-          publish_crate "codeprism-storage"
-          sleep 30
-          
-          publish_crate "codeprism-dev-tools"  
-          sleep 30
+                     # Publish crates in dependency order
+           echo "=== Phase 1: Independent crates ==="
+           publish_crate "codeprism-storage"
+           sleep 30
           
           echo "=== Phase 2: Language parsers (no dependencies) ==="
           publish_crate "codeprism-lang-js"
@@ -433,15 +430,19 @@ jobs:
           publish_crate "codeprism-lang-rust"
           sleep 30
           
-          echo "=== Phase 3: Core (depends on language parsers) ==="
-          publish_crate "codeprism-core"
-          sleep 30
-          
-          echo "=== Phase 4: Analysis (depends on core) ==="
+                     echo "=== Phase 3: Core (depends on language parsers) ==="
+           publish_crate "codeprism-core"
+           sleep 30
+           
+           echo "=== Phase 4: Dev Tools (depends on core) ==="
+           publish_crate "codeprism-dev-tools"
+           sleep 30
+           
+           echo "=== Phase 5: Analysis (depends on core) ==="
           publish_crate "codeprism-analysis"
           sleep 30
           
-          echo "=== Phase 5: MCP Server (depends on all) ==="
+                     echo "=== Phase 6: MCP Server (depends on all) ==="
           publish_crate "codeprism-mcp"
           
           echo "🎉 All crates published successfully!"

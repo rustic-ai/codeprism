@@ -1111,6 +1111,7 @@ pub enum LicenseCompatibility {
 struct DependencyPattern {
     name: String,
     pattern: Regex,
+    #[allow(dead_code)]
     file_type: RequirementsFileType,
     extraction_method: String,
 }
@@ -1191,7 +1192,7 @@ pub struct DataclassInfo {
 }
 
 /// Dataclass types
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum DataclassType {
     StandardDataclass,  // @dataclass
     PydanticModel,      // Pydantic BaseModel
@@ -1293,7 +1294,7 @@ pub struct FStringInfo {
 }
 
 /// F-string complexity levels
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum FStringComplexity {
     Simple,     // Basic variable interpolation
     Moderate,   // Simple expressions and formatting
@@ -1499,7 +1500,7 @@ pub struct ModernSyntaxInfo {
 }
 
 /// Modern syntax types
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ModernSyntaxType {
     WalrusOperator,         // := (Python 3.8+)
     PositionalOnlyParams,   // def func(a, /, b) (Python 3.8+)
@@ -1535,6 +1536,7 @@ pub enum FeatureComplexity {
 struct ModernFeaturePattern {
     name: String,
     pattern: Regex,
+    #[allow(dead_code)]
     feature_type: String,
     python_version: String,
     complexity: FeatureComplexity,
@@ -2134,31 +2136,31 @@ impl PythonAnalyzer {
             DependencyPattern {
                 name: "Standard Import".to_string(),
                 pattern: Regex::new(r"(?m)^import\s+([a-zA-Z_][a-zA-Z0-9_.]*)").unwrap(),
-                file_type: RequirementsFileType::RequirementsTxt, // Placeholder
+                file_type: RequirementsFileType::SetupPy, // Python source files
                 extraction_method: "import_statement".to_string(),
             },
             DependencyPattern {
                 name: "From Import".to_string(),
                 pattern: Regex::new(r"(?m)^from\s+([a-zA-Z_][a-zA-Z0-9_.]*)\s+import").unwrap(),
-                file_type: RequirementsFileType::RequirementsTxt, // Placeholder
+                file_type: RequirementsFileType::SetupPy, // Python source files
                 extraction_method: "import_statement".to_string(),
             },
             DependencyPattern {
                 name: "Star Import".to_string(),
                 pattern: Regex::new(r"(?m)^from\s+([a-zA-Z_][a-zA-Z0-9_.]*)\s+import\s+\*").unwrap(),
-                file_type: RequirementsFileType::RequirementsTxt, // Placeholder
+                file_type: RequirementsFileType::SetupPy, // Python source files
                 extraction_method: "import_statement".to_string(),
             },
             DependencyPattern {
                 name: "Alias Import".to_string(),
                 pattern: Regex::new(r"(?m)^import\s+([a-zA-Z_][a-zA-Z0-9_.]*)\s+as\s+").unwrap(),
-                file_type: RequirementsFileType::RequirementsTxt, // Placeholder
+                file_type: RequirementsFileType::SetupPy, // Python source files
                 extraction_method: "import_statement".to_string(),
             },
             DependencyPattern {
                 name: "Relative Import".to_string(),
                 pattern: Regex::new(r"(?m)^from\s+(\.+)([a-zA-Z_][a-zA-Z0-9_.]*)\s+import").unwrap(),
-                file_type: RequirementsFileType::RequirementsTxt, // Placeholder
+                file_type: RequirementsFileType::SetupPy, // Python source files
                 extraction_method: "import_statement".to_string(),
             },
         ];
@@ -3587,9 +3589,9 @@ impl PythonAnalyzer {
 
     /// Analyze pattern matching (Python 3.10+)
     fn analyze_pattern_matching(&self, content: &str, pattern_features: &mut Vec<PatternMatchingInfo>) {
-        if let Some(patterns) = self.modern_feature_patterns.get("pattern_matching") {
+        if let Some(_patterns) = self.modern_feature_patterns.get("pattern_matching") {
             // Look for complete match statements
-            let match_regex = Regex::new(r"match\s+[^:]+:(.*?)(?=\n\S|\n*$)").unwrap();
+            let match_regex = Regex::new(r"(?m)^(\s*)match\s+[^:]+:(.*?)$").unwrap();
             for captures in match_regex.captures_iter(content) {
                 let match_statement = captures.get(0).unwrap().as_str().to_string();
                 
@@ -3659,7 +3661,7 @@ impl PythonAnalyzer {
             let usage_pattern = self.analyze_decorator_usage_pattern(content, full_decorator);
             let complexity = self.assess_decorator_complexity(full_decorator);
             let is_factory = full_decorator.contains('(');
-            let is_async = content.contains(&format!("async def")) && content.contains(&decorator_name);
+                            let is_async = content.contains("async def") && content.contains(&decorator_name);
             let parameters = self.extract_decorator_parameters(full_decorator);
             let best_practices_score = self.score_decorator_best_practices(&decorator_category, &usage_pattern);
 
@@ -3715,7 +3717,7 @@ impl PythonAnalyzer {
         let mut minimum_version = "3.6".to_string(); // Default modern minimum
 
         // Check for version-specific features
-        for (category, patterns) in &self.modern_feature_patterns {
+        for patterns in self.modern_feature_patterns.values() {
             for pattern in patterns {
                 if pattern.pattern.is_match(content) {
                     let version_required = pattern.python_version.clone();
@@ -3856,6 +3858,7 @@ impl PythonAnalyzer {
     }
 
     /// Calculate overall modernity score
+    #[allow(clippy::too_many_arguments)]
     fn calculate_modernity_score(
         &self,
         dataclass_features: &[DataclassInfo],
@@ -3866,21 +3869,22 @@ impl PythonAnalyzer {
         decorator_features: &[ModernDecoratorInfo],
         modern_syntax_features: &[ModernSyntaxInfo],
     ) -> i32 {
-        let mut score = 50; // Base score
+        let mut score = 50i32; // Base score
 
         // Add points for modern features
-        score += (dataclass_features.len() * 8).min(20);
-        score += (context_manager_features.len() * 5).min(15);
-        score += (fstring_features.len() * 3).min(10);
-        score += (pattern_matching_features.len() * 10).min(20);
-        score += (generator_features.len() * 4).min(12);
-        score += (decorator_features.len() * 2).min(10);
-        score += (modern_syntax_features.len() * 3).min(13);
+        score += (dataclass_features.len() * 8).min(20) as i32;
+        score += (context_manager_features.len() * 5).min(15) as i32;
+        score += (fstring_features.len() * 3).min(10) as i32;
+        score += (pattern_matching_features.len() * 10).min(20) as i32;
+        score += (generator_features.len() * 4).min(12) as i32;
+        score += (decorator_features.len() * 2).min(10) as i32;
+        score += (modern_syntax_features.len() * 3).min(13) as i32;
 
         score.min(100)
     }
 
     /// Generate modern feature recommendations
+    #[allow(clippy::too_many_arguments)]
     fn get_modern_feature_recommendations(
         &self,
         dataclass_features: &[DataclassInfo],
@@ -4152,7 +4156,7 @@ impl PythonAnalyzer {
             score += 10; // Simple patterns are better
         }
         
-        score.min(100) as i32
+        score.min(100)
     }
 
     /// Generator helper methods
@@ -6169,6 +6173,6 @@ flask==2.0.1
         assert!(syntax_types.contains(&&ModernSyntaxType::GenericTypeHints));
 
         // Should detect Python 3.10+ as minimum version due to union operator
-        assert!(analysis.python_version_detected.minimum_version >= "3.10");
+        assert!(analysis.python_version_detected.minimum_version >= "3.10".to_string());
     }
 }

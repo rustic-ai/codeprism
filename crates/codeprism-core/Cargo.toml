@@ -55,17 +55,17 @@ lang-python = ["codeprism-lang-python"]
 lang-java = ["codeprism-lang-java"]
 
 [dependencies.codeprism-lang-js]
-version = "0.3.0"
+version = "0.3.4"
 path = "../codeprism-lang-js"
 optional = true
 
 [dependencies.codeprism-lang-python]
-version = "0.3.0"
+version = "0.3.4"
 path = "../codeprism-lang-python"
 optional = true
 
 [dependencies.codeprism-lang-java]
-version = "0.3.0"
+version = "0.3.4"
 path = "../codeprism-lang-java"
 optional = true
 

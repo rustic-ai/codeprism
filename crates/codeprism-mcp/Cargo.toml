@@ -39,10 +39,10 @@ futures = "0.3"
 chrono = { version = "0.4", features = ["serde"] }
 
 # Internal dependencies
-codeprism-core = { version = "0.3.1", path = "../codeprism-core" }
-codeprism-analysis = { version = "0.3.1", path = "../codeprism-analysis" }
-codeprism-lang-python = { version = "0.3.1", path = "../codeprism-lang-python" }
-codeprism-lang-js = { version = "0.3.1", path = "../codeprism-lang-js" }
+codeprism-core = { version = "0.3.3", path = "../codeprism-core" }
+codeprism-analysis = { version = "0.3.3", path = "../codeprism-analysis" }
+codeprism-lang-python = { version = "0.3.3", path = "../codeprism-lang-python" }
+codeprism-lang-js = { version = "0.3.3", path = "../codeprism-lang-js" }
 
 [dev-dependencies]
 tokio-test = "0.4"

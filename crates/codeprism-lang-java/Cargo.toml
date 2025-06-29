@@ -2,6 +2,11 @@
 name = "codeprism-lang-java"
 version.workspace = true
 edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Java language support for codeprism"
 
 [dependencies]
 anyhow = "1.0"

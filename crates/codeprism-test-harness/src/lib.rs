@@ -9,6 +9,7 @@
 
 pub mod config;
 pub mod executor;
+pub mod prompts;
 pub mod protocol;
 pub mod resources;
 pub mod server;
@@ -18,6 +19,7 @@ pub mod types;
 // Re-export main types for convenience
 pub use config::TestConfig;
 pub use executor::TestExecutor;
+pub use prompts::{PromptTester, PromptValidator};
 pub use protocol::{JsonRpcMessage, McpCapabilities, McpClient, ProtocolValidator};
 pub use resources::{ResourceTester, ResourceValidator};
 pub use tools::{ToolTester, ToolValidator};

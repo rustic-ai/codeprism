@@ -186,7 +186,11 @@ impl ToolTester {
                             "description": "Second operand"
                         }
                     })),
-                    required: Some(vec!["operation".to_string(), "a".to_string(), "b".to_string()]),
+                    required: Some(vec![
+                        "operation".to_string(),
+                        "a".to_string(),
+                        "b".to_string(),
+                    ]),
                     additional: HashMap::new(),
                 },
             },
@@ -213,11 +217,7 @@ impl ToolTester {
                 serde_json::json!({"message": "Hello, world!"}),
                 true,
             ),
-            (
-                "echo",
-                serde_json::json!({"invalid": "parameter"}),
-                false,
-            ),
+            ("echo", serde_json::json!({"invalid": "parameter"}), false),
             (
                 "calculate",
                 serde_json::json!({"operation": "add", "a": 5, "b": 3}),
@@ -264,7 +264,11 @@ impl ToolTester {
             additional: HashMap::new(),
         };
 
-        if let Err(e) = self.validator.validate_tool_result(&sample_call_result).await {
+        if let Err(e) = self
+            .validator
+            .validate_tool_result(&sample_call_result)
+            .await
+        {
             result
                 .validation_errors
                 .push(format!("Tool result validation failed: {}", e));
@@ -373,7 +377,11 @@ impl ToolValidator {
             if let Some(props_obj) = properties.as_object() {
                 for (param_name, param_value) in params_obj {
                     if let Some(prop_schema) = props_obj.get(param_name) {
-                        self.validate_parameter_against_schema(param_name, param_value, prop_schema)?;
+                        self.validate_parameter_against_schema(
+                            param_name,
+                            param_value,
+                            prop_schema,
+                        )?;
                     }
                 }
             }
@@ -399,7 +407,9 @@ impl ToolValidator {
                 Value::Null => "null",
             };
 
-            if expected_type != actual_type && !(expected_type == "integer" && actual_type == "number") {
+            if expected_type != actual_type
+                && !(expected_type == "integer" && actual_type == "number")
+            {
                 return Err(anyhow!(
                     "Parameter '{}' type mismatch: expected '{}', got '{}'",
                     param_name,
@@ -468,10 +478,7 @@ impl ToolValidator {
                 }
             }
             _ => {
-                return Err(anyhow!(
-                    "Unknown content type: {}",
-                    result.content_type
-                ));
+                return Err(anyhow!("Unknown content type: {}", result.content_type));
             }
         }
 
@@ -617,7 +624,10 @@ mod tests {
             additional: HashMap::new(),
         };
 
-        assert!(validator.validate_tool_result(&invalid_result).await.is_err());
+        assert!(validator
+            .validate_tool_result(&invalid_result)
+            .await
+            .is_err());
     }
 
     #[test]
@@ -635,11 +645,11 @@ mod tests {
     async fn test_tools_capability() {
         let tester = ToolTester::new();
         let result = tester.test_tools_capability().await.unwrap();
-        
+
         assert!(result.tools_discovered > 0);
         assert_eq!(result.tools_discovered, 2); // We have 2 sample tools
         assert!(result.schemas_validated > 0);
-        
+
         // Test should pass if no validation errors
         if !result.validation_errors.is_empty() {
             println!("Validation errors: {:?}", result.validation_errors);
@@ -668,4 +678,4 @@ mod tests {
             .validate_parameter_against_schema("operation", &invalid_value, &enum_schema)
             .is_err());
     }
-} 
+}

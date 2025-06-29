@@ -2673,20 +2673,186 @@ impl JavaAnalyzer {
     // (I'll add more specific implementations as needed)
 
     // Missing method implementations (stub versions)
-    fn analyze_field_access(&self, _content: &str, _class_name: &str) -> Result<Vec<FieldAccessInfo>> {
-        Ok(Vec::new())
+    fn analyze_field_access(&self, content: &str, class_name: &str) -> Result<Vec<FieldAccessInfo>> {
+        let mut field_access_info = Vec::new();
+        
+        // Extract class content
+        let class_content = self.extract_class_content(content, class_name);
+        
+        // Find field declarations
+        let field_regex = Regex::new(r"(?m)^\s*(public|protected|private|)\s*(static\s+)?(final\s+)?(\w+(?:<[^>]+>)?)\s+(\w+)\s*[=;]")?;
+        
+        for captures in field_regex.captures_iter(&class_content) {
+            let access_modifier = match captures.get(1).map(|m| m.as_str().trim()) {
+                Some("public") => AccessModifier::Public,
+                Some("protected") => AccessModifier::Protected,
+                Some("private") => AccessModifier::Private,
+                _ => AccessModifier::PackagePrivate,
+            };
+            
+            let is_static = captures.get(2).is_some();
+            let is_final = captures.get(3).is_some();
+            let field_type = captures.get(4).unwrap().as_str().to_string();
+            let field_name = captures.get(5).unwrap().as_str().to_string();
+            
+            // Check if field follows proper encapsulation (private with accessors)
+            let proper_encapsulation = match access_modifier {
+                AccessModifier::Private => {
+                    // Check if there are corresponding getter/setter methods
+                    let getter_pattern = format!(r"(?i)get{}", field_name);
+                    let setter_pattern = format!(r"(?i)set{}", field_name);
+                    let has_getter = Regex::new(&getter_pattern).unwrap().is_match(&class_content);
+                    let has_setter = Regex::new(&setter_pattern).unwrap().is_match(&class_content);
+                    has_getter || has_setter || is_final
+                },
+                AccessModifier::Public => false, // Public fields are not properly encapsulated
+                _ => true, // Protected and package-private can be considered proper in some contexts
+            };
+            
+            field_access_info.push(FieldAccessInfo {
+                field_name,
+                access_modifier,
+                is_final,
+                is_static,
+                field_type,
+                proper_encapsulation,
+            });
+        }
+        
+        Ok(field_access_info)
     }
 
-    fn analyze_getter_setters(&self, _content: &str, _class_name: &str) -> Result<Vec<GetterSetterInfo>> {
-        Ok(Vec::new())
+    fn analyze_getter_setters(&self, content: &str, class_name: &str) -> Result<Vec<GetterSetterInfo>> {
+        let mut getter_setter_info = Vec::new();
+        let class_content = self.extract_class_content(content, class_name);
+        
+        // Find potential field names from field declarations
+        let field_regex = Regex::new(r"(?m)^\s*(?:public|protected|private|)\s*(?:static\s+)?(?:final\s+)?\w+(?:<[^>]+>)?\s+(\w+)\s*[=;]")?;
+        let fields: Vec<String> = field_regex.captures_iter(&class_content)
+            .map(|cap| cap.get(1).unwrap().as_str().to_string())
+            .collect();
+        
+        for field_name in fields {
+            // Check for getter method
+            let getter_name = format!("get{}", field_name.chars().next().unwrap().to_uppercase().chain(field_name.chars().skip(1)).collect::<String>());
+            let getter_pattern = format!(r"(?m)^\s*(?:public|protected)\s+\w+(?:<[^>]+>)?\s+{}\s*\(\s*\)", getter_name);
+            let has_getter = Regex::new(&getter_pattern).unwrap().is_match(&class_content);
+            
+            // Check for setter method
+            let setter_name = format!("set{}", field_name.chars().next().unwrap().to_uppercase().chain(field_name.chars().skip(1)).collect::<String>());
+            let setter_pattern = format!(r"(?m)^\s*(?:public|protected)\s+(?:void|{0})\s+{1}\s*\([^)]+\)", class_name, setter_name);
+            let has_setter = Regex::new(&setter_pattern).unwrap().is_match(&class_content);
+            
+            // Check naming convention (camelCase starting with get/set)
+            let follows_naming_convention = getter_name.starts_with("get") && setter_name.starts_with("set");
+            
+            // Check for validation in setter (basic pattern matching)
+            let validation_in_setter = if has_setter {
+                let setter_content_pattern = format!(r"(?s){}[^{{]*\{{[^}}]*(?:if|throw|validate|check|assert)[^}}]*\}}", setter_name);
+                Regex::new(&setter_content_pattern).unwrap().is_match(&class_content)
+            } else {
+                false
+            };
+            
+            if has_getter || has_setter {
+                getter_setter_info.push(GetterSetterInfo {
+                    field_name,
+                    has_getter,
+                    has_setter,
+                    getter_name,
+                    setter_name,
+                    follows_naming_convention,
+                    validation_in_setter,
+                });
+            }
+        }
+        
+        Ok(getter_setter_info)
     }
 
-    fn calculate_data_hiding_score(&self, _field_access_analysis: &[FieldAccessInfo]) -> i32 {
-        75
+    fn calculate_data_hiding_score(&self, field_access_analysis: &[FieldAccessInfo]) -> i32 {
+        if field_access_analysis.is_empty() {
+            return 50; // Default score if no fields
+        }
+        
+        let total_fields = field_access_analysis.len() as i32;
+        let properly_encapsulated = field_access_analysis.iter()
+            .filter(|field| field.proper_encapsulation)
+            .count() as i32;
+        let private_fields = field_access_analysis.iter()
+            .filter(|field| matches!(field.access_modifier, AccessModifier::Private))
+            .count() as i32;
+        let public_fields = field_access_analysis.iter()
+            .filter(|field| matches!(field.access_modifier, AccessModifier::Public))
+            .count() as i32;
+        
+        // Calculate score based on encapsulation quality
+        let encapsulation_score = (properly_encapsulated * 100) / total_fields;
+        let access_modifier_score = ((private_fields * 2 + (total_fields - public_fields - private_fields)) * 100) / (total_fields * 2);
+        
+        // Weighted average: 60% encapsulation, 40% access modifiers
+        (encapsulation_score * 60 + access_modifier_score * 40) / 100
     }
 
-    fn analyze_immutability_patterns(&self, _content: &str, _class_name: &str) -> Result<Vec<ImmutabilityPattern>> {
-        Ok(Vec::new())
+    fn analyze_immutability_patterns(&self, content: &str, class_name: &str) -> Result<Vec<ImmutabilityPattern>> {
+        let mut immutability_patterns = Vec::new();
+        let class_content = self.extract_class_content(content, class_name);
+        
+        // Check if class is declared as final
+        let is_final_class = class_content.contains(&format!("final class {}", class_name));
+        
+        // Find all fields and check immutability
+        let field_regex = Regex::new(r"(?m)^\s*(?:public|protected|private|)\s*(?:static\s+)?(final\s+)?(\w+(?:<[^>]+>)?)\s+(\w+)\s*[=;]")?;
+        
+        let mut immutable_fields = Vec::new();
+        let mut mutable_fields = Vec::new();
+        
+        for captures in field_regex.captures_iter(&class_content) {
+            let is_final = captures.get(1).is_some();
+            let field_type = captures.get(2).unwrap().as_str();
+            let field_name = captures.get(3).unwrap().as_str().to_string();
+            
+            // Check if field type is inherently immutable (String, primitives, wrapper classes)
+            let is_immutable_type = matches!(field_type, 
+                "String" | "int" | "long" | "double" | "float" | "boolean" | "char" | "byte" | "short" |
+                "Integer" | "Long" | "Double" | "Float" | "Boolean" | "Character" | "Byte" | "Short" |
+                "BigInteger" | "BigDecimal" | "LocalDate" | "LocalDateTime" | "Instant"
+            ) || field_type.starts_with("Immutable");
+            
+            if is_final && is_immutable_type {
+                immutable_fields.push(field_name);
+            } else {
+                mutable_fields.push(field_name);
+            }
+        }
+        
+        // Determine immutability level
+        let total_fields = immutable_fields.len() + mutable_fields.len();
+        let immutability_level = if total_fields == 0 {
+            ImmutabilityLevel::FullyImmutable
+        } else {
+            let immutable_ratio = immutable_fields.len() as f32 / total_fields as f32;
+            match immutable_ratio {
+                1.0 => ImmutabilityLevel::FullyImmutable,
+                r if r >= 0.8 => ImmutabilityLevel::MostlyImmutable,
+                r if r >= 0.5 => ImmutabilityLevel::PartiallyImmutable,
+                _ => ImmutabilityLevel::Mutable,
+            }
+        };
+        
+        // Check for builder pattern usage
+        let builder_pattern_used = class_content.contains("builder()") || 
+                                  class_content.contains("Builder") ||
+                                  class_content.contains("build()");
+        
+        immutability_patterns.push(ImmutabilityPattern {
+            class_name: class_name.to_string(),
+            immutability_level,
+            immutable_fields,
+            builder_pattern_used,
+        });
+        
+        Ok(immutability_patterns)
     }
 
     fn find_containing_class(&self, content: &str, position: usize) -> Option<String> {
@@ -2734,14 +2900,266 @@ impl JavaAnalyzer {
         Ok(Vec::new())
     }
 
-    fn evaluate_srp(&self, _content: &str) -> i32 { 70 }
-    fn evaluate_ocp(&self, _content: &str) -> i32 { 70 }
-    fn evaluate_lsp(&self, _content: &str) -> i32 { 70 }
-    fn evaluate_isp(&self, _content: &str) -> i32 { 70 }
-    fn evaluate_dip(&self, _content: &str) -> i32 { 70 }
+    fn evaluate_srp(&self, content: &str) -> i32 { 
+        // Single Responsibility Principle - analyze if classes have single responsibility
+        let class_regex = Regex::new(r"class\s+(\w+)").unwrap();
+        let mut total_score = 0;
+        let mut class_count = 0;
+        
+        for captures in class_regex.captures_iter(content) {
+            let class_name = captures.get(1).unwrap().as_str();
+            let class_content = self.extract_class_content(content, class_name);
+            
+            // Count method responsibilities (different return types, different verb patterns)
+            let method_regex = Regex::new(r"(?:public|protected|private)\s+(?:\w+\s+)?(\w+)\s+(\w+)\s*\(").unwrap();
+            let methods: Vec<_> = method_regex.captures_iter(&class_content).collect();
+            
+            // Check for different types of operations (CRUD, validation, calculation, etc.)
+            let has_crud = methods.iter().any(|cap| {
+                let method_name = cap.get(2).unwrap().as_str();
+                method_name.starts_with("save") || method_name.starts_with("delete") || 
+                method_name.starts_with("create") || method_name.starts_with("update")
+            });
+            let has_validation = methods.iter().any(|cap| {
+                let method_name = cap.get(2).unwrap().as_str();
+                method_name.contains("validate") || method_name.contains("check")
+            });
+            let has_calculation = methods.iter().any(|cap| {
+                let method_name = cap.get(2).unwrap().as_str();
+                method_name.contains("calculate") || method_name.contains("compute")
+            });
+            let has_formatting = methods.iter().any(|cap| {
+                let method_name = cap.get(2).unwrap().as_str();
+                method_name.contains("format") || method_name.contains("toString")
+            });
+            
+            // Score based on number of different responsibilities
+            let responsibility_count = [has_crud, has_validation, has_calculation, has_formatting].iter().filter(|&&x| x).count();
+            let class_score = match responsibility_count {
+                0..=1 => 90,
+                2 => 70,
+                3 => 50,
+                _ => 30,
+            };
+            
+            total_score += class_score;
+            class_count += 1;
+        }
+        
+        if class_count > 0 { total_score / class_count } else { 70 }
+    }
+    
+    fn evaluate_ocp(&self, content: &str) -> i32 { 
+        // Open/Closed Principle - analyze use of interfaces, abstractions, and extension points
+        let mut score = 50; // Base score
+        
+        // Bonus for using interfaces
+        if content.contains("interface ") && content.contains("implements ") {
+            score += 20;
+        }
+        
+        // Bonus for using abstract classes
+        if content.contains("abstract class ") {
+            score += 15;
+        }
+        
+        // Bonus for strategy pattern or similar extensibility patterns
+        if content.contains("Strategy") || content.contains("Policy") || content.contains("Handler") {
+            score += 15;
+        }
+        
+        // Penalty for excessive switch statements (indicates violation of OCP)
+        let switch_count = content.matches("switch").count();
+        if switch_count > 2 {
+            score -= (switch_count as i32 - 2) * 5;
+        }
+        
+        score.min(100).max(0)
+    }
+    
+    fn evaluate_lsp(&self, content: &str) -> i32 { 
+        // Liskov Substitution Principle - analyze inheritance usage
+        let mut score = 70; // Base score
+        
+        // Look for proper use of @Override
+        let override_count = content.matches("@Override").count();
+        let method_count = Regex::new(r"(?:public|protected)\s+\w+\s+\w+\s*\(").unwrap().find_iter(content).count();
+        
+        if method_count > 0 {
+            let override_ratio = override_count as f32 / method_count as f32;
+            if override_ratio > 0.5 {
+                score += 15; // Good use of explicit overrides
+            }
+        }
+        
+        // Check for super() calls in overridden methods (good practice)
+        if content.contains("super.") {
+            score += 10;
+        }
+        
+        // Penalty for throwing new exceptions in overridden methods (LSP violation)
+        if content.contains("@Override") && content.contains("throw new") {
+            score -= 20;
+        }
+        
+        score.min(100).max(0)
+    }
+    
+    fn evaluate_isp(&self, content: &str) -> i32 { 
+        // Interface Segregation Principle - analyze interface design
+        let interface_regex = Regex::new(r"interface\s+(\w+)\s*\{([^}]+)\}").unwrap();
+        let mut total_score = 0;
+        let mut interface_count = 0;
+        
+        for captures in interface_regex.captures_iter(content) {
+            let interface_content = captures.get(2).unwrap().as_str();
+            let method_count = interface_content.matches("(").count(); // Rough method count
+            
+            // Score based on interface size (smaller interfaces are better)
+            let interface_score = match method_count {
+                1..=3 => 90, // Small, focused interfaces
+                4..=6 => 75, // Medium interfaces
+                7..=10 => 60, // Large interfaces
+                _ => 40, // Very large interfaces (ISP violation)
+            };
+            
+            total_score += interface_score;
+            interface_count += 1;
+        }
+        
+        if interface_count > 0 { total_score / interface_count } else { 70 }
+    }
+    
+    fn evaluate_dip(&self, content: &str) -> i32 { 
+        // Dependency Inversion Principle - analyze dependency injection and abstractions
+        let mut score = 50; // Base score
+        
+        // Bonus for dependency injection patterns
+        if content.contains("@Autowired") || content.contains("@Inject") {
+            score += 20;
+        }
+        
+        // Bonus for constructor injection (best practice)
+        if content.contains("@Autowired") && content.matches("public.*\\(.*\\)").count() > 0 {
+            score += 15;
+        }
+        
+        // Bonus for depending on interfaces rather than concrete classes
+        let interface_dependencies = Regex::new(r"@Autowired\s+(\w+)").unwrap()
+            .captures_iter(content)
+            .filter(|cap| {
+                let dep_type = cap.get(1).unwrap().as_str();
+                dep_type.ends_with("Service") || dep_type.ends_with("Repository") || 
+                dep_type.ends_with("Interface") || dep_type.chars().next().unwrap().is_uppercase()
+            })
+            .count();
+        
+        if interface_dependencies > 0 {
+            score += 15;
+        }
+        
+        // Penalty for new keyword usage (tight coupling)
+        let new_count = content.matches(" new ").count();
+        if new_count > 3 { // Allow some new usages for value objects, etc.
+            score -= (new_count as i32 - 3) * 3;
+        }
+        
+        score.min(100).max(0)
+    }
 
-    fn identify_solid_violations(&self, _content: &str) -> Result<Vec<SOLIDViolation>> {
-        Ok(Vec::new())
+    fn identify_solid_violations(&self, content: &str) -> Result<Vec<SOLIDViolation>> {
+        let mut violations = Vec::new();
+        
+        // Single Responsibility Principle violations
+        let class_regex = Regex::new(r"class\s+(\w+)")?;
+        for captures in class_regex.captures_iter(content) {
+            let class_name = captures.get(1).unwrap().as_str().to_string();
+            let class_content = self.extract_class_content(content, &class_name);
+            
+            // Check for classes with too many responsibilities
+            let crud_methods = ["save", "delete", "create", "update", "insert"];
+            let validation_methods = ["validate", "check", "verify"];
+            let calculation_methods = ["calculate", "compute", "process"];
+            let formatting_methods = ["format", "toString", "display"];
+            
+            let has_crud = crud_methods.iter().any(|&method| class_content.contains(method));
+            let has_validation = validation_methods.iter().any(|&method| class_content.contains(method));
+            let has_calculation = calculation_methods.iter().any(|&method| class_content.contains(method));
+            let has_formatting = formatting_methods.iter().any(|&method| class_content.contains(method));
+            
+            let responsibility_count = [has_crud, has_validation, has_calculation, has_formatting].iter().filter(|&&x| x).count();
+            
+            if responsibility_count > 2 {
+                violations.push(SOLIDViolation {
+                    principle: SOLIDPrinciple::SingleResponsibility,
+                    class_name: class_name.clone(),
+                    description: format!("Class {} has {} different types of responsibilities", class_name, responsibility_count),
+                    severity: if responsibility_count > 3 { ViolationSeverity::High } else { ViolationSeverity::Medium },
+                    recommendation: "Consider splitting this class into smaller, more focused classes".to_string(),
+                });
+            }
+        }
+        
+        // Open/Closed Principle violations - excessive switch statements
+        let switch_regex = Regex::new(r"switch\s*\([^)]+\)\s*\{([^}]+)\}")?;
+        for captures in switch_regex.captures_iter(content) {
+            let switch_content = captures.get(1).unwrap().as_str();
+            let case_count = switch_content.matches("case ").count();
+            
+            if case_count > 5 {
+                violations.push(SOLIDViolation {
+                    principle: SOLIDPrinciple::OpenClosed,
+                    class_name: "Switch statement".to_string(),
+                    description: format!("Large switch statement with {} cases", case_count),
+                    severity: ViolationSeverity::Medium,
+                    recommendation: "Consider using polymorphism or strategy pattern instead".to_string(),
+                });
+            }
+        }
+        
+        // Interface Segregation Principle violations - large interfaces
+        let interface_regex = Regex::new(r"interface\s+(\w+)\s*\{([^}]+)\}")?;
+        for captures in interface_regex.captures_iter(content) {
+            let interface_name = captures.get(1).unwrap().as_str().to_string();
+            let interface_content = captures.get(2).unwrap().as_str();
+            let method_count = interface_content.matches("(").count();
+            
+            if method_count > 7 {
+                violations.push(SOLIDViolation {
+                    principle: SOLIDPrinciple::InterfaceSegregation,
+                    class_name: interface_name.clone(),
+                    description: format!("Interface {} has {} methods, which is too many", interface_name, method_count),
+                    severity: if method_count > 10 { ViolationSeverity::High } else { ViolationSeverity::Medium },
+                    recommendation: "Consider splitting this interface into smaller, more focused interfaces".to_string(),
+                });
+            }
+        }
+        
+        // Dependency Inversion Principle violations - direct instantiation of concrete classes
+        let new_regex = Regex::new(r"new\s+([A-Z]\w+)\s*\(")?;
+        let mut new_violations = std::collections::HashMap::new();
+        
+        for captures in new_regex.captures_iter(content) {
+            let class_name = captures.get(1).unwrap().as_str().to_string();
+            // Skip common value objects and standard library classes
+            if !["String", "Integer", "Long", "Double", "Float", "Boolean", "ArrayList", "HashMap", "HashSet"].contains(&class_name.as_str()) {
+                *new_violations.entry(class_name).or_insert(0) += 1;
+            }
+        }
+        
+        for (class_name, count) in new_violations {
+            if count > 2 {
+                violations.push(SOLIDViolation {
+                    principle: SOLIDPrinciple::DependencyInversion,
+                    class_name: class_name.clone(),
+                    description: format!("Direct instantiation of {} appears {} times", class_name, count),
+                    severity: ViolationSeverity::Medium,
+                    recommendation: "Consider using dependency injection instead of direct instantiation".to_string(),
+                });
+            }
+        }
+        
+        Ok(violations)
     }
 
     fn detect_framework_version(&self, _content: &str, _framework_name: &str) -> Option<String> {

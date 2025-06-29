@@ -10,12 +10,15 @@
 pub mod config;
 pub mod executor;
 pub mod protocol;
+pub mod resources;
+pub mod server;
 pub mod types;
 
 // Re-export main types for convenience
 pub use config::TestConfig;
 pub use executor::TestExecutor;
-pub use protocol::{JsonRpcMessage, McpCapabilities, McpClient, McpConfig};
+pub use protocol::{JsonRpcMessage, McpCapabilities, McpClient, ProtocolValidator};
+pub use resources::{ResourceTester, ResourceValidator};
 pub use types::{TestCase, TestResult, TestSuite, TestSuiteResult};
 
 use anyhow::Result;

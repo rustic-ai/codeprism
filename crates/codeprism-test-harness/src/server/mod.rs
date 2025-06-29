@@ -6,13 +6,14 @@
 //! - Process isolation and resource management
 //! - Timeout handling and graceful shutdown
 
-pub mod manager;
-pub mod instance;
-pub mod rpc;
+// Module files will be added as needed for server management
+// pub mod manager;
+// pub mod instance;
+// pub mod rpc;
 
-pub use manager::ServerManager;
-pub use instance::ServerInstance;
-pub use rpc::{JsonRpcClient, JsonRpcRequest, JsonRpcResponse, JsonRpcError};
+// pub use manager::ServerManager;
+// pub use instance::ServerInstance;
+// pub use rpc::{JsonRpcClient, JsonRpcRequest, JsonRpcResponse, JsonRpcError};
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -71,7 +72,7 @@ pub enum ServerError {
     #[error("Communication timeout after {timeout:?}")]
     CommunicationTimeout { timeout: Duration },
     #[error("JSON-RPC error: {0}")]
-    JsonRpc(#[from] JsonRpcError),
+    JsonRpc(String),
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
     #[error("Serialization error: {0}")]

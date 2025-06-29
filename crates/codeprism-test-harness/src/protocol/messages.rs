@@ -10,42 +10,51 @@ use std::collections::HashMap;
 
 use super::capabilities::{McpCapabilities, ServerCapabilities};
 
-/// Standard MCP method names
-#[derive(Debug, Clone, PartialEq)]
+/// MCP protocol methods for different capabilities
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum McpMethod {
-    // Initialization
+    // Core protocol
+    #[serde(rename = "initialize")]
     Initialize,
+    #[serde(rename = "initialized")]
     Initialized,
+    #[serde(rename = "ping")]
+    Ping,
 
-    // Resources
+    // Resources capability
+    #[serde(rename = "resources/list")]
     ResourcesList,
+    #[serde(rename = "resources/read")]
     ResourcesRead,
+    #[serde(rename = "resources/subscribe")]
     ResourcesSubscribe,
+    #[serde(rename = "resources/unsubscribe")]
     ResourcesUnsubscribe,
+    #[serde(rename = "notifications/resources/list_changed")]
     ResourcesListChanged,
+    #[serde(rename = "notifications/resources/updated")]
+    ResourcesUpdated,
 
-    // Tools
+    // Tools capability  
+    #[serde(rename = "tools/list")]
     ToolsList,
+    #[serde(rename = "tools/call")]
     ToolsCall,
-    ToolsListChanged,
 
-    // Prompts
+    // Prompts capability
+    #[serde(rename = "prompts/list")]
     PromptsList,
+    #[serde(rename = "prompts/get")]
     PromptsGet,
-    PromptsListChanged,
 
-    // Sampling
+    // Sampling capability
+    #[serde(rename = "sampling/create_message")]
     SamplingCreateMessage,
 
-    // Logging
-    LoggingSetLevel,
-
-    // Notifications
-    NotificationsCancelled,
-    NotificationsProgress,
-
-    // Custom/Extension
-    Custom(String),
+    // Other method (for unknown methods)
+    #[serde(untagged)]
+    Other(String),
 }
 
 impl McpMethod {
@@ -54,22 +63,19 @@ impl McpMethod {
         match self {
             Self::Initialize => "initialize",
             Self::Initialized => "initialized",
+            Self::Ping => "ping",
             Self::ResourcesList => "resources/list",
             Self::ResourcesRead => "resources/read",
             Self::ResourcesSubscribe => "resources/subscribe",
             Self::ResourcesUnsubscribe => "resources/unsubscribe",
             Self::ResourcesListChanged => "notifications/resources/list_changed",
+            Self::ResourcesUpdated => "notifications/resources/updated",
             Self::ToolsList => "tools/list",
             Self::ToolsCall => "tools/call",
-            Self::ToolsListChanged => "notifications/tools/list_changed",
             Self::PromptsList => "prompts/list",
             Self::PromptsGet => "prompts/get",
-            Self::PromptsListChanged => "notifications/prompts/list_changed",
             Self::SamplingCreateMessage => "sampling/createMessage",
-            Self::LoggingSetLevel => "logging/setLevel",
-            Self::NotificationsCancelled => "notifications/cancelled",
-            Self::NotificationsProgress => "notifications/progress",
-            Self::Custom(method) => method,
+            Self::Other(method) => method,
         }
     }
 }
@@ -79,22 +85,19 @@ impl From<&str> for McpMethod {
         match method {
             "initialize" => Self::Initialize,
             "initialized" => Self::Initialized,
+            "ping" => Self::Ping,
             "resources/list" => Self::ResourcesList,
             "resources/read" => Self::ResourcesRead,
             "resources/subscribe" => Self::ResourcesSubscribe,
             "resources/unsubscribe" => Self::ResourcesUnsubscribe,
             "notifications/resources/list_changed" => Self::ResourcesListChanged,
+            "notifications/resources/updated" => Self::ResourcesUpdated,
             "tools/list" => Self::ToolsList,
             "tools/call" => Self::ToolsCall,
-            "notifications/tools/list_changed" => Self::ToolsListChanged,
             "prompts/list" => Self::PromptsList,
             "prompts/get" => Self::PromptsGet,
-            "notifications/prompts/list_changed" => Self::PromptsListChanged,
             "sampling/createMessage" => Self::SamplingCreateMessage,
-            "logging/setLevel" => Self::LoggingSetLevel,
-            "notifications/cancelled" => Self::NotificationsCancelled,
-            "notifications/progress" => Self::NotificationsProgress,
-            other => Self::Custom(other.to_string()),
+            other => Self::Other(other.to_string()),
         }
     }
 }
@@ -509,6 +512,320 @@ pub struct CancelledParams {
     pub reason: Option<String>,
 }
 
+/// Resource metadata as returned by resources/list
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Resource {
+    /// The URI of this resource
+    pub uri: String,
+    
+    /// A human-readable name for this resource
+    pub name: String,
+    
+    /// A description of what this resource contains
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    
+    /// The MIME type of this resource, if known
+    #[serde(skip_serializing_if = "Option::is_none", rename = "mimeType")]
+    pub mime_type: Option<String>,
+}
+
+/// Parameters for resources/list request
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ListResourcesParams {
+    /// Optional cursor for pagination
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cursor: Option<String>,
+}
+
+/// Response from resources/list
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ListResourcesResult {
+    /// List of available resources
+    pub resources: Vec<Resource>,
+    
+    /// Optional cursor for pagination
+    #[serde(skip_serializing_if = "Option::is_none", rename = "nextCursor")]
+    pub next_cursor: Option<String>,
+}
+
+/// Parameters for resources/read request
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ReadResourceParams {
+    /// The URI of the resource to read
+    pub uri: String,
+}
+
+/// Resource content for resources/read response
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ResourceContents {
+    /// The URI of this resource
+    pub uri: String,
+    
+    /// The MIME type of this resource
+    #[serde(rename = "mimeType")]
+    pub mime_type: String,
+    
+    /// The text content of the resource (if text-based)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub text: Option<String>,
+    
+    /// The base64-encoded binary content (if binary)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub blob: Option<String>,
+}
+
+/// Response from resources/read
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ReadResourceResult {
+    /// List of resource contents (usually one item)
+    pub contents: Vec<ResourceContents>,
+}
+
+/// Parameters for resources/subscribe request
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct SubscribeResourceParams {
+    /// The URI of the resource to subscribe to
+    pub uri: String,
+}
+
+/// Response from resources/subscribe (empty on success)
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct SubscribeResourceResult {}
+
+/// Parameters for resources/unsubscribe request
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct UnsubscribeResourceParams {
+    /// The URI of the resource to unsubscribe from
+    pub uri: String,
+}
+
+/// Response from resources/unsubscribe (empty on success)
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct UnsubscribeResourceResult {}
+
+/// Notification when resource list changes
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ResourceListChangedNotification {
+    /// Optional metadata about what changed
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub meta: Option<Value>,
+}
+
+/// Notification when a subscribed resource is updated
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ResourceUpdatedNotification {
+    /// The URI of the updated resource
+    pub uri: String,
+    
+    /// Optional metadata about the update
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub meta: Option<Value>,
+}
+
+/// Tool input schema definition
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ToolInputSchema {
+    /// Schema type (typically "object")
+    #[serde(rename = "type")]
+    pub schema_type: String,
+    
+    /// Schema properties
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<Value>,
+    
+    /// Required properties
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub required: Option<Vec<String>>,
+    
+    /// Additional schema properties
+    #[serde(flatten)]
+    pub additional: HashMap<String, Value>,
+}
+
+/// Tool metadata as returned by tools/list
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Tool {
+    /// The name of the tool
+    pub name: String,
+    
+    /// A description of what this tool does
+    pub description: String,
+    
+    /// JSON schema for the tool's input
+    #[serde(rename = "inputSchema")]
+    pub input_schema: ToolInputSchema,
+}
+
+/// Parameters for tools/list request
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ListToolsParams {
+    /// Optional cursor for pagination
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cursor: Option<String>,
+}
+
+/// Response from tools/list
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ListToolsResult {
+    /// List of available tools
+    pub tools: Vec<Tool>,
+    
+    /// Optional cursor for pagination
+    #[serde(skip_serializing_if = "Option::is_none", rename = "nextCursor")]
+    pub next_cursor: Option<String>,
+}
+
+/// Parameters for tools/call request
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CallToolParams {
+    /// The name of the tool to call
+    pub name: String,
+    
+    /// Arguments to pass to the tool
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub arguments: Option<Value>,
+}
+
+/// Tool call result content
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ToolCallContent {
+    /// Content type
+    #[serde(rename = "type")]
+    pub content_type: String,
+    
+    /// Text content (for text type)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub text: Option<String>,
+    
+    /// Additional content properties
+    #[serde(flatten)]
+    pub additional: HashMap<String, Value>,
+}
+
+/// Response from tools/call
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CallToolResult {
+    /// The result content
+    pub content: Vec<ToolCallContent>,
+    
+    /// Whether the tool completed successfully
+    #[serde(skip_serializing_if = "Option::is_none", rename = "isError")]
+    pub is_error: Option<bool>,
+}
+
+/// Prompt metadata as returned by prompts/list
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Prompt {
+    /// The name of the prompt
+    pub name: String,
+    
+    /// A description of what this prompt does
+    pub description: String,
+    
+    /// List of arguments this prompt accepts
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub arguments: Option<Vec<PromptArgument>>,
+}
+
+/// Parameters for prompts/list request
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ListPromptsParams {
+    /// Optional cursor for pagination
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cursor: Option<String>,
+}
+
+/// Response from prompts/list
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ListPromptsResult {
+    /// List of available prompts
+    pub prompts: Vec<Prompt>,
+    
+    /// Optional cursor for pagination
+    #[serde(skip_serializing_if = "Option::is_none", rename = "nextCursor")]
+    pub next_cursor: Option<String>,
+}
+
+/// Parameters for prompts/get request
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct GetPromptParams {
+    /// The name of the prompt to retrieve
+    pub name: String,
+    
+    /// Arguments to pass to the prompt
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub arguments: Option<HashMap<String, String>>,
+}
+
+
+
+/// Response from prompts/get
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct GetPromptResult {
+    /// Description of the prompt
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    
+    /// List of messages in the prompt
+    pub messages: Vec<PromptMessage>,
+}
+
+
+
+/// Sampling request parameters
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CreateMessageParams {
+    /// Messages to include in sampling
+    pub messages: Vec<SamplingMessage>,
+    
+    /// Model preferences
+    #[serde(skip_serializing_if = "Option::is_none", rename = "modelPreferences")]
+    pub model_preferences: Option<ModelPreferences>,
+    
+    /// System prompt
+    #[serde(skip_serializing_if = "Option::is_none", rename = "systemPrompt")]
+    pub system_prompt: Option<String>,
+    
+    /// Whether to include context
+    #[serde(skip_serializing_if = "Option::is_none", rename = "includeContext")]
+    pub include_context: Option<String>,
+    
+    /// Temperature for sampling
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub temperature: Option<f64>,
+    
+    /// Maximum tokens
+    #[serde(skip_serializing_if = "Option::is_none", rename = "maxTokens")]
+    pub max_tokens: Option<u32>,
+    
+    /// Stop sequences
+    #[serde(skip_serializing_if = "Option::is_none", rename = "stopSequences")]
+    pub stop_sequences: Option<Vec<String>>,
+    
+    /// Additional metadata
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<Value>,
+}
+
+/// Response from sampling/create_message
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CreateMessageResult {
+    /// The model used for sampling
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub model: Option<String>,
+    
+    /// The role of the response
+    pub role: String,
+    
+    /// The generated content
+    pub content: SamplingContent,
+    
+    /// Stop reason
+    #[serde(skip_serializing_if = "Option::is_none", rename = "stopReason")]
+    pub stop_reason: Option<String>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -523,7 +840,7 @@ mod tests {
         assert_eq!(method, McpMethod::Initialize);
 
         let custom: McpMethod = "custom/method".into();
-        assert_eq!(custom, McpMethod::Custom("custom/method".to_string()));
+        assert_eq!(custom, McpMethod::Other("custom/method".to_string()));
     }
 
     #[test]
@@ -588,5 +905,115 @@ mod tests {
         let json_str = serde_json::to_string(&result).unwrap();
         let parsed: ResourcesReadResult = serde_json::from_str(&json_str).unwrap();
         assert_eq!(result, parsed);
+    }
+
+    #[test]
+    fn test_resource_serialization() {
+        let resource = Resource {
+            uri: "file:///test.txt".to_string(),
+            name: "Test File".to_string(),
+            description: Some("A test file".to_string()),
+            mime_type: Some("text/plain".to_string()),
+        };
+
+        let json = serde_json::to_string(&resource).unwrap();
+        let deserialized: Resource = serde_json::from_str(&json).unwrap();
+        assert_eq!(resource, deserialized);
+    }
+
+    #[test]
+    fn test_resource_contents_serialization() {
+        let contents = ResourceContents {
+            uri: "file:///test.txt".to_string(),
+            mime_type: "text/plain".to_string(),
+            text: Some("Hello, world!".to_string()),
+            blob: None,
+        };
+
+        let json = serde_json::to_string(&contents).unwrap();
+        let deserialized: ResourceContents = serde_json::from_str(&json).unwrap();
+        assert_eq!(contents, deserialized);
+    }
+
+    #[test]
+    fn test_binary_resource_contents() {
+        let contents = ResourceContents {
+            uri: "file:///test.bin".to_string(),
+            mime_type: "application/octet-stream".to_string(),
+            text: None,
+            blob: Some("SGVsbG8gV29ybGQ=".to_string()), // "Hello World" in base64
+        };
+
+        let json = serde_json::to_string(&contents).unwrap();
+        let deserialized: ResourceContents = serde_json::from_str(&json).unwrap();
+        assert_eq!(contents, deserialized);
+    }
+
+    #[test]
+    fn test_list_resources_params() {
+        let params = ListResourcesParams { cursor: None };
+        let json = serde_json::to_string(&params).unwrap();
+        assert_eq!(json, "{}");
+
+        let params = ListResourcesParams {
+            cursor: Some("next_page".to_string()),
+        };
+        let json = serde_json::to_string(&params).unwrap();
+        assert!(json.contains("cursor"));
+    }
+
+    #[test]
+    fn test_resource_subscription_flow() {
+        // Subscribe
+        let subscribe_params = SubscribeResourceParams {
+            uri: "file:///watched.txt".to_string(),
+        };
+        let json = serde_json::to_string(&subscribe_params).unwrap();
+        assert!(json.contains("file:///watched.txt"));
+
+        // Notification
+        let notification = ResourceUpdatedNotification {
+            uri: "file:///watched.txt".to_string(),
+            meta: Some(serde_json::json!({"timestamp": "2024-01-01T00:00:00Z"})),
+        };
+        let json = serde_json::to_string(&notification).unwrap();
+        let deserialized: ResourceUpdatedNotification = serde_json::from_str(&json).unwrap();
+        assert_eq!(notification, deserialized);
+    }
+
+    #[test]
+    fn test_tool_messages() {
+        let tool = Tool {
+            name: "test_tool".to_string(),
+            description: "A test tool".to_string(),
+            input_schema: ToolInputSchema {
+                schema_type: "object".to_string(),
+                properties: Some(serde_json::json!({
+                    "message": {"type": "string"}
+                })),
+                required: Some(vec!["message".to_string()]),
+                additional: HashMap::new(),
+            },
+        };
+
+        let json = serde_json::to_string(&tool).unwrap();
+        let deserialized: Tool = serde_json::from_str(&json).unwrap();
+        assert_eq!(tool, deserialized);
+    }
+
+    #[test]
+    fn test_mcp_methods() {
+        assert_eq!(
+            serde_json::to_string(&McpMethod::ResourcesList).unwrap(),
+            "\"resources/list\""
+        );
+        assert_eq!(
+            serde_json::to_string(&McpMethod::ResourcesRead).unwrap(),
+            "\"resources/read\""
+        );
+        assert_eq!(
+            serde_json::to_string(&McpMethod::ToolsList).unwrap(),
+            "\"tools/list\""
+        );
     }
 }

@@ -10,6 +10,7 @@ members = [
     "crates/codeprism-lang-rust",
     "crates/codeprism-lang-java",
     "crates/codeprism-dev-tools",
+    "crates/codeprism-test-harness",
 ]
 
 [workspace.package]

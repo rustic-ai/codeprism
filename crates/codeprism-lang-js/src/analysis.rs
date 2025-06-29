@@ -580,7 +580,6 @@ pub struct WebSocketSecurityAssessment {
 
 /// WebSocket authentication methods
 #[derive(Debug, Clone)]
-#[allow(clippy::upper_case_acronyms)]
 pub enum WebSocketAuthMethod {
     Jwt,
     SessionBased,
@@ -612,7 +611,6 @@ pub enum ScalingStrategy {
 }
 
 /// Advanced Node.js pattern analysis (Phase 1.3)
-#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct AdvancedNodePatternInfo {
     pub pattern_type: AdvancedNodePatternType,
@@ -624,7 +622,6 @@ pub struct AdvancedNodePatternInfo {
 }
 
 /// Advanced Node.js pattern types
-#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum AdvancedNodePatternType {
     SecurityMiddleware,
@@ -637,7 +634,6 @@ pub enum AdvancedNodePatternType {
 }
 
 /// Middleware information
-#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct MiddlewareInfo {
     pub name: String,
@@ -649,7 +645,6 @@ pub struct MiddlewareInfo {
 }
 
 /// Middleware types
-#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum MiddlewareType {
     Authentication,
@@ -665,7 +660,6 @@ pub enum MiddlewareType {
 }
 
 /// Error handling pattern information
-#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct ErrorHandlingPattern {
     pub pattern_type: ErrorHandlingType,
@@ -676,7 +670,6 @@ pub struct ErrorHandlingPattern {
 }
 
 /// Error handling types
-#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum ErrorHandlingType {
     TryCatch,
@@ -689,7 +682,6 @@ pub enum ErrorHandlingType {
 }
 
 /// Error classification
-#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct ErrorClassification {
     pub error_type: ErrorType,
@@ -699,8 +691,6 @@ pub struct ErrorClassification {
 }
 
 /// Error types
-#[allow(dead_code)]
-#[allow(clippy::enum_variant_names)]
 #[derive(Debug, Clone)]
 pub enum ErrorType {
     ValidationError,
@@ -714,7 +704,6 @@ pub enum ErrorType {
 }
 
 /// Error severity levels
-#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum ErrorSeverity {
     Critical,
@@ -725,7 +714,6 @@ pub enum ErrorSeverity {
 }
 
 /// User impact levels
-#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum UserImpact {
     ServiceUnavailable,
@@ -735,7 +723,6 @@ pub enum UserImpact {
 }
 
 /// Performance indicator for advanced patterns
-#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct PerformanceIndicator {
     pub indicator_type: PerformanceType,
@@ -746,8 +733,6 @@ pub struct PerformanceIndicator {
 }
 
 /// Performance types
-#[allow(dead_code)]
-#[allow(clippy::upper_case_acronyms)]
 #[derive(Debug, Clone)]
 pub enum PerformanceType {
     Memory,
@@ -761,7 +746,6 @@ pub enum PerformanceType {
 }
 
 /// Performance metrics
-#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct PerformanceMetrics {
     pub response_time: Option<f64>,
@@ -772,7 +756,6 @@ pub struct PerformanceMetrics {
 }
 
 /// Microservice pattern information
-#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct MicroservicePattern {
     pub pattern_name: String,
@@ -783,21 +766,17 @@ pub struct MicroservicePattern {
 }
 
 /// Service communication patterns
-#[allow(dead_code)]
-#[allow(clippy::upper_case_acronyms)]
-#[allow(non_camel_case_types)]
 #[derive(Debug, Clone)]
 pub enum ServiceCommunication {
     Http,
     GraphQL,
-    gRPC,
+    GRpc,
     MessageQueue,
     EventStream,
     WebSocket,
 }
 
 /// Data consistency patterns
-#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum DataConsistency {
     Strong,
@@ -808,7 +787,6 @@ pub enum DataConsistency {
 }
 
 /// Fault tolerance patterns
-#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum FaultTolerance {
     CircuitBreaker,
@@ -820,7 +798,6 @@ pub enum FaultTolerance {
 }
 
 /// Monitoring levels
-#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum MonitoringLevel {
     Comprehensive,
@@ -830,7 +807,6 @@ pub enum MonitoringLevel {
 }
 
 /// Database pattern information
-#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct DatabasePattern {
     pub database_type: DatabaseType,
@@ -841,7 +817,6 @@ pub struct DatabasePattern {
 }
 
 /// Database types
-#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum DatabaseType {
     PostgreSQL,
@@ -855,8 +830,6 @@ pub enum DatabaseType {
 }
 
 /// Database access patterns
-#[allow(dead_code)]
-#[allow(clippy::upper_case_acronyms)]
 #[derive(Debug, Clone)]
 pub enum DatabaseAccessPattern {
     DirectAccess,
@@ -868,7 +841,6 @@ pub enum DatabaseAccessPattern {
 }
 
 /// Optimization levels
-#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum OptimizationLevel {
     High,
@@ -878,7 +850,6 @@ pub enum OptimizationLevel {
 }
 
 /// Connection management patterns
-#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum ConnectionManagement {
     Pool,
@@ -889,8 +860,6 @@ pub enum ConnectionManagement {
 }
 
 /// Transaction handling patterns
-#[allow(dead_code)]
-#[allow(clippy::upper_case_acronyms)]
 #[derive(Debug, Clone)]
 pub enum TransactionHandling {
     Acid,
@@ -907,18 +876,12 @@ pub struct JavaScriptAnalyzer {
     react_patterns: HashMap<String, Regex>,
     nodejs_patterns: HashMap<String, Regex>,
     typescript_patterns: HashMap<String, Regex>,
-    #[allow(dead_code)]
     vue_patterns: HashMap<String, Regex>,
-    #[allow(dead_code)]
     angular_patterns: HashMap<String, Regex>,
     // Phase 1.3 additions
-    #[allow(dead_code)]
     security_patterns: HashMap<String, Regex>,
-    #[allow(dead_code)]
     performance_patterns: HashMap<String, Regex>,
-    #[allow(dead_code)]
     websocket_patterns: HashMap<String, Regex>,
-    #[allow(dead_code)]
     advanced_typescript_patterns: HashMap<String, Regex>,
 }
 
@@ -1659,7 +1622,6 @@ impl JavaScriptAnalyzer {
         }
     }
 
-    #[allow(dead_code)]
     fn extract_route_parameters(&self, path: &str) -> Vec<String> {
         let param_pattern = Regex::new(r":(\w+)").unwrap();
         param_pattern

@@ -1,10 +1,5 @@
 //! AST mapper for converting Tree-sitter CST to Universal AST for Rust
 
-// Temporarily allow clippy warnings for Issue #77 - will be cleaned up in future issues
-#![allow(dead_code)]
-#![allow(unused_variables)]
-#![allow(unused_imports)]
-
 use crate::error::Result;
 use crate::types::{Edge, EdgeKind, Language, Node, NodeKind, Span};
 
@@ -17,7 +12,6 @@ use tree_sitter::{Tree, TreeCursor};
 pub struct LifetimeInfo {
     pub lifetimes: Vec<LifetimeAnnotation>,
     pub elision_applied: bool,
-    pub complexity_score: i32,
 }
 
 /// Individual lifetime annotation with detailed information
@@ -27,7 +21,6 @@ pub struct LifetimeAnnotation {
     pub span: Span,
     pub lifetime_type: LifetimeType,
     pub constraints: Vec<LifetimeConstraint>,
-    pub variance: LifetimeVariance,
 }
 
 /// Types of lifetime annotations
@@ -37,7 +30,6 @@ pub enum LifetimeType {
     Static,       // 'static
     Elided,       // '_
     HigherRanked, // for<'a>
-    Anonymous,    // anonymous lifetime
 }
 
 /// Lifetime constraint information
@@ -54,8 +46,6 @@ pub struct LifetimeConstraint {
 pub enum LifetimeConstraintType {
     Outlives, // 'a: 'b
     Contains, // 'a contains 'b
-    Equal,    // 'a = 'b
-    Subtype,  // 'a <: 'b
 }
 
 /// Source of a lifetime constraint
@@ -63,105 +53,6 @@ pub enum LifetimeConstraintType {
 pub enum ConstraintSource {
     Explicit, // Written in source code
     Inferred, // Inferred by borrow checker
-    Elision,  // From lifetime elision rules
-}
-
-/// Lifetime variance information
-#[derive(Debug, Clone, serde::Serialize)]
-pub enum LifetimeVariance {
-    Covariant,     // Can be shortened
-    Contravariant, // Can be lengthened
-    Invariant,     // Cannot be changed
-    Bivariant,     // Can be both shortened and lengthened
-}
-
-/// Enhanced lifetime usage tracking
-#[derive(Debug, Clone)]
-pub struct LifetimeUsageInfo {
-    pub name: String,
-    pub scope: LifetimeScope,
-    pub relationships: Vec<LifetimeRelationship>,
-    pub usage_patterns: Vec<LifetimeUsagePattern>,
-    pub complexity_metrics: LifetimeComplexityMetrics,
-}
-
-/// Scope where lifetime is defined/used
-#[derive(Debug, Clone)]
-pub enum LifetimeScope {
-    Function,
-    Struct,
-    Trait,
-    Impl,
-    Block,
-    Module,
-}
-
-/// Lifetime relationships between parameters and return types
-#[derive(Debug, Clone)]
-pub struct LifetimeRelationship {
-    pub relationship_type: LifetimeRelationshipType,
-    pub source: String,
-    pub target: String,
-    pub strength: RelationshipStrength,
-}
-
-/// Types of lifetime relationships
-#[derive(Debug, Clone)]
-pub enum LifetimeRelationshipType {
-    ParameterToReturn,
-    ParameterToParameter,
-    FieldToField,
-    InputToOutput,
-    SelfToReturn,
-}
-
-/// Strength of lifetime relationships
-#[derive(Debug, Clone)]
-pub enum RelationshipStrength {
-    Strong,   // Direct relationship
-    Weak,     // Indirect relationship
-    Inferred, // Compiler-inferred
-}
-
-/// Lifetime usage patterns
-#[derive(Debug, Clone)]
-pub struct LifetimeUsagePattern {
-    pub pattern_type: LifetimePatternType,
-    pub description: String,
-    pub suggestion: Option<String>,
-    pub severity: LifetimeSeverity,
-}
-
-/// Types of lifetime usage patterns
-#[derive(Debug, Clone)]
-pub enum LifetimePatternType {
-    Optimal,
-    Redundant,
-    Missing,
-    TooRestrictive,
-    Unclear,
-    Complex,
-}
-
-/// Severity of lifetime issues
-#[derive(Debug, Clone)]
-pub enum LifetimeSeverity {
-    Error,
-    Warning,
-    Info,
-    Suggestion,
-}
-
-/// Lifetime complexity metrics
-#[derive(Debug, Clone)]
-pub struct LifetimeComplexityMetrics {
-    pub total_lifetimes: usize,
-    pub explicit_lifetimes: usize,
-    pub elided_lifetimes: usize,
-    pub constraint_count: usize,
-    pub nesting_depth: usize,
-    pub hrtb_count: usize,
-    pub complexity_score: f32,
 }
 
 /// AST mapper for Rust
@@ -1244,7 +1135,6 @@ impl AstMapper {
                     lifetime_type: LifetimeType::Explicit,
                     constraints: self
                         .extract_lifetime_constraints(&type_text, lifetime_match.as_str()),
-                    variance: self.determine_lifetime_variance(&type_text, lifetime_match.as_str()),
                 });
             }
         }
@@ -1257,7 +1147,6 @@ impl AstMapper {
                 span,
                 lifetime_type: LifetimeType::Static,
                 constraints: vec![],
-                variance: LifetimeVariance::Covariant,
             });
         }
 
@@ -1271,7 +1160,6 @@ impl AstMapper {
                 span,
                 lifetime_type: LifetimeType::Elided,
                 constraints: vec![],
-                variance: LifetimeVariance::Covariant,
             });
         }
 
@@ -1287,7 +1175,6 @@ impl AstMapper {
                     span,
                     lifetime_type: LifetimeType::HigherRanked,
                     constraints: vec![],
-                    variance: LifetimeVariance::Invariant,
                 });
             }
         }
@@ -1295,7 +1182,6 @@ impl AstMapper {
         Ok(LifetimeInfo {
             lifetimes,
             elision_applied,
-            complexity_score: self.calculate_lifetime_complexity(&type_text),
         })
     }
 
@@ -1348,22 +1234,6 @@ impl AstMapper {
         constraints
     }
 
-    /// Determine lifetime variance from usage context
-    fn determine_lifetime_variance(
-        &self,
-        type_text: &str,
-        lifetime_name: &str,
-    ) -> LifetimeVariance {
-        // Simplified variance detection
-        if type_text.contains(&format!("&mut {}", lifetime_name)) {
-            LifetimeVariance::Invariant
-        } else if type_text.contains(&format!("&{}", lifetime_name)) {
-            LifetimeVariance::Covariant
-        } else {
-            LifetimeVariance::Contravariant
-        }
-    }
-
     /// Create span from text position within a node
     fn create_span_from_text_position(&self, node: &tree_sitter::Node, _position: usize) -> Span {
         // Simplified span creation - would need more sophisticated parsing for exact positions
@@ -1375,43 +1245,18 @@ impl AstMapper {
         Span::from_node(node)
     }
 
-    /// Calculate complexity score for lifetime usage
-    fn calculate_lifetime_complexity(&self, type_text: &str) -> i32 {
-        let mut complexity = 0;
-
-        // Count number of lifetime parameters
-        let lifetime_count = type_text.matches("'").count();
-        complexity += lifetime_count as i32;
-
-        // Add complexity for HRTB
-        if type_text.contains("for<") {
-            complexity += 3;
-        }
-
-        // Add complexity for nested references
-        let nesting_level = type_text.matches("&").count();
-        complexity += nesting_level as i32;
-
-        // Add complexity for trait bounds
-        if type_text.contains(":") {
-            complexity += 1;
-        }
-
-        complexity
-    }
-
     /// Create lifetime constraint edge
     fn create_lifetime_constraint_edge(
         &mut self,
-        lifetime_id: crate::types::NodeId,
-        constraint: LifetimeConstraint,
+        _lifetime_id: crate::types::NodeId,
+        _constraint: LifetimeConstraint,
     ) {
         // Create metadata for the constraint
-        let constraint_metadata = serde_json::json!({
-            "constraint_type": format!("{:?}", constraint.constraint_type),
-            "source_lifetime": constraint.source_lifetime,
-            "target_lifetime": constraint.target_lifetime,
-            "constraint_source": format!("{:?}", constraint.source)
+        let _constraint_metadata = serde_json::json!({
+            "constraint_type": format!("{:?}", _constraint.constraint_type),
+            "source_lifetime": _constraint.source_lifetime,
+            "target_lifetime": _constraint.target_lifetime,
+            "constraint_source": format!("{:?}", _constraint.source)
         });
 
         // Store constraint information as metadata

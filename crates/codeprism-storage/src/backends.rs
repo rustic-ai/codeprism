@@ -355,7 +355,6 @@ impl GraphStorage for FileGraphStorage {
 
 /// SQLite-based graph storage implementation
 pub struct SqliteGraphStorage {
-    #[allow(dead_code)]
     db_path: PathBuf,
     connection: Arc<AsyncMutex<Connection>>,
 }
@@ -462,7 +461,6 @@ impl SqliteGraphStorage {
     }
 
     /// Convert Unix timestamp to SystemTime
-    #[allow(dead_code)]
     fn timestamp_to_system_time(timestamp: i64) -> SystemTime {
         std::time::UNIX_EPOCH + std::time::Duration::from_secs(timestamp as u64)
     }

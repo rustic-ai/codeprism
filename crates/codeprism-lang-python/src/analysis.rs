@@ -400,7 +400,6 @@ pub struct TypeHintInfo {
 
 /// Type hint types
 #[derive(Debug, Clone)]
-#[allow(clippy::enum_variant_names)]
 pub enum TypeHintType {
     SimpleType(String),             // int, str, bool
     UnionType(Vec<String>),         // Union[str, int] or str | int
@@ -1116,7 +1115,6 @@ pub enum LicenseCompatibility {
 struct DependencyPattern {
     name: String,
     pattern: Regex,
-    #[allow(dead_code)]
     file_type: RequirementsFileType,
     extraction_method: String,
 }
@@ -1541,7 +1539,6 @@ pub enum FeatureComplexity {
 struct ModernFeaturePattern {
     name: String,
     pattern: Regex,
-    #[allow(dead_code)]
     feature_type: String,
     python_version: String,
     complexity: FeatureComplexity,
@@ -1571,7 +1568,6 @@ struct DecoratorPattern {
 
 #[derive(Debug, Clone)]
 struct MetaclassPattern {
-    #[allow(dead_code)]
     name: String,
     pattern: Regex,
     impact: String,
@@ -1579,7 +1575,6 @@ struct MetaclassPattern {
 
 #[derive(Debug, Clone)]
 struct SecurityPattern {
-    #[allow(dead_code)]
     name: String,
     pattern: Regex,
     vulnerability_type: VulnerabilityType,
@@ -1589,7 +1584,6 @@ struct SecurityPattern {
 
 #[derive(Debug, Clone)]
 struct PerformancePattern {
-    #[allow(dead_code)]
     name: String,
     pattern: Regex,
     optimization_type: OptimizationType,
@@ -1599,7 +1593,6 @@ struct PerformancePattern {
 
 #[derive(Debug, Clone)]
 struct FrameworkPattern {
-    #[allow(dead_code)]
     name: String,
     pattern: Regex,
     framework: String,
@@ -4016,7 +4009,6 @@ impl PythonAnalyzer {
     }
 
     /// Calculate overall modernity score
-    #[allow(clippy::too_many_arguments)]
     fn calculate_modernity_score(
         &self,
         dataclass_features: &[DataclassInfo],
@@ -4042,7 +4034,6 @@ impl PythonAnalyzer {
     }
 
     /// Generate modern feature recommendations
-    #[allow(clippy::too_many_arguments)]
     fn get_modern_feature_recommendations(
         &self,
         dataclass_features: &[DataclassInfo],

@@ -91,7 +91,6 @@ pub struct McpServer {
     /// Current server state
     state: ServerState,
     /// MCP protocol version
-    #[allow(dead_code)]
     protocol_version: String,
     /// Server information
     server_info: ServerInfo,

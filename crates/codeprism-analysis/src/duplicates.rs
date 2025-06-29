@@ -65,7 +65,6 @@ pub struct DuplicateSavings {
 /// Advanced duplicate analyzer with AST and semantic analysis
 pub struct DuplicateAnalyzer {
     /// Cache for parsed AST structures
-    #[allow(dead_code)]
     ast_cache: HashMap<String, AstNode>,
     /// Language-specific analyzers for different programming languages
     language_analyzers: HashMap<String, LanguageAnalyzer>,
@@ -76,7 +75,6 @@ pub struct DuplicateAnalyzer {
 #[derive(Debug, Clone)]
 struct LanguageAnalyzer {
     keywords: Vec<String>,
-    #[allow(dead_code)]
     operators: Vec<String>,
     control_structures: Vec<String>,
     comment_patterns: Vec<String>,

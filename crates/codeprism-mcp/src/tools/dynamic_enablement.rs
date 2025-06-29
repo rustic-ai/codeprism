@@ -41,7 +41,6 @@ pub struct RepositoryAnalysis {
 #[derive(Debug, Clone)]
 pub struct DynamicToolManager {
     /// Base tool configuration
-    #[allow(dead_code)]
     base_config: ToolConfiguration,
     /// Active enablement rules
     rules: Vec<EnablementRule>,

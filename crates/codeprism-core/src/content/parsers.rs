@@ -133,13 +133,10 @@ pub struct MarkdownParser {
     /// Regex for code blocks
     code_block_regex: Regex,
     /// Regex for inline code
-    #[allow(dead_code)]
     inline_code_regex: Regex,
     /// Regex for links
-    #[allow(dead_code)]
     link_regex: Regex,
     /// Regex for lists
-    #[allow(dead_code)]
     list_regex: Regex,
 }
 
@@ -432,7 +429,6 @@ impl ConfigParser {
     }
 
     /// Extract values from JSON recursively
-    #[allow(clippy::only_used_in_recursion)]
     fn extract_json_values(
         &self,
         value: &Value,

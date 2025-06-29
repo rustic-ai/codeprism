@@ -392,7 +392,6 @@ impl AstDiff {
     }
 
     /// Calculate tree depth
-    #[allow(clippy::only_used_in_recursion)]
     fn calculate_tree_depth(&self, node: &tree_sitter::Node) -> usize {
         let mut max_depth = 0;
         for i in 0..node.child_count() {

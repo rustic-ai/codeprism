@@ -104,7 +104,6 @@ impl Debouncer {
 /// File system watcher
 pub struct FileWatcher {
     watcher: RecommendedWatcher,
-    #[allow(dead_code)] // Used indirectly through Arc
     debouncer: Arc<Debouncer>,
     change_rx: mpsc::UnboundedReceiver<ChangeEvent>,
     watched_paths: Arc<Mutex<Vec<PathBuf>>>,

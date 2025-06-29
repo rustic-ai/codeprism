@@ -128,15 +128,18 @@ impl Default for DocumentParser {
 
 /// Markdown document parser
 pub struct MarkdownParser {
-    /// Regex for markdown headers
+    /// Regex for headers
     header_regex: Regex,
     /// Regex for code blocks
     code_block_regex: Regex,
     /// Regex for inline code
+    #[allow(dead_code)] // TODO: Will be used for inline code extraction
     inline_code_regex: Regex,
     /// Regex for links
+    #[allow(dead_code)] // TODO: Will be used for link extraction
     link_regex: Regex,
     /// Regex for lists
+    #[allow(dead_code)] // TODO: Will be used for list extraction
     list_regex: Regex,
 }
 
@@ -429,6 +432,7 @@ impl ConfigParser {
     }
 
     /// Extract values from JSON recursively
+    #[allow(clippy::only_used_in_recursion)] // Method is used recursively by design
     fn extract_json_values(
         &self,
         value: &Value,

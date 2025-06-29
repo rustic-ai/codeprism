@@ -494,6 +494,7 @@ impl AstVisualizer {
     }
 
     /// Recursively collect AST statistics
+    #[allow(clippy::only_used_in_recursion)] // Method is used recursively by design
     fn collect_statistics(&self, node: &Node, stats: &mut AstStatistics, depth: usize) {
         stats.total_nodes += 1;
         stats.max_depth = stats.max_depth.max(depth);
@@ -614,6 +615,7 @@ mod tests {
     use super::*;
     use tree_sitter::Parser;
 
+    #[allow(dead_code)] // Used in tests
     fn create_test_parser() -> Parser {
         // For testing, we'll use a simple language grammar
         // In real usage, this would use the appropriate language

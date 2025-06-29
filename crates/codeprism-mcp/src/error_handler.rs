@@ -148,6 +148,7 @@ pub type McpResult<T> = Result<T, McpError>;
 pub struct McpErrorHandler {
     metrics_collector: MetricsCollector,
     health_monitor: HealthMonitor,
+    #[allow(dead_code)] // TODO: Will be used for performance monitoring
     performance_monitor: PerformanceMonitor,
     resilience_manager: ResilienceManager,
     circuit_states: Arc<RwLock<std::collections::HashMap<String, CircuitState>>>,

@@ -3697,7 +3697,12 @@ impl JavaAnalyzer {
         let mut methods = Vec::new();
 
         // Find the interface definition
-        let interface_pattern = ["interface\\s+", interface_name, "\\s*(?:\\w+\\s+)*\\{([^}]+)\\}"].concat();
+        let interface_pattern = [
+            "interface\\s+",
+            interface_name,
+            "\\s*(?:\\w+\\s+)*\\{([^}]+)\\}",
+        ]
+        .concat();
         let interface_regex = Regex::new(&interface_pattern)?;
 
         if let Some(captures) = interface_regex.captures(content) {
@@ -3705,7 +3710,7 @@ impl JavaAnalyzer {
 
             // Extract method declarations
             let method_regex = Regex::new(
-                r"(?:default\s+|static\s+)?([\w<>\[\]]+)\s+(\w+)\s*\(([^)]*)\)(?:\s*\{[^}]*\})?;"
+                r"(?:default\s+|static\s+)?([\w<>\[\]]+)\s+(\w+)\s*\(([^)]*)\)(?:\s*\{[^}]*\})?;",
             )?;
 
             for captures in method_regex.captures_iter(interface_body) {
@@ -3769,7 +3774,7 @@ impl JavaAnalyzer {
             let regex = Regex::new(pattern)?;
             for m in regex.find_iter(content) {
                 let lambda_text = m.as_str();
-                
+
                 // Determine lambda type
                 let lambda_type = if lambda_text.contains("::") {
                     LambdaType::MethodReference
@@ -3789,8 +3794,8 @@ impl JavaAnalyzer {
                 };
 
                 // Check for variable capture
-                let captures_variables = lambda_text.contains("final") || 
-                    self.has_external_variable_references(content, m.start(), m.end());
+                let captures_variables = lambda_text.contains("final")
+                    || self.has_external_variable_references(content, m.start(), m.end());
 
                 let context = self.extract_usage_context(content, m.start());
 
@@ -5237,7 +5242,10 @@ impl JavaAnalyzer {
             features_by_version.push(VersionFeatureInfo {
                 feature_name: "Local variable type inference (var)".to_string(),
                 java_version: "10".to_string(),
-                usage_count: Regex::new(r"\bvar\s+\w+\s*=").unwrap().find_iter(content).count(),
+                usage_count: Regex::new(r"\bvar\s+\w+\s*=")
+                    .unwrap()
+                    .find_iter(content)
+                    .count(),
                 is_best_practice: true,
             });
             minimum_version = minimum_version.max(10);
@@ -5270,7 +5278,10 @@ impl JavaAnalyzer {
             features_by_version.push(VersionFeatureInfo {
                 feature_name: "Record classes".to_string(),
                 java_version: "14".to_string(),
-                usage_count: Regex::new(r"\brecord\s+\w+").unwrap().find_iter(content).count(),
+                usage_count: Regex::new(r"\brecord\s+\w+")
+                    .unwrap()
+                    .find_iter(content)
+                    .count(),
                 is_best_practice: true,
             });
             minimum_version = minimum_version.max(14);
@@ -5281,7 +5292,10 @@ impl JavaAnalyzer {
             features_by_version.push(VersionFeatureInfo {
                 feature_name: "Sealed classes".to_string(),
                 java_version: "17".to_string(),
-                usage_count: Regex::new(r"\bsealed\s+(?:class|interface)").unwrap().find_iter(content).count(),
+                usage_count: Regex::new(r"\bsealed\s+(?:class|interface)")
+                    .unwrap()
+                    .find_iter(content)
+                    .count(),
                 is_best_practice: true,
             });
             minimum_version = minimum_version.max(17);
@@ -5570,7 +5584,8 @@ impl JavaAnalyzer {
         let mut sealed_classes = Vec::new();
 
         // Find sealed class declarations
-        let sealed_class_regex = Regex::new(r"sealed\s+(class|interface)\s+(\w+).*permits\s+([\w\s,]+)")?;
+        let sealed_class_regex =
+            Regex::new(r"sealed\s+(class|interface)\s+(\w+).*permits\s+([\w\s,]+)")?;
 
         for captures in sealed_class_regex.captures_iter(content) {
             let sealing_type = match captures.get(1).unwrap().as_str() {
@@ -5614,13 +5629,12 @@ impl JavaAnalyzer {
             let has_yield = switch_body.contains("yield");
 
             // Check for pattern matching (simplified detection)
-            let pattern_matching = switch_body.contains("instanceof")
-                || switch_body.contains("when")
-                || arrow_syntax;
+            let pattern_matching =
+                switch_body.contains("instanceof") || switch_body.contains("when") || arrow_syntax;
 
             // Check exhaustiveness (simplified - would need more sophisticated analysis)
-            let exhaustiveness = switch_body.contains("default")
-                || (switch_body.matches("case").count() > 3);
+            let exhaustiveness =
+                switch_body.contains("default") || (switch_body.matches("case").count() > 3);
 
             switch_expressions.push(SwitchExpressionInfo {
                 switch_type,
@@ -5757,27 +5771,36 @@ impl JavaAnalyzer {
                 completable_futures.push(CompletableFutureInfo {
                     usage_pattern: CompletableFuturePattern::SimpleAsync,
                     chaining_complexity: self.count_completable_future_chains(content),
-                    exception_handling: content.contains("exceptionally") || content.contains("handle"),
+                    exception_handling: content.contains("exceptionally")
+                        || content.contains("handle"),
                     thread_pool_usage: self.extract_executor_usage(content),
                 });
             }
 
             // Chaining usage
-            if content.contains("thenApply") || content.contains("thenCompose") || content.contains("thenCombine") {
+            if content.contains("thenApply")
+                || content.contains("thenCompose")
+                || content.contains("thenCombine")
+            {
                 completable_futures.push(CompletableFutureInfo {
                     usage_pattern: CompletableFuturePattern::Chaining,
                     chaining_complexity: self.count_completable_future_chains(content),
-                    exception_handling: content.contains("exceptionally") || content.contains("handle"),
+                    exception_handling: content.contains("exceptionally")
+                        || content.contains("handle"),
                     thread_pool_usage: self.extract_executor_usage(content),
                 });
             }
 
             // Combining futures
-            if content.contains("allOf") || content.contains("anyOf") || content.contains("thenCombine") {
+            if content.contains("allOf")
+                || content.contains("anyOf")
+                || content.contains("thenCombine")
+            {
                 completable_futures.push(CompletableFutureInfo {
                     usage_pattern: CompletableFuturePattern::Combining,
                     chaining_complexity: self.count_completable_future_chains(content),
-                    exception_handling: content.contains("exceptionally") || content.contains("handle"),
+                    exception_handling: content.contains("exceptionally")
+                        || content.contains("handle"),
                     thread_pool_usage: self.extract_executor_usage(content),
                 });
             }
@@ -5934,7 +5957,13 @@ impl JavaAnalyzer {
 
     // Helper methods for the new implementations
     fn count_completable_future_chains(&self, content: &str) -> i32 {
-        let chain_methods = ["thenApply", "thenCompose", "thenAccept", "thenRun", "thenCombine"];
+        let chain_methods = [
+            "thenApply",
+            "thenCompose",
+            "thenAccept",
+            "thenRun",
+            "thenCombine",
+        ];
         chain_methods
             .iter()
             .map(|method| content.matches(method).count() as i32)
@@ -5965,7 +5994,7 @@ impl JavaAnalyzer {
         if content.contains(&format!("{}.parse(", api_name)) {
             patterns.push("String parsing".to_string());
         }
-        if content.contains(&format!(".format(")) {
+        if content.contains(".format(") {
             patterns.push("Time formatting".to_string());
         }
 
@@ -6062,7 +6091,10 @@ impl JavaAnalyzer {
         }])
     }
 
-    fn identify_optimization_opportunities(&self, _content: &str) -> Result<Vec<OptimizationOpportunity>> {
+    fn identify_optimization_opportunities(
+        &self,
+        _content: &str,
+    ) -> Result<Vec<OptimizationOpportunity>> {
         Ok(vec![OptimizationOpportunity {
             opportunity_type: OptimizationType::AlgorithmImprovement,
             potential_impact: ImpactLevel::Medium,
@@ -6072,7 +6104,12 @@ impl JavaAnalyzer {
         }])
     }
 
-    fn calculate_performance_score(&self, _algorithm_complexity: &[ComplexityAnalysis], _performance_issues: &[PerformanceIssue], _optimization_opportunities: &[OptimizationOpportunity]) -> i32 {
+    fn calculate_performance_score(
+        &self,
+        _algorithm_complexity: &[ComplexityAnalysis],
+        _performance_issues: &[PerformanceIssue],
+        _optimization_opportunities: &[OptimizationOpportunity],
+    ) -> i32 {
         75 // Default score
     }
 
@@ -6124,7 +6161,11 @@ impl JavaAnalyzer {
         vec!["findAll".to_string(), "save".to_string()]
     }
 
-    fn extract_query_methods(&self, _content: &str, _class_name: &str) -> Result<Vec<QueryMethodInfo>> {
+    fn extract_query_methods(
+        &self,
+        _content: &str,
+        _class_name: &str,
+    ) -> Result<Vec<QueryMethodInfo>> {
         Ok(vec![QueryMethodInfo {
             method_name: "findByName".to_string(),
             query_type: QueryType::DerivedQuery,
@@ -6237,7 +6278,10 @@ impl JavaAnalyzer {
         }]
     }
 
-    fn extract_gradle_dependencies_from_imports(&self, _content: &str) -> Vec<GradleDependencyInfo> {
+    fn extract_gradle_dependencies_from_imports(
+        &self,
+        _content: &str,
+    ) -> Vec<GradleDependencyInfo> {
         vec![GradleDependencyInfo {
             configuration: "implementation".to_string(),
             group: "org.springframework".to_string(),

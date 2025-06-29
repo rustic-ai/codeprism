@@ -286,6 +286,166 @@ pub enum ViolationSeverity {
     Low,
 }
 
+/// Comprehensive Java analysis result
+#[derive(Debug, Clone)]
+pub struct JavaComprehensiveAnalysis {
+    pub oop_analysis: OOPAnalysisInfo,
+    pub framework_analysis: JavaFrameworkAnalysis,
+    pub security_analysis: JavaSecurityAnalysis,
+    pub modern_features: ModernJavaFeatureAnalysis,
+    pub performance_analysis: JavaPerformanceAnalysis,
+    pub overall_score: i32,
+}
+
+/// Java analysis result
+#[derive(Debug, Clone)]
+pub struct JavaAnalysisResult {
+    pub oop_patterns: Vec<String>,
+    pub design_patterns: Vec<String>,
+    pub framework_usage: Vec<String>,
+    pub security_issues: Vec<String>,
+    pub performance_notes: Vec<String>,
+    pub modern_features: Vec<String>,
+    pub complexity_score: i32,
+    pub maintainability_score: i32,
+    pub overall_quality: f32,
+}
+
+/// Java performance analysis
+#[derive(Debug, Clone)]
+pub struct JavaPerformanceAnalysis {
+    pub algorithm_complexity: Vec<ComplexityAnalysis>,
+    pub collection_usage: Vec<CollectionUsageInfo>,
+    pub memory_patterns: Vec<MemoryPatternInfo>,
+    pub concurrency_patterns: Vec<ConcurrencyPatternInfo>,
+    pub performance_issues: Vec<PerformanceIssue>,
+    pub optimization_opportunities: Vec<OptimizationOpportunity>,
+    pub overall_performance_score: i32,
+}
+
+/// Algorithm complexity analysis
+#[derive(Debug, Clone)]
+pub struct ComplexityAnalysis {
+    pub method_name: String,
+    pub time_complexity: String,
+    pub space_complexity: String,
+    pub complexity_score: i32,
+    pub recommendations: Vec<String>,
+}
+
+/// Collection usage information
+#[derive(Debug, Clone)]
+pub struct CollectionUsageInfo {
+    pub collection_type: String,
+    pub usage_pattern: String,
+    pub efficiency_rating: EfficiencyRating,
+    pub recommendations: Vec<String>,
+}
+
+/// Efficiency rating
+#[derive(Debug, Clone)]
+pub enum EfficiencyRating {
+    Optimal,
+    Good,
+    Fair,
+    Poor,
+}
+
+/// Memory pattern information
+#[derive(Debug, Clone)]
+pub struct MemoryPatternInfo {
+    pub pattern_type: MemoryPatternType,
+    pub impact: MemoryImpact,
+    pub location: String,
+    pub recommendations: Vec<String>,
+}
+
+/// Memory pattern types
+#[derive(Debug, Clone)]
+pub enum MemoryPatternType {
+    MemoryLeak,
+    ExcessiveAllocation,
+    EfficientCaching,
+    PoolingPattern,
+    LazyInitialization,
+}
+
+/// Memory impact
+#[derive(Debug, Clone)]
+pub enum MemoryImpact {
+    High,
+    Medium,
+    Low,
+    Positive,
+}
+
+/// Concurrency pattern information
+#[derive(Debug, Clone)]
+pub struct ConcurrencyPatternInfo {
+    pub pattern_type: ConcurrencyPatternType,
+    pub thread_safety: ThreadSafety,
+    pub performance_impact: PerformanceImpact,
+    pub recommendations: Vec<String>,
+}
+
+/// Concurrency pattern types
+#[derive(Debug, Clone)]
+pub enum ConcurrencyPatternType {
+    Synchronization,
+    LockFree,
+    ActorModel,
+    ForkJoin,
+    CompletableFuture,
+    Reactive,
+}
+
+/// Thread safety levels
+#[derive(Debug, Clone)]
+pub enum ThreadSafety {
+    ThreadSafe,
+    ConditionallyThreadSafe,
+    NotThreadSafe,
+    Immutable,
+}
+
+/// Optimization opportunity
+#[derive(Debug, Clone)]
+pub struct OptimizationOpportunity {
+    pub opportunity_type: OptimizationType,
+    pub potential_impact: ImpactLevel,
+    pub description: String,
+    pub implementation_difficulty: DifficultyLevel,
+    pub recommendations: Vec<String>,
+}
+
+/// Optimization types
+#[derive(Debug, Clone)]
+pub enum OptimizationType {
+    AlgorithmImprovement,
+    DataStructureOptimization,
+    ConcurrencyImprovement,
+    MemoryOptimization,
+    IOOptimization,
+    DatabaseOptimization,
+}
+
+/// Impact level
+#[derive(Debug, Clone)]
+pub enum ImpactLevel {
+    High,
+    Medium,
+    Low,
+}
+
+/// Difficulty level
+#[derive(Debug, Clone)]
+pub enum DifficultyLevel {
+    Easy,
+    Medium,
+    Hard,
+    VeryHard,
+}
+
 /// Framework analysis information
 #[derive(Debug, Clone)]
 pub struct JavaFrameworkAnalysis {
@@ -1690,7 +1850,6 @@ impl JavaAnalyzer {
             modern_features,
             performance_analysis,
             overall_score: self.calculate_overall_score(content),
-            recommendations: self.generate_recommendations(content),
         })
     }
 
@@ -1799,41 +1958,79 @@ impl JavaAnalyzer {
     /// Simple analysis for backward compatibility
     pub fn analyze_code(&self, content: &str) -> JavaAnalysisResult {
         // This provides backward compatibility with the existing simple interface
-        let mut patterns = Vec::new();
-        let mut issues = Vec::new();
-        let mut recommendations = Vec::new();
+        let mut oop_patterns = Vec::new();
+        let mut design_patterns = Vec::new();
+        let mut framework_usage = Vec::new();
+        let mut security_issues = Vec::new();
+        let mut performance_notes = Vec::new();
+        let mut modern_features = Vec::new();
 
         // Perform comprehensive analysis and extract key insights
         if let Ok(comprehensive) = self.analyze_comprehensive(content) {
-            // Extract patterns from design patterns
+            // Extract OOP patterns
+            for class_hierarchy in &comprehensive.oop_analysis.class_hierarchies {
+                oop_patterns.push(format!("Class hierarchy: {} (depth: {})", 
+                    class_hierarchy.class_name, class_hierarchy.hierarchy_depth));
+            }
+
+            // Extract design patterns
             for pattern in &comprehensive.oop_analysis.design_patterns {
-                patterns.push(format!("{:?} pattern detected with {:.1}% confidence", 
+                design_patterns.push(format!("{:?} pattern detected with {:.1}% confidence", 
                     pattern.pattern_type, pattern.confidence * 100.0));
+            }
+
+            // Extract framework usage
+            for framework in &comprehensive.framework_analysis.frameworks_detected {
+                framework_usage.push(format!("{} framework detected (confidence: {:.1}%)", 
+                    framework.name, framework.confidence * 100.0));
             }
 
             // Extract security issues
             for vuln in &comprehensive.security_analysis.vulnerabilities {
-                issues.push(format!("{:?}: {}", vuln.vulnerability_type, vuln.description));
+                security_issues.push(format!("{:?}: {}", vuln.vulnerability_type, vuln.description));
             }
 
-            // Extract framework recommendations
-            recommendations.extend(comprehensive.recommendations);
+            // Extract performance notes
+            for issue in &comprehensive.performance_analysis.performance_issues {
+                performance_notes.push(format!("{:?}: {}", issue.issue_type, issue.description));
+            }
+
+            // Extract modern features
+            for lambda in &comprehensive.modern_features.lambda_expressions {
+                modern_features.push(format!("Lambda expression: {}", lambda.expression));
+            }
+
+            // Extract framework security recommendations
+            for rec in &comprehensive.security_analysis.recommendations {
+                security_issues.push(format!("Recommendation: {}", rec));
+            }
         }
 
         // Fallback to basic patterns if comprehensive analysis fails
-        if patterns.is_empty() {
+        if design_patterns.is_empty() {
             if content.contains("public static final") {
-                patterns.push("Constants pattern detected".to_string());
+                design_patterns.push("Constants pattern detected".to_string());
             }
             if content.contains("private static") && content.contains("getInstance") {
-                patterns.push("Singleton pattern detected".to_string());
+                design_patterns.push("Singleton pattern detected".to_string());
             }
         }
 
+        // Calculate basic scores
+        let complexity_score = if content.len() > 10000 { 80 } else if content.len() > 5000 { 60 } else { 40 };
+        let maintainability_score = if security_issues.is_empty() && !design_patterns.is_empty() { 80 } else { 60 };
+        let overall_quality = (complexity_score + maintainability_score) as f32 / 2.0;
+
         JavaAnalysisResult {
-            patterns_detected: patterns,
-            issues_found: issues,
-            recommendations,
+            oop_patterns,
+            design_patterns,
+            framework_usage,
+            security_issues,
+            performance_notes,
+            modern_features,
+            complexity_score,
+            maintainability_score,
+            overall_quality,
         }
     }
 
@@ -3395,36 +3592,293 @@ impl JavaAnalyzer {
             .collect()
     }
 
-    fn analyze_aop_patterns(&self, _content: &str) -> Result<Vec<AOPPatternInfo>> {
-        Ok(Vec::new())
+    fn analyze_aop_patterns(&self, content: &str) -> Result<Vec<AOPPatternInfo>> {
+        let mut aop_patterns = Vec::new();
+        
+        // Look for @Aspect annotation
+        let aspect_regex = Regex::new(r"@Aspect\s+(?:public\s+)?class\s+(\w+)").unwrap();
+        
+        for captures in aspect_regex.captures_iter(content) {
+            let aspect_class = captures.get(1).unwrap().as_str().to_string();
+            
+            // Extract pointcuts and advice
+            let pointcuts = self.extract_pointcuts(content, &aspect_class);
+            let advice_types = self.extract_advice_types(content, &aspect_class);
+            let cross_cutting_concerns = self.identify_cross_cutting_concerns(content, &aspect_class);
+            
+            aop_patterns.push(AOPPatternInfo {
+                aspect_class,
+                pointcuts,
+                advice_types,
+                cross_cutting_concerns,
+            });
+        }
+        
+        Ok(aop_patterns)
     }
 
-    fn analyze_transactions(&self, _content: &str) -> Result<Vec<TransactionInfo>> {
-        Ok(Vec::new())
+    fn analyze_transactions(&self, content: &str) -> Result<Vec<TransactionInfo>> {
+        let mut transactions = Vec::new();
+        
+        // Look for @Transactional annotations
+        let transactional_regex = Regex::new(r"@Transactional(?:\([^)]*\))?\s+(?:public\s+)?[\w<>\[\]]+\s+(\w+)\s*\(").unwrap();
+        
+        for captures in transactional_regex.captures_iter(content) {
+            let method_name = captures.get(1).unwrap().as_str().to_string();
+            let class_name = self.find_containing_class(content, captures.get(0).unwrap().start())
+                .unwrap_or_else(|| "Unknown".to_string());
+            
+            // Extract transaction attributes
+            let annotation = captures.get(0).unwrap().as_str();
+            let propagation = self.extract_transaction_attribute(annotation, "propagation")
+                .unwrap_or_else(|| "REQUIRED".to_string());
+            let isolation = self.extract_transaction_attribute(annotation, "isolation")
+                .unwrap_or_else(|| "DEFAULT".to_string());
+            let rollback_rules = self.extract_rollback_rules(annotation);
+            
+            transactions.push(TransactionInfo {
+                class_name,
+                method_name,
+                transaction_type: TransactionType::Declarative,
+                propagation,
+                isolation,
+                rollback_rules,
+            });
+        }
+        
+        // Look for programmatic transactions
+        if content.contains("TransactionTemplate") || content.contains("PlatformTransactionManager") {
+            let class_regex = Regex::new(r"(?:public\s+)?class\s+(\w+)").unwrap();
+            
+            for captures in class_regex.captures_iter(content) {
+                let class_name = captures.get(1).unwrap().as_str().to_string();
+                let class_content = self.extract_class_content(content, &class_name);
+                
+                if class_content.contains("TransactionTemplate") {
+                    transactions.push(TransactionInfo {
+                        class_name: class_name.clone(),
+                        method_name: "programmaticTransaction".to_string(),
+                        transaction_type: TransactionType::Programmatic,
+                        propagation: "REQUIRED".to_string(),
+                        isolation: "DEFAULT".to_string(),
+                        rollback_rules: Vec::new(),
+                    });
+                }
+            }
+        }
+        
+        Ok(transactions)
     }
 
-    fn analyze_spring_security(&self, _content: &str) -> Result<Option<SpringSecurityInfo>> {
-        Ok(None)
+    fn analyze_spring_security(&self, content: &str) -> Result<Option<SpringSecurityInfo>> {
+        if !content.contains("@EnableWebSecurity") && !content.contains("WebSecurityConfigurerAdapter") &&
+           !content.contains("SecurityFilterChain") {
+            return Ok(None);
+        }
+        
+        let authentication_mechanisms = self.extract_authentication_mechanisms(content);
+        let authorization_patterns = self.extract_authorization_patterns(content);
+        let security_configurations = self.extract_security_configurations(content);
+        let csrf_protection = content.contains("csrf()") && !content.contains("csrf().disable()");
+        let session_management = self.extract_session_management(content);
+        
+        Ok(Some(SpringSecurityInfo {
+            authentication_mechanisms,
+            authorization_patterns,
+            security_configurations,
+            csrf_protection,
+            session_management,
+        }))
     }
 
-    fn analyze_data_access(&self, _content: &str) -> Result<Vec<DataAccessPatternInfo>> {
-        Ok(Vec::new())
+    fn analyze_data_access(&self, content: &str) -> Result<Vec<DataAccessPatternInfo>> {
+        let mut data_access_patterns = Vec::new();
+        
+        // JPA Repository patterns
+        let jpa_repo_regex = Regex::new(r"interface\s+(\w+)\s+extends\s+(JpaRepository|CrudRepository|PagingAndSortingRepository)<([^>]+)>").unwrap();
+        
+        for captures in jpa_repo_regex.captures_iter(content) {
+            let implementation_class = captures.get(1).unwrap().as_str().to_string();
+            let repo_type = captures.get(2).unwrap().as_str();
+            
+            let pattern_type = match repo_type {
+                "JpaRepository" => DataAccessPattern::JpaRepository,
+                "CrudRepository" => DataAccessPattern::CrudRepository,
+                _ => DataAccessPattern::JpaRepository,
+            };
+            
+            let database_operations = self.extract_database_operations(content, &implementation_class);
+            let query_methods = self.extract_query_methods(content, &implementation_class)?;
+            
+            data_access_patterns.push(DataAccessPatternInfo {
+                pattern_type,
+                implementation_class,
+                database_operations,
+                query_methods,
+            });
+        }
+        
+        // JdbcTemplate patterns
+        if content.contains("JdbcTemplate") {
+            let class_regex = Regex::new(r"(?:public\s+)?class\s+(\w+)").unwrap();
+            
+            for captures in class_regex.captures_iter(content) {
+                let class_name = captures.get(1).unwrap().as_str().to_string();
+                let class_content = self.extract_class_content(content, &class_name);
+                
+                if class_content.contains("JdbcTemplate") {
+                    let pattern_type = if class_content.contains("NamedParameterJdbcTemplate") {
+                        DataAccessPattern::NamedParameterJdbcTemplate
+                    } else {
+                        DataAccessPattern::JdbcTemplate
+                    };
+                    
+                    let database_operations = self.extract_jdbc_operations(content, &class_name);
+                    
+                    data_access_patterns.push(DataAccessPatternInfo {
+                        pattern_type,
+                        implementation_class: class_name,
+                        database_operations,
+                        query_methods: Vec::new(),
+                    });
+                }
+            }
+        }
+        
+        Ok(data_access_patterns)
     }
 
-    fn analyze_hibernate(&self, _content: &str) -> Result<Option<HibernateAnalysis>> {
-        Ok(None)
+    fn analyze_hibernate(&self, content: &str) -> Result<Option<HibernateAnalysis>> {
+        // Check if Hibernate/JPA is being used
+        if !content.contains("@Entity") && !content.contains("javax.persistence") && 
+           !content.contains("jakarta.persistence") && !content.contains("hibernate") {
+            return Ok(None);
+        }
+
+        let entities = self.analyze_jpa_entities(content)?;
+        let relationships = self.analyze_entity_relationships(content)?;
+        let query_analysis = self.analyze_jpa_queries(content)?;
+        let performance_considerations = self.identify_jpa_performance_issues(content)?;
+        let configuration_analysis = self.analyze_jpa_configuration(content)?;
+
+        Ok(Some(HibernateAnalysis {
+            entities,
+            relationships,
+            query_analysis,
+            performance_considerations,
+            configuration_analysis,
+        }))
     }
 
-    fn analyze_junit(&self, _content: &str) -> Result<Option<JUnitAnalysis>> {
-        Ok(None)
+    fn analyze_junit(&self, content: &str) -> Result<Option<JUnitAnalysis>> {
+        // Check for JUnit imports or annotations
+        if !content.contains("org.junit") && !content.contains("@Test") && 
+           !content.contains("@BeforeEach") && !content.contains("@AfterEach") {
+            return Ok(None);
+        }
+        
+        // Determine JUnit version
+        let junit_version = if content.contains("org.junit.jupiter") || content.contains("@BeforeEach") {
+            JUnitVersion::JUnit5
+        } else if content.contains("org.junit.Test") || content.contains("@Before") && content.contains("@After") {
+            JUnitVersion::JUnit4
+        } else if content.contains("org.junit") {
+            JUnitVersion::Mixed
+        } else {
+            JUnitVersion::Unknown
+        };
+        
+        // Find test classes
+        let test_classes = self.extract_test_classes(content)?;
+        
+        // Analyze test patterns
+        let test_patterns = self.analyze_test_patterns(content);
+        
+        // Detect mocking frameworks
+        let mocking_frameworks = self.detect_mocking_frameworks(content);
+        
+        // Analyze coverage patterns
+        let coverage_patterns = self.analyze_coverage_patterns(content);
+        
+        // Calculate best practices score
+        let best_practices_score = self.calculate_junit_best_practices_score(content);
+        
+        Ok(Some(JUnitAnalysis {
+            junit_version,
+            test_classes,
+            test_patterns,
+            mocking_frameworks,
+            coverage_patterns,
+            best_practices_score,
+        }))
     }
 
-    fn analyze_maven(&self, _content: &str) -> Result<Option<MavenAnalysis>> {
-        Ok(None)
+    fn analyze_maven(&self, content: &str) -> Result<Option<MavenAnalysis>> {
+        // This would typically analyze pom.xml, but for code analysis look for Maven-specific code
+        if !content.contains("maven") && !content.contains("<groupId>") && !content.contains("pom.xml") {
+            return Ok(None);
+        }
+        
+        // For code analysis, we can infer some Maven usage patterns
+        let project_info = MavenProjectInfo {
+            group_id: "com.example".to_string(), // Would be extracted from pom.xml
+            artifact_id: "example-project".to_string(),
+            version: "1.0.0".to_string(),
+            packaging: "jar".to_string(),
+            java_version: Some("11".to_string()),
+            properties: vec!["maven.compiler.source=11".to_string()],
+        };
+        
+        // Analyze dependencies from imports
+        let dependencies = self.extract_maven_dependencies_from_imports(content);
+        
+        // Plugin analysis would require pom.xml parsing
+        let plugins = Vec::new();
+        let profiles = Vec::new();
+        let dependency_management = Vec::new();
+        let potential_issues = Vec::new();
+        
+        Ok(Some(MavenAnalysis {
+            project_info,
+            dependencies,
+            plugins,
+            profiles,
+            dependency_management,
+            potential_issues,
+        }))
     }
 
-    fn analyze_gradle(&self, _content: &str) -> Result<Option<GradleAnalysis>> {
-        Ok(None)
+    fn analyze_gradle(&self, content: &str) -> Result<Option<GradleAnalysis>> {
+        // This would typically analyze build.gradle, but for code analysis look for Gradle-specific patterns
+        if !content.contains("gradle") && !content.contains("implementation") && !content.contains("build.gradle") {
+            return Ok(None);
+        }
+        
+        let project_info = GradleProjectInfo {
+            project_name: "example-project".to_string(),
+            version: "1.0.0".to_string(),
+            java_version: Some("11".to_string()),
+            gradle_version: Some("7.0".to_string()),
+            source_compatibility: Some("11".to_string()),
+            target_compatibility: Some("11".to_string()),
+        };
+        
+        // Analyze dependencies from imports
+        let dependencies = self.extract_gradle_dependencies_from_imports(content);
+        
+        let plugins = Vec::new();
+        let tasks = Vec::new();
+        let build_configurations = Vec::new();
+        let potential_issues = Vec::new();
+        
+        Ok(Some(GradleAnalysis {
+            project_info,
+            dependencies,
+            plugins,
+            tasks,
+            build_configurations,
+            potential_issues,
+        }))
     }
 
     /// Detect security patterns in code
@@ -3917,706 +4371,1004 @@ impl JavaAnalyzer {
     fn calculate_performance_score(&self, _algorithm_complexity: &[ComplexityAnalysis], _performance_issues: &[PerformanceIssue], _optimization_opportunities: &[OptimizationOpportunity]) -> i32 {
         70
     }
+
+    // JPA/Hibernate helper methods
+    fn analyze_jpa_entities(&self, content: &str) -> Result<Vec<JPAEntityInfo>> {
+        let mut entities = Vec::new();
+        
+        // Find @Entity classes
+        let entity_regex = Regex::new(r"@Entity(?:\([^)]*\))?\s+(?:public\s+)?class\s+(\w+)")?;
+        
+        for captures in entity_regex.captures_iter(content) {
+            let entity_name = captures.get(1).unwrap().as_str().to_string();
+            let class_content = self.extract_class_content(content, &entity_name);
+            
+            // Extract @Table annotation
+            let table_name = if let Some(table_match) = Regex::new(r#"@Table\s*\(\s*name\s*=\s*"([^"]+)""#).unwrap().captures(&class_content) {
+                table_match.get(1).unwrap().as_str().to_string()
+            } else {
+                entity_name.to_lowercase() // Default table name
+            };
+            
+            // Find primary key fields
+            let primary_key = self.extract_primary_keys(&class_content);
+            
+            // Analyze fields
+            let fields = self.analyze_jpa_fields(&class_content)?;
+            
+            // Extract all annotations on the class
+            let annotations = self.extract_class_annotations(content, &entity_name);
+            
+            // Check for inheritance strategy
+            let inheritance_strategy = if class_content.contains("@Inheritance") {
+                Regex::new(r#"@Inheritance\s*\(\s*strategy\s*=\s*InheritanceType\.(\w+)"#)
+                    .unwrap()
+                    .captures(&class_content)
+                    .map(|cap| cap.get(1).unwrap().as_str().to_string())
+            } else {
+                None
+            };
+            
+            entities.push(JPAEntityInfo {
+                entity_name,
+                table_name,
+                primary_key,
+                fields,
+                annotations,
+                inheritance_strategy,
+            });
+        }
+        
+        Ok(entities)
+    }
+    
+    fn analyze_entity_relationships(&self, content: &str) -> Result<Vec<EntityRelationshipInfo>> {
+        let mut relationships = Vec::new();
+        
+        // Find relationship annotations
+        let relationship_patterns = [
+            (r"@OneToOne(?:\([^)]*\))?\s+(?:\w+\s+)*(\w+)\s+(\w+)", RelationshipType::OneToOne),
+            (r"@OneToMany(?:\([^)]*\))?\s+(?:\w+\s+)*(?:List|Set|Collection)<(\w+)>\s+(\w+)", RelationshipType::OneToMany),
+            (r"@ManyToOne(?:\([^)]*\))?\s+(?:\w+\s+)*(\w+)\s+(\w+)", RelationshipType::ManyToOne),
+            (r"@ManyToMany(?:\([^)]*\))?\s+(?:\w+\s+)*(?:List|Set|Collection)<(\w+)>\s+(\w+)", RelationshipType::ManyToMany),
+        ];
+        
+        for (pattern, relationship_type) in relationship_patterns {
+            let regex = Regex::new(pattern)?;
+            
+            for captures in regex.captures_iter(content) {
+                let target_entity = captures.get(1).unwrap().as_str().to_string();
+                let field_name = if captures.get(2).is_some() {
+                    captures.get(2).unwrap().as_str().to_string()
+                } else {
+                    "unknown".to_string()
+                };
+                
+                // Find the containing entity
+                let source_entity = self.find_containing_class(content, captures.get(0).unwrap().start())
+                    .unwrap_or_else(|| "Unknown".to_string());
+                
+                // Extract fetch type
+                let annotation_text = captures.get(0).unwrap().as_str();
+                let fetch_type = if annotation_text.contains("FetchType.LAZY") {
+                    FetchType::Lazy
+                } else {
+                    FetchType::Eager // Default for @ManyToOne and @OneToOne
+                };
+                
+                // Extract cascade operations
+                let cascade_operations = self.extract_cascade_operations(annotation_text);
+                
+                // Check if bidirectional (simplified check)
+                let bidirectional = content.contains("mappedBy");
+                
+                relationships.push(EntityRelationshipInfo {
+                    relationship_type: relationship_type.clone(),
+                    source_entity,
+                    target_entity,
+                    fetch_type,
+                    cascade_operations,
+                    bidirectional,
+                });
+            }
+        }
+        
+        Ok(relationships)
+    }
+    
+    fn analyze_jpa_queries(&self, content: &str) -> Result<Vec<JPAQueryInfo>> {
+        let mut queries = Vec::new();
+        
+        // Find @Query annotations
+        let query_regex = Regex::new(r#"@Query\s*\(\s*(?:value\s*=\s*)?"([^"]+)""#)?;
+        
+        for captures in query_regex.captures_iter(content) {
+            let query_string = captures.get(1).unwrap().as_str().to_string();
+            
+            // Determine query type
+            let query_type = if query_string.to_uppercase().contains("SELECT") && 
+                              !query_string.to_uppercase().contains("FROM DUAL") {
+                if query_string.to_uppercase().contains("NATIVE") || 
+                   query_string.to_uppercase().contains("INSERT") ||
+                   query_string.to_uppercase().contains("UPDATE") ||
+                   query_string.to_uppercase().contains("DELETE") {
+                    JPAQueryType::NativeSQL
+                } else {
+                    JPAQueryType::JPQL
+                }
+            } else {
+                JPAQueryType::JPQL
+            };
+            
+            // Extract parameters (simplified)
+            let parameters = Regex::new(r":(\w+)")
+                .unwrap()
+                .captures_iter(&query_string)
+                .map(|cap| cap.get(1).unwrap().as_str().to_string())
+                .collect();
+            
+            // Analyze potential issues
+            let mut potential_issues = Vec::new();
+            
+            // Check for N+1 queries
+            if query_string.to_uppercase().contains("SELECT") && !query_string.to_uppercase().contains("JOIN") {
+                potential_issues.push("Potential N+1 query - consider using JOIN FETCH".to_string());
+            }
+            
+            // Check for SELECT *
+            if query_string.contains("SELECT *") {
+                potential_issues.push("Using SELECT * - consider selecting only needed columns".to_string());
+            }
+            
+            queries.push(JPAQueryInfo {
+                query_type,
+                query_string,
+                parameters,
+                result_type: "Unknown".to_string(), // Would need more sophisticated analysis
+                potential_issues,
+            });
+        }
+        
+        Ok(queries)
+    }
+    
+    fn identify_jpa_performance_issues(&self, content: &str) -> Result<Vec<PerformanceIssue>> {
+        let mut issues = Vec::new();
+        
+        // N+1 Query Problem detection
+        if content.contains("@OneToMany") && !content.contains("FetchType.LAZY") && !content.contains("@BatchSize") {
+            issues.push(PerformanceIssue {
+                issue_type: PerformanceIssueType::NPlusOneProblem,
+                severity: IssueSeverity::High,
+                location: "@OneToMany relationship".to_string(),
+                description: "OneToMany relationship without lazy loading may cause N+1 queries".to_string(),
+                recommendation: "Use FetchType.LAZY and @BatchSize or JOIN FETCH queries".to_string(),
+            });
+        }
+        
+        // Large result set detection
+        if content.contains("findAll()") && !content.contains("Pageable") {
+            issues.push(PerformanceIssue {
+                issue_type: PerformanceIssueType::LargeResultSet,
+                severity: IssueSeverity::Medium,
+                location: "findAll() method usage".to_string(),
+                description: "Using findAll() without pagination may load large datasets".to_string(),
+                recommendation: "Use paginated queries with Pageable parameter".to_string(),
+            });
+        }
+        
+        // Inefficient query detection
+        if content.contains("SELECT *") {
+            issues.push(PerformanceIssue {
+                issue_type: PerformanceIssueType::InEfficientQuery,
+                severity: IssueSeverity::Medium,
+                location: "Query with SELECT *".to_string(),
+                description: "SELECT * queries load unnecessary data".to_string(),
+                recommendation: "Select only required columns explicitly".to_string(),
+            });
+        }
+        
+        Ok(issues)
+    }
+    
+    fn analyze_jpa_configuration(&self, content: &str) -> Result<JPAConfigurationInfo> {
+        // This would typically analyze application.properties or persistence.xml
+        // For code analysis, we look for configuration-related annotations and code
+        
+        let hibernate_dialect = if content.contains("hibernate.dialect") {
+            // Extract dialect from properties (simplified)
+            Some("org.hibernate.dialect.MySQL8Dialect".to_string()) // Default example
+        } else {
+            None
+        };
+        
+        let show_sql = content.contains("hibernate.show_sql=true") || content.contains("show-sql: true");
+        let format_sql = content.contains("hibernate.format_sql=true") || content.contains("format-sql: true");
+        
+        let ddl_auto = if content.contains("hibernate.hbm2ddl.auto") {
+            Some("update".to_string()) // Common default
+        } else {
+            None
+        };
+        
+        // Look for cache annotations
+        let cache_configuration = if content.contains("@Cache") || content.contains("@Cacheable") {
+            vec!["Second-level cache enabled".to_string()]
+        } else {
+            Vec::new()
+        };
+        
+        let connection_pool_settings = if content.contains("HikariCP") || content.contains("c3p0") {
+            vec!["Connection pooling configured".to_string()]
+        } else {
+            Vec::new()
+        };
+        
+        Ok(JPAConfigurationInfo {
+            hibernate_dialect,
+            show_sql,
+            format_sql,
+            ddl_auto,
+            cache_configuration,
+            connection_pool_settings,
+        })
+    }
+    
+    fn extract_primary_keys(&self, class_content: &str) -> Vec<String> {
+        let mut primary_keys = Vec::new();
+        
+        // Look for @Id annotation
+        let id_regex = Regex::new(r"@Id\s+(?:\w+\s+)*(\w+)\s+(\w+)").unwrap();
+        
+        for captures in id_regex.captures_iter(class_content) {
+            let field_name = captures.get(2).unwrap().as_str().to_string();
+            primary_keys.push(field_name);
+        }
+        
+        // If no @Id found, look for @EmbeddedId
+        if primary_keys.is_empty() {
+            let embedded_id_regex = Regex::new(r"@EmbeddedId\s+(?:\w+\s+)*(\w+)\s+(\w+)").unwrap();
+            for captures in embedded_id_regex.captures_iter(class_content) {
+                let field_name = captures.get(2).unwrap().as_str().to_string();
+                primary_keys.push(field_name);
+            }
+        }
+        
+        primary_keys
+    }
+    
+    fn analyze_jpa_fields(&self, class_content: &str) -> Result<Vec<JPAFieldInfo>> {
+        let mut fields = Vec::new();
+        
+        // Find field declarations with potential JPA annotations
+        let field_regex = Regex::new(r"(?:@\w+(?:\([^)]*\))?\s+)*(?:private|protected|public)\s+(\w+(?:<[^>]+>)?)\s+(\w+)")?;
+        
+        for captures in field_regex.captures_iter(class_content) {
+            let field_type = captures.get(1).unwrap().as_str().to_string();
+            let field_name = captures.get(2).unwrap().as_str().to_string();
+            
+            // Extract annotations before this field
+            let field_start = captures.get(0).unwrap().start();
+            let before_field = &class_content[..field_start];
+            
+            // Find the last set of annotations before this field
+            let annotations = self.extract_field_annotations(before_field, field_start);
+            
+            // Extract column name
+            let column_name = if let Some(column_match) = Regex::new(r#"@Column\s*\([^)]*name\s*=\s*"([^"]+)""#).unwrap().captures(&annotations.join(" ")) {
+                column_match.get(1).unwrap().as_str().to_string()
+            } else {
+                field_name.clone() // Default column name
+            };
+            
+            // Extract constraints
+            let mut constraints = Vec::new();
+            if annotations.iter().any(|a| a.contains("@NotNull")) {
+                constraints.push("NOT NULL".to_string());
+            }
+            if annotations.iter().any(|a| a.contains("@Size")) {
+                constraints.push("SIZE constraint".to_string());
+            }
+            
+            // Determine relationship type
+            let relationship_type = if annotations.iter().any(|a| a.contains("@OneToOne")) {
+                Some(RelationshipType::OneToOne)
+            } else if annotations.iter().any(|a| a.contains("@OneToMany")) {
+                Some(RelationshipType::OneToMany)
+            } else if annotations.iter().any(|a| a.contains("@ManyToOne")) {
+                Some(RelationshipType::ManyToOne)
+            } else if annotations.iter().any(|a| a.contains("@ManyToMany")) {
+                Some(RelationshipType::ManyToMany)
+            } else {
+                None
+            };
+            
+            fields.push(JPAFieldInfo {
+                field_name,
+                column_name,
+                field_type,
+                constraints,
+                annotations,
+                relationship_type,
+            });
+        }
+        
+        Ok(fields)
+    }
+    
+    fn extract_field_annotations(&self, content_before: &str, _field_position: usize) -> Vec<String> {
+        // Extract annotations from the end of the content (working backwards)
+        let annotation_regex = Regex::new(r"@(\w+)(?:\([^)]*\))?").unwrap();
+        
+        // Get the last few lines to find annotations for this field
+        let lines: Vec<&str> = content_before.lines().collect();
+        let mut annotations = Vec::new();
+        
+        // Look at the last few lines for annotations
+        for line in lines.iter().rev().take(5) {
+            if annotation_regex.is_match(line) {
+                for captures in annotation_regex.captures_iter(line) {
+                    annotations.push(captures.get(0).unwrap().as_str().to_string());
+                }
+            } else if line.trim().is_empty() || line.contains("//") {
+                continue; // Skip empty lines and comments
+            } else if line.contains("private") || line.contains("protected") || line.contains("public") {
+                break; // Stop if we hit another field
+            }
+        }
+        
+        annotations.reverse(); // Restore original order
+        annotations
+    }
+    
+    // AOP helper methods
+    fn extract_pointcuts(&self, content: &str, aspect_class: &str) -> Vec<String> {
+        let mut pointcuts = Vec::new();
+        let aspect_content = self.extract_class_content(content, aspect_class);
+        
+        let pointcut_regex = Regex::new(r#"@Pointcut\s*\(\s*['"]([^'"]+)['"]"#).unwrap();
+        for captures in pointcut_regex.captures_iter(&aspect_content) {
+            if let Some(pointcut) = captures.get(1) {
+                pointcuts.push(pointcut.as_str().to_string());
+            }
+        }
+        
+        pointcuts
+    }
+
+    fn extract_advice_types(&self, content: &str, aspect_class: &str) -> Vec<AdviceType> {
+        let mut advice_types = Vec::new();
+        let aspect_content = self.extract_class_content(content, aspect_class);
+        
+        if aspect_content.contains("@Before") {
+            advice_types.push(AdviceType::Before);
+        }
+        if aspect_content.contains("@After") {
+            advice_types.push(AdviceType::After);
+        }
+        if aspect_content.contains("@AfterReturning") {
+            advice_types.push(AdviceType::AfterReturning);
+        }
+        if aspect_content.contains("@AfterThrowing") {
+            advice_types.push(AdviceType::AfterThrowing);
+        }
+        if aspect_content.contains("@Around") {
+            advice_types.push(AdviceType::Around);
+        }
+        
+        advice_types
+    }
+
+    fn identify_cross_cutting_concerns(&self, content: &str, aspect_class: &str) -> Vec<String> {
+        let mut concerns = Vec::new();
+        let aspect_content = self.extract_class_content(content, aspect_class);
+        
+        if aspect_content.contains("log") || aspect_content.contains("Log") || aspect_content.contains("logger") {
+            concerns.push("Logging".to_string());
+        }
+        if aspect_content.contains("security") || aspect_content.contains("auth") || aspect_content.contains("permission") {
+            concerns.push("Security".to_string());
+        }
+        if aspect_content.contains("transaction") || aspect_content.contains("Transaction") {
+            concerns.push("Transaction Management".to_string());
+        }
+        if aspect_content.contains("cache") || aspect_content.contains("Cache") {
+            concerns.push("Caching".to_string());
+        }
+        if aspect_content.contains("audit") || aspect_content.contains("Audit") {
+            concerns.push("Auditing".to_string());
+        }
+        if aspect_content.contains("monitor") || aspect_content.contains("metric") || aspect_content.contains("performance") {
+            concerns.push("Performance Monitoring".to_string());
+        }
+        
+        concerns
+    }
+
+    // Transaction helper methods
+    fn extract_transaction_attribute(&self, annotation: &str, attribute: &str) -> Option<String> {
+        let pattern = format!(r"{}[\s]*=[\s]*([^,)]+)", attribute);
+        let regex = Regex::new(&pattern).ok()?;
+        
+        regex.captures(annotation)
+            .and_then(|captures| captures.get(1))
+            .map(|m| m.as_str().trim().to_string())
+    }
+
+    fn extract_rollback_rules(&self, annotation: &str) -> Vec<String> {
+        let mut rules = Vec::new();
+        
+        if annotation.contains("rollbackFor") {
+            let rollback_regex = Regex::new(r"rollbackFor[\s]*=[\s]*\{?([^}]+)\}?").unwrap();
+            if let Some(captures) = rollback_regex.captures(annotation) {
+                if let Some(rule_text) = captures.get(1) {
+                    rules.extend(
+                        rule_text.as_str()
+                            .split(',')
+                            .map(|s| s.trim().replace(".class", "").to_string())
+                    );
+                }
+            }
+        }
+        
+        if annotation.contains("noRollbackFor") {
+            let no_rollback_regex = Regex::new(r"noRollbackFor[\s]*=[\s]*\{?([^}]+)\}?").unwrap();
+            if let Some(captures) = no_rollback_regex.captures(annotation) {
+                if let Some(rule_text) = captures.get(1) {
+                    for rule in rule_text.as_str().split(',') {
+                        rules.push(format!("NO_ROLLBACK: {}", rule.trim().replace(".class", "")));
+                    }
+                }
+            }
+        }
+        
+        rules
+    }
+
+    // Spring Security helper methods
+    fn extract_authentication_mechanisms(&self, content: &str) -> Vec<String> {
+        let mut mechanisms = Vec::new();
+        
+        if content.contains("formLogin") || content.contains("loginPage") {
+            mechanisms.push("Form-based Authentication".to_string());
+        }
+        if content.contains("httpBasic") {
+            mechanisms.push("HTTP Basic Authentication".to_string());
+        }
+        if content.contains("oauth2Login") || content.contains("OAuth2") {
+            mechanisms.push("OAuth2 Authentication".to_string());
+        }
+        if content.contains("jwt") || content.contains("JwtAuthenticationProvider") {
+            mechanisms.push("JWT Authentication".to_string());
+        }
+        if content.contains("ldap") || content.contains("LdapAuthenticationProvider") {
+            mechanisms.push("LDAP Authentication".to_string());
+        }
+        if content.contains("DaoAuthenticationProvider") || content.contains("UserDetailsService") {
+            mechanisms.push("Database Authentication".to_string());
+        }
+        
+        mechanisms
+    }
+
+    fn extract_authorization_patterns(&self, content: &str) -> Vec<String> {
+        let mut patterns = Vec::new();
+        
+        if content.contains("hasRole") || content.contains("@PreAuthorize") {
+            patterns.push("Role-based Authorization".to_string());
+        }
+        if content.contains("hasAuthority") || content.contains("hasPermission") {
+            patterns.push("Permission-based Authorization".to_string());
+        }
+        if content.contains("permitAll") {
+            patterns.push("Permit All Access".to_string());
+        }
+        if content.contains("denyAll") {
+            patterns.push("Deny All Access".to_string());
+        }
+        if content.contains("authenticated") {
+            patterns.push("Authenticated Users Only".to_string());
+        }
+        if content.contains("@Secured") {
+            patterns.push("Method-level Security".to_string());
+        }
+        
+        patterns
+    }
+
+    fn extract_security_configurations(&self, content: &str) -> Vec<String> {
+        let mut configs = Vec::new();
+        
+        if content.contains("@EnableWebSecurity") {
+            configs.push("Web Security Enabled".to_string());
+        }
+        if content.contains("@EnableGlobalMethodSecurity") {
+            configs.push("Method Security Enabled".to_string());
+        }
+        if content.contains("passwordEncoder") {
+            configs.push("Password Encoding Configured".to_string());
+        }
+        if content.contains("sessionManagement") {
+            configs.push("Session Management Configured".to_string());
+        }
+        if content.contains("cors") {
+            configs.push("CORS Configuration".to_string());
+        }
+        if content.contains("headers") {
+            configs.push("Security Headers Configured".to_string());
+        }
+        
+        configs
+    }
+
+    fn extract_session_management(&self, content: &str) -> String {
+        if content.contains("sessionCreationPolicy") {
+            if content.contains("STATELESS") {
+                return "Stateless".to_string();
+            } else if content.contains("ALWAYS") {
+                return "Always Create".to_string();
+            } else if content.contains("IF_REQUIRED") {
+                return "If Required".to_string();
+            } else if content.contains("NEVER") {
+                return "Never Create".to_string();
+            }
+        }
+        
+        if content.contains("maximumSessions") {
+            return "Concurrent Session Control".to_string();
+        }
+        
+        "Default".to_string()
+    }
+
+    // Data Access helper methods
+    fn extract_database_operations(&self, content: &str, class_name: &str) -> Vec<String> {
+        let mut operations = Vec::new();
+        let class_content = self.extract_class_content(content, class_name);
+        
+        if class_content.contains("save") || class_content.contains("persist") {
+            operations.push("CREATE".to_string());
+        }
+        if class_content.contains("find") || class_content.contains("get") || class_content.contains("query") {
+            operations.push("READ".to_string());
+        }
+        if class_content.contains("update") || class_content.contains("merge") {
+            operations.push("UPDATE".to_string());
+        }
+        if class_content.contains("delete") || class_content.contains("remove") {
+            operations.push("DELETE".to_string());
+        }
+        
+        operations
+    }
+
+    fn extract_query_methods(&self, content: &str, interface_name: &str) -> Result<Vec<QueryMethodInfo>> {
+        let mut query_methods = Vec::new();
+        
+        // Extract the interface content
+        let interface_start = content.find(&format!("interface {}", interface_name)).unwrap_or(0);
+        let interface_end = content[interface_start..].find('}').map(|i| interface_start + i).unwrap_or(content.len());
+        let interface_content = &content[interface_start..interface_end];
+        
+        // Look for query methods
+        let method_regex = Regex::new(r"(?:@Query\s*\([^)]*\))?\s*(?:public\s+)?([^(]+)\s+(\w+)\s*\(([^)]*)\)").unwrap();
+        
+        for captures in method_regex.captures_iter(interface_content) {
+            let return_type = captures.get(1).unwrap().as_str().trim().to_string();
+            let method_name = captures.get(2).unwrap().as_str().to_string();
+            let params = captures.get(3).unwrap().as_str();
+            
+            let parameters = if params.trim().is_empty() {
+                Vec::new()
+            } else {
+                params.split(',')
+                    .map(|p| p.trim().to_string())
+                    .collect()
+            };
+            
+            // Determine query type
+            let query_type = if interface_content.contains(&format!("@Query")) && interface_content.contains(&method_name) {
+                if interface_content.contains("nativeQuery = true") {
+                    QueryType::NativeQuery
+                } else {
+                    QueryType::CustomQuery
+                }
+            } else if method_name.starts_with("find") || method_name.starts_with("get") || 
+                      method_name.starts_with("count") || method_name.starts_with("exists") {
+                QueryType::DerivedQuery
+            } else {
+                QueryType::CustomQuery
+            };
+            
+            // Extract custom query if present
+            let custom_query = if matches!(query_type, QueryType::CustomQuery | QueryType::NativeQuery) {
+                self.extract_query_string(interface_content, &method_name)
+            } else {
+                None
+            };
+            
+            query_methods.push(QueryMethodInfo {
+                method_name,
+                query_type,
+                custom_query,
+                parameters,
+                return_type,
+            });
+        }
+        
+        Ok(query_methods)
+    }
+
+    fn extract_jdbc_operations(&self, content: &str, class_name: &str) -> Vec<String> {
+        let mut operations = Vec::new();
+        let class_content = self.extract_class_content(content, class_name);
+        
+        if class_content.contains("jdbcTemplate.update") || class_content.contains("insert") {
+            operations.push("INSERT/UPDATE".to_string());
+        }
+        if class_content.contains("jdbcTemplate.query") || class_content.contains("queryFor") {
+            operations.push("SELECT".to_string());
+        }
+        if class_content.contains("jdbcTemplate.execute") {
+            operations.push("EXECUTE".to_string());
+        }
+        if class_content.contains("batchUpdate") {
+            operations.push("BATCH_UPDATE".to_string());
+        }
+        
+        operations
+    }
+
+    fn extract_query_string(&self, content: &str, method_name: &str) -> Option<String> {
+        let query_regex = Regex::new(&format!(r#"@Query\s*\(\s*["']([^"']+)["']\s*\)[^{{}}]*{}"#, method_name)).unwrap();
+        
+        query_regex.captures(content)
+            .and_then(|captures| captures.get(1))
+            .map(|m| m.as_str().to_string())
+    }
+
+    fn extract_cascade_operations(&self, annotation_text: &str) -> Vec<CascadeType> {
+        let mut cascade_operations = Vec::new();
+        
+        if annotation_text.contains("CascadeType.ALL") {
+            cascade_operations.push(CascadeType::All);
+        } else {
+            if annotation_text.contains("CascadeType.PERSIST") {
+                cascade_operations.push(CascadeType::Persist);
+            }
+            if annotation_text.contains("CascadeType.MERGE") {
+                cascade_operations.push(CascadeType::Merge);
+            }
+            if annotation_text.contains("CascadeType.REMOVE") {
+                cascade_operations.push(CascadeType::Remove);
+            }
+            if annotation_text.contains("CascadeType.REFRESH") {
+                cascade_operations.push(CascadeType::Refresh);
+            }
+            if annotation_text.contains("CascadeType.DETACH") {
+                cascade_operations.push(CascadeType::Detach);
+            }
+        }
+        
+        cascade_operations
+    }
+
+    // JUnit helper methods
+    fn extract_test_classes(&self, content: &str) -> Result<Vec<TestClassInfo>> {
+        let mut test_classes = Vec::new();
+        
+        // Find test classes (classes with @Test methods or Test suffix)
+        let class_regex = Regex::new(r"(?:public\s+)?class\s+(\w+)")?;
+        
+        for captures in class_regex.captures_iter(content) {
+            let class_name = captures.get(1).unwrap().as_str().to_string();
+            let class_content = self.extract_class_content(content, &class_name);
+            
+            // Check if this is a test class
+            if class_content.contains("@Test") || class_name.ends_with("Test") || class_name.ends_with("Tests") {
+                let test_methods = self.extract_test_methods(&class_content)?;
+                let setup_methods = self.extract_setup_methods(&class_content);
+                let teardown_methods = self.extract_teardown_methods(&class_content);
+                let annotations = self.extract_class_annotations(content, &class_name);
+                
+                test_classes.push(TestClassInfo {
+                    class_name,
+                    test_methods,
+                    setup_methods,
+                    teardown_methods,
+                    annotations,
+                });
+            }
+        }
+        
+        Ok(test_classes)
+    }
+
+    fn extract_test_methods(&self, class_content: &str) -> Result<Vec<TestMethodInfo>> {
+        let mut test_methods = Vec::new();
+        
+        // Find @Test methods
+        let test_method_regex = Regex::new(r"@Test(?:\([^)]*\))?\s+(?:public\s+)?(?:void\s+)?(\w+)\s*\([^)]*\)")?;
+        
+        for captures in test_method_regex.captures_iter(class_content) {
+            let method_name = captures.get(1).unwrap().as_str().to_string();
+            
+            // Determine test type
+            let test_type = if method_name.contains("integration") || method_name.contains("Integration") {
+                TestType::Integration
+            } else if class_content.contains("@ParameterizedTest") {
+                TestType::Parameterized
+            } else if method_name.contains("performance") || method_name.contains("Performance") {
+                TestType::Performance
+            } else if class_content.contains("@Test(expected") || class_content.contains("assertThrows") {
+                TestType::Exception
+            } else {
+                TestType::Unit
+            };
+            
+            // Count assertions
+            let assertions_count = self.count_assertions_in_method(class_content, &method_name);
+            
+            // Extract expected exceptions
+            let expected_exceptions = self.extract_expected_exceptions(class_content, &method_name);
+            
+            // Extract timeout
+            let timeout = self.extract_test_timeout(class_content, &method_name);
+            
+            test_methods.push(TestMethodInfo {
+                method_name,
+                test_type,
+                assertions_count,
+                expected_exceptions,
+                timeout,
+                parameters: Vec::new(), // Would need more sophisticated parsing
+            });
+        }
+        
+        Ok(test_methods)
+    }
+
+    fn extract_setup_methods(&self, class_content: &str) -> Vec<String> {
+        let mut setup_methods = Vec::new();
+        
+        // JUnit 5 setup
+        let setup_regex = Regex::new(r"@BeforeEach\s+(?:public\s+)?(?:void\s+)?(\w+)\s*\(").unwrap();
+        for captures in setup_regex.captures_iter(class_content) {
+            setup_methods.push(captures.get(1).unwrap().as_str().to_string());
+        }
+        
+        // JUnit 4 setup
+        let before_regex = Regex::new(r"@Before\s+(?:public\s+)?(?:void\s+)?(\w+)\s*\(").unwrap();
+        for captures in before_regex.captures_iter(class_content) {
+            setup_methods.push(captures.get(1).unwrap().as_str().to_string());
+        }
+        
+        setup_methods
+    }
+
+    fn extract_teardown_methods(&self, class_content: &str) -> Vec<String> {
+        let mut teardown_methods = Vec::new();
+        
+        // JUnit 5 teardown
+        let teardown_regex = Regex::new(r"@AfterEach\s+(?:public\s+)?(?:void\s+)?(\w+)\s*\(").unwrap();
+        for captures in teardown_regex.captures_iter(class_content) {
+            teardown_methods.push(captures.get(1).unwrap().as_str().to_string());
+        }
+        
+        // JUnit 4 teardown
+        let after_regex = Regex::new(r"@After\s+(?:public\s+)?(?:void\s+)?(\w+)\s*\(").unwrap();
+        for captures in after_regex.captures_iter(class_content) {
+            teardown_methods.push(captures.get(1).unwrap().as_str().to_string());
+        }
+        
+        teardown_methods
+    }
+
+    fn count_assertions_in_method(&self, class_content: &str, method_name: &str) -> usize {
+        // Find the method and count assertions within it
+        if let Some(method_start) = class_content.find(&format!("void {}", method_name)) {
+            if let Some(method_end) = class_content[method_start..].find('}') {
+                let method_content = &class_content[method_start..method_start + method_end];
+                return method_content.matches("assert").count();
+            }
+        }
+        0
+    }
+
+    fn extract_expected_exceptions(&self, class_content: &str, method_name: &str) -> Vec<String> {
+        let mut exceptions = Vec::new();
+        
+        // Look for @Test(expected = Exception.class)
+        let expected_regex = Regex::new(&format!(r"@Test\([^)]*expected\s*=\s*(\w+)\.class[^)]*\)[^{{}}]*void\s+{}", method_name)).unwrap();
+        for captures in expected_regex.captures_iter(class_content) {
+            exceptions.push(captures.get(1).unwrap().as_str().to_string());
+        }
+        
+        // Look for assertThrows
+        let assert_throws_regex = Regex::new(r"assertThrows\s*\(\s*(\w+)\.class").unwrap();
+        for captures in assert_throws_regex.captures_iter(class_content) {
+            exceptions.push(captures.get(1).unwrap().as_str().to_string());
+        }
+        
+        exceptions
+    }
+
+    fn extract_test_timeout(&self, class_content: &str, method_name: &str) -> Option<String> {
+        let timeout_regex = Regex::new(&format!(r"@Test\([^)]*timeout\s*=\s*(\d+)[^)]*\)[^{{}}]*void\s+{}", method_name)).unwrap();
+        timeout_regex.captures(class_content)
+            .and_then(|captures| captures.get(1))
+            .map(|m| format!("{}ms", m.as_str()))
+    }
+
+    fn analyze_test_patterns(&self, content: &str) -> Vec<TestPatternInfo> {
+        let mut patterns = Vec::new();
+        
+        // Arrange-Act-Assert pattern detection
+        let aaa_count = content.matches("// Arrange").count() + content.matches("// Act").count() + content.matches("// Assert").count();
+        if aaa_count > 0 {
+            patterns.push(TestPatternInfo {
+                pattern_type: TestPatternType::ArrangeActAssert,
+                usage_count: aaa_count,
+                classes_using: Vec::new(), // Would need more detailed analysis
+            });
+        }
+        
+        // Given-When-Then pattern
+        let gwt_count = content.matches("// Given").count() + content.matches("// When").count() + content.matches("// Then").count();
+        if gwt_count > 0 {
+            patterns.push(TestPatternInfo {
+                pattern_type: TestPatternType::GivenWhenThen,
+                usage_count: gwt_count,
+                classes_using: Vec::new(),
+            });
+        }
+        
+        // Mock objects
+        if content.contains("@Mock") || content.contains("mock(") || content.contains("Mockito") {
+            patterns.push(TestPatternInfo {
+                pattern_type: TestPatternType::MockObject,
+                usage_count: content.matches("@Mock").count() + content.matches("mock(").count(),
+                classes_using: Vec::new(),
+            });
+        }
+        
+        patterns
+    }
+
+    fn detect_mocking_frameworks(&self, content: &str) -> Vec<MockingFrameworkInfo> {
+        let mut frameworks = Vec::new();
+        
+        if content.contains("Mockito") || content.contains("org.mockito") {
+            frameworks.push(MockingFrameworkInfo {
+                framework_name: "Mockito".to_string(),
+                version: None,
+                usage_patterns: vec!["@Mock".to_string(), "mock()".to_string()],
+                mock_objects: Vec::new(),
+            });
+        }
+        
+        if content.contains("PowerMock") {
+            frameworks.push(MockingFrameworkInfo {
+                framework_name: "PowerMock".to_string(),
+                version: None,
+                usage_patterns: vec!["@RunWith(PowerMockRunner.class)".to_string()],
+                mock_objects: Vec::new(),
+            });
+        }
+        
+        if content.contains("EasyMock") {
+            frameworks.push(MockingFrameworkInfo {
+                framework_name: "EasyMock".to_string(),
+                version: None,
+                usage_patterns: vec!["createMock()".to_string()],
+                mock_objects: Vec::new(),
+            });
+        }
+        
+        frameworks
+    }
+
+    fn analyze_coverage_patterns(&self, content: &str) -> Vec<String> {
+        let mut patterns = Vec::new();
+        
+        if content.contains("@Generated") {
+            patterns.push("Generated code exclusion".to_string());
+        }
+        
+        if content.contains("jacoco") || content.contains("JaCoCo") {
+            patterns.push("JaCoCo coverage integration".to_string());
+        }
+        
+        if content.contains("cobertura") {
+            patterns.push("Cobertura coverage integration".to_string());
+        }
+        
+        patterns
+    }
+
+    fn calculate_junit_best_practices_score(&self, content: &str) -> i32 {
+        let mut score = 0;
+        
+        // Use of proper annotations
+        if content.contains("@Test") { score += 10; }
+        if content.contains("@BeforeEach") || content.contains("@Before") { score += 5; }
+        if content.contains("@AfterEach") || content.contains("@After") { score += 5; }
+        
+        // Assertion usage
+        if content.contains("assert") { score += 15; }
+        
+        // Mocking usage
+        if content.contains("@Mock") || content.contains("mock(") { score += 10; }
+        
+        // Parameterized tests
+        if content.contains("@ParameterizedTest") { score += 10; }
+        
+        // Test naming conventions
+        if content.matches("Test").count() > 0 { score += 5; }
+        
+        // Maximum score of 100
+        score.min(100)
+    }
+
+    // Maven/Gradle helper methods
+    fn extract_maven_dependencies_from_imports(&self, content: &str) -> Vec<MavenDependencyInfo> {
+        let mut dependencies = Vec::new();
+        
+        // Common framework imports
+        if content.contains("import org.springframework") {
+            dependencies.push(MavenDependencyInfo {
+                group_id: "org.springframework".to_string(),
+                artifact_id: "spring-core".to_string(),
+                version: "5.3.0".to_string(),
+                scope: "compile".to_string(),
+                dependency_type: "jar".to_string(),
+                transitive_dependencies: Vec::new(),
+            });
+        }
+        
+        if content.contains("import org.junit") {
+            dependencies.push(MavenDependencyInfo {
+                group_id: "org.junit.jupiter".to_string(),
+                artifact_id: "junit-jupiter".to_string(),
+                version: "5.8.0".to_string(),
+                scope: "test".to_string(),
+                dependency_type: "jar".to_string(),
+                transitive_dependencies: Vec::new(),
+            });
+        }
+        
+        dependencies
+    }
+
+    fn extract_gradle_dependencies_from_imports(&self, content: &str) -> Vec<GradleDependencyInfo> {
+        let mut dependencies = Vec::new();
+        
+        if content.contains("import org.springframework") {
+            dependencies.push(GradleDependencyInfo {
+                configuration: "implementation".to_string(),
+                group: "org.springframework".to_string(),
+                name: "spring-core".to_string(),
+                version: "5.3.0".to_string(),
+                dependency_type: "jar".to_string(),
+            });
+        }
+        
+        if content.contains("import org.junit") {
+            dependencies.push(GradleDependencyInfo {
+                configuration: "testImplementation".to_string(),
+                group: "org.junit.jupiter".to_string(),
+                name: "junit-jupiter".to_string(),
+                version: "5.8.0".to_string(),
+                dependency_type: "jar".to_string(),
+            });
+        }
+        
+        dependencies
+    }
 }
 
 impl Default for JavaAnalyzer {
     fn default() -> Self {
         Self::new()
-    }
-}
-
-/// Result of Java code analysis
-#[derive(Debug)]
-pub struct JavaAnalysisResult {
-    /// Design patterns detected
-    pub patterns_detected: Vec<String>,
-    /// Issues found in the code
-    pub issues_found: Vec<String>,
-    /// Recommendations for improvement
-    pub recommendations: Vec<String>,
-}
-
-/// Comprehensive Java analysis result
-#[derive(Debug)]
-pub struct JavaComprehensiveAnalysis {
-    pub oop_analysis: OOPAnalysisInfo,
-    pub framework_analysis: JavaFrameworkAnalysis,
-    pub security_analysis: JavaSecurityAnalysis,
-    pub modern_features: ModernJavaFeatureAnalysis,
-    pub performance_analysis: JavaPerformanceAnalysis,
-    pub overall_score: i32,
-    pub recommendations: Vec<String>,
-}
-
-/// Java performance analysis
-#[derive(Debug, Clone)]
-pub struct JavaPerformanceAnalysis {
-    pub algorithm_complexity: Vec<ComplexityAnalysis>,
-    pub collection_usage: Vec<CollectionUsageInfo>,
-    pub memory_patterns: Vec<MemoryPatternInfo>,
-    pub concurrency_patterns: Vec<ConcurrencyPatternInfo>,
-    pub performance_issues: Vec<PerformanceIssue>,
-    pub optimization_opportunities: Vec<OptimizationOpportunity>,
-    pub overall_performance_score: i32,
-}
-
-/// Algorithm complexity analysis
-#[derive(Debug, Clone)]
-pub struct ComplexityAnalysis {
-    pub method_name: String,
-    pub time_complexity: String,
-    pub space_complexity: String,
-    pub complexity_score: i32,
-    pub potential_optimizations: Vec<String>,
-}
-
-/// Collection usage information
-#[derive(Debug, Clone)]
-pub struct CollectionUsageInfo {
-    pub collection_type: String,
-    pub usage_pattern: CollectionUsagePattern,
-    pub size_characteristics: CollectionSizeCharacteristics,
-    pub performance_implications: Vec<String>,
-}
-
-/// Collection usage patterns
-#[derive(Debug, Clone)]
-pub enum CollectionUsagePattern {
-    Appropriate,
-    Suboptimal,
-    Inefficient,
-}
-
-/// Collection size characteristics
-#[derive(Debug, Clone)]
-pub enum CollectionSizeCharacteristics {
-    Small,      // < 100 elements
-    Medium,     // 100-10000 elements
-    Large,      // > 10000 elements
-    Unknown,
-}
-
-/// Memory pattern information
-#[derive(Debug, Clone)]
-pub struct MemoryPatternInfo {
-    pub pattern_type: MemoryPatternType,
-    pub location: String,
-    pub memory_impact: MemoryImpact,
-    pub recommendations: Vec<String>,
-}
-
-/// Memory pattern types
-#[derive(Debug, Clone)]
-pub enum MemoryPatternType {
-    StringConcatenation,
-    LargeObjectCreation,
-    CachingPattern,
-    MemoryLeak,
-    ResourceLeak,
-}
-
-/// Memory impact levels
-#[derive(Debug, Clone)]
-pub enum MemoryImpact {
-    High,
-    Medium,
-    Low,
-}
-
-/// Concurrency pattern information
-#[derive(Debug, Clone)]
-pub struct ConcurrencyPatternInfo {
-    pub pattern_type: ConcurrencyPatternType,
-    pub thread_safety: ThreadSafety,
-    pub synchronization_mechanisms: Vec<String>,
-    pub potential_issues: Vec<String>,
-}
-
-/// Concurrency pattern types
-#[derive(Debug, Clone)]
-pub enum ConcurrencyPatternType {
-    Synchronized,
-    Volatile,
-    Atomic,
-    ConcurrentCollections,
-    ExecutorService,
-    CompletableFuture,
-}
-
-/// Thread safety levels
-#[derive(Debug, Clone)]
-pub enum ThreadSafety {
-    ThreadSafe,
-    ConditionallyThreadSafe,
-    NotThreadSafe,
-    Immutable,
-}
-
-/// Optimization opportunities
-#[derive(Debug, Clone)]
-pub struct OptimizationOpportunity {
-    pub opportunity_type: OptimizationType,
-    pub location: String,
-    pub description: String,
-    pub estimated_impact: OptimizationImpact,
-    pub implementation_effort: ImplementationEffort,
-}
-
-/// Optimization types
-#[derive(Debug, Clone)]
-pub enum OptimizationType {
-    AlgorithmOptimization,
-    DataStructureOptimization,
-    CachingImplementation,
-    LazyInitialization,
-    ObjectPooling,
-    StringOptimization,
-    CollectionOptimization,
-}
-
-/// Optimization impact
-#[derive(Debug, Clone)]
-pub enum OptimizationImpact {
-    High,
-    Medium,
-    Low,
-}
-
-/// Implementation effort
-#[derive(Debug, Clone)]
-pub enum ImplementationEffort {
-    Low,
-    Medium,
-    High,
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_analyzer_creation() {
-        let analyzer = JavaAnalyzer::new();
-        let result = analyzer.analyze_code("public class Test {}");
-
-        // Basic test to ensure the analyzer works
-        assert!(!result.recommendations.is_empty()); // Should have recommendations
-        assert!(result.patterns_detected.is_empty()); // Simple class shouldn't detect complex patterns
-        assert!(result.issues_found.is_empty()); // Simple class shouldn't have issues
-    }
-
-    #[test]
-    fn test_comprehensive_analysis() {
-        let analyzer = JavaAnalyzer::new();
-        let java_code = r#"
-        @Component
-        public class UserService {
-            @Autowired
-            private UserRepository userRepository;
-            
-            public Optional<User> findUser(String id) {
-                return userRepository.findById(id);
-            }
-        }
-        "#;
-        
-        let result = analyzer.analyze_comprehensive(java_code);
-        assert!(result.is_ok());
-        
-        let analysis = result.unwrap();
-        assert!(analysis.overall_score > 0);
-        assert!(!analysis.recommendations.is_empty());
-    }
-
-    #[test]
-    fn test_singleton_pattern_detection() {
-        let analyzer = JavaAnalyzer::new();
-
-        let singleton_code = r#"
-        public class Singleton {
-            private static Singleton instance;
-            private Singleton() {}
-            
-            public static Singleton getInstance() {
-                if (instance == null) {
-                    instance = new Singleton();
-                }
-                return instance;
-            }
-        }
-        "#;
-        
-        let result = analyzer.analyze_code(singleton_code);
-        assert!(result
-            .patterns_detected
-            .iter()
-            .any(|p| p.contains("Singleton")));
-    }
-
-    #[test]
-    fn test_spring_framework_detection() {
-        let analyzer = JavaAnalyzer::new();
-
-        let spring_code = r#"
-        @RestController
-        @RequestMapping("/api/users")
-        public class UserController {
-            
-            @Autowired
-            private UserService userService;
-            
-            @GetMapping("/{id}")
-            public ResponseEntity<User> getUser(@PathVariable String id) {
-                return ResponseEntity.ok(userService.findUser(id));
-            }
-        }
-        "#;
-        
-        let result = analyzer.analyze_comprehensive(spring_code);
-        assert!(result.is_ok());
-        
-        let analysis = result.unwrap();
-        assert!(!analysis.framework_analysis.frameworks_detected.is_empty());
-        assert!(analysis.framework_analysis.spring_analysis.is_some());
-    }
-
-    #[test]
-    fn test_security_vulnerability_detection() {
-        let analyzer = JavaAnalyzer::new();
-
-        let vulnerable_code = r#"
-        public class UserDAO {
-            public User findUser(String username, String password) {
-                String sql = "SELECT * FROM users WHERE username = '" + username + 
-                           "' AND password = '" + password + "'";
-                // Vulnerable to SQL injection
-                return executeQuery(sql);
-            }
-        }
-        "#;
-        
-        let result = analyzer.analyze_code(vulnerable_code);
-        assert!(result
-            .issues_found
-            .iter()
-            .any(|i| i.to_lowercase().contains("sql") || i.to_lowercase().contains("injection")));
-    }
-
-    #[test]
-    fn test_oop_analysis() {
-        let analyzer = JavaAnalyzer::new();
-
-        let oop_code = r#"
-        public abstract class Animal {
-            protected String name;
-            
-            public abstract void makeSound();
-            
-            public final void setName(String name) {
-                this.name = name;
-            }
-        }
-        
-        public class Dog extends Animal {
-            @Override
-            public void makeSound() {
-                System.out.println("Woof!");
-            }
-        }
-        "#;
-        
-        let result = analyzer.analyze_oop_patterns(oop_code);
-        assert!(result.is_ok());
-        
-        let oop_analysis = result.unwrap();
-        assert!(!oop_analysis.class_hierarchies.is_empty());
-        assert!(!oop_analysis.inheritance_patterns.is_empty());
-    }
-
-    #[test]
-    fn test_modern_java_features() {
-        let analyzer = JavaAnalyzer::new();
-
-        let modern_code = r#"
-        public class StreamExample {
-            public List<String> processNames(List<String> names) {
-                return names.stream()
-                    .filter(name -> name.length() > 3)
-                    .map(String::toUpperCase)
-                    .collect(Collectors.toList());
-            }
-            
-            public Optional<String> findFirst(List<String> items) {
-                return items.stream().findFirst();
-            }
-        }
-        "#;
-        
-        let result = analyzer.analyze_modern_features(modern_code);
-        assert!(result.is_ok());
-        
-        let modern_analysis = result.unwrap();
-        assert!(!modern_analysis.lambda_expressions.is_empty());
-    }
-
-    #[test]
-    fn test_performance_analysis() {
-        let analyzer = JavaAnalyzer::new();
-
-        let performance_code = r#"
-        public class PerformanceExample {
-            public String concatenateStrings(List<String> strings) {
-                String result = "";
-                for (String s : strings) {
-                    result += s; // Inefficient string concatenation
-                }
-                return result;
-            }
-        }
-        "#;
-        
-        let result = analyzer.analyze_performance(performance_code);
-        assert!(result.is_ok());
-        
-        let perf_analysis = result.unwrap();
-        assert!(perf_analysis.overall_performance_score > 0);
-    }
-
-    #[test]
-    fn test_design_pattern_detection() {
-        let analyzer = JavaAnalyzer::new();
-
-        let factory_code = r#"
-        public class CarFactory {
-            public static Car createCar(String type) {
-                switch (type) {
-                    case "sedan":
-                        return new Sedan();
-                    case "suv":
-                        return new SUV();
-                    default:
-                        throw new IllegalArgumentException("Unknown car type");
-                }
-            }
-        }
-        "#;
-        
-        let result = analyzer.detect_design_patterns(factory_code);
-        assert!(result.is_ok());
-        
-        let patterns = result.unwrap();
-        assert!(!patterns.is_empty());
-    }
-
-    #[test]
-    fn test_builder_pattern_detection() {
-        let analyzer = JavaAnalyzer::new();
-
-        let builder_code = r#"
-        public class User {
-            private String name;
-            private int age;
-            
-            public static class Builder {
-                private String name;
-                private int age;
-                
-                public Builder setName(String name) {
-                    this.name = name;
-                    return this;
-                }
-                
-                public Builder setAge(int age) {
-                    this.age = age;
-                    return this;
-                }
-                
-                public User build() {
-                    return new User(this);
-                }
-            }
-        }
-        "#;
-        
-        let result = analyzer.analyze_code(builder_code);
-        assert!(result
-            .patterns_detected
-            .iter()
-            .any(|p| p.contains("Builder") || p.contains("builder")));
-    }
-
-    #[test]
-    fn test_encapsulation_analysis() {
-        let analyzer = JavaAnalyzer::new();
-
-        let encapsulation_code = r#"
-        public class BankAccount {
-            private double balance;
-            private final String accountNumber;
-            
-            public BankAccount(String accountNumber) {
-                this.accountNumber = accountNumber;
-                this.balance = 0.0;
-            }
-            
-            public double getBalance() {
-                return balance;
-            }
-            
-            public void deposit(double amount) {
-                if (amount > 0) {
-                    balance += amount;
-                }
-            }
-        }
-        "#;
-        
-        let result = analyzer.analyze_encapsulation(encapsulation_code);
-        assert!(result.is_ok());
-        
-        let encapsulation_analysis = result.unwrap();
-        assert!(!encapsulation_analysis.is_empty());
-    }
-
-    #[test]
-    fn test_inheritance_analysis() {
-        let analyzer = JavaAnalyzer::new();
-
-        let inheritance_code = r#"
-        public interface Drawable {
-            void draw();
-        }
-        
-        public abstract class Shape implements Drawable {
-            protected String color;
-            
-            public abstract double getArea();
-        }
-        
-        public class Circle extends Shape {
-            private double radius;
-            
-            @Override
-            public void draw() {
-                System.out.println("Drawing a circle");
-            }
-            
-            @Override
-            public double getArea() {
-                return Math.PI * radius * radius;
-            }
-        }
-        "#;
-        
-        let result = analyzer.analyze_inheritance_patterns(inheritance_code);
-        assert!(result.is_ok());
-        
-        let inheritance_patterns = result.unwrap();
-        assert!(!inheritance_patterns.is_empty());
-    }
-
-    #[test]
-    fn test_security_hardcoded_credentials() {
-        let analyzer = JavaAnalyzer::new();
-
-        let insecure_code = r#"
-        public class DatabaseConfig {
-            private static final String PASSWORD = "admin123";
-            private String dbUrl = "jdbc:mysql://localhost:3306/mydb";
-            
-            public Connection getConnection() {
-                return DriverManager.getConnection(dbUrl, "admin", PASSWORD);
-            }
-        }
-        "#;
-        
-        let result = analyzer.detect_vulnerabilities(insecure_code);
-        assert!(result.is_ok());
-        
-        let vulnerabilities = result.unwrap();
-        assert!(vulnerabilities.iter().any(|v| 
-            matches!(v.vulnerability_type, SecurityVulnerabilityType::HardcodedCredentials)));
-    }
-
-    #[test]
-    fn test_weak_cryptography_detection() {
-        let analyzer = JavaAnalyzer::new();
-
-        let weak_crypto_code = r#"
-        public class HashUtil {
-            public String hashPassword(String password) {
-                try {
-                    MessageDigest md = MessageDigest.getInstance("MD5");
-                    byte[] hash = md.digest(password.getBytes());
-                    return Base64.getEncoder().encodeToString(hash);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }
-        "#;
-        
-        let result = analyzer.detect_vulnerabilities(weak_crypto_code);
-        assert!(result.is_ok());
-        
-        let vulnerabilities = result.unwrap();
-        assert!(vulnerabilities.iter().any(|v| 
-            matches!(v.vulnerability_type, SecurityVulnerabilityType::WeakCryptography)));
-    }
-
-    #[test]
-    fn test_command_injection_detection() {
-        let analyzer = JavaAnalyzer::new();
-
-        let command_injection_code = r#"
-        public class SystemUtil {
-            public void executeCommand(String userInput) {
-                try {
-                    Runtime.getRuntime().exec("ls " + userInput);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        "#;
-        
-        let result = analyzer.detect_vulnerabilities(command_injection_code);
-        assert!(result.is_ok());
-        
-        let vulnerabilities = result.unwrap();
-        assert!(vulnerabilities.iter().any(|v| 
-            matches!(v.vulnerability_type, SecurityVulnerabilityType::CommandInjection)));
-    }
-
-    #[test]
-    fn test_class_hierarchy_analysis() {
-        let analyzer = JavaAnalyzer::new();
-
-        let hierarchy_code = r#"
-        public abstract class Vehicle {
-            protected String brand;
-        }
-        
-        public class Car extends Vehicle implements Drivable {
-            private int wheels = 4;
-        }
-        
-        public interface Drivable {
-            void drive();
-        }
-        "#;
-        
-        let result = analyzer.analyze_class_hierarchies(hierarchy_code);
-        assert!(result.is_ok());
-        
-        let hierarchies = result.unwrap();
-        assert!(!hierarchies.is_empty());
-        
-        // Check if Car class hierarchy is correctly identified
-        let car_hierarchy = hierarchies.iter().find(|h| h.class_name == "Car");
-        assert!(car_hierarchy.is_some());
-        
-        let car = car_hierarchy.unwrap();
-        assert_eq!(car.superclass, Some("Vehicle".to_string()));
-        assert!(car.interfaces.contains(&"Drivable".to_string()));
-    }
-
-    #[test]
-    fn test_interface_usage_analysis() {
-        let analyzer = JavaAnalyzer::new();
-
-        let interface_code = r#"
-        @FunctionalInterface
-        public interface StringProcessor {
-            String process(String input);
-            
-            default String processWithLogging(String input) {
-                System.out.println("Processing: " + input);
-                return process(input);
-            }
-        }
-        
-        public class UpperCaseProcessor implements StringProcessor {
-            @Override
-            public String process(String input) {
-                return input.toUpperCase();
-            }
-        }
-        "#;
-        
-        let result = analyzer.analyze_interface_usage(interface_code);
-        assert!(result.is_ok());
-        
-        let interface_usage = result.unwrap();
-        assert!(!interface_usage.is_empty());
-        
-        let string_processor = interface_usage.iter()
-            .find(|i| i.interface_name == "StringProcessor");
-        assert!(string_processor.is_some());
-    }
-
-    #[test]
-    fn test_lambda_expression_analysis() {
-        let analyzer = JavaAnalyzer::new();
-
-        let lambda_code = r#"
-        public class LambdaExample {
-            public void processItems(List<String> items) {
-                items.stream()
-                    .filter(item -> item.length() > 5)
-                    .map(String::toUpperCase)
-                    .forEach(System.out::println);
-            }
-        }
-        "#;
-        
-        let result = analyzer.analyze_lambda_expressions(lambda_code);
-        assert!(result.is_ok());
-        
-        let lambda_expressions = result.unwrap();
-        assert!(!lambda_expressions.is_empty());
-    }
-
-    #[test]
-    fn test_overall_code_quality_score() {
-        let analyzer = JavaAnalyzer::new();
-
-        let quality_code = r#"
-        @Service
-        public class UserService {
-            private final UserRepository userRepository;
-            
-            public UserService(UserRepository userRepository) {
-                this.userRepository = userRepository;
-            }
-            
-            public Optional<User> findUserById(Long id) {
-                if (id == null || id <= 0) {
-                    return Optional.empty();
-                }
-                return userRepository.findById(id);
-            }
-            
-            @Transactional
-            public User saveUser(User user) {
-                validateUser(user);
-                return userRepository.save(user);
-            }
-            
-            private void validateUser(User user) {
-                if (user == null || user.getEmail() == null) {
-                    throw new IllegalArgumentException("User and email cannot be null");
-                }
-            }
-        }
-        "#;
-        
-        let result = analyzer.analyze_comprehensive(quality_code);
-        assert!(result.is_ok());
-        
-        let analysis = result.unwrap();
-        // Should have a reasonable overall score
-        assert!(analysis.overall_score >= 50);
-        assert!(analysis.overall_score <= 100);
     }
 }

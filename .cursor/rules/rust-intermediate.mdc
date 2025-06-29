@@ -234,17 +234,18 @@ impl<R: UserRepository> CachedUserService<R> {
 }
 ```
 
-## Enhanced Dependencies
+## Additional Dependencies
 
+**Rule: Add intermediate-level dependencies for async programming and enhanced testing.**
+Why: These dependencies enable advanced patterns covered in this rule set.
+
+**Add these to the base Cargo.toml from project-setup.md:**
 ```toml
 [dependencies]
-thiserror = "1.0"
-serde = { version = "1.0", features = ["derive"] }
-async-trait = "0.1"
-futures = "0.3"
+async-trait = "0.1"     # Async traits
+futures = "0.3"         # Async utilities
 tokio = { version = "1.0", features = ["rt-multi-thread", "macros"] }
 
 [dev-dependencies]
-rstest = "0.18"
-mockall = "0.11"
+mockall = "0.11"        # Mocking
 ```

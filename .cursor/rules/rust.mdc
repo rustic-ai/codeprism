@@ -1,6 +1,6 @@
 ---
 description: This rule provides comprehensive best practices for Rust development, covering code organization, common patterns, performance, security, testing, pitfalls, and tooling. It aims to guide developers in writing idiomatic, efficient, secure, and maintainable Rust code.
-globs: *.rs
+globs: *.rs,Cargo.toml,**/*.rs,**/Cargo.toml
 alwaysApply: false
 ---
 # Rust Essentials - Must-Have Basics
@@ -323,27 +323,18 @@ pub struct UserManager {
 
 ## Essential Cargo.toml
 
-**Rule: Configure Cargo.toml with essential dependencies and basic optimization settings.**
-Why: Proper project configuration ensures reproducible builds, includes necessary dependencies for error handling and testing, and provides basic release optimizations.
+**Rule: Configure basic project metadata and essential dependencies.**
+Why: Proper configuration ensures reproducible builds and includes necessary dependencies for error handling and testing.
+
+**Use the comprehensive Cargo.toml template from project-setup.md - this section covers only the essential additions:**
 
 ```toml
-[package]
-name = "my_project"
-version = "0.1.0"
-edition = "2021"
-rust-version = "1.70.0"
-
 [dependencies]
 thiserror = "1.0"    # Error handling
 serde = { version = "1.0", features = ["derive"] }
 
 [dev-dependencies]
 rstest = "0.18"      # Better testing
-
-# Basic optimization
-[profile.release]
-opt-level = 3
-lto = true
 ```
 
 ## Code Generation Checklist

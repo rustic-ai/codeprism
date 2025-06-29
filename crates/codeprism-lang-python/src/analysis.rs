@@ -1,5 +1,10 @@
 //! Python-specific code analysis module
 
+// Temporarily allow clippy warnings for Issue #77 - will be cleaned up in future issues
+#![allow(clippy::upper_case_acronyms)]
+#![allow(clippy::enum_variant_names)]
+#![allow(clippy::cmp_owned)]
+
 use anyhow::Result;
 use regex::Regex;
 use std::collections::HashMap;
@@ -397,22 +402,22 @@ pub struct TypeHintInfo {
 #[derive(Debug, Clone)]
 #[allow(clippy::enum_variant_names)]
 pub enum TypeHintType {
-    SimpleType(String),           // int, str, bool
-    UnionType(Vec<String>),       // Union[str, int] or str | int
-    GenericType(GenericTypeInfo), // List[T], Dict[K, V]
-    ProtocolType(String),         // Protocol for structural typing
-    LiteralType(Vec<String>),     // Literal['value1', 'value2']
+    SimpleType(String),             // int, str, bool
+    UnionType(Vec<String>),         // Union[str, int] or str | int
+    GenericType(GenericTypeInfo),   // List[T], Dict[K, V]
+    ProtocolType(String),           // Protocol for structural typing
+    LiteralType(Vec<String>),       // Literal['value1', 'value2']
     CallableType(CallableTypeInfo), // Callable[[int, str], bool]
-    TypeVarType(TypeVarInfo),     // TypeVar constraints and bounds
-    OptionalType(String),         // Optional[str] or str | None
-    FinalType(String),            // Final[int]
-    TypedDictType(TypedDictInfo), // TypedDict for structured dicts
+    TypeVarType(TypeVarInfo),       // TypeVar constraints and bounds
+    OptionalType(String),           // Optional[str] or str | None
+    FinalType(String),              // Final[int]
+    TypedDictType(TypedDictInfo),   // TypedDict for structured dicts
 }
 
 /// Generic type information
 #[derive(Debug, Clone)]
 pub struct GenericTypeInfo {
-    pub base_type: String,      // List, Dict, Set, etc.
+    pub base_type: String,            // List, Dict, Set, etc.
     pub type_parameters: Vec<String>, // [T] or [K, V]
     pub is_covariant: bool,
     pub is_contravariant: bool,
@@ -455,10 +460,10 @@ pub struct TypedDictField {
 /// Type complexity assessment
 #[derive(Debug, Clone)]
 pub enum TypeComplexity {
-    Simple,    // Basic types like int, str
-    Moderate,  // Union types, Optional
-    Complex,   // Generic types with multiple parameters
-    Advanced,  // Complex nested generics, Protocols
+    Simple,   // Basic types like int, str
+    Moderate, // Union types, Optional
+    Complex,  // Generic types with multiple parameters
+    Advanced, // Complex nested generics, Protocols
 }
 
 /// Type safety issues
@@ -474,14 +479,14 @@ pub struct TypeSafetyIssue {
 /// Type safety issue types
 #[derive(Debug, Clone)]
 pub enum TypeSafetyIssueType {
-    AnyTypeOveruse,           // Too many Any types
-    MissingTypeHints,         // Functions without type hints
-    InconsistentTypes,        // Type inconsistencies
-    TypeIgnoreOveruse,        // Too many # type: ignore comments
-    WrongTypeHintSyntax,      // Incorrect type hint syntax
-    DeprecatedTypingSyntax,   // Using old typing syntax
-    UnreachableCode,          // Dead code due to type narrowing
-    TypeVarianceIssue,        // Covariance/contravariance problems
+    AnyTypeOveruse,         // Too many Any types
+    MissingTypeHints,       // Functions without type hints
+    InconsistentTypes,      // Type inconsistencies
+    TypeIgnoreOveruse,      // Too many # type: ignore comments
+    WrongTypeHintSyntax,    // Incorrect type hint syntax
+    DeprecatedTypingSyntax, // Using old typing syntax
+    UnreachableCode,        // Dead code due to type narrowing
+    TypeVarianceIssue,      // Covariance/contravariance problems
 }
 
 /// Type safety severity levels
@@ -505,17 +510,17 @@ pub struct ModernTypeFeature {
 /// Modern type feature types
 #[derive(Debug, Clone)]
 pub enum ModernTypeFeatureType {
-    PositionalOnlyParams,  // def func(arg, /) -> str:
-    UnionSyntaxPy310,      // str | int instead of Union[str, int]
-    TypedDict,             // TypedDict for structured dictionaries
-    FinalType,             // Final[int] = 42
-    LiteralType,           // Literal['red', 'green', 'blue']
-    ProtocolType,          // Protocol for structural typing
-    TypeGuard,             // TypeGuard for type narrowing
-    OverloadDecorator,     // @overload for function overloading
-    GenericAlias,          // list[int] instead of List[int] (Python 3.9+)
-    ParamSpec,             // ParamSpec for callable signatures (Python 3.10+)
-    TypeVarTuple,          // TypeVarTuple for variadic generics (Python 3.11+)
+    PositionalOnlyParams, // def func(arg, /) -> str:
+    UnionSyntaxPy310,     // str | int instead of Union[str, int]
+    TypedDict,            // TypedDict for structured dictionaries
+    FinalType,            // Final[int] = 42
+    LiteralType,          // Literal['red', 'green', 'blue']
+    ProtocolType,         // Protocol for structural typing
+    TypeGuard,            // TypeGuard for type narrowing
+    OverloadDecorator,    // @overload for function overloading
+    GenericAlias,         // list[int] instead of List[int] (Python 3.9+)
+    ParamSpec,            // ParamSpec for callable signatures (Python 3.10+)
+    TypeVarTuple,         // TypeVarTuple for variadic generics (Python 3.11+)
 }
 
 /// Pattern for type hint detection
@@ -557,39 +562,39 @@ pub struct AsyncFunctionInfo {
 /// Types of async functions
 #[derive(Debug, Clone)]
 pub enum AsyncFunctionType {
-    RegularAsync,      // async def function()
-    AsyncGenerator,    // async def with yield
+    RegularAsync,        // async def function()
+    AsyncGenerator,      // async def with yield
     AsyncContextManager, // __aenter__, __aexit__
-    AsyncIterator,     // __aiter__, __anext__
-    AsyncProperty,     // @async_property
-    AsyncDecorator,    // Decorates with async functionality
+    AsyncIterator,       // __aiter__, __anext__
+    AsyncProperty,       // @async_property
+    AsyncDecorator,      // Decorates with async functionality
 }
 
 /// Async function complexity
 #[derive(Debug, Clone)]
 pub enum AsyncComplexity {
-    Simple,    // Single await or simple operations
-    Moderate,  // Multiple awaits, basic control flow
-    Complex,   // Nested awaits, exception handling
-    Advanced,  // Complex concurrency patterns, resource management
+    Simple,   // Single await or simple operations
+    Moderate, // Multiple awaits, basic control flow
+    Complex,  // Nested awaits, exception handling
+    Advanced, // Complex concurrency patterns, resource management
 }
 
 /// Coroutine type classification
 #[derive(Debug, Clone)]
 pub enum CoroutineType {
-    Native,         // Native Python coroutines
+    Native,            // Native Python coroutines
     Framework(String), // Framework-specific (asyncio, trio, curio)
-    Generator,      // Generator-based coroutines (deprecated)
-    Hybrid,         // Mixed native and framework
+    Generator,         // Generator-based coroutines (deprecated)
+    Hybrid,            // Mixed native and framework
 }
 
 /// Async error handling assessment
 #[derive(Debug, Clone)]
 pub enum AsyncErrorHandling {
-    None,       // No error handling
-    Basic,      // Simple try/catch
-    Timeout,    // Includes timeout handling
-    Robust,     // Comprehensive error handling with retries
+    None,    // No error handling
+    Basic,   // Simple try/catch
+    Timeout, // Includes timeout handling
+    Robust,  // Comprehensive error handling with retries
 }
 
 /// Await usage information
@@ -605,35 +610,35 @@ pub struct AwaitUsageInfo {
 /// Context where await is used
 #[derive(Debug, Clone)]
 pub enum AwaitContext {
-    AsyncFunction,     // Inside async def
-    AsyncGenerator,    // Inside async generator
+    AsyncFunction,       // Inside async def
+    AsyncGenerator,      // Inside async generator
     AsyncContextManager, // Inside async context manager
-    AsyncIterator,     // Inside async iterator
-    SyncContext,       // Invalid: inside sync function
-    Comprehension,     // Invalid: inside comprehension
-    Lambda,           // Invalid: inside lambda
+    AsyncIterator,       // Inside async iterator
+    SyncContext,         // Invalid: inside sync function
+    Comprehension,       // Invalid: inside comprehension
+    Lambda,              // Invalid: inside lambda
 }
 
 /// Await usage patterns
 #[derive(Debug, Clone)]
 pub enum AwaitUsagePattern {
-    SingleAwait,       // Single await expression
-    SequentialAwaits,  // Multiple sequential awaits
-    ConditionalAwait,  // Await in conditional
-    NestedAwait,       // Await inside await
-    GatheredAwait,     // Part of asyncio.gather()
-    ConcurrentAwait,   // Concurrent execution pattern
+    SingleAwait,      // Single await expression
+    SequentialAwaits, // Multiple sequential awaits
+    ConditionalAwait, // Await in conditional
+    NestedAwait,      // Await inside await
+    GatheredAwait,    // Part of asyncio.gather()
+    ConcurrentAwait,  // Concurrent execution pattern
 }
 
 /// Await usage issues
 #[derive(Debug, Clone)]
 pub enum AwaitIssue {
-    IllegalContext,    // await in illegal context
-    MissingAwait,      // Missing await on coroutine
-    BlockingCall,      // Blocking call in async context
-    SyncInAsync,       // Sync operation in async function
-    ResourceLeak,      // Potential resource leak
-    TimeoutMissing,    // Missing timeout handling
+    IllegalContext, // await in illegal context
+    MissingAwait,   // Missing await on coroutine
+    BlockingCall,   // Blocking call in async context
+    SyncInAsync,    // Sync operation in async function
+    ResourceLeak,   // Potential resource leak
+    TimeoutMissing, // Missing timeout handling
 }
 
 /// Concurrency pattern information
@@ -664,20 +669,20 @@ pub enum ConcurrencyPatternType {
 /// Quality of concurrency usage
 #[derive(Debug, Clone)]
 pub enum ConcurrencyUsageQuality {
-    Excellent,  // Optimal usage with best practices
-    Good,       // Correct usage with minor optimizations possible
-    Adequate,   // Functional but suboptimal
-    Poor,       // Problematic usage that should be improved
-    Dangerous,  // Usage that can cause deadlocks or race conditions
+    Excellent, // Optimal usage with best practices
+    Good,      // Correct usage with minor optimizations possible
+    Adequate,  // Functional but suboptimal
+    Poor,      // Problematic usage that should be improved
+    Dangerous, // Usage that can cause deadlocks or race conditions
 }
 
 /// Performance impact of async patterns
 #[derive(Debug, Clone)]
 pub enum AsyncPerformanceImpact {
-    Positive,   // Improves performance
-    Neutral,    // No significant impact
-    Negative,   // Reduces performance
-    Critical,   // Severely impacts performance
+    Positive, // Improves performance
+    Neutral,  // No significant impact
+    Negative, // Reduces performance
+    Critical, // Severely impacts performance
 }
 
 /// Async-specific performance issues
@@ -694,26 +699,26 @@ pub struct AsyncPerformanceIssue {
 /// Types of async performance issues
 #[derive(Debug, Clone)]
 pub enum AsyncPerformanceIssueType {
-    BlockingIOInAsync,    // Sync I/O operations in async functions
-    EventLoopBlocking,    // Operations that block the event loop
-    GILContentionAsync,   // GIL contention in async code
-    AwaitInLoop,          // Inefficient await in loop
-    MissingConcurrency,   // Sequential execution where concurrent is possible
-    ResourceLeakAsync,    // Async resource leaks
-    SyncWrapperOveruse,   // Overuse of sync-to-async wrappers
+    BlockingIOInAsync,     // Sync I/O operations in async functions
+    EventLoopBlocking,     // Operations that block the event loop
+    GILContentionAsync,    // GIL contention in async code
+    AwaitInLoop,           // Inefficient await in loop
+    MissingConcurrency,    // Sequential execution where concurrent is possible
+    ResourceLeakAsync,     // Async resource leaks
+    SyncWrapperOveruse,    // Overuse of sync-to-async wrappers
     AsyncioSubprocessSync, // Sync subprocess calls in async context
     DatabaseBlockingAsync, // Blocking database calls in async functions
-    SlowAsyncGenerator,   // Inefficient async generators
+    SlowAsyncGenerator,    // Inefficient async generators
 }
 
 /// Async issue severity levels
 #[derive(Debug, Clone)]
 pub enum AsyncIssueSeverity {
-    Critical,  // Breaks async functionality
-    High,      // Significant performance impact
-    Medium,    // Moderate impact on performance
-    Low,       // Minor optimization opportunity
-    Info,      // Best practice suggestion
+    Critical, // Breaks async functionality
+    High,     // Significant performance impact
+    Medium,   // Moderate impact on performance
+    Low,      // Minor optimization opportunity
+    Info,     // Best practice suggestion
 }
 
 /// Async-specific security issues
@@ -729,24 +734,24 @@ pub struct AsyncSecurityIssue {
 /// Types of async security issues
 #[derive(Debug, Clone)]
 pub enum AsyncSecurityIssueType {
-    AsyncRaceCondition,   // Race conditions in async code
-    SharedStateNoLock,    // Shared mutable state without locking
-    AsyncTimeoutVuln,     // Missing timeouts enabling DoS
-    TaskCancellationLeak, // Improper task cancellation
-    AsyncResourceExposure, // Resource exposure through async operations
-    EventLoopPoisoning,   // Event loop manipulation attacks
-    AsyncPickleVuln,      // Pickle vulnerabilities in async context
+    AsyncRaceCondition,     // Race conditions in async code
+    SharedStateNoLock,      // Shared mutable state without locking
+    AsyncTimeoutVuln,       // Missing timeouts enabling DoS
+    TaskCancellationLeak,   // Improper task cancellation
+    AsyncResourceExposure,  // Resource exposure through async operations
+    EventLoopPoisoning,     // Event loop manipulation attacks
+    AsyncPickleVuln,        // Pickle vulnerabilities in async context
     ConcurrentModification, // Concurrent modification without protection
 }
 
 /// Async security severity levels
 #[derive(Debug, Clone)]
 pub enum AsyncSecuritySeverity {
-    Critical,  // Exploitable security vulnerability
-    High,      // Significant security risk
-    Medium,    // Moderate security concern
-    Low,       // Minor security consideration
-    Info,      // Security best practice
+    Critical, // Exploitable security vulnerability
+    High,     // Significant security risk
+    Medium,   // Moderate security concern
+    Low,      // Minor security consideration
+    Info,     // Security best practice
 }
 
 /// Modern async features (Python 3.7+)
@@ -762,7 +767,7 @@ pub struct ModernAsyncFeature {
 /// Types of modern async features
 #[derive(Debug, Clone)]
 pub enum ModernAsyncFeatureType {
-    AsyncContextManager,  // async with statements
+    AsyncContextManager, // async with statements
     TaskGroups,          // Python 3.11+ TaskGroup
     AsyncioTimeout,      // asyncio.timeout() (Python 3.11+)
     AsyncIterators,      // async for loops
@@ -813,14 +818,14 @@ pub struct RequirementsFileInfo {
 /// Requirements file types
 #[derive(Debug, Clone)]
 pub enum RequirementsFileType {
-    RequirementsTxt,    // requirements.txt
-    PyprojectToml,      // pyproject.toml with dependencies
-    SetupPy,            // setup.py with install_requires
-    Pipfile,            // Pipfile for pipenv
-    PipfileLock,        // Pipfile.lock with locked versions
-    PoetryLock,         // poetry.lock for poetry
-    CondaYml,           // environment.yml for conda
-    SetupCfg,           // setup.cfg with install_requires
+    RequirementsTxt, // requirements.txt
+    PyprojectToml,   // pyproject.toml with dependencies
+    SetupPy,         // setup.py with install_requires
+    Pipfile,         // Pipfile for pipenv
+    PipfileLock,     // Pipfile.lock with locked versions
+    PoetryLock,      // poetry.lock for poetry
+    CondaYml,        // environment.yml for conda
+    SetupCfg,        // setup.cfg with install_requires
 }
 
 /// Individual requirement information
@@ -839,11 +844,11 @@ pub struct RequirementInfo {
 /// Requirement source types
 #[derive(Debug, Clone)]
 pub enum RequirementSource {
-    PyPI,                    // Standard PyPI package
-    Git(String),             // Git repository URL
-    Local(String),           // Local file path
-    URL(String),             // Direct URL
-    VCS(String, String),     // Version control (type, url)
+    PyPI,                // Standard PyPI package
+    Git(String),         // Git repository URL
+    Local(String),       // Local file path
+    URL(String),         // Direct URL
+    VCS(String, String), // Version control (type, url)
 }
 
 /// Package metadata information
@@ -862,22 +867,22 @@ pub struct PackageMetadata {
 /// Package maintenance status
 #[derive(Debug, Clone)]
 pub enum MaintenanceStatus {
-    Active,      // Recently updated, active development
-    Maintained,  // Occasional updates, bug fixes
-    Stable,      // Mature, infrequent updates
-    Deprecated,  // No longer maintained
-    Abandoned,   // No updates for extended period
-    Unknown,     // Unable to determine status
+    Active,     // Recently updated, active development
+    Maintained, // Occasional updates, bug fixes
+    Stable,     // Mature, infrequent updates
+    Deprecated, // No longer maintained
+    Abandoned,  // No updates for extended period
+    Unknown,    // Unable to determine status
 }
 
 /// Dependency quality scoring
 #[derive(Debug, Clone)]
 pub enum DependencyQualityScore {
-    Excellent,  // 90-100: Well-managed, secure, up-to-date
-    Good,       // 70-89: Good practices, minor issues
-    Fair,       // 50-69: Adequate, some improvements needed
-    Poor,       // 30-49: Multiple issues, needs attention
-    Critical,   // 0-29: Major problems, immediate action required
+    Excellent, // 90-100: Well-managed, secure, up-to-date
+    Good,      // 70-89: Good practices, minor issues
+    Fair,      // 50-69: Adequate, some improvements needed
+    Poor,      // 30-49: Multiple issues, needs attention
+    Critical,  // 0-29: Major problems, immediate action required
 }
 
 /// Dependency issues
@@ -894,27 +899,27 @@ pub struct DependencyIssue {
 /// Dependency issue types
 #[derive(Debug, Clone)]
 pub enum DependencyIssueType {
-    VersionConflict,         // Conflicting version requirements
-    CircularDependency,      // Circular dependency detected
-    UnusedDependency,        // Declared but not imported
-    MissingDependency,       // Imported but not declared
-    SecurityVulnerability,   // Known security issue
-    LicenseIncompatibility,  // Incompatible licenses
-    DeprecatedPackage,       // Package is deprecated
-    UnpinnedVersion,         // Version not pinned for production
-    OutdatedVersion,         // Newer version available
-    DevDependencyInProd,     // Dev dependency in production requirements
-    DuplicateDependency,     // Same package in multiple files
+    VersionConflict,        // Conflicting version requirements
+    CircularDependency,     // Circular dependency detected
+    UnusedDependency,       // Declared but not imported
+    MissingDependency,      // Imported but not declared
+    SecurityVulnerability,  // Known security issue
+    LicenseIncompatibility, // Incompatible licenses
+    DeprecatedPackage,      // Package is deprecated
+    UnpinnedVersion,        // Version not pinned for production
+    OutdatedVersion,        // Newer version available
+    DevDependencyInProd,    // Dev dependency in production requirements
+    DuplicateDependency,    // Same package in multiple files
 }
 
 /// Dependency issue severity
 #[derive(Debug, Clone)]
 pub enum DependencyIssueSeverity {
-    Critical,   // Security vulnerabilities, license violations
-    High,       // Version conflicts, missing dependencies
-    Medium,     // Deprecated packages, outdated versions
-    Low,        // Unused dependencies, minor optimizations
-    Info,       // Best practice suggestions
+    Critical, // Security vulnerabilities, license violations
+    High,     // Version conflicts, missing dependencies
+    Medium,   // Deprecated packages, outdated versions
+    Low,      // Unused dependencies, minor optimizations
+    Info,     // Best practice suggestions
 }
 
 /// Virtual environment information
@@ -932,13 +937,13 @@ pub struct VirtualEnvironmentInfo {
 /// Virtual environment types
 #[derive(Debug, Clone)]
 pub enum VirtualEnvironmentType {
-    Venv,        // Python venv
-    Virtualenv,  // virtualenv package
-    Conda,       // Anaconda/Miniconda
-    Pipenv,      // Pipenv virtual environment
-    Poetry,      // Poetry virtual environment
-    Docker,      // Docker container environment
-    Pyenv,       // pyenv version management
+    Venv,           // Python venv
+    Virtualenv,     // virtualenv package
+    Conda,          // Anaconda/Miniconda
+    Pipenv,         // Pipenv virtual environment
+    Poetry,         // Poetry virtual environment
+    Docker,         // Docker container environment
+    Pyenv,          // pyenv version management
     Custom(String), // Custom environment type
 }
 
@@ -954,13 +959,13 @@ pub struct EnvironmentVariable {
 /// Environment variable purposes
 #[derive(Debug, Clone)]
 pub enum EnvironmentVariablePurpose {
-    Configuration,  // Application configuration
-    Secret,         // API keys, passwords
-    Path,           // PYTHONPATH, PATH modifications
-    Development,    // Development-specific settings
-    Production,     // Production environment settings
-    Testing,        // Test configuration
-    Unknown,        // Unable to categorize
+    Configuration, // Application configuration
+    Secret,        // API keys, passwords
+    Path,          // PYTHONPATH, PATH modifications
+    Development,   // Development-specific settings
+    Production,    // Production environment settings
+    Testing,       // Test configuration
+    Unknown,       // Unable to categorize
 }
 
 /// Virtual environment configuration
@@ -988,36 +993,36 @@ pub struct ImportAnalysisInfo {
 /// Import types
 #[derive(Debug, Clone)]
 pub enum ImportType {
-    StandardImport,     // import module
-    FromImport,         // from module import item
-    StarImport,         // from module import *
-    AliasImport,        // import module as alias
-    RelativeImport,     // from .module import item
-    ConditionalImport,  // Import inside if/try block
-    DynamicImport,      // importlib.import_module()
+    StandardImport,    // import module
+    FromImport,        // from module import item
+    StarImport,        // from module import *
+    AliasImport,       // import module as alias
+    RelativeImport,    // from .module import item
+    ConditionalImport, // Import inside if/try block
+    DynamicImport,     // importlib.import_module()
 }
 
 /// Module categories
 #[derive(Debug, Clone)]
 pub enum ModuleCategory {
-    StandardLibrary,    // Built-in Python modules
-    ThirdParty,         // External packages from PyPI
-    Local,              // Local project modules
-    BuiltIn,            // Built-in functions and types
-    Unknown,            // Unable to categorize
+    StandardLibrary, // Built-in Python modules
+    ThirdParty,      // External packages from PyPI
+    Local,           // Local project modules
+    BuiltIn,         // Built-in functions and types
+    Unknown,         // Unable to categorize
 }
 
 /// Import issues
 #[derive(Debug, Clone, PartialEq)]
 pub enum ImportIssue {
-    CircularImport,     // Circular import detected
+    CircularImport,      // Circular import detected
     StarImportDangerous, // from module import * is problematic
-    UnusedImport,       // Import not used in code
-    RedundantImport,    // Import duplicated
-    WrongImportOrder,   // PEP 8 import order violation
-    MissingImport,      // Required import not found
-    SlowImport,         // Import is known to be slow
-    DeprecatedImport,   // Importing deprecated module
+    UnusedImport,        // Import not used in code
+    RedundantImport,     // Import duplicated
+    WrongImportOrder,    // PEP 8 import order violation
+    MissingImport,       // Required import not found
+    SlowImport,          // Import is known to be slow
+    DeprecatedImport,    // Importing deprecated module
 }
 
 /// Security vulnerability information
@@ -1039,30 +1044,30 @@ pub struct SecurityVulnerabilityInfo {
 /// Security vulnerability severity (CVSS-based)
 #[derive(Debug, Clone)]
 pub enum SecurityVulnerabilitySeverity {
-    Critical,   // CVSS 9.0-10.0
-    High,       // CVSS 7.0-8.9  
-    Medium,     // CVSS 4.0-6.9
-    Low,        // CVSS 0.1-3.9
-    None,       // CVSS 0.0
-    Unknown,    // Severity not available
+    Critical, // CVSS 9.0-10.0
+    High,     // CVSS 7.0-8.9
+    Medium,   // CVSS 4.0-6.9
+    Low,      // CVSS 0.1-3.9
+    None,     // CVSS 0.0
+    Unknown,  // Severity not available
 }
 
 /// Vulnerability categories
 #[derive(Debug, Clone)]
 pub enum VulnerabilityCategory {
-    CodeExecution,      // Remote or arbitrary code execution
-    SqlInjection,       // SQL injection vulnerabilities
-    XSS,                // Cross-site scripting
-    CSRF,               // Cross-site request forgery
-    PathTraversal,      // Directory traversal attacks
-    Deserialization,    // Unsafe deserialization
-    Cryptographic,      // Cryptographic weaknesses
-    DoS,                // Denial of service
-    PrivilegeEscalation, // Privilege escalation
+    CodeExecution,         // Remote or arbitrary code execution
+    SqlInjection,          // SQL injection vulnerabilities
+    XSS,                   // Cross-site scripting
+    CSRF,                  // Cross-site request forgery
+    PathTraversal,         // Directory traversal attacks
+    Deserialization,       // Unsafe deserialization
+    Cryptographic,         // Cryptographic weaknesses
+    DoS,                   // Denial of service
+    PrivilegeEscalation,   // Privilege escalation
     InformationDisclosure, // Information disclosure
-    InputValidation,    // Input validation issues
-    AuthenticationBypass, // Authentication bypass
-    Other(String),      // Other vulnerability types
+    InputValidation,       // Input validation issues
+    AuthenticationBypass,  // Authentication bypass
+    Other(String),         // Other vulnerability types
 }
 
 /// License information
@@ -1099,11 +1104,11 @@ pub enum LicenseType {
 /// License compatibility assessment
 #[derive(Debug, Clone)]
 pub enum LicenseCompatibility {
-    Compatible,     // Fully compatible with project license
+    Compatible,              // Fully compatible with project license
     ConditionallyCompatible, // Compatible under certain conditions
-    Incompatible,   // License conflict detected
-    RequiresReview, // Manual review required
-    Unknown,        // Unable to determine compatibility
+    Incompatible,            // License conflict detected
+    RequiresReview,          // Manual review required
+    Unknown,                 // Unable to determine compatibility
 }
 
 /// Pattern for dependency detection
@@ -1162,21 +1167,21 @@ pub struct CompatibilityIssue {
 /// Compatibility issue types
 #[derive(Debug, Clone)]
 pub enum CompatibilityIssueType {
-    VersionMismatch,    // Feature requires newer Python version
-    DeprecatedFeature,  // Feature is deprecated
-    SyntaxError,        // Syntax not supported in target version
-    ImportError,        // Module not available in target version
-    BehaviorChange,     // Feature behavior changed between versions
+    VersionMismatch,   // Feature requires newer Python version
+    DeprecatedFeature, // Feature is deprecated
+    SyntaxError,       // Syntax not supported in target version
+    ImportError,       // Module not available in target version
+    BehaviorChange,    // Feature behavior changed between versions
 }
 
 /// Compatibility severity
 #[derive(Debug, Clone)]
 pub enum CompatibilitySeverity {
-    Critical,  // Code will not run
-    High,      // Major functionality affected
-    Medium,    // Minor issues or warnings
-    Low,       // Style or performance recommendations
-    Info,      // Informational only
+    Critical, // Code will not run
+    High,     // Major functionality affected
+    Medium,   // Minor issues or warnings
+    Low,      // Style or performance recommendations
+    Info,     // Informational only
 }
 
 /// Dataclass analysis information
@@ -1194,11 +1199,11 @@ pub struct DataclassInfo {
 /// Dataclass types
 #[derive(Debug, Clone, PartialEq)]
 pub enum DataclassType {
-    StandardDataclass,  // @dataclass
-    PydanticModel,      // Pydantic BaseModel
-    NamedTuple,         // typing.NamedTuple
-    AttrsClass,         // attrs @attr.s
-    SimpleNamespace,    // types.SimpleNamespace
+    StandardDataclass, // @dataclass
+    PydanticModel,     // Pydantic BaseModel
+    NamedTuple,        // typing.NamedTuple
+    AttrsClass,        // attrs @attr.s
+    SimpleNamespace,   // types.SimpleNamespace
 }
 
 /// Dataclass field information
@@ -1242,14 +1247,14 @@ pub struct ContextManagerInfo {
 /// Context manager types
 #[derive(Debug, Clone)]
 pub enum ContextManagerType {
-    BuiltInFileManager,     // open() with statement
-    CustomContextManager,   // Custom __enter__/__exit__
-    ContextlibManager,      // @contextmanager decorator
-    AsyncContextManager,    // async __aenter__/__aexit__
-    DatabaseConnection,     // DB connection managers
-    LockManager,            // Threading/asyncio locks
-    TemporaryResource,      // tempfile, temporary dirs
-    ExceptionSuppression,   // contextlib.suppress
+    BuiltInFileManager,   // open() with statement
+    CustomContextManager, // Custom __enter__/__exit__
+    ContextlibManager,    // @contextmanager decorator
+    AsyncContextManager,  // async __aenter__/__aexit__
+    DatabaseConnection,   // DB connection managers
+    LockManager,          // Threading/asyncio locks
+    TemporaryResource,    // tempfile, temporary dirs
+    ExceptionSuppression, // contextlib.suppress
 }
 
 /// Context usage patterns
@@ -1266,20 +1271,20 @@ pub enum ContextUsagePattern {
 /// Resource management quality
 #[derive(Debug, Clone)]
 pub enum ResourceManagementQuality {
-    Excellent,  // Proper resource cleanup, error handling
-    Good,       // Good resource management with minor issues
-    Adequate,   // Basic resource management
-    Poor,       // Resource leaks possible
-    Dangerous,  // Major resource management issues
+    Excellent, // Proper resource cleanup, error handling
+    Good,      // Good resource management with minor issues
+    Adequate,  // Basic resource management
+    Poor,      // Resource leaks possible
+    Dangerous, // Major resource management issues
 }
 
 /// Context error handling
 #[derive(Debug, Clone)]
 pub enum ContextErrorHandling {
-    Comprehensive,  // Full exception handling
-    Basic,          // Basic error handling
-    Minimal,        // Minimal error handling
-    None,           // No error handling
+    Comprehensive, // Full exception handling
+    Basic,         // Basic error handling
+    Minimal,       // Minimal error handling
+    None,          // No error handling
 }
 
 /// F-string analysis information
@@ -1296,32 +1301,32 @@ pub struct FStringInfo {
 /// F-string complexity levels
 #[derive(Debug, Clone, PartialEq)]
 pub enum FStringComplexity {
-    Simple,     // Basic variable interpolation
-    Moderate,   // Simple expressions and formatting
-    Complex,    // Complex expressions, nested calls
-    Advanced,   // Very complex expressions, performance concerns
+    Simple,   // Basic variable interpolation
+    Moderate, // Simple expressions and formatting
+    Complex,  // Complex expressions, nested calls
+    Advanced, // Very complex expressions, performance concerns
 }
 
 /// F-string features
 #[derive(Debug, Clone, PartialEq)]
 pub enum FStringFeature {
-    BasicInterpolation,     // f"{variable}"
-    ExpressionEvaluation,   // f"{expression()}"
-    FormatSpecifiers,       // f"{value:.2f}"
-    ConversionFlags,        // f"{value!r}"
-    NestedFormatting,       // f"{f'{inner}'}"
-    MultilineString,        // Multiline f-strings
-    RawFString,             // rf"string"
-    ComplexExpressions,     // f"{complex.expression}"
+    BasicInterpolation,   // f"{variable}"
+    ExpressionEvaluation, // f"{expression()}"
+    FormatSpecifiers,     // f"{value:.2f}"
+    ConversionFlags,      // f"{value!r}"
+    NestedFormatting,     // f"{f'{inner}'}"
+    MultilineString,      // Multiline f-strings
+    RawFString,           // rf"string"
+    ComplexExpressions,   // f"{complex.expression}"
 }
 
 /// Performance impact assessment
 #[derive(Debug, Clone)]
 pub enum PerformanceImpact {
-    Positive,   // Better performance than alternatives
-    Neutral,    // Similar performance
-    Negative,   // Worse performance
-    Critical,   // Significantly worse performance
+    Positive, // Better performance than alternatives
+    Neutral,  // Similar performance
+    Negative, // Worse performance
+    Critical, // Significantly worse performance
 }
 
 /// Formatting quality assessment
@@ -1349,36 +1354,36 @@ pub struct PatternMatchingInfo {
 /// Pattern types in match statements
 #[derive(Debug, Clone)]
 pub enum PatternType {
-    LiteralPattern,         // case 42:
-    VariablePattern,        // case x:
-    WildcardPattern,        // case _:
-    ValuePattern,           // case Color.RED:
-    GroupPattern,           // case (x, y):
-    SequencePattern,        // case [x, *rest]:
-    MappingPattern,         // case {"key": value}:
-    ClassPattern,           // case Point(x, y):
-    OrPattern,              // case x | y:
-    AsPattern,              // case x as y:
-    GuardedPattern,         // case x if condition:
+    LiteralPattern,  // case 42:
+    VariablePattern, // case x:
+    WildcardPattern, // case _:
+    ValuePattern,    // case Color.RED:
+    GroupPattern,    // case (x, y):
+    SequencePattern, // case [x, *rest]:
+    MappingPattern,  // case {"key": value}:
+    ClassPattern,    // case Point(x, y):
+    OrPattern,       // case x | y:
+    AsPattern,       // case x as y:
+    GuardedPattern,  // case x if condition:
 }
 
 /// Pattern matching complexity
 #[derive(Debug, Clone)]
 pub enum PatternComplexity {
-    Simple,     // Basic literal/variable patterns
-    Moderate,   // Some structured patterns
-    Complex,    // Complex nested patterns
-    Advanced,   // Very complex patterns with guards
+    Simple,   // Basic literal/variable patterns
+    Moderate, // Some structured patterns
+    Complex,  // Complex nested patterns
+    Advanced, // Very complex patterns with guards
 }
 
 /// Match statement performance characteristics
 #[derive(Debug, Clone)]
 pub enum MatchPerformance {
-    Optimal,    // Efficient pattern matching
-    Good,       // Good performance
-    Fair,       // Adequate performance
-    Poor,       // Inefficient patterns
-    Critical,   // Very poor performance
+    Optimal,  // Efficient pattern matching
+    Good,     // Good performance
+    Fair,     // Adequate performance
+    Poor,     // Inefficient patterns
+    Critical, // Very poor performance
 }
 
 /// Generator analysis information
@@ -1396,41 +1401,41 @@ pub struct GeneratorInfo {
 /// Generator types
 #[derive(Debug, Clone)]
 pub enum GeneratorType {
-    GeneratorFunction,      // def func(): yield
-    GeneratorExpression,    // (x for x in iterable)
-    AsyncGenerator,         // async def func(): yield
-    Comprehension,          // List/dict/set comprehensions
-    IteratorProtocol,       // __iter__, __next__
+    GeneratorFunction,   // def func(): yield
+    GeneratorExpression, // (x for x in iterable)
+    AsyncGenerator,      // async def func(): yield
+    Comprehension,       // List/dict/set comprehensions
+    IteratorProtocol,    // __iter__, __next__
 }
 
 /// Generator usage patterns
 #[derive(Debug, Clone)]
 pub enum GeneratorUsagePattern {
-    SimpleIteration,        // Basic iteration
-    DataTransformation,     // Data processing pipeline
-    LazyEvaluation,         // Lazy computation
-    InfiniteSequence,       // Infinite generators
-    Coroutine,              // Coroutine patterns
-    Pipeline,               // Chained generators
+    SimpleIteration,    // Basic iteration
+    DataTransformation, // Data processing pipeline
+    LazyEvaluation,     // Lazy computation
+    InfiniteSequence,   // Infinite generators
+    Coroutine,          // Coroutine patterns
+    Pipeline,           // Chained generators
 }
 
 /// Memory efficiency assessment
 #[derive(Debug, Clone)]
 pub enum MemoryEfficiency {
-    Excellent,  // Very memory efficient
-    Good,       // Good memory usage
-    Adequate,   // Acceptable memory usage
-    Poor,       // Inefficient memory usage
-    Critical,   // Very poor memory usage
+    Excellent, // Very memory efficient
+    Good,      // Good memory usage
+    Adequate,  // Acceptable memory usage
+    Poor,      // Inefficient memory usage
+    Critical,  // Very poor memory usage
 }
 
 /// Generator complexity
 #[derive(Debug, Clone)]
 pub enum GeneratorComplexity {
-    Simple,     // Basic yield statements
-    Moderate,   // Some control flow
-    Complex,    // Complex logic, multiple yields
-    Advanced,   // Very complex generators
+    Simple,   // Basic yield statements
+    Moderate, // Some control flow
+    Complex,  // Complex logic, multiple yields
+    Advanced, // Very complex generators
 }
 
 /// Yield analysis
@@ -1472,20 +1477,20 @@ pub enum DecoratorCategory {
 /// Decorator usage patterns
 #[derive(Debug, Clone)]
 pub enum DecoratorUsagePattern {
-    SingleDecorator,    // Single decorator
-    StackedDecorators,  // Multiple decorators
+    SingleDecorator,        // Single decorator
+    StackedDecorators,      // Multiple decorators
     ParameterizedDecorator, // Decorator with parameters
     ConditionalDecorator,   // Conditional application
-    DynamicDecorator,   // Runtime decoration
+    DynamicDecorator,       // Runtime decoration
 }
 
 /// Decorator complexity
 #[derive(Debug, Clone)]
 pub enum DecoratorComplexity {
-    Simple,     // Basic decorators
-    Moderate,   // Parameterized decorators
-    Complex,    // Complex decorator logic
-    Advanced,   // Very complex decorator patterns
+    Simple,   // Basic decorators
+    Moderate, // Parameterized decorators
+    Complex,  // Complex decorator logic
+    Advanced, // Very complex decorator patterns
 }
 
 /// Modern syntax features
@@ -1502,33 +1507,33 @@ pub struct ModernSyntaxInfo {
 /// Modern syntax types
 #[derive(Debug, Clone, PartialEq)]
 pub enum ModernSyntaxType {
-    WalrusOperator,         // := (Python 3.8+)
-    PositionalOnlyParams,   // def func(a, /, b) (Python 3.8+)
-    TypeUnionOperator,      // int | str (Python 3.10+)
-    ExceptionGroups,        // except* (Python 3.11+)
-    GenericTypeHints,       // list[int] (Python 3.9+)
-    StringPrefixChaining,   // rf"string" (Python 3.6+)
-    DictUnionOperator,      // dict1 | dict2 (Python 3.9+)
-    RemovePrefix,           // str.removeprefix() (Python 3.9+)
-    ContextVars,            // contextvars (Python 3.7+)
+    WalrusOperator,       // := (Python 3.8+)
+    PositionalOnlyParams, // def func(a, /, b) (Python 3.8+)
+    TypeUnionOperator,    // int | str (Python 3.10+)
+    ExceptionGroups,      // except* (Python 3.11+)
+    GenericTypeHints,     // list[int] (Python 3.9+)
+    StringPrefixChaining, // rf"string" (Python 3.6+)
+    DictUnionOperator,    // dict1 | dict2 (Python 3.9+)
+    RemovePrefix,         // str.removeprefix() (Python 3.9+)
+    ContextVars,          // contextvars (Python 3.7+)
 }
 
 /// Syntax complexity
 #[derive(Debug, Clone)]
 pub enum SyntaxComplexity {
-    Simple,     // Basic usage
-    Moderate,   // Standard usage
-    Complex,    // Advanced usage
-    Expert,     // Expert-level usage
+    Simple,   // Basic usage
+    Moderate, // Standard usage
+    Complex,  // Advanced usage
+    Expert,   // Expert-level usage
 }
 
 /// Feature complexity assessment
 #[derive(Debug, Clone)]
 pub enum FeatureComplexity {
-    Simple,     // Basic feature usage
-    Moderate,   // Standard feature usage
-    Complex,    // Advanced feature usage
-    Expert,     // Expert-level feature usage
+    Simple,   // Basic feature usage
+    Moderate, // Standard feature usage
+    Complex,  // Advanced feature usage
+    Expert,   // Expert-level feature usage
 }
 
 /// Pattern for modern feature detection
@@ -2040,12 +2045,16 @@ impl PythonAnalyzer {
             },
             AsyncPattern {
                 name: "Blocking IO in Async".to_string(),
-                pattern: Regex::new(r"(?:open|input|print)\s*\(.*\).*await|await.*(?:open|input|print)\s*\(").unwrap(),
+                pattern: Regex::new(
+                    r"(?:open|input|print)\s*\(.*\).*await|await.*(?:open|input|print)\s*\(",
+                )
+                .unwrap(),
                 pattern_type: "performance_issue".to_string(),
                 performance_impact: AsyncPerformanceImpact::Critical,
             },
         ];
-        self.async_patterns.insert("functions".to_string(), async_patterns);
+        self.async_patterns
+            .insert("functions".to_string(), async_patterns);
 
         let concurrency_patterns = vec![
             AsyncPattern {
@@ -2067,7 +2076,8 @@ impl PythonAnalyzer {
                 performance_impact: AsyncPerformanceImpact::Positive,
             },
         ];
-        self.async_patterns.insert("concurrency".to_string(), concurrency_patterns);
+        self.async_patterns
+            .insert("concurrency".to_string(), concurrency_patterns);
 
         let modern_async_patterns = vec![
             AsyncPattern {
@@ -2089,7 +2099,8 @@ impl PythonAnalyzer {
                 performance_impact: AsyncPerformanceImpact::Positive,
             },
         ];
-        self.async_patterns.insert("modern".to_string(), modern_async_patterns);
+        self.async_patterns
+            .insert("modern".to_string(), modern_async_patterns);
 
         // Dependency analysis patterns
         let requirements_patterns = vec![
@@ -2130,7 +2141,8 @@ impl PythonAnalyzer {
                 extraction_method: "yaml_list".to_string(),
             },
         ];
-        self.dependency_patterns.insert("requirements".to_string(), requirements_patterns);
+        self.dependency_patterns
+            .insert("requirements".to_string(), requirements_patterns);
 
         let import_patterns = vec![
             DependencyPattern {
@@ -2147,7 +2159,8 @@ impl PythonAnalyzer {
             },
             DependencyPattern {
                 name: "Star Import".to_string(),
-                pattern: Regex::new(r"(?m)^from\s+([a-zA-Z_][a-zA-Z0-9_.]*)\s+import\s+\*").unwrap(),
+                pattern: Regex::new(r"(?m)^from\s+([a-zA-Z_][a-zA-Z0-9_.]*)\s+import\s+\*")
+                    .unwrap(),
                 file_type: RequirementsFileType::SetupPy, // Python source files
                 extraction_method: "import_statement".to_string(),
             },
@@ -2159,12 +2172,14 @@ impl PythonAnalyzer {
             },
             DependencyPattern {
                 name: "Relative Import".to_string(),
-                pattern: Regex::new(r"(?m)^from\s+(\.+)([a-zA-Z_][a-zA-Z0-9_.]*)\s+import").unwrap(),
+                pattern: Regex::new(r"(?m)^from\s+(\.+)([a-zA-Z_][a-zA-Z0-9_.]*)\s+import")
+                    .unwrap(),
                 file_type: RequirementsFileType::SetupPy, // Python source files
                 extraction_method: "import_statement".to_string(),
             },
         ];
-        self.dependency_patterns.insert("imports".to_string(), import_patterns);
+        self.dependency_patterns
+            .insert("imports".to_string(), import_patterns);
 
         // Modern Python feature patterns
         let dataclass_patterns = vec![
@@ -2197,7 +2212,8 @@ impl PythonAnalyzer {
                 complexity: FeatureComplexity::Moderate,
             },
         ];
-        self.modern_feature_patterns.insert("dataclass".to_string(), dataclass_patterns);
+        self.modern_feature_patterns
+            .insert("dataclass".to_string(), dataclass_patterns);
 
         let context_manager_patterns = vec![
             ModernFeaturePattern {
@@ -2229,7 +2245,8 @@ impl PythonAnalyzer {
                 complexity: FeatureComplexity::Moderate,
             },
         ];
-        self.modern_feature_patterns.insert("context_manager".to_string(), context_manager_patterns);
+        self.modern_feature_patterns
+            .insert("context_manager".to_string(), context_manager_patterns);
 
         let fstring_patterns = vec![
             ModernFeaturePattern {
@@ -2254,7 +2271,8 @@ impl PythonAnalyzer {
                 complexity: FeatureComplexity::Moderate,
             },
         ];
-        self.modern_feature_patterns.insert("fstring".to_string(), fstring_patterns);
+        self.modern_feature_patterns
+            .insert("fstring".to_string(), fstring_patterns);
 
         let pattern_matching_patterns = vec![
             ModernFeaturePattern {
@@ -2279,7 +2297,8 @@ impl PythonAnalyzer {
                 complexity: FeatureComplexity::Expert,
             },
         ];
-        self.modern_feature_patterns.insert("pattern_matching".to_string(), pattern_matching_patterns);
+        self.modern_feature_patterns
+            .insert("pattern_matching".to_string(), pattern_matching_patterns);
 
         let generator_patterns = vec![
             ModernFeaturePattern {
@@ -2311,7 +2330,8 @@ impl PythonAnalyzer {
                 complexity: FeatureComplexity::Complex,
             },
         ];
-        self.modern_feature_patterns.insert("generator".to_string(), generator_patterns);
+        self.modern_feature_patterns
+            .insert("generator".to_string(), generator_patterns);
 
         let modern_syntax_patterns = vec![
             ModernFeaturePattern {
@@ -2350,7 +2370,8 @@ impl PythonAnalyzer {
                 complexity: FeatureComplexity::Moderate,
             },
         ];
-        self.modern_feature_patterns.insert("modern_syntax".to_string(), modern_syntax_patterns);
+        self.modern_feature_patterns
+            .insert("modern_syntax".to_string(), modern_syntax_patterns);
     }
 
     /// Analyze Python decorators
@@ -2676,7 +2697,7 @@ impl PythonAnalyzer {
             for pattern in patterns {
                 for captures in pattern.pattern.captures_iter(content) {
                     let full_match = captures.get(0).unwrap().as_str();
-                    
+
                     let hint_type = self.parse_type_hint_type(&pattern.hint_type, &captures);
                     let is_generic = self.is_generic_type(&pattern.hint_type);
                     let has_constraints = self.has_type_constraints(&pattern.hint_type);
@@ -2791,7 +2812,10 @@ impl PythonAnalyzer {
     }
 
     /// Analyze Python package dependencies comprehensively
-    pub fn analyze_package_dependencies(&self, content: &str) -> Result<PythonPackageDependencyAnalysis> {
+    pub fn analyze_package_dependencies(
+        &self,
+        content: &str,
+    ) -> Result<PythonPackageDependencyAnalysis> {
         let mut requirements_files = Vec::new();
         let mut dependencies = Vec::new();
         let mut dependency_issues = Vec::new();
@@ -2807,7 +2831,12 @@ impl PythonAnalyzer {
         self.analyze_imports(content, &mut import_analysis);
 
         // Detect dependency issues
-        self.detect_dependency_issues(content, &dependencies, &import_analysis, &mut dependency_issues);
+        self.detect_dependency_issues(
+            content,
+            &dependencies,
+            &import_analysis,
+            &mut dependency_issues,
+        );
 
         // Detect virtual environments
         self.detect_virtual_environments(content, &mut virtual_environments);
@@ -2862,8 +2891,13 @@ impl PythonAnalyzer {
                     for line in content.lines() {
                         if let Some(captures) = pattern.pattern.captures(line) {
                             let package_name = captures.get(1).unwrap().as_str();
-                            let version_spec = captures.get(2)
-                                .and_then(|m| captures.get(3).map(|v| format!("{}{}", m.as_str(), v.as_str())))
+                            let version_spec = captures
+                                .get(2)
+                                .and_then(|m| {
+                                    captures
+                                        .get(3)
+                                        .map(|v| format!("{}{}", m.as_str(), v.as_str()))
+                                })
                                 .unwrap_or_else(|| "*".to_string());
 
                             dependencies.push(RequirementInfo {
@@ -2890,14 +2924,17 @@ impl PythonAnalyzer {
                             quality_score: self.assess_requirements_quality(dependencies),
                         });
                     }
-                } else if pattern.extraction_method == "toml_array" && content.contains("pyproject.toml") {
+                } else if pattern.extraction_method == "toml_array"
+                    && content.contains("pyproject.toml")
+                {
                     // Handle pyproject.toml format
                     if let Some(captures) = pattern.pattern.captures(content) {
                         let deps_str = captures.get(1).unwrap().as_str();
                         for dep in deps_str.split(',') {
                             let clean_dep = dep.trim().trim_matches('"').trim_matches('\'');
                             if !clean_dep.is_empty() {
-                                let parts: Vec<&str> = clean_dep.split(['>', '<', '=', '!', '~']).collect();
+                                let parts: Vec<&str> =
+                                    clean_dep.split(['>', '<', '=', '!', '~']).collect();
                                 let package_name = parts[0].trim();
                                 let version_spec = if parts.len() > 1 {
                                     clean_dep[package_name.len()..].to_string()
@@ -2939,7 +2976,11 @@ impl PythonAnalyzer {
             for pattern in import_patterns {
                 for captures in pattern.pattern.captures_iter(content) {
                     let module_name = if pattern.name == "Relative Import" && captures.len() > 2 {
-                        format!("{}{}", captures.get(1).unwrap().as_str(), captures.get(2).unwrap().as_str())
+                        format!(
+                            "{}{}",
+                            captures.get(1).unwrap().as_str(),
+                            captures.get(2).unwrap().as_str()
+                        )
                     } else {
                         captures.get(1).unwrap().as_str().to_string()
                     };
@@ -2948,7 +2989,8 @@ impl PythonAnalyzer {
                     let module_category = self.categorize_module(&module_name);
                     let usage_count = content.matches(&module_name).count();
                     let is_unused = usage_count <= 1; // Only the import itself
-                    let import_issues = self.detect_import_issues(&pattern.name, &module_name, content);
+                    let import_issues =
+                        self.detect_import_issues(&pattern.name, &module_name, content);
 
                     import_analysis.push(ImportAnalysisInfo {
                         import_statement: captures.get(0).unwrap().as_str().to_string(),
@@ -2957,7 +2999,8 @@ impl PythonAnalyzer {
                         usage_count,
                         is_unused,
                         import_issues,
-                        optimization_suggestions: self.get_import_optimization_suggestions(&pattern.name, &module_name),
+                        optimization_suggestions: self
+                            .get_import_optimization_suggestions(&pattern.name, &module_name),
                     });
                 }
             }
@@ -2975,8 +3018,8 @@ impl PythonAnalyzer {
         // Detect unused dependencies
         for dep in dependencies {
             let is_imported = import_analysis.iter().any(|imp| {
-                imp.import_statement.contains(&dep.name) || 
-                imp.import_statement.contains(&dep.name.replace("-", "_"))
+                imp.import_statement.contains(&dep.name)
+                    || imp.import_statement.contains(&dep.name.replace("-", "_"))
             });
 
             if !is_imported {
@@ -2994,7 +3037,8 @@ impl PythonAnalyzer {
         // Detect missing dependencies
         for import in import_analysis {
             if matches!(import.module_category, ModuleCategory::ThirdParty) {
-                let module_root = import.import_statement
+                let module_root = import
+                    .import_statement
                     .split_whitespace()
                     .nth(1)
                     .unwrap_or("")
@@ -3011,7 +3055,10 @@ impl PythonAnalyzer {
                         issue_type: DependencyIssueType::MissingDependency,
                         severity: DependencyIssueSeverity::High,
                         affected_packages: vec![module_root.to_string()],
-                        description: format!("Module '{}' imported but not declared as dependency", module_root),
+                        description: format!(
+                            "Module '{}' imported but not declared as dependency",
+                            module_root
+                        ),
                         recommendation: "Add missing dependency to requirements".to_string(),
                         auto_fixable: true,
                     });
@@ -3050,7 +3097,11 @@ impl PythonAnalyzer {
     }
 
     /// Detect virtual environments
-    fn detect_virtual_environments(&self, content: &str, virtual_environments: &mut Vec<VirtualEnvironmentInfo>) {
+    fn detect_virtual_environments(
+        &self,
+        content: &str,
+        virtual_environments: &mut Vec<VirtualEnvironmentInfo>,
+    ) {
         // Check for virtual environment indicators
         if content.contains("venv") || content.contains("virtualenv") {
             virtual_environments.push(VirtualEnvironmentInfo {
@@ -3140,8 +3191,14 @@ impl PythonAnalyzer {
                         fixed_version: Some("Latest".to_string()),
                         severity: severity_enum,
                         vulnerability_type: VulnerabilityCategory::CodeExecution,
-                        description: format!("Security vulnerability in {} {}", vuln_package, vuln_version),
-                        references: vec![format!("https://cve.mitre.org/cgi-bin/cvename.cgi?name={}", cve_id)],
+                        description: format!(
+                            "Security vulnerability in {} {}",
+                            vuln_package, vuln_version
+                        ),
+                        references: vec![format!(
+                            "https://cve.mitre.org/cgi-bin/cvename.cgi?name={}",
+                            cve_id
+                        )],
                         published_date: Some("2020-01-01".to_string()),
                         last_modified: Some("2020-01-01".to_string()),
                     });
@@ -3151,7 +3208,11 @@ impl PythonAnalyzer {
     }
 
     /// Analyze package licenses
-    fn analyze_licenses(&self, dependencies: &[RequirementInfo], license_analysis: &mut Vec<LicenseInfo>) {
+    fn analyze_licenses(
+        &self,
+        dependencies: &[RequirementInfo],
+        license_analysis: &mut Vec<LicenseInfo>,
+    ) {
         for dep in dependencies {
             // Use metadata from package
             let license_type = self.parse_license_type(&dep.metadata.license);
@@ -3186,8 +3247,14 @@ impl PythonAnalyzer {
         }
     }
 
-    fn assess_requirements_quality(&self, dependencies: &[RequirementInfo]) -> DependencyQualityScore {
-        let pinned_count = dependencies.iter().filter(|d| d.version_spec != "*").count();
+    fn assess_requirements_quality(
+        &self,
+        dependencies: &[RequirementInfo],
+    ) -> DependencyQualityScore {
+        let pinned_count = dependencies
+            .iter()
+            .filter(|d| d.version_spec != "*")
+            .count();
         let pinned_ratio = if dependencies.is_empty() {
             0.0
         } else {
@@ -3217,9 +3284,25 @@ impl PythonAnalyzer {
     fn categorize_module(&self, module_name: &str) -> ModuleCategory {
         // Standard library modules
         let stdlib_modules = vec![
-            "os", "sys", "re", "json", "urllib", "http", "datetime", "collections",
-            "itertools", "functools", "pathlib", "typing", "asyncio", "threading",
-            "multiprocessing", "subprocess", "logging", "unittest", "sqlite3",
+            "os",
+            "sys",
+            "re",
+            "json",
+            "urllib",
+            "http",
+            "datetime",
+            "collections",
+            "itertools",
+            "functools",
+            "pathlib",
+            "typing",
+            "asyncio",
+            "threading",
+            "multiprocessing",
+            "subprocess",
+            "logging",
+            "unittest",
+            "sqlite3",
         ];
 
         let root_module = module_name.split('.').next().unwrap_or(module_name);
@@ -3233,7 +3316,12 @@ impl PythonAnalyzer {
         }
     }
 
-    fn detect_import_issues(&self, pattern_name: &str, module_name: &str, content: &str) -> Vec<ImportIssue> {
+    fn detect_import_issues(
+        &self,
+        pattern_name: &str,
+        module_name: &str,
+        content: &str,
+    ) -> Vec<ImportIssue> {
         let mut issues = Vec::new();
 
         if pattern_name == "Star Import" {
@@ -3241,21 +3329,29 @@ impl PythonAnalyzer {
         }
 
         // Check for circular imports (simplified)
-        if content.contains(&format!("from {} import", module_name)) &&
-           content.contains(&format!("import {}", module_name)) {
+        if content.contains(&format!("from {} import", module_name))
+            && content.contains(&format!("import {}", module_name))
+        {
             issues.push(ImportIssue::CircularImport);
         }
 
         // Check for deprecated modules
         let deprecated_modules = ["imp", "optparse", "platform.dist"];
-        if deprecated_modules.iter().any(|&dep| module_name.contains(dep)) {
+        if deprecated_modules
+            .iter()
+            .any(|&dep| module_name.contains(dep))
+        {
             issues.push(ImportIssue::DeprecatedImport);
         }
 
         issues
     }
 
-    fn get_import_optimization_suggestions(&self, pattern_name: &str, module_name: &str) -> Vec<String> {
+    fn get_import_optimization_suggestions(
+        &self,
+        pattern_name: &str,
+        module_name: &str,
+    ) -> Vec<String> {
         let mut suggestions = Vec::new();
 
         if pattern_name == "Star Import" {
@@ -3286,9 +3382,10 @@ impl PythonAnalyzer {
 
     fn assess_license_compatibility(&self, license_type: &LicenseType) -> LicenseCompatibility {
         match license_type {
-            LicenseType::MIT | LicenseType::Apache2 | LicenseType::BSD2Clause | LicenseType::BSD3Clause => {
-                LicenseCompatibility::Compatible
-            }
+            LicenseType::MIT
+            | LicenseType::Apache2
+            | LicenseType::BSD2Clause
+            | LicenseType::BSD3Clause => LicenseCompatibility::Compatible,
             LicenseType::GPL2 | LicenseType::GPL3 => LicenseCompatibility::RequiresReview,
             LicenseType::LGPL => LicenseCompatibility::ConditionallyCompatible,
             _ => LicenseCompatibility::Unknown,
@@ -3312,7 +3409,10 @@ impl PythonAnalyzer {
     }
 
     fn is_copyleft(&self, license_type: &LicenseType) -> bool {
-        matches!(license_type, LicenseType::GPL2 | LicenseType::GPL3 | LicenseType::LGPL)
+        matches!(
+            license_type,
+            LicenseType::GPL2 | LicenseType::GPL3 | LicenseType::LGPL
+        )
     }
 
     fn calculate_dependency_health_score(
@@ -3353,7 +3453,10 @@ impl PythonAnalyzer {
             score += 10;
         }
 
-        let pinned_deps = dependencies.iter().filter(|d| d.version_spec != "*").count();
+        let pinned_deps = dependencies
+            .iter()
+            .filter(|d| d.version_spec != "*")
+            .count();
         let pinned_ratio = if dependencies.is_empty() {
             0.0
         } else {
@@ -3376,10 +3479,14 @@ impl PythonAnalyzer {
         let mut recommendations = Vec::new();
 
         if requirements_files.is_empty() {
-            recommendations.push("Create a requirements.txt file to track dependencies".to_string());
+            recommendations
+                .push("Create a requirements.txt file to track dependencies".to_string());
         }
 
-        let unpinned_count = dependencies.iter().filter(|d| d.version_spec == "*").count();
+        let unpinned_count = dependencies
+            .iter()
+            .filter(|d| d.version_spec == "*")
+            .count();
         if unpinned_count > 0 {
             recommendations.push(format!(
                 "Pin {} unpinned dependencies for reproducible builds",
@@ -3396,24 +3503,33 @@ impl PythonAnalyzer {
 
         let unused_imports = import_analysis.iter().filter(|i| i.is_unused).count();
         if unused_imports > 0 {
-            recommendations.push(format!("Remove {} unused import statements", unused_imports));
+            recommendations.push(format!(
+                "Remove {} unused import statements",
+                unused_imports
+            ));
         }
 
-        let star_imports = import_analysis.iter()
+        let star_imports = import_analysis
+            .iter()
             .filter(|i| matches!(i.import_type, ImportType::StarImport))
             .count();
         if star_imports > 0 {
-            recommendations.push(format!("Replace {} star imports with specific imports", star_imports));
+            recommendations.push(format!(
+                "Replace {} star imports with specific imports",
+                star_imports
+            ));
         }
 
-        let critical_issues = issues.iter()
+        let critical_issues = issues
+            .iter()
             .filter(|i| matches!(i.severity, DependencyIssueSeverity::Critical))
             .count();
         if critical_issues > 0 {
             recommendations.push("Address critical dependency issues immediately".to_string());
         }
 
-        recommendations.push("Consider using dependency scanning tools like Safety or Bandit".to_string());
+        recommendations
+            .push("Consider using dependency scanning tools like Safety or Bandit".to_string());
         recommendations.push("Set up automated dependency updates with Dependabot".to_string());
 
         recommendations
@@ -3508,8 +3624,10 @@ impl PythonAnalyzer {
                     let fields = self.analyze_dataclass_fields(content, &class_name);
                     let features_used = self.detect_dataclass_features(content, &class_name);
                     let complexity = self.assess_dataclass_complexity(&fields, &features_used);
-                    let best_practices_score = self.score_dataclass_best_practices(&fields, &features_used);
-                    let recommendations = self.get_dataclass_recommendations(&features_used, best_practices_score);
+                    let best_practices_score =
+                        self.score_dataclass_best_practices(&fields, &features_used);
+                    let recommendations =
+                        self.get_dataclass_recommendations(&features_used, best_practices_score);
 
                     dataclass_features.push(DataclassInfo {
                         class_name,
@@ -3526,7 +3644,11 @@ impl PythonAnalyzer {
     }
 
     /// Analyze context manager usage
-    fn analyze_context_managers(&self, content: &str, context_features: &mut Vec<ContextManagerInfo>) {
+    fn analyze_context_managers(
+        &self,
+        content: &str,
+        context_features: &mut Vec<ContextManagerInfo>,
+    ) {
         if let Some(patterns) = self.modern_feature_patterns.get("context_manager") {
             for pattern in patterns {
                 for captures in pattern.pattern.captures_iter(content) {
@@ -3541,11 +3663,13 @@ impl PythonAnalyzer {
                     };
 
                     let usage_pattern = self.analyze_context_usage_pattern(content, full_match);
-                    let resource_management = self.assess_resource_management_quality(content, full_match);
+                    let resource_management =
+                        self.assess_resource_management_quality(content, full_match);
                     let error_handling = self.assess_context_error_handling(content, full_match);
                     let is_async = pattern.name.contains("Async");
                     let nested_level = self.calculate_context_nesting_level(content, full_match);
-                    let best_practices_followed = self.check_context_best_practices(content, full_match);
+                    let best_practices_followed =
+                        self.check_context_best_practices(content, full_match);
 
                     context_features.push(ContextManagerInfo {
                         context_type,
@@ -3570,7 +3694,8 @@ impl PythonAnalyzer {
 
                     let complexity = self.assess_fstring_complexity(&expression);
                     let features_used = self.detect_fstring_features(&expression);
-                    let performance_impact = self.assess_fstring_performance(&expression, &features_used);
+                    let performance_impact =
+                        self.assess_fstring_performance(&expression, &features_used);
                     let formatting_quality = self.assess_formatting_quality(&expression);
                     let readability_score = self.calculate_fstring_readability(&expression);
 
@@ -3588,19 +3713,25 @@ impl PythonAnalyzer {
     }
 
     /// Analyze pattern matching (Python 3.10+)
-    fn analyze_pattern_matching(&self, content: &str, pattern_features: &mut Vec<PatternMatchingInfo>) {
+    fn analyze_pattern_matching(
+        &self,
+        content: &str,
+        pattern_features: &mut Vec<PatternMatchingInfo>,
+    ) {
         if let Some(_patterns) = self.modern_feature_patterns.get("pattern_matching") {
             // Look for complete match statements
             let match_regex = Regex::new(r"(?m)^(\s*)match\s+[^:]+:(.*?)$").unwrap();
             for captures in match_regex.captures_iter(content) {
                 let match_statement = captures.get(0).unwrap().as_str().to_string();
-                
+
                 let pattern_types = self.analyze_match_patterns(&match_statement);
                 let complexity = self.assess_pattern_complexity(&pattern_types);
                 let has_guards = match_statement.contains("if ");
                 let is_exhaustive = self.check_pattern_exhaustiveness(&match_statement);
-                let performance_characteristics = self.assess_match_performance(&pattern_types, &match_statement);
-                let best_practices_score = self.score_pattern_best_practices(&pattern_types, has_guards, is_exhaustive);
+                let performance_characteristics =
+                    self.assess_match_performance(&pattern_types, &match_statement);
+                let best_practices_score =
+                    self.score_pattern_best_practices(&pattern_types, has_guards, is_exhaustive);
 
                 pattern_features.push(PatternMatchingInfo {
                     match_statement,
@@ -3630,11 +3761,13 @@ impl PythonAnalyzer {
                     };
 
                     let usage_pattern = self.classify_generator_usage_pattern(content, full_match);
-                    let memory_efficiency = self.assess_generator_memory_efficiency(content, full_match);
+                    let memory_efficiency =
+                        self.assess_generator_memory_efficiency(content, full_match);
                     let complexity = self.assess_generator_complexity(content, full_match);
                     let is_async = pattern.name.contains("Async");
                     let yield_analysis = self.analyze_yield_usage(content, full_match);
-                    let optimization_opportunities = self.identify_generator_optimizations(content, full_match);
+                    let optimization_opportunities =
+                        self.identify_generator_optimizations(content, full_match);
 
                     generator_features.push(GeneratorInfo {
                         generator_type,
@@ -3651,7 +3784,11 @@ impl PythonAnalyzer {
     }
 
     /// Analyze modern decorator usage
-    fn analyze_modern_decorators(&self, content: &str, decorator_features: &mut Vec<ModernDecoratorInfo>) {
+    fn analyze_modern_decorators(
+        &self,
+        content: &str,
+        decorator_features: &mut Vec<ModernDecoratorInfo>,
+    ) {
         let decorator_regex = Regex::new(r"@(\w+)(?:\([^)]*\))?").unwrap();
         for captures in decorator_regex.captures_iter(content) {
             let decorator_name = captures.get(1).unwrap().as_str().to_string();
@@ -3661,9 +3798,10 @@ impl PythonAnalyzer {
             let usage_pattern = self.analyze_decorator_usage_pattern(content, full_decorator);
             let complexity = self.assess_decorator_complexity(full_decorator);
             let is_factory = full_decorator.contains('(');
-                            let is_async = content.contains("async def") && content.contains(&decorator_name);
+            let is_async = content.contains("async def") && content.contains(&decorator_name);
             let parameters = self.extract_decorator_parameters(full_decorator);
-            let best_practices_score = self.score_decorator_best_practices(&decorator_category, &usage_pattern);
+            let best_practices_score =
+                self.score_decorator_best_practices(&decorator_category, &usage_pattern);
 
             decorator_features.push(ModernDecoratorInfo {
                 decorator_name,
@@ -3694,8 +3832,10 @@ impl PythonAnalyzer {
                     };
 
                     let complexity = self.assess_syntax_complexity(content, &pattern.pattern);
-                    let best_practices_followed = self.check_syntax_best_practices(content, &feature_type);
-                    let migration_suggestions = self.get_syntax_migration_suggestions(&feature_type, usage_count);
+                    let best_practices_followed =
+                        self.check_syntax_best_practices(content, &feature_type);
+                    let migration_suggestions =
+                        self.get_syntax_migration_suggestions(&feature_type, usage_count);
 
                     syntax_features.push(ModernSyntaxInfo {
                         feature_type,
@@ -3721,7 +3861,7 @@ impl PythonAnalyzer {
             for pattern in patterns {
                 if pattern.pattern.is_match(content) {
                     let version_required = pattern.python_version.clone();
-                    
+
                     // Update minimum version if this feature requires newer version
                     if self.is_newer_version(&version_required, &minimum_version) {
                         minimum_version = version_required.clone();
@@ -3731,7 +3871,10 @@ impl PythonAnalyzer {
                         feature_name: pattern.name.clone(),
                         python_version: version_required,
                         usage_count: pattern.pattern.find_iter(content).count(),
-                        is_best_practice: matches!(pattern.complexity, FeatureComplexity::Simple | FeatureComplexity::Moderate),
+                        is_best_practice: matches!(
+                            pattern.complexity,
+                            FeatureComplexity::Simple | FeatureComplexity::Moderate
+                        ),
                     });
                 }
             }
@@ -3760,7 +3903,10 @@ impl PythonAnalyzer {
     fn extract_dataclass_name(&self, _match: &str, content: &str) -> String {
         // Look for class definition near the dataclass decorator
         if let Some(class_match) = Regex::new(r"class\s+(\w+)").unwrap().find(content) {
-            if let Some(captures) = Regex::new(r"class\s+(\w+)").unwrap().captures(class_match.as_str()) {
+            if let Some(captures) = Regex::new(r"class\s+(\w+)")
+                .unwrap()
+                .captures(class_match.as_str())
+            {
                 return captures.get(1).unwrap().as_str().to_string();
             }
         }
@@ -3770,14 +3916,14 @@ impl PythonAnalyzer {
     fn analyze_dataclass_fields(&self, content: &str, class_name: &str) -> Vec<DataclassField> {
         // Simplified field analysis - in production this would parse the class body
         let mut fields = Vec::new();
-        
+
         // Look for field annotations in the class
         let field_regex = Regex::new(&format!(r"class\s+{}.*?(\w+):\s*(\w+)", class_name)).unwrap();
         for captures in field_regex.captures_iter(content) {
             if captures.len() >= 3 {
                 let field_name = captures.get(1).unwrap().as_str().to_string();
                 let field_type = captures.get(2).unwrap().as_str().to_string();
-                
+
                 fields.push(DataclassField {
                     name: field_name,
                     field_type,
@@ -3788,13 +3934,13 @@ impl PythonAnalyzer {
                 });
             }
         }
-        
+
         fields
     }
 
     fn detect_dataclass_features(&self, content: &str, _class_name: &str) -> Vec<DataclassFeature> {
         let mut features = Vec::new();
-        
+
         if content.contains("frozen=True") {
             features.push(DataclassFeature::FrozenClass);
         }
@@ -3807,13 +3953,17 @@ impl PythonAnalyzer {
         if content.contains("default_factory") {
             features.push(DataclassFeature::FieldFactories);
         }
-        
+
         features
     }
 
-    fn assess_dataclass_complexity(&self, fields: &[DataclassField], features: &[DataclassFeature]) -> FeatureComplexity {
+    fn assess_dataclass_complexity(
+        &self,
+        fields: &[DataclassField],
+        features: &[DataclassFeature],
+    ) -> FeatureComplexity {
         let complexity_score = fields.len() + features.len() * 2;
-        
+
         match complexity_score {
             0..=3 => FeatureComplexity::Simple,
             4..=8 => FeatureComplexity::Moderate,
@@ -3822,9 +3972,13 @@ impl PythonAnalyzer {
         }
     }
 
-    fn score_dataclass_best_practices(&self, _fields: &[DataclassField], features: &[DataclassFeature]) -> i32 {
+    fn score_dataclass_best_practices(
+        &self,
+        _fields: &[DataclassField],
+        features: &[DataclassFeature],
+    ) -> i32 {
         let mut score = 60; // Base score
-        
+
         // Add points for good practices
         if features.contains(&DataclassFeature::FrozenClass) {
             score += 15; // Immutability is good
@@ -3835,25 +3989,29 @@ impl PythonAnalyzer {
         if features.contains(&DataclassFeature::PostInitProcessing) {
             score += 10; // Proper initialization
         }
-        
+
         score.min(100)
     }
 
-    fn get_dataclass_recommendations(&self, features: &[DataclassFeature], score: i32) -> Vec<String> {
+    fn get_dataclass_recommendations(
+        &self,
+        features: &[DataclassFeature],
+        score: i32,
+    ) -> Vec<String> {
         let mut recommendations = Vec::new();
-        
+
         if score < 70 {
             recommendations.push("Consider using dataclass best practices".to_string());
         }
-        
+
         if !features.contains(&DataclassFeature::SlotsUsage) {
             recommendations.push("Consider using __slots__ for memory optimization".to_string());
         }
-        
+
         if !features.contains(&DataclassFeature::FrozenClass) {
             recommendations.push("Consider making dataclass frozen for immutability".to_string());
         }
-        
+
         recommendations
     }
 
@@ -3899,31 +4057,42 @@ impl PythonAnalyzer {
         let mut recommendations = Vec::new();
 
         if dataclass_features.is_empty() {
-            recommendations.push("Consider using @dataclass for data classes instead of manual __init__".to_string());
+            recommendations.push(
+                "Consider using @dataclass for data classes instead of manual __init__".to_string(),
+            );
         }
 
         if context_manager_features.is_empty() {
-            recommendations.push("Use context managers (with statements) for resource management".to_string());
+            recommendations
+                .push("Use context managers (with statements) for resource management".to_string());
         }
 
         if fstring_features.is_empty() {
-            recommendations.push("Consider using f-strings for string formatting instead of .format()".to_string());
+            recommendations.push(
+                "Consider using f-strings for string formatting instead of .format()".to_string(),
+            );
         }
 
         if generator_features.is_empty() {
-            recommendations.push("Consider using generators for memory-efficient iteration".to_string());
+            recommendations
+                .push("Consider using generators for memory-efficient iteration".to_string());
         }
 
         // Version-specific recommendations
         if self.is_version_supported("3.10", &python_version.minimum_version) {
-            recommendations.push("Consider using pattern matching (match/case) for complex conditionals".to_string());
+            recommendations.push(
+                "Consider using pattern matching (match/case) for complex conditionals".to_string(),
+            );
         }
 
         if self.is_version_supported("3.8", &python_version.minimum_version) {
-            let has_walrus = modern_syntax_features.iter()
+            let has_walrus = modern_syntax_features
+                .iter()
                 .any(|f| matches!(f.feature_type, ModernSyntaxType::WalrusOperator));
             if !has_walrus {
-                recommendations.push("Consider using walrus operator (:=) for assignment expressions".to_string());
+                recommendations.push(
+                    "Consider using walrus operator (:=) for assignment expressions".to_string(),
+                );
             }
         }
 
@@ -3931,7 +4100,11 @@ impl PythonAnalyzer {
     }
 
     /// Analyze context usage pattern
-    fn analyze_context_usage_pattern(&self, content: &str, _context_match: &str) -> ContextUsagePattern {
+    fn analyze_context_usage_pattern(
+        &self,
+        content: &str,
+        _context_match: &str,
+    ) -> ContextUsagePattern {
         if content.contains("async with") {
             ContextUsagePattern::AsyncContext
         } else if content.matches("with").count() > 1 {
@@ -3942,7 +4115,11 @@ impl PythonAnalyzer {
     }
 
     /// Assess resource management quality
-    fn assess_resource_management_quality(&self, content: &str, _context_match: &str) -> ResourceManagementQuality {
+    fn assess_resource_management_quality(
+        &self,
+        content: &str,
+        _context_match: &str,
+    ) -> ResourceManagementQuality {
         let has_error_handling = content.contains("try") || content.contains("except");
         let has_finally = content.contains("finally");
         let has_proper_cleanup = content.contains("close()") || content.contains("__exit__");
@@ -3957,7 +4134,11 @@ impl PythonAnalyzer {
     }
 
     /// Assess context error handling
-    fn assess_context_error_handling(&self, content: &str, _context_match: &str) -> ContextErrorHandling {
+    fn assess_context_error_handling(
+        &self,
+        content: &str,
+        _context_match: &str,
+    ) -> ContextErrorHandling {
         if content.contains("except") && content.contains("finally") {
             ContextErrorHandling::Comprehensive
         } else if content.contains("except") {
@@ -4026,7 +4207,11 @@ impl PythonAnalyzer {
         features
     }
 
-    fn assess_fstring_performance(&self, _expression: &str, features: &[FStringFeature]) -> PerformanceImpact {
+    fn assess_fstring_performance(
+        &self,
+        _expression: &str,
+        features: &[FStringFeature],
+    ) -> PerformanceImpact {
         if features.contains(&FStringFeature::ComplexExpressions) {
             PerformanceImpact::Negative
         } else if features.contains(&FStringFeature::ExpressionEvaluation) {
@@ -4081,7 +4266,7 @@ impl PythonAnalyzer {
     /// Pattern matching helper methods
     fn analyze_match_patterns(&self, match_statement: &str) -> Vec<PatternType> {
         let mut patterns = Vec::new();
-        
+
         if match_statement.contains("case _:") {
             patterns.push(PatternType::WildcardPattern);
         }
@@ -4097,22 +4282,25 @@ impl PythonAnalyzer {
         if match_statement.contains(" | ") {
             patterns.push(PatternType::OrPattern);
         }
-        
+
         if patterns.is_empty() {
             patterns.push(PatternType::LiteralPattern);
         }
-        
+
         patterns
     }
 
     fn assess_pattern_complexity(&self, patterns: &[PatternType]) -> PatternComplexity {
-        let complexity_score = patterns.len() + 
-            patterns.iter().map(|p| match p {
-                PatternType::GuardedPattern => 3,
-                PatternType::SequencePattern | PatternType::MappingPattern => 2,
-                PatternType::OrPattern => 2,
-                _ => 1,
-            }).sum::<usize>();
+        let complexity_score = patterns.len()
+            + patterns
+                .iter()
+                .map(|p| match p {
+                    PatternType::GuardedPattern => 3,
+                    PatternType::SequencePattern | PatternType::MappingPattern => 2,
+                    PatternType::OrPattern => 2,
+                    _ => 1,
+                })
+                .sum::<usize>();
 
         match complexity_score {
             0..=3 => PatternComplexity::Simple,
@@ -4126,12 +4314,20 @@ impl PythonAnalyzer {
         match_statement.contains("case _:") || match_statement.contains("case default:")
     }
 
-    fn assess_match_performance(&self, patterns: &[PatternType], _match_statement: &str) -> MatchPerformance {
-        let has_complex_patterns = patterns.iter().any(|p| matches!(
-            p, 
-            PatternType::GuardedPattern | PatternType::SequencePattern | PatternType::MappingPattern
-        ));
-        
+    fn assess_match_performance(
+        &self,
+        patterns: &[PatternType],
+        _match_statement: &str,
+    ) -> MatchPerformance {
+        let has_complex_patterns = patterns.iter().any(|p| {
+            matches!(
+                p,
+                PatternType::GuardedPattern
+                    | PatternType::SequencePattern
+                    | PatternType::MappingPattern
+            )
+        });
+
         if has_complex_patterns && patterns.len() > 10 {
             MatchPerformance::Poor
         } else if has_complex_patterns {
@@ -4143,9 +4339,14 @@ impl PythonAnalyzer {
         }
     }
 
-    fn score_pattern_best_practices(&self, patterns: &[PatternType], has_guards: bool, is_exhaustive: bool) -> i32 {
+    fn score_pattern_best_practices(
+        &self,
+        patterns: &[PatternType],
+        has_guards: bool,
+        is_exhaustive: bool,
+    ) -> i32 {
         let mut score = 70;
-        
+
         if is_exhaustive {
             score += 20;
         }
@@ -4155,12 +4356,16 @@ impl PythonAnalyzer {
         if patterns.len() <= 5 {
             score += 10; // Simple patterns are better
         }
-        
+
         score.min(100)
     }
 
     /// Generator helper methods
-    fn classify_generator_usage_pattern(&self, content: &str, _generator_match: &str) -> GeneratorUsagePattern {
+    fn classify_generator_usage_pattern(
+        &self,
+        content: &str,
+        _generator_match: &str,
+    ) -> GeneratorUsagePattern {
         if content.contains("yield from") {
             GeneratorUsagePattern::Pipeline
         } else if content.contains("while True") {
@@ -4172,10 +4377,15 @@ impl PythonAnalyzer {
         }
     }
 
-    fn assess_generator_memory_efficiency(&self, content: &str, _generator_match: &str) -> MemoryEfficiency {
-        let has_large_data_structures = content.contains("list(") || content.contains("[") && content.len() > 100;
+    fn assess_generator_memory_efficiency(
+        &self,
+        content: &str,
+        _generator_match: &str,
+    ) -> MemoryEfficiency {
+        let has_large_data_structures =
+            content.contains("list(") || content.contains("[") && content.len() > 100;
         let uses_yield_properly = content.contains("yield") && !content.contains("return [");
-        
+
         match (uses_yield_properly, has_large_data_structures) {
             (true, false) => MemoryEfficiency::Excellent,
             (true, true) => MemoryEfficiency::Good,
@@ -4184,11 +4394,15 @@ impl PythonAnalyzer {
         }
     }
 
-    fn assess_generator_complexity(&self, content: &str, _generator_match: &str) -> GeneratorComplexity {
+    fn assess_generator_complexity(
+        &self,
+        content: &str,
+        _generator_match: &str,
+    ) -> GeneratorComplexity {
         let yield_count = content.matches("yield").count();
         let has_complex_logic = content.contains("if") && content.contains("for");
         let has_nested_loops = content.matches("for").count() > 1;
-        
+
         match (yield_count, has_complex_logic, has_nested_loops) {
             (1, false, false) => GeneratorComplexity::Simple,
             (1..=3, _, false) => GeneratorComplexity::Moderate,
@@ -4207,21 +4421,27 @@ impl PythonAnalyzer {
         }
     }
 
-    fn identify_generator_optimizations(&self, content: &str, _generator_match: &str) -> Vec<String> {
+    fn identify_generator_optimizations(
+        &self,
+        content: &str,
+        _generator_match: &str,
+    ) -> Vec<String> {
         let mut optimizations = Vec::new();
-        
+
         if content.contains("list(") && content.contains("yield") {
             optimizations.push("Avoid converting generator to list unless necessary".to_string());
         }
-        
+
         if content.matches("for").count() > 2 {
-            optimizations.push("Consider breaking complex generator into smaller functions".to_string());
+            optimizations
+                .push("Consider breaking complex generator into smaller functions".to_string());
         }
-        
+
         if !content.contains("yield from") && content.contains("for") && content.contains("yield") {
-            optimizations.push("Consider using 'yield from' for delegating to sub-generators".to_string());
+            optimizations
+                .push("Consider using 'yield from' for delegating to sub-generators".to_string());
         }
-        
+
         optimizations
     }
 
@@ -4229,7 +4449,9 @@ impl PythonAnalyzer {
     fn classify_decorator_category(&self, decorator_name: &str) -> DecoratorCategory {
         match decorator_name {
             "property" | "staticmethod" | "classmethod" => DecoratorCategory::BuiltIn,
-            "wraps" | "singledispatch" | "cache" | "lru_cache" => DecoratorCategory::FunctoolsDecorator,
+            "wraps" | "singledispatch" | "cache" | "lru_cache" => {
+                DecoratorCategory::FunctoolsDecorator
+            }
             "app.route" | "api.route" | "route" => DecoratorCategory::WebFramework,
             "pytest.fixture" | "pytest.mark" | "unittest.mock" => DecoratorCategory::Testing,
             "dataclass" | "validator" => DecoratorCategory::DataValidation,
@@ -4237,9 +4459,13 @@ impl PythonAnalyzer {
         }
     }
 
-    fn analyze_decorator_usage_pattern(&self, content: &str, decorator: &str) -> DecoratorUsagePattern {
+    fn analyze_decorator_usage_pattern(
+        &self,
+        content: &str,
+        decorator: &str,
+    ) -> DecoratorUsagePattern {
         let decorator_context = self.get_decorator_context(content, decorator);
-        
+
         if decorator_context.contains('@') && decorator_context.matches('@').count() > 1 {
             DecoratorUsagePattern::StackedDecorators
         } else if decorator.contains('(') {
@@ -4270,22 +4496,26 @@ impl PythonAnalyzer {
         }
     }
 
-    fn score_decorator_best_practices(&self, category: &DecoratorCategory, usage_pattern: &DecoratorUsagePattern) -> i32 {
+    fn score_decorator_best_practices(
+        &self,
+        category: &DecoratorCategory,
+        usage_pattern: &DecoratorUsagePattern,
+    ) -> i32 {
         let mut score = 80;
-        
+
         match category {
             DecoratorCategory::BuiltIn => score += 10,
             DecoratorCategory::FunctoolsDecorator => score += 15,
             DecoratorCategory::Performance => score += 10,
             _ => {}
         }
-        
+
         match usage_pattern {
             DecoratorUsagePattern::SingleDecorator => score += 5,
             DecoratorUsagePattern::StackedDecorators => score -= 5, // Can be complex
             _ => {}
         }
-        
+
         score.min(100)
     }
 
@@ -4293,8 +4523,12 @@ impl PythonAnalyzer {
     fn assess_syntax_complexity(&self, content: &str, pattern: &Regex) -> SyntaxComplexity {
         let usage_count = pattern.find_iter(content).count();
         let total_lines = content.lines().count();
-        let usage_density = if total_lines > 0 { usage_count as f32 / total_lines as f32 } else { 0.0 };
-        
+        let usage_density = if total_lines > 0 {
+            usage_count as f32 / total_lines as f32
+        } else {
+            0.0
+        };
+
         match usage_density {
             d if d > 0.1 => SyntaxComplexity::Expert,
             d if d > 0.05 => SyntaxComplexity::Complex,
@@ -4321,25 +4555,38 @@ impl PythonAnalyzer {
         }
     }
 
-    fn get_syntax_migration_suggestions(&self, feature_type: &ModernSyntaxType, usage_count: usize) -> Vec<String> {
+    fn get_syntax_migration_suggestions(
+        &self,
+        feature_type: &ModernSyntaxType,
+        usage_count: usize,
+    ) -> Vec<String> {
         let mut suggestions = Vec::new();
-        
+
         match feature_type {
             ModernSyntaxType::WalrusOperator => {
                 if usage_count > 10 {
-                    suggestions.push("Consider if all walrus operator usages improve readability".to_string());
+                    suggestions.push(
+                        "Consider if all walrus operator usages improve readability".to_string(),
+                    );
                 }
-                suggestions.push("Use walrus operator to reduce code duplication in conditions".to_string());
+                suggestions.push(
+                    "Use walrus operator to reduce code duplication in conditions".to_string(),
+                );
             }
             ModernSyntaxType::GenericTypeHints => {
-                suggestions.push("Migrate from typing.List/Dict to built-in list/dict for type hints".to_string());
+                suggestions.push(
+                    "Migrate from typing.List/Dict to built-in list/dict for type hints"
+                        .to_string(),
+                );
             }
             ModernSyntaxType::TypeUnionOperator => {
-                suggestions.push("Replace typing.Union with | operator for cleaner type hints".to_string());
+                suggestions.push(
+                    "Replace typing.Union with | operator for cleaner type hints".to_string(),
+                );
             }
             _ => {}
         }
-        
+
         suggestions
     }
 
@@ -4347,21 +4594,26 @@ impl PythonAnalyzer {
     fn analyze_async_functions(&self, content: &str, async_functions: &mut Vec<AsyncFunctionInfo>) {
         for patterns in self.async_patterns.values() {
             for pattern in patterns {
-                if pattern.pattern_type == "function" || pattern.pattern_type == "generator" 
-                    || pattern.pattern_type == "context_manager" || pattern.pattern_type == "iterator" {
-                    
+                if pattern.pattern_type == "function"
+                    || pattern.pattern_type == "generator"
+                    || pattern.pattern_type == "context_manager"
+                    || pattern.pattern_type == "iterator"
+                {
                     for captures in pattern.pattern.captures_iter(content) {
                         let full_match = captures.get(0).unwrap().as_str();
-                        let function_name = captures.get(1)
+                        let function_name = captures
+                            .get(1)
                             .map(|m| m.as_str().to_string())
                             .unwrap_or_else(|| "anonymous".to_string());
 
-                        let function_type = self.determine_async_function_type(&pattern.name, full_match);
+                        let function_type =
+                            self.determine_async_function_type(&pattern.name, full_match);
                         let complexity = self.assess_async_complexity(content, full_match);
                         let coroutine_type = self.classify_coroutine_type(content);
                         let error_handling = self.assess_error_handling(content, full_match);
                         let has_timeout = self.has_timeout_handling(content, full_match);
-                        let uses_context_manager = self.uses_async_context_manager(content, full_match);
+                        let uses_context_manager =
+                            self.uses_async_context_manager(content, full_match);
 
                         async_functions.push(AsyncFunctionInfo {
                             name: function_name,
@@ -4382,7 +4634,7 @@ impl PythonAnalyzer {
     /// Analyze await usage patterns
     fn analyze_await_usage(&self, content: &str, await_patterns: &mut Vec<AwaitUsageInfo>) {
         let await_pattern = Regex::new(r"await\s+([^;\n]+)").unwrap();
-        
+
         for captures in await_pattern.captures_iter(content) {
             let full_match = captures.get(0).unwrap().as_str();
             let await_expr = captures.get(1).unwrap().as_str();
@@ -4403,7 +4655,11 @@ impl PythonAnalyzer {
     }
 
     /// Analyze concurrency patterns
-    fn analyze_concurrency_patterns(&self, content: &str, concurrency_patterns: &mut Vec<ConcurrencyPatternInfo>) {
+    fn analyze_concurrency_patterns(
+        &self,
+        content: &str,
+        concurrency_patterns: &mut Vec<ConcurrencyPatternInfo>,
+    ) {
         for patterns in self.async_patterns.values() {
             for pattern in patterns {
                 if pattern.pattern_type == "concurrency" {
@@ -4411,8 +4667,10 @@ impl PythonAnalyzer {
                         let full_match = captures.get(0).unwrap().as_str();
 
                         let pattern_type = self.map_to_concurrency_pattern_type(&pattern.name);
-                        let usage_quality = self.assess_concurrency_usage_quality(content, full_match);
-                        let best_practices_followed = self.check_concurrency_best_practices(content, full_match);
+                        let usage_quality =
+                            self.assess_concurrency_usage_quality(content, full_match);
+                        let best_practices_followed =
+                            self.check_concurrency_best_practices(content, full_match);
 
                         concurrency_patterns.push(ConcurrencyPatternInfo {
                             pattern_type,
@@ -4428,9 +4686,17 @@ impl PythonAnalyzer {
     }
 
     /// Detect async performance issues
-    fn detect_async_performance_issues(&self, content: &str, issues: &mut Vec<AsyncPerformanceIssue>) {
+    fn detect_async_performance_issues(
+        &self,
+        content: &str,
+        issues: &mut Vec<AsyncPerformanceIssue>,
+    ) {
         // Detect blocking IO in async functions - look for blocking calls within async function bodies
-        if content.contains("async def") && (content.contains("time.sleep") || content.contains("open(") || content.contains("input(")) {
+        if content.contains("async def")
+            && (content.contains("time.sleep")
+                || content.contains("open(")
+                || content.contains("input("))
+        {
             issues.push(AsyncPerformanceIssue {
                 issue_type: AsyncPerformanceIssueType::BlockingIOInAsync,
                 severity: AsyncIssueSeverity::High,
@@ -4450,7 +4716,9 @@ impl PythonAnalyzer {
                 severity: AsyncIssueSeverity::Medium,
                 location: full_match.to_string(),
                 description: "Sequential await in loop - consider asyncio.gather()".to_string(),
-                recommendation: "Use asyncio.gather() or asyncio.as_completed() for concurrent execution".to_string(),
+                recommendation:
+                    "Use asyncio.gather() or asyncio.as_completed() for concurrent execution"
+                        .to_string(),
                 estimated_impact: AsyncPerformanceImpact::Negative,
             });
         }
@@ -4464,7 +4732,8 @@ impl PythonAnalyzer {
                 severity: AsyncIssueSeverity::Medium,
                 location: full_match.to_string(),
                 description: "Sequential await calls could be concurrent".to_string(),
-                recommendation: "Consider using asyncio.gather() for independent operations".to_string(),
+                recommendation: "Consider using asyncio.gather() for independent operations"
+                    .to_string(),
                 estimated_impact: AsyncPerformanceImpact::Negative,
             });
         }
@@ -4474,7 +4743,8 @@ impl PythonAnalyzer {
     fn detect_async_security_issues(&self, content: &str, issues: &mut Vec<AsyncSecurityIssue>) {
         // Detect missing timeouts
         let await_pattern = Regex::new(r"await\s+").unwrap();
-        let timeout_count = content.matches("asyncio.wait_for").count() + content.matches("asyncio.timeout").count();
+        let timeout_count = content.matches("asyncio.wait_for").count()
+            + content.matches("asyncio.timeout").count();
         let await_count = await_pattern.find_iter(content).count();
 
         if await_count > timeout_count + 2 {
@@ -4488,7 +4758,8 @@ impl PythonAnalyzer {
         }
 
         // Detect shared state without locking
-        let shared_state_pattern = Regex::new(r"(?:global|class)\s+\w+.*=.*\n.*async\s+def.*\w+.*=").unwrap();
+        let shared_state_pattern =
+            Regex::new(r"(?:global|class)\s+\w+.*=.*\n.*async\s+def.*\w+.*=").unwrap();
         for captures in shared_state_pattern.captures_iter(content) {
             let full_match = captures.get(0).unwrap().as_str();
             if !content.contains("asyncio.Lock") && !content.contains("asyncio.Semaphore") {
@@ -4497,13 +4768,17 @@ impl PythonAnalyzer {
                     severity: AsyncSecuritySeverity::High,
                     location: full_match.to_string(),
                     description: "Shared mutable state without proper locking".to_string(),
-                    recommendation: "Use asyncio.Lock or asyncio.Semaphore for thread safety".to_string(),
+                    recommendation: "Use asyncio.Lock or asyncio.Semaphore for thread safety"
+                        .to_string(),
                 });
             }
         }
 
         // Detect race condition patterns
-        if content.contains("asyncio.gather") && !content.contains("asyncio.Lock") && content.matches("=").count() > 3 {
+        if content.contains("asyncio.gather")
+            && !content.contains("asyncio.Lock")
+            && content.matches("=").count() > 3
+        {
             issues.push(AsyncSecurityIssue {
                 issue_type: AsyncSecurityIssueType::AsyncRaceCondition,
                 severity: AsyncSecuritySeverity::Medium,
@@ -4517,9 +4792,21 @@ impl PythonAnalyzer {
     /// Detect modern async features
     fn detect_modern_async_features(&self, content: &str, features: &mut Vec<ModernAsyncFeature>) {
         let modern_patterns = &[
-            ("async with", ModernAsyncFeatureType::AsyncContextManager, "3.7+"),
-            ("asyncio.TaskGroup", ModernAsyncFeatureType::TaskGroups, "3.11+"),
-            ("asyncio.timeout", ModernAsyncFeatureType::AsyncioTimeout, "3.11+"),
+            (
+                "async with",
+                ModernAsyncFeatureType::AsyncContextManager,
+                "3.7+",
+            ),
+            (
+                "asyncio.TaskGroup",
+                ModernAsyncFeatureType::TaskGroups,
+                "3.11+",
+            ),
+            (
+                "asyncio.timeout",
+                ModernAsyncFeatureType::AsyncioTimeout,
+                "3.11+",
+            ),
             ("async for", ModernAsyncFeatureType::AsyncIterators, "3.7+"),
             ("contextvars", ModernAsyncFeatureType::ContextVars, "3.7+"),
             ("asyncio.run", ModernAsyncFeatureType::AsyncioRun, "3.7+"),
@@ -4553,7 +4840,11 @@ impl PythonAnalyzer {
     }
 
     /// Helper methods for async analysis
-    fn determine_async_function_type(&self, pattern_name: &str, _full_match: &str) -> AsyncFunctionType {
+    fn determine_async_function_type(
+        &self,
+        pattern_name: &str,
+        _full_match: &str,
+    ) -> AsyncFunctionType {
         match pattern_name {
             "Async Function" => AsyncFunctionType::RegularAsync,
             "Async Generator" => AsyncFunctionType::AsyncGenerator,
@@ -4591,7 +4882,8 @@ impl PythonAnalyzer {
     }
 
     fn assess_error_handling(&self, _content: &str, function_match: &str) -> AsyncErrorHandling {
-        if function_match.contains("asyncio.timeout") || function_match.contains("asyncio.wait_for") {
+        if function_match.contains("asyncio.timeout") || function_match.contains("asyncio.wait_for")
+        {
             AsyncErrorHandling::Robust
         } else if function_match.contains("timeout") {
             AsyncErrorHandling::Timeout
@@ -4646,10 +4938,18 @@ impl PythonAnalyzer {
     }
 
     fn validate_await_usage(&self, context: &AwaitContext) -> bool {
-        !matches!(context, AwaitContext::SyncContext | AwaitContext::Comprehension | AwaitContext::Lambda)
+        !matches!(
+            context,
+            AwaitContext::SyncContext | AwaitContext::Comprehension | AwaitContext::Lambda
+        )
     }
 
-    fn detect_await_issues(&self, content: &str, await_expr: &str, context: &AwaitContext) -> Vec<AwaitIssue> {
+    fn detect_await_issues(
+        &self,
+        content: &str,
+        await_expr: &str,
+        context: &AwaitContext,
+    ) -> Vec<AwaitIssue> {
         let mut issues = Vec::new();
 
         if !self.validate_await_usage(context) {
@@ -4683,24 +4983,31 @@ impl PythonAnalyzer {
         }
     }
 
-    fn assess_concurrency_usage_quality(&self, content: &str, pattern_match: &str) -> ConcurrencyUsageQuality {
+    fn assess_concurrency_usage_quality(
+        &self,
+        content: &str,
+        pattern_match: &str,
+    ) -> ConcurrencyUsageQuality {
         let has_error_handling = pattern_match.contains("try") || pattern_match.contains("except");
         let has_timeout = pattern_match.contains("timeout") || content.contains("asyncio.wait_for");
-        let has_proper_cleanup = pattern_match.contains("finally") || pattern_match.contains("async with");
+        let has_proper_cleanup =
+            pattern_match.contains("finally") || pattern_match.contains("async with");
 
         match (has_error_handling, has_timeout, has_proper_cleanup) {
             (true, true, true) => ConcurrencyUsageQuality::Excellent,
             (true, true, false) | (true, false, true) => ConcurrencyUsageQuality::Good,
-            (true, false, false) | (false, true, false) | (false, true, true) => ConcurrencyUsageQuality::Adequate,
+            (true, false, false) | (false, true, false) | (false, true, true) => {
+                ConcurrencyUsageQuality::Adequate
+            }
             (false, false, true) => ConcurrencyUsageQuality::Poor,
             (false, false, false) => ConcurrencyUsageQuality::Dangerous,
         }
     }
 
     fn check_concurrency_best_practices(&self, content: &str, _pattern_match: &str) -> bool {
-        content.contains("async with") && 
-        (content.contains("timeout") || content.contains("asyncio.wait_for")) &&
-        content.contains("try")
+        content.contains("async with")
+            && (content.contains("timeout") || content.contains("asyncio.wait_for"))
+            && content.contains("try")
     }
 
     fn calculate_async_score(
@@ -4711,12 +5018,13 @@ impl PythonAnalyzer {
         security_issues: &[AsyncSecurityIssue],
     ) -> i32 {
         let base_score = 50;
-        
+
         // Bonus for async functions
         let async_bonus = async_functions.len() as i32 * 5;
-        
+
         // Bonus for good concurrency patterns
-        let concurrency_bonus = concurrency_patterns.iter()
+        let concurrency_bonus = concurrency_patterns
+            .iter()
             .map(|p| match p.usage_quality {
                 ConcurrencyUsageQuality::Excellent => 10,
                 ConcurrencyUsageQuality::Good => 7,
@@ -4727,7 +5035,8 @@ impl PythonAnalyzer {
             .sum::<i32>();
 
         // Penalty for issues
-        let performance_penalty = performance_issues.iter()
+        let performance_penalty = performance_issues
+            .iter()
             .map(|i| match i.severity {
                 AsyncIssueSeverity::Critical => 20,
                 AsyncIssueSeverity::High => 15,
@@ -4737,7 +5046,8 @@ impl PythonAnalyzer {
             })
             .sum::<i32>();
 
-        let security_penalty = security_issues.iter()
+        let security_penalty = security_issues
+            .iter()
             .map(|i| match i.severity {
                 AsyncSecuritySeverity::Critical => 25,
                 AsyncSecuritySeverity::High => 20,
@@ -4747,7 +5057,8 @@ impl PythonAnalyzer {
             })
             .sum::<i32>();
 
-        (base_score + async_bonus + concurrency_bonus - performance_penalty - security_penalty).clamp(0, 100)
+        (base_score + async_bonus + concurrency_bonus - performance_penalty - security_penalty)
+            .clamp(0, 100)
     }
 
     fn get_async_recommendations(
@@ -4765,18 +5076,24 @@ impl PythonAnalyzer {
         }
 
         if !performance_issues.is_empty() {
-            recommendations.push("Address async performance issues for better efficiency".to_string());
+            recommendations
+                .push("Address async performance issues for better efficiency".to_string());
         }
 
         if !security_issues.is_empty() {
             recommendations.push("Fix async security vulnerabilities".to_string());
         }
 
-        let has_poor_concurrency = concurrency_patterns.iter()
-            .any(|p| matches!(p.usage_quality, ConcurrencyUsageQuality::Poor | ConcurrencyUsageQuality::Dangerous));
+        let has_poor_concurrency = concurrency_patterns.iter().any(|p| {
+            matches!(
+                p.usage_quality,
+                ConcurrencyUsageQuality::Poor | ConcurrencyUsageQuality::Dangerous
+            )
+        });
 
         if has_poor_concurrency {
-            recommendations.push("Improve concurrency pattern usage with proper error handling".to_string());
+            recommendations
+                .push("Improve concurrency pattern usage with proper error handling".to_string());
         }
 
         let has_invalid_await = await_patterns.iter().any(|p| !p.is_valid);
@@ -4789,9 +5106,12 @@ impl PythonAnalyzer {
             recommendations.push("Add timeout handling to prevent hanging operations".to_string());
         }
 
-        recommendations.push("Use asyncio.gather() for concurrent independent operations".to_string());
-        recommendations.push("Implement proper async context managers for resource cleanup".to_string());
-        recommendations.push("Consider using Python 3.11+ TaskGroup for structured concurrency".to_string());
+        recommendations
+            .push("Use asyncio.gather() for concurrent independent operations".to_string());
+        recommendations
+            .push("Implement proper async context managers for resource cleanup".to_string());
+        recommendations
+            .push("Consider using Python 3.11+ TaskGroup for structured concurrency".to_string());
 
         recommendations
     }
@@ -4838,7 +5158,10 @@ impl PythonAnalyzer {
                 let parameter_types = if params_str.is_empty() {
                     Vec::new()
                 } else {
-                    params_str.split(',').map(|s| s.trim().to_string()).collect()
+                    params_str
+                        .split(',')
+                        .map(|s| s.trim().to_string())
+                        .collect()
                 };
                 TypeHintType::CallableType(CallableTypeInfo {
                     parameter_types,
@@ -4856,12 +5179,13 @@ impl PythonAnalyzer {
                     contravariant: false,
                 })
             }
-            "protocol" => {
-                TypeHintType::ProtocolType("Protocol".to_string())
-            }
+            "protocol" => TypeHintType::ProtocolType("Protocol".to_string()),
             "literal" => {
                 let values_str = captures.get(1).unwrap().as_str();
-                let literal_values = values_str.split(',').map(|s| s.trim().to_string()).collect();
+                let literal_values = values_str
+                    .split(',')
+                    .map(|s| s.trim().to_string())
+                    .collect();
                 TypeHintType::LiteralType(literal_values)
             }
             "final" => {
@@ -4926,10 +5250,10 @@ impl PythonAnalyzer {
         // Detect missing type hints
         let func_pattern = Regex::new(r"def\s+\w+\s*\([^)]*\)\s*:").unwrap();
         let typed_func_pattern = Regex::new(r"def\s+\w+\s*\([^)]*\)\s*->\s*\w+:").unwrap();
-        
+
         let total_functions = func_pattern.find_iter(content).count();
         let typed_functions = typed_func_pattern.find_iter(content).count();
-        
+
         if total_functions > typed_functions && total_functions > 0 {
             let missing_hints = total_functions - typed_functions;
             issues.push(TypeSafetyIssue {
@@ -4968,15 +5292,16 @@ impl PythonAnalyzer {
     fn calculate_type_coverage(&self, content: &str, _type_hints: &[TypeHintInfo]) -> f32 {
         let func_pattern = Regex::new(r"def\s+\w+").unwrap();
         let total_functions = func_pattern.find_iter(content).count();
-        
+
         if total_functions == 0 {
             return 0.0;
         }
 
         // Count functions with type annotations (parameter or return type hints)
-        let typed_func_pattern = Regex::new(r"def\s+\w+\s*\([^)]*:\s*\w+|def\s+\w+\s*\([^)]*\)\s*->\s*\w+").unwrap();
+        let typed_func_pattern =
+            Regex::new(r"def\s+\w+\s*\([^)]*:\s*\w+|def\s+\w+\s*\([^)]*\)\s*->\s*\w+").unwrap();
         let typed_functions = typed_func_pattern.find_iter(content).count();
-        
+
         (typed_functions as f32 / total_functions as f32) * 100.0
     }
 
@@ -5006,26 +5331,31 @@ impl PythonAnalyzer {
             recommendations.push("Address type safety issues identified in the code".to_string());
         }
 
-        let has_modern_features = type_hints.iter().any(|h| 
-            h.python_version_required.starts_with("3.8") || 
-            h.python_version_required.starts_with("3.9") ||
-            h.python_version_required.starts_with("3.10")
-        );
+        let has_modern_features = type_hints.iter().any(|h| {
+            h.python_version_required.starts_with("3.8")
+                || h.python_version_required.starts_with("3.9")
+                || h.python_version_required.starts_with("3.10")
+        });
 
         if !has_modern_features {
             recommendations.push("Consider using modern Python type features (3.8+)".to_string());
         }
 
-        let has_complex_types = type_hints.iter().any(|h| 
-            matches!(h.complexity, TypeComplexity::Complex | TypeComplexity::Advanced)
-        );
+        let has_complex_types = type_hints.iter().any(|h| {
+            matches!(
+                h.complexity,
+                TypeComplexity::Complex | TypeComplexity::Advanced
+            )
+        });
 
         if has_complex_types {
-            recommendations.push("Document complex type relationships for maintainability".to_string());
+            recommendations
+                .push("Document complex type relationships for maintainability".to_string());
         }
 
         if type_hints.iter().any(|h| h.is_generic) {
-            recommendations.push("Ensure generic type constraints are properly defined".to_string());
+            recommendations
+                .push("Ensure generic type constraints are properly defined".to_string());
         }
 
         recommendations.push("Use type checkers like mypy for static type validation".to_string());
@@ -5473,15 +5803,18 @@ MODE: Literal["read", "write"] = "read"
         let result = analyzer.analyze_type_hints(code).unwrap();
 
         assert!(!result.type_hints_detected.is_empty());
-        assert!(result.type_hints_detected.iter().any(|h| 
-            matches!(h.hint_type, TypeHintType::GenericType(_))
-        ));
-        assert!(result.type_hints_detected.iter().any(|h| 
-            matches!(h.hint_type, TypeHintType::UnionType(_))
-        ));
-        assert!(result.type_hints_detected.iter().any(|h| 
-            matches!(h.hint_type, TypeHintType::OptionalType(_))
-        ));
+        assert!(result
+            .type_hints_detected
+            .iter()
+            .any(|h| matches!(h.hint_type, TypeHintType::GenericType(_))));
+        assert!(result
+            .type_hints_detected
+            .iter()
+            .any(|h| matches!(h.hint_type, TypeHintType::UnionType(_))));
+        assert!(result
+            .type_hints_detected
+            .iter()
+            .any(|h| matches!(h.hint_type, TypeHintType::OptionalType(_))));
         assert!(result.overall_coverage > 0.0);
     }
 
@@ -5508,15 +5841,18 @@ def process(value: str | int) -> str | None:
         let result = analyzer.analyze_type_hints(code).unwrap();
 
         assert!(!result.modern_type_features.is_empty());
-        assert!(result.modern_type_features.iter().any(|f| 
-            matches!(f.feature_type, ModernTypeFeatureType::TypedDict)
-        ));
-        assert!(result.modern_type_features.iter().any(|f| 
-            matches!(f.feature_type, ModernTypeFeatureType::FinalType)
-        ));
-        assert!(result.modern_type_features.iter().any(|f| 
-            matches!(f.feature_type, ModernTypeFeatureType::LiteralType)
-        ));
+        assert!(result
+            .modern_type_features
+            .iter()
+            .any(|f| matches!(f.feature_type, ModernTypeFeatureType::TypedDict)));
+        assert!(result
+            .modern_type_features
+            .iter()
+            .any(|f| matches!(f.feature_type, ModernTypeFeatureType::FinalType)));
+        assert!(result
+            .modern_type_features
+            .iter()
+            .any(|f| matches!(f.feature_type, ModernTypeFeatureType::LiteralType)));
     }
 
     #[test]
@@ -5544,18 +5880,21 @@ def bad_any_usage(x: Any, y: Any, z: Any, a: Any, b: Any, c: Any) -> Any:
         let result = analyzer.analyze_type_hints(code).unwrap();
 
         assert!(!result.type_safety_issues.is_empty());
-        assert!(result.type_safety_issues.iter().any(|issue| 
-            matches!(issue.issue_type, TypeSafetyIssueType::AnyTypeOveruse)
-        ));
-        assert!(result.type_safety_issues.iter().any(|issue| 
-            matches!(issue.issue_type, TypeSafetyIssueType::MissingTypeHints)
-        ));
-        assert!(result.type_safety_issues.iter().any(|issue| 
-            matches!(issue.issue_type, TypeSafetyIssueType::TypeIgnoreOveruse)
-        ));
+        assert!(result
+            .type_safety_issues
+            .iter()
+            .any(|issue| matches!(issue.issue_type, TypeSafetyIssueType::AnyTypeOveruse)));
+        assert!(result
+            .type_safety_issues
+            .iter()
+            .any(|issue| matches!(issue.issue_type, TypeSafetyIssueType::MissingTypeHints)));
+        assert!(result
+            .type_safety_issues
+            .iter()
+            .any(|issue| matches!(issue.issue_type, TypeSafetyIssueType::TypeIgnoreOveruse)));
     }
 
-    #[test] 
+    #[test]
     fn test_type_coverage_calculation() {
         let analyzer = PythonAnalyzer::new();
 
@@ -5570,7 +5909,8 @@ def typed_func2(y: str) -> int:
 
         let result = analyzer.analyze_type_hints(high_coverage_code).unwrap();
         assert!(result.overall_coverage > 50.0);
-        assert!(matches!(result.type_coverage_score, 
+        assert!(matches!(
+            result.type_coverage_score,
             TypeCoverageScore::Good | TypeCoverageScore::Excellent | TypeCoverageScore::Fair
         ));
 
@@ -5614,17 +5954,17 @@ async def with_context():
 "#;
 
         let result = analyzer.analyze_async_await(content).unwrap();
-        
+
         // Should detect async functions
         assert!(!result.async_functions_detected.is_empty());
         assert!(result.async_functions_detected.len() >= 3);
-        
+
         // Should detect concurrency patterns
         assert!(!result.concurrency_patterns.is_empty());
-        
+
         // Should detect modern async features
         assert!(!result.modern_async_features.is_empty());
-        
+
         // Should have a reasonable async score
         assert!(result.overall_async_score > 50);
     }
@@ -5654,19 +5994,33 @@ async def fetch_data():
 "#;
 
         let result = analyzer.analyze_async_await(content).unwrap();
-        
+
         // Should detect performance issues
         assert!(!result.async_performance_issues.is_empty());
-        
+
         // Should detect blocking operations
-        let blocking_issues: Vec<_> = result.async_performance_issues.iter()
-            .filter(|issue| matches!(issue.issue_type, AsyncPerformanceIssueType::BlockingIOInAsync))
+        let blocking_issues: Vec<_> = result
+            .async_performance_issues
+            .iter()
+            .filter(|issue| {
+                matches!(
+                    issue.issue_type,
+                    AsyncPerformanceIssueType::BlockingIOInAsync
+                )
+            })
             .collect();
         assert!(!blocking_issues.is_empty());
-        
+
         // Should detect missing concurrency
-        let concurrency_issues: Vec<_> = result.async_performance_issues.iter()
-            .filter(|issue| matches!(issue.issue_type, AsyncPerformanceIssueType::MissingConcurrency))
+        let concurrency_issues: Vec<_> = result
+            .async_performance_issues
+            .iter()
+            .filter(|issue| {
+                matches!(
+                    issue.issue_type,
+                    AsyncPerformanceIssueType::MissingConcurrency
+                )
+            })
             .collect();
         assert!(!concurrency_issues.is_empty());
     }
@@ -5701,12 +6055,14 @@ async def modify_shared_data():
 "#;
 
         let result = analyzer.analyze_async_await(content).unwrap();
-        
+
         // Should detect security issues
         assert!(!result.async_security_issues.is_empty());
-        
+
         // Should detect timeout vulnerability
-        let timeout_issues: Vec<_> = result.async_security_issues.iter()
+        let timeout_issues: Vec<_> = result
+            .async_security_issues
+            .iter()
             .filter(|issue| matches!(issue.issue_type, AsyncSecurityIssueType::AsyncTimeoutVuln))
             .collect();
         assert!(!timeout_issues.is_empty());
@@ -5752,28 +6108,34 @@ if __name__ == "__main__":
 "#;
 
         let result = analyzer.analyze_async_await(content).unwrap();
-        
+
         // Should detect modern async features
         assert!(!result.modern_async_features.is_empty());
-        
+
         // Should detect async context managers
-        let context_manager_features: Vec<_> = result.modern_async_features.iter()
+        let context_manager_features: Vec<_> = result
+            .modern_async_features
+            .iter()
             .filter(|f| matches!(f.feature_type, ModernAsyncFeatureType::AsyncContextManager))
             .collect();
         assert!(!context_manager_features.is_empty());
-        
+
         // Should detect TaskGroups
-        let task_group_features: Vec<_> = result.modern_async_features.iter()
+        let task_group_features: Vec<_> = result
+            .modern_async_features
+            .iter()
             .filter(|f| matches!(f.feature_type, ModernAsyncFeatureType::TaskGroups))
             .collect();
         assert!(!task_group_features.is_empty());
-        
+
         // Should detect asyncio.run
-        let asyncio_run_features: Vec<_> = result.modern_async_features.iter()
+        let asyncio_run_features: Vec<_> = result
+            .modern_async_features
+            .iter()
             .filter(|f| matches!(f.feature_type, ModernAsyncFeatureType::AsyncioRun))
             .collect();
         assert!(!asyncio_run_features.is_empty());
-        
+
         // Should have recommendations
         assert!(!result.recommendations.is_empty());
     }
@@ -5796,21 +6158,21 @@ flask==2.0.1
 "#;
 
         let result = analyzer.analyze_package_dependencies(content).unwrap();
-        
+
         // Should detect dependencies
         assert!(!result.dependencies.is_empty());
-        
+
         // Should detect imports
         assert!(!result.import_analysis.is_empty());
         assert!(result.import_analysis.len() >= 5);
-        
+
         // Should have a reasonable health score
         assert!(result.overall_health_score >= 0);
         assert!(result.overall_health_score <= 100);
-        
+
         // Should detect issues
         assert!(!result.dependency_issues.is_empty());
-        
+
         // Should provide recommendations
         assert!(!result.recommendations.is_empty());
     }
@@ -5831,27 +6193,35 @@ django
 "#;
 
         let result = analyzer.analyze_package_dependencies(content).unwrap();
-        
+
         // Should detect unused dependency
-        let unused_issues: Vec<_> = result.dependency_issues.iter()
+        let unused_issues: Vec<_> = result
+            .dependency_issues
+            .iter()
             .filter(|issue| matches!(issue.issue_type, DependencyIssueType::UnusedDependency))
             .collect();
         assert!(!unused_issues.is_empty());
-        
+
         // Should detect missing dependency
-        let missing_issues: Vec<_> = result.dependency_issues.iter()
+        let missing_issues: Vec<_> = result
+            .dependency_issues
+            .iter()
             .filter(|issue| matches!(issue.issue_type, DependencyIssueType::MissingDependency))
             .collect();
         assert!(!missing_issues.is_empty());
-        
+
         // Should detect unpinned version
-        let unpinned_issues: Vec<_> = result.dependency_issues.iter()
+        let unpinned_issues: Vec<_> = result
+            .dependency_issues
+            .iter()
             .filter(|issue| matches!(issue.issue_type, DependencyIssueType::UnpinnedVersion))
             .collect();
         assert!(!unpinned_issues.is_empty());
-        
+
         // Should detect deprecated package
-        let deprecated_issues: Vec<_> = result.dependency_issues.iter()
+        let deprecated_issues: Vec<_> = result
+            .dependency_issues
+            .iter()
             .filter(|issue| matches!(issue.issue_type, DependencyIssueType::DeprecatedPackage))
             .collect();
         assert!(!deprecated_issues.is_empty());
@@ -5873,31 +6243,44 @@ import numpy as np
 "#;
 
         let result = analyzer.analyze_package_dependencies(content).unwrap();
-        
+
         // Should categorize imports correctly
-        let stdlib_imports: Vec<_> = result.import_analysis.iter()
+        let stdlib_imports: Vec<_> = result
+            .import_analysis
+            .iter()
             .filter(|imp| matches!(imp.module_category, ModuleCategory::StandardLibrary))
             .collect();
         assert!(stdlib_imports.len() >= 2); // os, sys
-        
-        let third_party_imports: Vec<_> = result.import_analysis.iter()
+
+        let third_party_imports: Vec<_> = result
+            .import_analysis
+            .iter()
             .filter(|imp| matches!(imp.module_category, ModuleCategory::ThirdParty))
             .collect();
         assert!(third_party_imports.len() >= 3); // requests, pandas, flask, numpy
-        
+
         // Should detect star import issues
-        let star_import_issues: Vec<_> = result.import_analysis.iter()
-            .filter(|imp| imp.import_issues.contains(&ImportIssue::StarImportDangerous))
+        let star_import_issues: Vec<_> = result
+            .import_analysis
+            .iter()
+            .filter(|imp| {
+                imp.import_issues
+                    .contains(&ImportIssue::StarImportDangerous)
+            })
             .collect();
         assert!(!star_import_issues.is_empty());
-        
+
         // Should detect different import types
-        let from_imports: Vec<_> = result.import_analysis.iter()
+        let from_imports: Vec<_> = result
+            .import_analysis
+            .iter()
             .filter(|imp| matches!(imp.import_type, ImportType::FromImport))
             .collect();
         assert!(!from_imports.is_empty());
-        
-        let alias_imports: Vec<_> = result.import_analysis.iter()
+
+        let alias_imports: Vec<_> = result
+            .import_analysis
+            .iter()
             .filter(|imp| matches!(imp.import_type, ImportType::AliasImport))
             .collect();
         assert!(!alias_imports.is_empty());
@@ -5917,24 +6300,30 @@ pyyaml==5.3.1
 "#;
 
         let result = analyzer.analyze_package_dependencies(content).unwrap();
-        
+
         // Should detect security vulnerabilities
         assert!(!result.security_vulnerabilities.is_empty());
-        
+
         // Should have vulnerabilities for known packages
-        let urllib3_vulns: Vec<_> = result.security_vulnerabilities.iter()
+        let urllib3_vulns: Vec<_> = result
+            .security_vulnerabilities
+            .iter()
             .filter(|vuln| vuln.package_name == "urllib3")
             .collect();
         assert!(!urllib3_vulns.is_empty());
-        
+
         // Should categorize severity correctly
-        let critical_vulns: Vec<_> = result.security_vulnerabilities.iter()
+        let critical_vulns: Vec<_> = result
+            .security_vulnerabilities
+            .iter()
             .filter(|vuln| matches!(vuln.severity, SecurityVulnerabilitySeverity::Critical))
             .collect();
         assert!(!critical_vulns.is_empty());
-        
+
         // Should have CVE information
-        let vulns_with_cve: Vec<_> = result.security_vulnerabilities.iter()
+        let vulns_with_cve: Vec<_> = result
+            .security_vulnerabilities
+            .iter()
             .filter(|vuln| vuln.cve_id.is_some())
             .collect();
         assert!(!vulns_with_cve.is_empty());
@@ -5959,22 +6348,28 @@ pipenv shell
 "#;
 
         let result = analyzer.analyze_package_dependencies(content).unwrap();
-        
+
         // Should detect virtual environments
         assert!(!result.virtual_environments.is_empty());
-        
+
         // Should detect different environment types
-        let venv_envs: Vec<_> = result.virtual_environments.iter()
+        let venv_envs: Vec<_> = result
+            .virtual_environments
+            .iter()
             .filter(|env| matches!(env.env_type, VirtualEnvironmentType::Venv))
             .collect();
         assert!(!venv_envs.is_empty());
-        
-        let conda_envs: Vec<_> = result.virtual_environments.iter()
+
+        let conda_envs: Vec<_> = result
+            .virtual_environments
+            .iter()
             .filter(|env| matches!(env.env_type, VirtualEnvironmentType::Conda))
             .collect();
         assert!(!conda_envs.is_empty());
-        
-        let pipenv_envs: Vec<_> = result.virtual_environments.iter()
+
+        let pipenv_envs: Vec<_> = result
+            .virtual_environments
+            .iter()
             .filter(|env| matches!(env.env_type, VirtualEnvironmentType::Pipenv))
             .collect();
         assert!(!pipenv_envs.is_empty());
@@ -5994,25 +6389,32 @@ flask==2.0.1
 "#;
 
         let result = analyzer.analyze_package_dependencies(content).unwrap();
-        
+
         // Should analyze licenses
         assert!(!result.license_analysis.is_empty());
-        
+
         // Should have license information for dependencies
         assert_eq!(result.license_analysis.len(), result.dependencies.len());
-        
+
         // Should assess compatibility
-        let compatible_licenses: Vec<_> = result.license_analysis.iter()
+        let compatible_licenses: Vec<_> = result
+            .license_analysis
+            .iter()
             .filter(|license| matches!(license.compatibility, LicenseCompatibility::Compatible))
             .collect();
         assert!(!compatible_licenses.is_empty());
-        
+
         // Should have license metadata
         for license in &result.license_analysis {
             assert!(!license.package_name.is_empty());
-            assert!(matches!(license.license_type, 
-                LicenseType::MIT | LicenseType::Apache2 | LicenseType::BSD2Clause | 
-                LicenseType::BSD3Clause | LicenseType::Unknown));
+            assert!(matches!(
+                license.license_type,
+                LicenseType::MIT
+                    | LicenseType::Apache2
+                    | LicenseType::BSD2Clause
+                    | LicenseType::BSD3Clause
+                    | LicenseType::Unknown
+            ));
         }
     }
 
@@ -6050,10 +6452,10 @@ flask==2.0.1
         "#;
 
         let analysis = analyzer.analyze_modern_features(code).unwrap();
-        
+
         // Should detect dataclass usage
         assert!(!analysis.dataclass_features.is_empty());
-        
+
         // Should detect f-string usage
         assert!(!analysis.fstring_features.is_empty());
 
@@ -6065,7 +6467,10 @@ flask==2.0.1
         assert!(analysis.overall_modernity_score <= 100);
 
         // Should detect appropriate Python version
-        assert!(analysis.python_version_detected.minimum_version.starts_with("3."));
+        assert!(analysis
+            .python_version_detected
+            .minimum_version
+            .starts_with("3."));
 
         // Should provide recommendations
         assert!(!analysis.recommendations.is_empty());
@@ -6095,14 +6500,23 @@ flask==2.0.1
         "#;
 
         let analysis = analyzer.analyze_modern_features(code).unwrap();
-        
+
         assert!(!analysis.dataclass_features.is_empty());
         let dataclass_info = &analysis.dataclass_features[0];
-        
-        assert_eq!(dataclass_info.dataclass_type, DataclassType::StandardDataclass);
-        assert!(dataclass_info.features_used.contains(&DataclassFeature::FrozenClass));
-        assert!(dataclass_info.features_used.contains(&DataclassFeature::PostInitProcessing));
-        assert!(dataclass_info.features_used.contains(&DataclassFeature::FieldFactories));
+
+        assert_eq!(
+            dataclass_info.dataclass_type,
+            DataclassType::StandardDataclass
+        );
+        assert!(dataclass_info
+            .features_used
+            .contains(&DataclassFeature::FrozenClass));
+        assert!(dataclass_info
+            .features_used
+            .contains(&DataclassFeature::PostInitProcessing));
+        assert!(dataclass_info
+            .features_used
+            .contains(&DataclassFeature::FieldFactories));
         assert!(dataclass_info.best_practices_score > 70);
     }
 
@@ -6124,18 +6538,22 @@ flask==2.0.1
         "#;
 
         let analysis = analyzer.analyze_modern_features(code).unwrap();
-        
+
         assert!(!analysis.fstring_features.is_empty());
         assert!(analysis.fstring_features.len() >= 3);
-        
+
         // Should detect different complexity levels
-        let complexities: Vec<_> = analysis.fstring_features.iter()
+        let complexities: Vec<_> = analysis
+            .fstring_features
+            .iter()
             .map(|f| &f.complexity)
             .collect();
-        
+
         assert!(complexities.contains(&&FStringComplexity::Simple));
-        assert!(complexities.contains(&&FStringComplexity::Moderate) || 
-                complexities.contains(&&FStringComplexity::Complex));
+        assert!(
+            complexities.contains(&&FStringComplexity::Moderate)
+                || complexities.contains(&&FStringComplexity::Complex)
+        );
     }
 
     #[test]
@@ -6160,13 +6578,15 @@ flask==2.0.1
         "#;
 
         let analysis = analyzer.analyze_modern_features(code).unwrap();
-        
+
         assert!(!analysis.modern_syntax_features.is_empty());
-        
-        let syntax_types: Vec<_> = analysis.modern_syntax_features.iter()
+
+        let syntax_types: Vec<_> = analysis
+            .modern_syntax_features
+            .iter()
             .map(|s| &s.feature_type)
             .collect();
-        
+
         assert!(syntax_types.contains(&&ModernSyntaxType::WalrusOperator));
         assert!(syntax_types.contains(&&ModernSyntaxType::TypeUnionOperator));
         assert!(syntax_types.contains(&&ModernSyntaxType::PositionalOnlyParams));

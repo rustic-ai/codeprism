@@ -2375,43 +2375,43 @@ impl JavaAnalyzer {
 
         // Enhanced SQL Injection detection
         vulnerabilities.extend(self.detect_sql_injection(content));
-        
+
         // Command injection detection
         vulnerabilities.extend(self.detect_command_injection(content));
-        
+
         // Path traversal vulnerabilities
         vulnerabilities.extend(self.detect_path_traversal(content));
-        
+
         // Hardcoded credentials detection
         vulnerabilities.extend(self.detect_hardcoded_credentials(content));
-        
+
         // Weak cryptography detection
         vulnerabilities.extend(self.detect_weak_cryptography(content));
-        
+
         // Deserialization vulnerabilities
         vulnerabilities.extend(self.detect_deserialization_attacks(content));
-        
+
         // XXE vulnerabilities
         vulnerabilities.extend(self.detect_xxe_vulnerabilities(content));
-        
+
         // LDAP injection
         vulnerabilities.extend(self.detect_ldap_injection(content));
-        
+
         // Insecure randomness
         vulnerabilities.extend(self.detect_insecure_randomness(content));
-        
+
         // Session fixation
         vulnerabilities.extend(self.detect_session_fixation(content));
-        
+
         // Unvalidated redirects
         vulnerabilities.extend(self.detect_unvalidated_redirects(content));
-        
+
         // Insecure direct object references
         vulnerabilities.extend(self.detect_insecure_direct_object_references(content));
-        
+
         // XSS vulnerabilities
         vulnerabilities.extend(self.detect_xss_vulnerabilities(content));
-        
+
         // CSRF vulnerabilities
         vulnerabilities.extend(self.detect_csrf_vulnerabilities(content));
 
@@ -2421,7 +2421,7 @@ impl JavaAnalyzer {
     /// Detect SQL injection vulnerabilities with comprehensive patterns
     fn detect_sql_injection(&self, content: &str) -> Vec<SecurityVulnerability> {
         let mut vulnerabilities = Vec::new();
-        
+
         // String concatenation patterns
         let sql_concat_patterns = vec![
             r#""SELECT.*"\s*\+\s*\w+"#,
@@ -2431,7 +2431,7 @@ impl JavaAnalyzer {
             r#"String\.format\s*\(\s*".*SELECT.*%s.*""#,
             r#"MessageFormat\.format\s*\(\s*".*SELECT.*\{0\}.*""#,
         ];
-        
+
         for pattern in sql_concat_patterns {
             if let Ok(regex) = Regex::new(pattern) {
                 if regex.is_match(content) {
@@ -2446,33 +2446,37 @@ impl JavaAnalyzer {
                 }
             }
         }
-        
+
         // Dynamic query building without sanitization
-        if content.contains("createQuery(") && (content.contains("+ ") || content.contains("concat(")) {
+        if content.contains("createQuery(")
+            && (content.contains("+ ") || content.contains("concat("))
+        {
             vulnerabilities.push(SecurityVulnerability {
                 vulnerability_type: SecurityVulnerabilityType::SqlInjection,
                 severity: SecuritySeverity::Medium,
                 location: "Dynamic query construction".to_string(),
-                description: "Dynamic query construction detected without proper parameterization".to_string(),
+                description: "Dynamic query construction detected without proper parameterization"
+                    .to_string(),
                 cwe_id: Some("CWE-89".to_string()),
-                recommendation: "Use JPA criteria API or properly parameterized queries".to_string(),
+                recommendation: "Use JPA criteria API or properly parameterized queries"
+                    .to_string(),
             });
         }
-        
+
         vulnerabilities
     }
 
     /// Detect command injection vulnerabilities
     fn detect_command_injection(&self, content: &str) -> Vec<SecurityVulnerability> {
         let mut vulnerabilities = Vec::new();
-        
+
         let command_patterns = vec![
             r#"Runtime\.getRuntime\(\)\.exec\s*\([^)]*\+[^)]*\)"#,
             r#"ProcessBuilder\s*\([^)]*\+[^)]*\)"#,
             r#"new\s+ProcessBuilder\s*\([^)]*\+[^)]*\)"#,
             r#"Process\.exec\s*\([^)]*\+[^)]*\)"#,
         ];
-        
+
         for pattern in command_patterns {
             if let Ok(regex) = Regex::new(pattern) {
                 if regex.is_match(content) {
@@ -2487,14 +2491,14 @@ impl JavaAnalyzer {
                 }
             }
         }
-        
+
         vulnerabilities
     }
 
     /// Detect path traversal vulnerabilities
     fn detect_path_traversal(&self, content: &str) -> Vec<SecurityVulnerability> {
         let mut vulnerabilities = Vec::new();
-        
+
         let path_patterns = vec![
             r#"new\s+File\s*\([^)]*\+[^)]*\)"#,
             r#"Files\.read\s*\([^)]*\+[^)]*\)"#,
@@ -2502,7 +2506,7 @@ impl JavaAnalyzer {
             r#"FileOutputStream\s*\([^)]*\+[^)]*\)"#,
             r#"\.getResourceAsStream\s*\([^)]*\+[^)]*\)"#,
         ];
-        
+
         for pattern in path_patterns {
             if let Ok(regex) = Regex::new(pattern) {
                 if regex.is_match(content) {
@@ -2517,7 +2521,7 @@ impl JavaAnalyzer {
                 }
             }
         }
-        
+
         // Check for directory traversal patterns
         if content.contains("../") || content.contains("..\\") {
             vulnerabilities.push(SecurityVulnerability {
@@ -2526,17 +2530,19 @@ impl JavaAnalyzer {
                 location: "File path operations".to_string(),
                 description: "Directory traversal sequences detected in code".to_string(),
                 cwe_id: Some("CWE-22".to_string()),
-                recommendation: "Remove or validate directory traversal sequences, use absolute paths".to_string(),
+                recommendation:
+                    "Remove or validate directory traversal sequences, use absolute paths"
+                        .to_string(),
             });
         }
-        
+
         vulnerabilities
     }
 
     /// Detect hardcoded credentials
     fn detect_hardcoded_credentials(&self, content: &str) -> Vec<SecurityVulnerability> {
         let mut vulnerabilities = Vec::new();
-        
+
         let credential_patterns = vec![
             r#"password\s*=\s*"[^"]+""#,
             r#"PASSWORD\s*=\s*"[^"]+""#,
@@ -2548,7 +2554,7 @@ impl JavaAnalyzer {
             r#"\.password\(\s*"[^"]+"\s*\)"#,
             r#"getConnection\s*\([^,]*,\s*"[^"]*",\s*"[^"]+"\s*\)"#,
         ];
-        
+
         for pattern in credential_patterns {
             if let Ok(regex) = Regex::new(pattern) {
                 if regex.is_match(content) {
@@ -2563,14 +2569,14 @@ impl JavaAnalyzer {
                 }
             }
         }
-        
+
         vulnerabilities
     }
 
     /// Detect weak cryptography
     fn detect_weak_cryptography(&self, content: &str) -> Vec<SecurityVulnerability> {
         let mut vulnerabilities = Vec::new();
-        
+
         let weak_algorithms = vec![
             ("MD5", "CWE-327", SecuritySeverity::High),
             ("SHA1", "CWE-327", SecuritySeverity::Medium),
@@ -2579,9 +2585,11 @@ impl JavaAnalyzer {
             ("3DES", "CWE-327", SecuritySeverity::High),
             ("RC4", "CWE-327", SecuritySeverity::Critical),
         ];
-        
+
         for (algorithm, cwe, severity) in weak_algorithms {
-            if content.contains(algorithm) || content.contains(&format!("getInstance(\"{}\")", algorithm)) {
+            if content.contains(algorithm)
+                || content.contains(&format!("getInstance(\"{}\")", algorithm))
+            {
                 vulnerabilities.push(SecurityVulnerability {
                     vulnerability_type: SecurityVulnerabilityType::WeakCryptography,
                     severity,
@@ -2592,7 +2600,7 @@ impl JavaAnalyzer {
                 });
             }
         }
-        
+
         // Check for weak key sizes
         if content.contains("keySize = 64") || content.contains("keySize = 128") {
             vulnerabilities.push(SecurityVulnerability {
@@ -2601,17 +2609,19 @@ impl JavaAnalyzer {
                 location: "Key generation".to_string(),
                 description: "Weak cryptographic key size detected".to_string(),
                 cwe_id: Some("CWE-326".to_string()),
-                recommendation: "Use minimum 256-bit keys for symmetric encryption, 2048-bit for RSA".to_string(),
+                recommendation:
+                    "Use minimum 256-bit keys for symmetric encryption, 2048-bit for RSA"
+                        .to_string(),
             });
         }
-        
+
         vulnerabilities
     }
 
     /// Detect deserialization vulnerabilities
     fn detect_deserialization_attacks(&self, content: &str) -> Vec<SecurityVulnerability> {
         let mut vulnerabilities = Vec::new();
-        
+
         let deserialization_patterns = vec![
             r#"ObjectInputStream\s*\([^)]*\)"#,
             r#"\.readObject\s*\(\s*\)"#,
@@ -2620,7 +2630,7 @@ impl JavaAnalyzer {
             r#"@JsonTypeInfo"#,
             r#"enableDefaultTyping"#,
         ];
-        
+
         for pattern in deserialization_patterns {
             if let Ok(regex) = Regex::new(pattern) {
                 if regex.is_match(content) {
@@ -2635,21 +2645,21 @@ impl JavaAnalyzer {
                 }
             }
         }
-        
+
         vulnerabilities
     }
 
     /// Detect XXE vulnerabilities
     fn detect_xxe_vulnerabilities(&self, content: &str) -> Vec<SecurityVulnerability> {
         let mut vulnerabilities = Vec::new();
-        
+
         let xxe_patterns = vec![
             r#"DocumentBuilderFactory\.newInstance\s*\(\s*\)"#,
             r#"SAXParserFactory\.newInstance\s*\(\s*\)"#,
             r#"XMLInputFactory\.newInstance\s*\(\s*\)"#,
             r#"TransformerFactory\.newInstance\s*\(\s*\)"#,
         ];
-        
+
         for pattern in xxe_patterns {
             if let Ok(regex) = Regex::new(pattern) {
                 if regex.is_match(content) && !content.contains("setFeature") {
@@ -2664,20 +2674,20 @@ impl JavaAnalyzer {
                 }
             }
         }
-        
+
         vulnerabilities
     }
 
     /// Detect LDAP injection vulnerabilities
     fn detect_ldap_injection(&self, content: &str) -> Vec<SecurityVulnerability> {
         let mut vulnerabilities = Vec::new();
-        
+
         let ldap_patterns = vec![
             r#"new\s+SearchControls\s*\([^)]*\+[^)]*\)"#,
             r#"\.search\s*\([^)]*\+[^)]*\)"#,
             r#"LdapContext\.search\s*\([^)]*\+[^)]*\)"#,
         ];
-        
+
         for pattern in ldap_patterns {
             if let Ok(regex) = Regex::new(pattern) {
                 if regex.is_match(content) {
@@ -2685,39 +2695,46 @@ impl JavaAnalyzer {
                         vulnerability_type: SecurityVulnerabilityType::LdapInjection,
                         severity: SecuritySeverity::High,
                         location: self.find_pattern_location(content, &regex),
-                        description: "LDAP injection vulnerability detected in directory operations".to_string(),
+                        description:
+                            "LDAP injection vulnerability detected in directory operations"
+                                .to_string(),
                         cwe_id: Some("CWE-90".to_string()),
-                        recommendation: "Validate and escape LDAP query parameters, use parameterized queries".to_string(),
+                        recommendation:
+                            "Validate and escape LDAP query parameters, use parameterized queries"
+                                .to_string(),
                     });
                 }
             }
         }
-        
+
         vulnerabilities
     }
 
     /// Detect insecure randomness
     fn detect_insecure_randomness(&self, content: &str) -> Vec<SecurityVulnerability> {
         let mut vulnerabilities = Vec::new();
-        
+
         if content.contains("new Random()") || content.contains("Math.random()") {
             vulnerabilities.push(SecurityVulnerability {
                 vulnerability_type: SecurityVulnerabilityType::InsecureRandomness,
                 severity: SecuritySeverity::Medium,
                 location: "Random number generation".to_string(),
-                description: "Insecure random number generation detected for security-sensitive operations".to_string(),
+                description:
+                    "Insecure random number generation detected for security-sensitive operations"
+                        .to_string(),
                 cwe_id: Some("CWE-338".to_string()),
-                recommendation: "Use SecureRandom for cryptographic operations and security tokens".to_string(),
+                recommendation: "Use SecureRandom for cryptographic operations and security tokens"
+                    .to_string(),
             });
         }
-        
+
         vulnerabilities
     }
 
     /// Detect session fixation vulnerabilities
     fn detect_session_fixation(&self, content: &str) -> Vec<SecurityVulnerability> {
         let mut vulnerabilities = Vec::new();
-        
+
         if content.contains("request.getSession(true)") && !content.contains("invalidate()") {
             vulnerabilities.push(SecurityVulnerability {
                 vulnerability_type: SecurityVulnerabilityType::SessionFixation,
@@ -2728,20 +2745,20 @@ impl JavaAnalyzer {
                 recommendation: "Invalidate existing sessions and create new ones after successful authentication".to_string(),
             });
         }
-        
+
         vulnerabilities
     }
 
     /// Detect unvalidated redirects
     fn detect_unvalidated_redirects(&self, content: &str) -> Vec<SecurityVulnerability> {
         let mut vulnerabilities = Vec::new();
-        
+
         let redirect_patterns = vec![
             r#"response\.sendRedirect\s*\([^)]*\+[^)]*\)"#,
             r#"ModelAndView\s*\([^)]*\+[^)]*\)"#,
             r#"redirect:\s*\+\s*\w+"#,
         ];
-        
+
         for pattern in redirect_patterns {
             if let Ok(regex) = Regex::new(pattern) {
                 if regex.is_match(content) {
@@ -2751,29 +2768,37 @@ impl JavaAnalyzer {
                         location: self.find_pattern_location(content, &regex),
                         description: "Unvalidated redirect vulnerability detected".to_string(),
                         cwe_id: Some("CWE-601".to_string()),
-                        recommendation: "Validate redirect URLs against a whitelist of allowed destinations".to_string(),
+                        recommendation:
+                            "Validate redirect URLs against a whitelist of allowed destinations"
+                                .to_string(),
                     });
                 }
             }
         }
-        
+
         vulnerabilities
     }
 
     /// Detect insecure direct object references
-    fn detect_insecure_direct_object_references(&self, content: &str) -> Vec<SecurityVulnerability> {
+    fn detect_insecure_direct_object_references(
+        &self,
+        content: &str,
+    ) -> Vec<SecurityVulnerability> {
         let mut vulnerabilities = Vec::new();
-        
+
         // Look for direct parameter usage in database queries without authorization checks
         let idor_patterns = vec![
             r#"findById\s*\(\s*request\.getParameter\s*\([^)]*\)\s*\)"#,
             r#"findById\s*\(\s*@PathVariable[^)]*\)"#,
             r#"getById\s*\(\s*@RequestParam[^)]*\)"#,
         ];
-        
+
         for pattern in idor_patterns {
             if let Ok(regex) = Regex::new(pattern) {
-                if regex.is_match(content) && !content.contains("@PreAuthorize") && !content.contains("hasPermission") {
+                if regex.is_match(content)
+                    && !content.contains("@PreAuthorize")
+                    && !content.contains("hasPermission")
+                {
                     vulnerabilities.push(SecurityVulnerability {
                         vulnerability_type: SecurityVulnerabilityType::InsecureDirectObjectReference,
                         severity: SecuritySeverity::High,
@@ -2785,33 +2810,39 @@ impl JavaAnalyzer {
                 }
             }
         }
-        
+
         vulnerabilities
     }
 
     /// Detect XSS vulnerabilities
     fn detect_xss_vulnerabilities(&self, content: &str) -> Vec<SecurityVulnerability> {
         let mut vulnerabilities = Vec::new();
-        
+
         // Check for unescaped output
-        if content.contains("@ResponseBody") && !content.contains("HtmlUtils.htmlEscape") && !content.contains("StringEscapeUtils") {
+        if content.contains("@ResponseBody")
+            && !content.contains("HtmlUtils.htmlEscape")
+            && !content.contains("StringEscapeUtils")
+        {
             vulnerabilities.push(SecurityVulnerability {
                 vulnerability_type: SecurityVulnerabilityType::XssVulnerability,
                 severity: SecuritySeverity::Medium,
                 location: "Response body generation".to_string(),
-                description: "Potential XSS vulnerability - unescaped output in response".to_string(),
+                description: "Potential XSS vulnerability - unescaped output in response"
+                    .to_string(),
                 cwe_id: Some("CWE-79".to_string()),
-                recommendation: "Escape HTML output using HtmlUtils.htmlEscape or use proper templating engines".to_string(),
+                recommendation:
+                    "Escape HTML output using HtmlUtils.htmlEscape or use proper templating engines"
+                        .to_string(),
             });
         }
-        
+
         vulnerabilities
     }
 
     /// Detect CSRF vulnerabilities
     fn detect_csrf_vulnerabilities(&self, content: &str) -> Vec<SecurityVulnerability> {
         let mut vulnerabilities = Vec::new();
-        
+
         if content.contains("csrf().disable()") {
             vulnerabilities.push(SecurityVulnerability {
                 vulnerability_type: SecurityVulnerabilityType::CsrfVulnerability,
@@ -2819,10 +2850,11 @@ impl JavaAnalyzer {
                 location: "Security configuration".to_string(),
                 description: "CSRF protection disabled in security configuration".to_string(),
                 cwe_id: Some("CWE-352".to_string()),
-                recommendation: "Enable CSRF protection or implement custom CSRF token validation".to_string(),
+                recommendation: "Enable CSRF protection or implement custom CSRF token validation"
+                    .to_string(),
             });
         }
-        
+
         vulnerabilities
     }
 

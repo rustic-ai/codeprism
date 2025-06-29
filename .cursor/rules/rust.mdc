@@ -38,6 +38,49 @@ pub fn read_config(path: &Path) -> Config {
 }
 ```
 
+**Rule: Use doc test features to ensure examples remain accurate and demonstrate different scenarios.**
+Why: Doc tests are automatically run by `cargo test`, ensuring examples never become outdated. Use different doc test attributes to show various use cases and error conditions.
+
+**Run doc tests with:** `cargo test --doc` or `cargo test` (includes all tests)
+
+**Doc test best practices:**
+```rust
+/// Parses configuration from various sources.
+/// 
+/// # Examples
+/// 
+/// Basic usage:
+/// ```
+/// let config = parse_config("app.toml")?;
+/// assert!(config.port > 0);
+/// # Ok::<(), ConfigError>(())
+/// ```
+/// 
+/// This example doesn't run but shows the API:
+/// ```no_run
+/// let config = parse_config("/etc/myapp/config.toml")?;
+/// deploy_with_config(config);
+/// # Ok::<(), Box<dyn std::error::Error>>(())
+/// ```
+/// 
+/// Demonstrating error handling:
+/// ```should_panic
+/// let config = parse_config("nonexistent.toml").unwrap();
+/// ```
+/// 
+/// Hidden setup code (lines starting with #):
+/// ```
+/// # use std::fs;
+/// # fs::write("test.toml", "port = 8080").unwrap();
+/// let config = parse_config("test.toml")?;
+/// assert_eq!(config.port, 8080);
+/// # fs::remove_file("test.toml").unwrap();
+/// # Ok::<(), ConfigError>(())
+/// ```
+pub fn parse_config(path: &str) -> Result<Config, ConfigError> {
+    // Implementation
+}
+
 **Rule: Create specific error types instead of using generic errors.**
 Why: Specific errors enable proper error handling by callers and provide better debugging information. Use `thiserror` to reduce boilerplate.
 
@@ -66,17 +109,26 @@ pub fn process_user_data(id: u32) -> Result<UserProfile, UserError> {
 
 ## Documentation Standards
 
-**Rule: Every public function, struct, and module must have rustdoc comments.**
-Why: Documentation is part of the API contract. Good docs prevent misuse, reduce support burden, and make your code maintainable. Include examples and error conditions.
+**Rule: Every public function, struct, and module must have rustdoc comments with working code examples.**
+Why: Documentation is part of the API contract. Good docs prevent misuse, reduce support burden, and make your code maintainable. Code examples are automatically tested by `cargo test`, ensuring documentation stays accurate.
 
-**Every public item needs rustdoc:**
+**Every public item needs rustdoc with examples:**
 ```rust
 /// Represents a user in the system.
 ///
 /// # Examples
+/// 
+/// Creating a valid user:
 /// ```
 /// let user = User::new("alice@example.com", "Alice Smith")?;
 /// assert_eq!(user.email(), "alice@example.com");
+/// assert_eq!(user.name(), "Alice Smith");
+/// # Ok::<(), UserError>(())
+/// ```
+/// 
+/// Handling invalid email:
+/// ```should_panic
+/// let user = User::new("invalid-email", "Alice Smith").unwrap();
 /// ```
 ///
 /// # Errors
@@ -89,6 +141,15 @@ pub struct User {
 
 impl User {
     /// Creates a new user with validated email.
+    /// 
+    /// # Examples
+    /// ```
+    /// use my_crate::User;
+    /// 
+    /// let user = User::new("bob@example.com", "Bob Jones")?;
+    /// assert!(user.email().contains("@"));
+    /// # Ok::<(), my_crate::UserError>(())
+    /// ```
     pub fn new(email: impl Into<String>, name: impl Into<String>) -> Result<Self, UserError> {
         let email = email.into();
         validate_email(&email)?;
@@ -291,7 +352,8 @@ Before outputting Rust code, verify:
 - [ ] Compiles without warnings
 - [ ] Uses Result<T, E> for fallible operations
 - [ ] No unwrap() in production paths
-- [ ] Public items have rustdoc comments
+- [ ] Public items have rustdoc comments with working examples
+- [ ] Doc tests demonstrate both success and error cases
 - [ ] Includes basic unit tests
 - [ ] Uses appropriate derives
 - [ ] Validates external inputs

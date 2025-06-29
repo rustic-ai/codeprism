@@ -21,7 +21,7 @@ walkdir = "2.4"
 tokio = { workspace = true, features = ["fs"] }
 
 # Internal dependencies
-codeprism-core = { version = "0.3.3", path = "../codeprism-core" }
+codeprism-core = { version = "0.3.5" }
 
 [dev-dependencies]
 tempfile.workspace = true

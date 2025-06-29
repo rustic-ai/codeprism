@@ -425,13 +425,11 @@ impl PromptValidator {
         // Check required arguments
         if let Some(prompt_args) = &prompt.arguments {
             for prompt_arg in prompt_args {
-                if prompt_arg.required {
-                    if !args_obj.contains_key(&prompt_arg.name) {
-                        return Err(anyhow!(
-                            "Required argument '{}' is missing",
-                            prompt_arg.name
-                        ));
-                    }
+                if prompt_arg.required && !args_obj.contains_key(&prompt_arg.name) {
+                    return Err(anyhow!(
+                        "Required argument '{}' is missing",
+                        prompt_arg.name
+                    ));
                 }
             }
 
@@ -569,12 +567,24 @@ impl SamplingTester {
     }
 }
 
+impl Default for CompletionValidator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl CompletionValidator {
     pub fn new() -> Self {
         Self {
             max_response_length: 10000,
             allowed_content_types: vec!["text".to_string(), "json".to_string()],
         }
+    }
+}
+
+impl Default for SecurityValidator {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -654,7 +664,7 @@ mod tests {
             arguments: Some(vec![PromptArgument {
                 name: "text".to_string(),
                 description: "Input text".to_string(),
-                required: Some(true),
+                required: true,
             }]),
         };
 
@@ -680,12 +690,12 @@ mod tests {
                 PromptArgument {
                     name: "text".to_string(),
                     description: "Input text".to_string(),
-                    required: Some(true),
+                    required: true,
                 },
                 PromptArgument {
                     name: "max_length".to_string(),
                     description: "Maximum length".to_string(),
-                    required: Some(false),
+                    required: false,
                 },
             ]),
         };
@@ -721,11 +731,15 @@ mod tests {
             messages: vec![
                 PromptMessage {
                     role: "system".to_string(),
-                    content: Value::String("You are a helpful assistant.".to_string()),
+                    content: PromptContent::Text {
+                        text: "You are a helpful assistant.".to_string(),
+                    },
                 },
                 PromptMessage {
                     role: "user".to_string(),
-                    content: Value::String("Hello, world!".to_string()),
+                    content: PromptContent::Text {
+                        text: "Hello, world!".to_string(),
+                    },
                 },
             ],
         };

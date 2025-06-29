@@ -374,40 +374,128 @@ jobs:
           fi
           cargo login ${{ secrets.CRATES_IO_TOKEN }}
 
-      - name: Publish Crates (in dependency order)
+      - name: Publish Crates (in dependency order with error handling)
         run: |
-          # Publish in correct dependency order
+          # Robust publication with proper error handling
+          set -e  # Exit on any error
+          
+          # Get the expected version
+          VERSION="${{ needs.check-release.outputs.new_version }}"
+          echo "Publishing all crates for version: $VERSION"
+          
+          # Function to publish a crate with proper error handling
+          publish_crate() {
+            local crate_name=$1
+            echo "Publishing $crate_name..."
+            
+            # Try to publish the crate
+            if cargo publish -p "$crate_name" --allow-dirty; then
+              echo "✅ Successfully published $crate_name"
+              return 0
+            else
+              # Check if it failed because it's already published
+              local exit_code=$?
+              echo "⚠️ Publication failed for $crate_name, checking if already published..."
+              
+              # Wait a moment for potential index update
+              sleep 10
+              
+              # Check if the expected version exists on crates.io
+              if cargo search "$crate_name" --limit 1 | grep -q "= \"$VERSION\""; then
+                echo "✅ $crate_name version $VERSION already published - continuing"
+                return 0
+              else
+                echo "❌ FATAL: $crate_name failed to publish and version $VERSION not found on crates.io"
+                echo "Exit code: $exit_code"
+                return 1
+              fi
+            fi
+          }
+          
+          # Publish crates in dependency order
+          echo "=== Phase 1: Independent crates ==="
+          publish_crate "codeprism-storage"
+          sleep 30
+          
+          publish_crate "codeprism-dev-tools"  
+          sleep 30
+          
+          echo "=== Phase 2: Language parsers (no dependencies) ==="
+          publish_crate "codeprism-lang-js"
+          sleep 30
+          
+          publish_crate "codeprism-lang-python"
+          sleep 30
+          
+          publish_crate "codeprism-lang-java"
+          sleep 30
+          
+          publish_crate "codeprism-lang-rust"
+          sleep 30
+          
+          echo "=== Phase 3: Core (depends on language parsers) ==="
+          publish_crate "codeprism-core"
+          sleep 30
+          
+          echo "=== Phase 4: Analysis (depends on core) ==="
+          publish_crate "codeprism-analysis"
+          sleep 30
+          
+          echo "=== Phase 5: MCP Server (depends on all) ==="
+          publish_crate "codeprism-mcp"
+          
+          echo "🎉 All crates published successfully!"
+
+      - name: Validate All Crates Published
+        run: |
+          # Validate that ALL expected crates are available on crates.io
           set -e
+          VERSION="${{ needs.check-release.outputs.new_version }}"
           
-          echo "Publishing independent crates first..."
-          echo "Publishing codeprism-storage..."
-          cargo publish -p codeprism-storage --allow-dirty || echo "codeprism-storage may already be published"
-          sleep 30
+          echo "Validating all crates are available on crates.io for version $VERSION"
           
-          echo "Publishing codeprism-dev-tools..."
-          cargo publish -p codeprism-dev-tools --allow-dirty || echo "codeprism-dev-tools may already be published"
-          sleep 30
+          # List of all crates that must be published
+          REQUIRED_CRATES=(
+            "codeprism-storage"
+            "codeprism-dev-tools"
+            "codeprism-lang-js"  
+            "codeprism-lang-python"
+            "codeprism-lang-java"
+            "codeprism-lang-rust"
+            "codeprism-core"
+            "codeprism-analysis"
+            "codeprism-mcp"
+          )
           
-          echo "Publishing language parsers (no dependencies)..."
-          cargo publish -p codeprism-lang-js --allow-dirty || echo "codeprism-lang-js may already be published"
-          sleep 30
-          cargo publish -p codeprism-lang-python --allow-dirty || echo "codeprism-lang-python may already be published"
-          sleep 30
-          cargo publish -p codeprism-lang-java --allow-dirty || echo "codeprism-lang-java may already be published"
-          sleep 30
-          cargo publish -p codeprism-lang-rust --allow-dirty || echo "codeprism-lang-rust may already be published"
-          sleep 30
+          echo "Waiting 60 seconds for crates.io index to fully propagate..."
+          sleep 60
           
-          echo "Publishing codeprism-core (depends on language parsers)..."
-          cargo publish -p codeprism-core --allow-dirty || echo "codeprism-core may already be published"
-          sleep 30
+          failed_crates=()
           
-          echo "Publishing codeprism-analysis (depends on core)..."
-          cargo publish -p codeprism-analysis --allow-dirty || echo "codeprism-analysis may already be published"
-          sleep 30
+          for crate in "${REQUIRED_CRATES[@]}"; do
+            echo "Checking $crate..."
+            if cargo search "$crate" --limit 1 | grep -q "= \"$VERSION\""; then
+              echo "✅ $crate version $VERSION found on crates.io"
+            else
+              echo "❌ $crate version $VERSION NOT found on crates.io"
+              failed_crates+=("$crate")
+            fi
+          done
           
-          echo "Publishing main MCP server (depends on all)..."
-          cargo publish -p codeprism-mcp --allow-dirty || echo "codeprism-mcp may already be published"
+          if [ ${#failed_crates[@]} -ne 0 ]; then
+            echo ""
+            echo "💥 CRITICAL: The following crates failed validation:"
+            for crate in "${failed_crates[@]}"; do
+              echo "  - $crate"
+            done
+            echo ""
+            echo "Release cannot proceed. Docker build would fail."
+            exit 1
+          fi
+          
+          echo ""
+          echo "🎉 SUCCESS: All required crates are available on crates.io!"
+          echo "Release validation complete - Docker build can proceed safely."
 
   # Build and push Docker images
   docker:
@@ -423,10 +511,31 @@ jobs:
         with:
           ref: v${{ needs.check-release.outputs.new_version }}
 
-      - name: Wait for crates.io to update
+      - name: Validate Crates Available Before Docker Build
         run: |
-          echo "Waiting 60 seconds for crates.io index to propagate..."
-          sleep 60
+          # Double-check that codeprism-mcp is available before Docker build
+          VERSION="${{ needs.check-release.outputs.new_version }}"
+          
+          echo "Final validation: Ensuring codeprism-mcp@$VERSION is available for Docker build..."
+          
+          # Try up to 3 times with increasing delays for crates.io propagation
+          for attempt in 1 2 3; do
+            echo "Attempt $attempt: Checking codeprism-mcp availability..."
+            
+            if cargo search codeprism-mcp --limit 1 | grep -q "= \"$VERSION\""; then
+              echo "✅ codeprism-mcp@$VERSION confirmed available on crates.io"
+              break
+            else
+              if [ $attempt -eq 3 ]; then
+                echo "❌ FATAL: codeprism-mcp@$VERSION still not available after 3 attempts"
+                echo "Docker build cannot proceed as it would fail to install the crate"
+                exit 1
+              else
+                echo "⏳ codeprism-mcp@$VERSION not yet available, waiting 60 seconds..."
+                sleep 60
+              fi
+            fi
+          done
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -464,9 +573,10 @@ jobs:
 
   # Notify community
   notify:
-    name: Notify Community
+    name: Notify Community  
     needs: [check-release, release, publish-crates, docker]
-    if: needs.check-release.outputs.should_release == 'true'
+    # Only notify if ALL steps succeeded (including Docker)
+    if: needs.check-release.outputs.should_release == 'true' && needs.publish-crates.result == 'success' && needs.docker.result == 'success'
     runs-on: ubuntu-latest
     steps:
       - name: Create Discussion Post
@@ -561,4 +671,61 @@ jobs:
             echo "💡 Manual discussion can be created at: https://github.com/${{ github.repository }}/discussions/new"
           fi
           echo ""
-          echo "The AI developer continues to evolve! 🤖🚀" 
+          echo "The AI developer continues to evolve! 🤖🚀"
+
+  # Final release status summary
+  release-summary:
+    name: Release Summary
+    needs: [check-release, release, publish-crates, docker, notify]
+    if: always() && needs.check-release.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate Release Summary
+        run: |
+          echo "# 📊 Release v${{ needs.check-release.outputs.new_version }} Summary"
+          echo "================================================"
+          echo ""
+          
+          # Check status of each job
+          echo "## Job Status"
+          echo "- ✅ Pre-Release Testing: ${{ needs.test.result }}"
+          echo "- ✅ Binary Build: ${{ needs.build.result }}"  
+          echo "- ✅ GitHub Release: ${{ needs.release.result }}"
+          echo "- 🦀 Crates.io Publication: ${{ needs.publish-crates.result }}"
+          echo "- 🐳 Docker Build: ${{ needs.docker.result }}"
+          echo "- 📢 Community Notification: ${{ needs.notify.result }}"
+          echo ""
+          
+          # Overall status
+          if [[ "${{ needs.publish-crates.result }}" == "success" && "${{ needs.docker.result }}" == "success" ]]; then
+            echo "## 🎉 RELEASE STATUS: ✅ COMPLETE SUCCESS"
+            echo ""
+            echo "✅ All components successfully released!"
+            echo "✅ codeprism-mcp@${{ needs.check-release.outputs.new_version }} available on crates.io"
+            echo "✅ Docker images pushed to ghcr.io/rustic-ai/codeprism:v${{ needs.check-release.outputs.new_version }}"
+            echo "✅ Binaries available for all platforms"
+            echo ""
+            echo "Users can now install with:"
+            echo "- cargo install codeprism-mcp@${{ needs.check-release.outputs.new_version }}"
+            echo "- docker pull ghcr.io/rustic-ai/codeprism:v${{ needs.check-release.outputs.new_version }}"
+          elif [[ "${{ needs.publish-crates.result }}" == "success" ]]; then
+            echo "## ⚠️ RELEASE STATUS: 🔶 PARTIAL SUCCESS"
+            echo ""
+            echo "✅ Crates.io publication successful"
+            echo "❌ Docker build failed"
+            echo ""
+            echo "Users can install via:"
+            echo "- cargo install codeprism-mcp@${{ needs.check-release.outputs.new_version }}"
+            echo "- Download binaries from GitHub releases"
+          else
+            echo "## ❌ RELEASE STATUS: 🔴 FAILED"
+            echo ""
+            echo "❌ Critical failure in crates.io publication"
+            echo "❌ codeprism-mcp@${{ needs.check-release.outputs.new_version }} NOT available"
+            echo ""
+            echo "Release cannot be considered successful without primary package availability."
+          fi
+          
+          echo ""
+          echo "================================================"
+          echo "Release process completed at $(date)" 

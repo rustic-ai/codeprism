@@ -1,0 +1,361 @@
+---
+description: Enterprise-grade patterns for production systems including security, complex architecture, and deployment. Use this for high-stakes applications requiring authentication, comprehensive testing, and production deployment.
+globs: 
+alwaysApply: false
+---
+# Rust Advanced - Complex Scenarios
+
+**Purpose:** Enterprise-grade patterns for production systems including security, complex architecture, and deployment. Use this for high-stakes applications requiring authentication, comprehensive testing, and production deployment.
+
+**When to use:** Production services, security-critical applications, enterprise systems, microservices, or any system requiring bulletproof reliability and performance.
+
+## Architecture Patterns
+
+**Rule: Use dependency injection with traits for testable, decoupled business logic.**
+Why: Enables testing with mocks, follows SOLID principles, and allows swapping implementations.
+
+```rust
+#[async_trait]
+pub trait UserRepository: Send + Sync {
+    async fn find_by_id(&self, id: UserId) -> RepositoryResult<Option<User>>;
+    async fn save(&self, user: &User) -> RepositoryResult<()>;
+}
+
+#[async_trait]
+pub trait EventPublisher: Send + Sync {
+    async fn publish(&self, event: DomainEvent) -> Result<(), EventError>;
+}
+
+pub struct UserDomainService<R, E> 
+where R: UserRepository, E: EventPublisher {
+    repository: Arc<R>,
+    event_publisher: Arc<E>,
+}
+
+impl<R, E> UserDomainService<R, E>
+where R: UserRepository, E: EventPublisher {
+    pub async fn create_user(&self, cmd: CreateUserCommand) -> DomainResult<User> {
+        let user = User::create(cmd.email, cmd.name, cmd.role)?;
+        self.repository.save(&user).await?;
+        
+        let event = DomainEvent::UserCreated {
+            user_id: user.id(),
+            email: user.email().to_string(),
+            created_at: Utc::now(),
+        };
+        self.event_publisher.publish(event).await?;
+        Ok(user)
+    }
+}
+```
+
+**Rule: Separate commands (writes) from queries (reads) for complex domains.**
+Why: CQRS improves performance, enables event sourcing, and simplifies complex business logic.
+
+```rust
+// Command side
+#[derive(Debug)]
+pub struct CreateUserCommand {
+    pub email: String,
+    pub name: String,
+    pub role: Role,
+}
+
+#[async_trait]
+pub trait CommandHandler<C> {
+    type Result;
+    type Error;
+    async fn handle(&self, command: C) -> Result<Self::Result, Self::Error>;
+}
+
+// Query side
+#[derive(Debug, Serialize)]
+pub struct UserView {
+    pub id: UserId,
+    pub email: String,
+    pub name: String,
+    pub status: UserStatus,
+}
+
+#[async_trait]
+pub trait QueryHandler<Q> {
+    type Result;
+    async fn handle(&self, query: Q) -> Result<Self::Result, Self::Error>;
+}
+```
+
+## Security Implementation
+
+**Rule: Hash passwords with Argon2 and implement secure JWT handling.**
+Why: Prevents authentication bypass and protects against credential theft.
+
+```rust
+use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
+use jsonwebtoken::{encode, decode, Header, Algorithm, Validation};
+
+pub struct AuthService {
+    encoding_key: EncodingKey,
+    decoding_key: DecodingKey,
+    argon2: Argon2<'static>,
+}
+
+impl AuthService {
+    pub fn hash_password(&self, password: &str) -> Result<String, AuthError> {
+        let salt = SaltString::generate(&mut OsRng);
+        let hash = self.argon2.hash_password(password.as_bytes(), &salt)
+            .map_err(AuthError::HashingFailed)?;
+        Ok(hash.to_string())
+    }
+    
+    pub fn authenticate(&self, email: &str, password: &str, stored_hash: &str) -> Result<String, AuthError> {
+        let parsed_hash = PasswordHash::new(stored_hash)
+            .map_err(|_| AuthError::InvalidCredentials)?;
+            
+        self.argon2.verify_password(password.as_bytes(), &parsed_hash)
+            .map_err(|_| AuthError::InvalidCredentials)?;
+        
+        let claims = Claims {
+            sub: email.to_string(),
+            exp: (Utc::now() + Duration::hours(24)).timestamp() as usize,
+            roles: vec!["user".to_string()],
+        };
+        
+        encode(&Header::default(), &claims, &self.encoding_key)
+            .map_err(AuthError::TokenGeneration)
+    }
+}
+```
+
+**Rule: Sanitize and validate all inputs to prevent injection attacks.**
+Why: Input validation prevents most security vulnerabilities including XSS and injection attacks.
+
+```rust
+use regex::Regex;
+use once_cell::sync::Lazy;
+
+static EMAIL_REGEX: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"^[^\s@]+@[^\s@]+\.[^\s@]+$").unwrap()
+});
+
+pub struct SecurityValidator;
+
+impl SecurityValidator {
+    pub fn sanitize_string(&self, input: &str, max_length: usize) -> Result<String, ValidationError> {
+        if input.len() > max_length {
+            return Err(ValidationError::InputTooLong { max: max_length });
+        }
+        
+        // Remove dangerous characters
+        let sanitized = input.chars()
+            .filter(|c| c.is_alphanumeric() || " .,!?-_@".contains(*c))
+            .collect();
+        
+        Ok(sanitized)
+    }
+    
+    pub fn validate_email(&self, email: &str) -> Result<(), ValidationError> {
+        if !EMAIL_REGEX.is_match(email) || email.len() > 254 {
+            return Err(ValidationError::InvalidEmail);
+        }
+        Ok(())
+    }
+}
+```
+
+## Advanced Testing
+
+**Rule: Use property-based testing to verify invariants across many inputs.**
+Why: Finds edge cases manual tests miss and provides better coverage with less code.
+
+```rust
+use proptest::prelude::*;
+
+proptest! {
+    #[test]
+    fn test_user_serialization_invariant(
+        email in "[a-z]+@[a-z]+\\.[a-z]+",
+        name in "[A-Za-z ]{1,50}",
+    ) {
+        let user = User::new(email.clone(), name.clone()).unwrap();
+        let serialized = serde_json::to_string(&user).unwrap();
+        let deserialized: User = serde_json::from_str(&serialized).unwrap();
+        
+        prop_assert_eq!(user.email(), deserialized.email());
+        prop_assert_eq!(user.name(), deserialized.name());
+    }
+    
+    #[test]
+    fn test_password_hashing_security(password in "[a-zA-Z0-9]{8,128}") {
+        let auth_service = AuthService::new();
+        let hash1 = auth_service.hash_password(&password).unwrap();
+        let hash2 = auth_service.hash_password(&password).unwrap();
+        
+        // Same password should produce different hashes (salt)
+        prop_assert_ne!(hash1, hash2);
+        prop_assert!(auth_service.verify_password(&password, &hash1).unwrap());
+    }
+}
+```
+
+**Rule: Use test containers for integration tests requiring real infrastructure.**
+Why: Provides isolated, reproducible environments that match production.
+
+```rust
+#[tokio::test]
+async fn test_user_repository_integration() {
+    let docker = clients::Cli::default();
+    let postgres = docker.run(Postgres::default());
+    
+    let connection_string = format!(
+        "postgres://postgres@localhost:{}/postgres",
+        postgres.get_host_port_ipv4()
+    );
+    
+    let pool = PgPoolOptions::new().connect(&connection_string).await.unwrap();
+    sqlx::migrate!("./migrations").run(&pool).await.unwrap();
+    
+    let repository = PostgresUserRepository::new(pool);
+    let user = repository.save(User::new("test@example.com", "Test User")?).await?;
+    let retrieved = repository.find_by_id(user.id()).await?.unwrap();
+    
+    assert_eq!(user.email(), retrieved.email());
+}
+```
+
+## Performance Optimization
+
+**Rule: Process large datasets in chunks to avoid memory exhaustion.**
+Why: Keeps memory usage constant and enables parallel processing.
+
+```rust
+use rayon::prelude::*;
+
+pub struct DataProcessor;
+
+impl DataProcessor {
+    pub fn process_large_file<R: Read>(
+        &self,
+        reader: R,
+        chunk_size: usize,
+    ) -> Result<ProcessingResult, ProcessingError> {
+        let mut reader = BufReader::new(reader);
+        let mut buffer = vec![0u8; chunk_size];
+        let mut result = ProcessingResult::default();
+        
+        loop {
+            let bytes_read = reader.read(&mut buffer)?;
+            if bytes_read == 0 { break; }
+            
+            // Process chunk in parallel
+            let chunk_result = buffer[..bytes_read]
+                .par_chunks(1024)
+                .map(|chunk| self.process_chunk(chunk))
+                .reduce(|| ProcessingResult::default(), |a, b| a.merge(b));
+                
+            result = result.merge(chunk_result);
+        }
+        
+        Ok(result)
+    }
+}
+```
+
+**Rule: Use semaphores to control concurrency and prevent resource exhaustion.**
+Why: Provides backpressure and keeps applications stable under load.
+
+```rust
+use tokio::sync::Semaphore;
+
+pub struct WorkerPool<T> {
+    semaphore: Arc<Semaphore>,
+    sender: mpsc::UnboundedSender<T>,
+}
+
+impl<T: Send + 'static> WorkerPool<T> {
+    pub fn new<F, Fut>(max_workers: usize, worker_fn: F) -> Self 
+    where F: Fn(T) -> Fut + Send + Sync + 'static, Fut: Future<Output = ()> + Send {
+        let semaphore = Arc::new(Semaphore::new(max_workers));
+        let (sender, mut receiver) = mpsc::unbounded_channel();
+        let worker_fn = Arc::new(worker_fn);
+        
+        tokio::spawn(async move {
+            while let Some(item) = receiver.recv().await {
+                let semaphore = semaphore.clone();
+                let worker_fn = worker_fn.clone();
+                
+                tokio::spawn(async move {
+                    let _permit = semaphore.acquire().await.unwrap();
+                    worker_fn(item).await;
+                });
+            }
+        });
+        
+        Self { semaphore, sender }
+    }
+}
+```
+
+## Production Configuration
+
+**Rule: Configure comprehensive production settings for performance and observability.**
+Why: Production requires different optimizations and monitoring than development.
+
+```toml
+[package]
+name = "production_service"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1.0", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+thiserror = "1.0"
+argon2 = "0.5"
+jsonwebtoken = "9.0"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+
+[dev-dependencies]
+proptest = "1.4"
+testcontainers = "0.15"
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true
+```
+
+**Rule: Implement CI/CD with security audits and performance regression tests.**
+Why: Production systems require comprehensive validation before deployment.
+
+```yaml
+name: Production Pipeline
+on: [push, pull_request]
+
+jobs:
+  security-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cargo audit
+      - run: cargo clippy -- -D warnings
+  
+  performance-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cargo bench
+      - uses: benchmark-action/github-action-benchmark@v1
+  
+  integration-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env: { POSTGRES_PASSWORD: postgres }
+    steps:
+      - uses: actions/checkout@v4
+      - run: cargo test --test integration_tests
+```

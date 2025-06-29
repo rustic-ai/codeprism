@@ -380,12 +380,12 @@ jobs:
           set -e
           
           echo "Publishing independent crates first..."
-          echo "Publishing codeprism-bus..."
-          cargo publish -p codeprism-bus --allow-dirty || echo "codeprism-bus may already be published"
-          sleep 30
-          
           echo "Publishing codeprism-storage..."
           cargo publish -p codeprism-storage --allow-dirty || echo "codeprism-storage may already be published"
+          sleep 30
+          
+          echo "Publishing codeprism-dev-tools..."
+          cargo publish -p codeprism-dev-tools --allow-dirty || echo "codeprism-dev-tools may already be published"
           sleep 30
           
           echo "Publishing language parsers (no dependencies)..."
@@ -394,6 +394,8 @@ jobs:
           cargo publish -p codeprism-lang-python --allow-dirty || echo "codeprism-lang-python may already be published"
           sleep 30
           cargo publish -p codeprism-lang-java --allow-dirty || echo "codeprism-lang-java may already be published"
+          sleep 30
+          cargo publish -p codeprism-lang-rust --allow-dirty || echo "codeprism-lang-rust may already be published"
           sleep 30
           
           echo "Publishing codeprism-core (depends on language parsers)..."

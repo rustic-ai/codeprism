@@ -1213,22 +1213,37 @@ mod tests {
 
     #[tokio::test]
     async fn test_storage_error_handling() {
-        // Test FileGraphStorage with invalid path
-        let invalid_path = PathBuf::from("/invalid/path/that/should/not/exist");
-        let result = FileGraphStorage::new(&invalid_path).await;
-        assert!(result.is_err());
-
-        // Test loading non-existent graph
+        // Test loading non-existent graph from FileGraphStorage
         let temp_dir = tempdir().unwrap();
         let storage = FileGraphStorage::new(temp_dir.path()).await.unwrap();
         let result = storage.load_graph("nonexistent").await.unwrap();
         assert!(result.is_none());
 
-        // Test SQLite with read-only directory (if possible)
+        // Test loading non-existent graph from SQLiteGraphStorage
         let temp_dir = tempdir().unwrap();
         let storage = SqliteGraphStorage::new(temp_dir.path()).await.unwrap();
         let result = storage.load_graph("nonexistent").await.unwrap();
         assert!(result.is_none());
+
+        // Test FileGraphStorage with a file as path (should fail)
+        let temp_dir = tempdir().unwrap();
+        let file_path = temp_dir.path().join("not_a_directory.txt");
+        fs::write(&file_path, "test").await.unwrap();
+        let result = FileGraphStorage::new(&file_path).await;
+        assert!(
+            result.is_err(),
+            "Should fail when trying to create directory over a file"
+        );
+
+        // Test SQLiteGraphStorage with a file as path (should fail)
+        let temp_dir = tempdir().unwrap();
+        let file_path = temp_dir.path().join("not_a_directory.txt");
+        fs::write(&file_path, "test").await.unwrap();
+        let result = SqliteGraphStorage::new(&file_path).await;
+        assert!(
+            result.is_err(),
+            "Should fail when trying to create directory over a file"
+        );
     }
 
     #[tokio::test]

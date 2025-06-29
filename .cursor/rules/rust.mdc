@@ -1,7 +1,18 @@
 ---
 description: This rule provides comprehensive best practices for Rust development, covering code organization, common patterns, performance, security, testing, pitfalls, and tooling. It aims to guide developers in writing idiomatic, efficient, secure, and maintainable Rust code.
 globs: *.rs
+alwaysApply: false
 ---
+"Write a Rust struct for user management that:
+- Compiles without any warnings on stable Rust
+- Passes cargo clippy with --deny warnings
+- Is properly formatted with rustfmt
+- Uses appropriate derive traits
+- Includes proper error handling
+- Has rustdoc comments
+- Includes at least 2 unit tests
+- Follows Rust 2021 edition best practices"
+
 # Rust Best Practices
 
 This document outlines a comprehensive set of best practices for Rust development, covering various aspects from code organization to security and tooling. Adhering to these guidelines will help you write idiomatic, efficient, secure, and maintainable Rust code.

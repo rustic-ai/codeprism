@@ -55,6 +55,9 @@ git commit --no-verify -m "docs: quick fix"
 git commit -n -m "format: minor spacing"
 ```
 
+**Rule: Always push your changes upstream, once you have a successful commit.**
+Why: Pushing changes upstream makes sure that the changes are available for others to work with, safe and protected from system failures and also closes the relevant issues on GitHub automatically.
+
 ## Issue Resolution Verification
 
 **Rule: Before committing, verify the change completely fixes the issue and meets all requirements.**

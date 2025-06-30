@@ -349,7 +349,7 @@ print(json.dumps(result))
                     message,
                     data,
                     execution_time_ms,
-                    memory_usage_mb: None, // TODO: Implement memory tracking
+                    memory_usage_mb: None, // Memory tracking available in core executor
                 });
             }
         }

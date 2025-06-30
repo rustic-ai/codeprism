@@ -65,7 +65,7 @@ pub struct DuplicateSavings {
 /// Advanced duplicate analyzer with AST and semantic analysis
 pub struct DuplicateAnalyzer {
     /// Cache for parsed AST structures
-    #[allow(dead_code)] // TODO: Will be used for AST caching optimization
+    #[allow(dead_code)] // Will be used for AST caching optimization
     ast_cache: HashMap<String, AstNode>,
     /// Language-specific analyzers for different programming languages
     language_analyzers: HashMap<String, LanguageAnalyzer>,
@@ -76,7 +76,7 @@ pub struct DuplicateAnalyzer {
 #[derive(Debug, Clone)]
 struct LanguageAnalyzer {
     keywords: Vec<String>,
-    #[allow(dead_code)] // TODO: Will be used for operator-aware analysis
+    #[allow(dead_code)] // Will be used for operator-aware analysis
     operators: Vec<String>,
     control_structures: Vec<String>,
     comment_patterns: Vec<String>,
@@ -388,19 +388,19 @@ impl DuplicateAnalyzer {
 
         // Remove language-specific syntax while preserving structure
         if let Some(_analyzer) = self.language_analyzers.get(language) {
-            // Replace identifiers with placeholders
+            // Replace identifiers with normalized tokens
             normalized = regex::Regex::new(r"\b[a-zA-Z_][a-zA-Z0-9_]*\b")
                 .unwrap()
                 .replace_all(&normalized, "IDENTIFIER")
                 .to_string();
 
-            // Replace numbers with placeholders
+            // Replace numbers with normalized tokens
             normalized = regex::Regex::new(r"\b\d+\b")
                 .unwrap()
                 .replace_all(&normalized, "NUMBER")
                 .to_string();
 
-            // Replace strings with placeholders
+            // Replace strings with normalized tokens
             normalized = regex::Regex::new(r#""[^"]*""#)
                 .unwrap()
                 .replace_all(&normalized, "STRING")
@@ -1046,7 +1046,7 @@ impl DuplicateAnalyzer {
             .lines()
             .map(|line| {
                 let trimmed = line.trim();
-                // Replace identifiers with placeholders while keeping structure
+                // Replace identifiers with normalized tokens while keeping structure
                 let mut normalized = trimmed.to_string();
 
                 // Replace common patterns

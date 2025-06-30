@@ -80,7 +80,7 @@ impl PerformanceAnalyzer {
         &self,
         test_results: &[TestSuiteResult],
     ) -> Vec<super::PerformanceTrend> {
-        // For now, create a simple trend with current data
+        // Create simplified trend with current test data
         // In a real implementation, this would compare against historical data
         let current_time = Utc::now();
 
@@ -283,7 +283,7 @@ impl TestCoverageAnalyzer {
         test_id.split('_').next().unwrap_or(test_id).to_string()
     }
 
-    /// Generate coverage trends (placeholder for now)
+    /// Generate coverage trends (simplified implementation)
     fn generate_coverage_trends(&self) -> Vec<super::CoverageTrend> {
         vec![super::CoverageTrend {
             timestamp: Utc::now(),

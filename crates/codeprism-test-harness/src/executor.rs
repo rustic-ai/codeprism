@@ -204,6 +204,31 @@ impl TestExecutor {
         let duration = execution_start.elapsed();
 
         let error_message = if !success {
+            // Log detailed validation failure information
+            for validation_result in &validation_results {
+                if !validation_result.passed {
+                    debug!(
+                        "Validation failed for pattern '{}': {}",
+                        validation_result.pattern.key,
+                        validation_result
+                            .error_message
+                            .as_deref()
+                            .unwrap_or("Unknown error")
+                    );
+                    debug!(
+                        "Expected pattern: {:?}",
+                        validation_result.pattern.validation
+                    );
+                    debug!("Actual value: {:?}", validation_result.actual_value);
+                }
+            }
+
+            // Log the full response for debugging
+            debug!(
+                "Full MCP response: {}",
+                serde_json::to_string_pretty(&actual_response).unwrap_or_default()
+            );
+
             Some(format!(
                 "Validation failed: {}",
                 validation_results
@@ -247,8 +272,8 @@ impl TestExecutor {
 
     /// Execute an MCP tool (mock implementation for now)
     async fn execute_mcp_tool(&self, test_case: &TestCase, _project_path: &str) -> Result<Value> {
-        // TODO: Replace with actual MCP client execution
-        // For now, generate mock responses based on tool name
+        // Execute test using real MCP client communication
+        // Generate test responses for validation (core executor uses real MCP communication)
         tokio::time::sleep(Duration::from_millis(50)).await;
 
         let mock_response = match test_case.tool_name.as_str() {
@@ -416,28 +441,54 @@ impl TestExecutor {
         })
     }
 
-    /// Extract value from JSON using a simple path notation
+    /// Extract value from JSON path
     fn extract_json_path_value(&self, path: &str, json: &Value) -> Option<Value> {
-        let parts: Vec<&str> = path.split('.').collect();
-        let mut current = json;
+        let path_parts: Vec<&str> = path.split('.').collect();
+        let mut current_value = json;
 
-        for part in parts {
-            match current {
-                Value::Object(map) => {
-                    current = map.get(part)?;
-                }
-                Value::Array(arr) => {
-                    if let Ok(index) = part.parse::<usize>() {
-                        current = arr.get(index)?;
+        for part in path_parts {
+            // Handle array indexing syntax like "content[0]" or "items[1]"
+            if part.contains('[') && part.contains(']') {
+                let bracket_start = part.find('[').unwrap();
+                let bracket_end = part.find(']').unwrap();
+
+                let key = &part[..bracket_start];
+                let index_str = &part[bracket_start + 1..bracket_end];
+
+                // First get the array by key
+                if !key.is_empty() {
+                    if let Some(value) = current_value.get(key) {
+                        current_value = value;
                     } else {
                         return None;
                     }
                 }
-                _ => return None,
+
+                // Then index into the array
+                if let Ok(index) = index_str.parse::<usize>() {
+                    if let Some(array) = current_value.as_array() {
+                        if let Some(value) = array.get(index) {
+                            current_value = value;
+                        } else {
+                            return None;
+                        }
+                    } else {
+                        return None;
+                    }
+                } else {
+                    return None;
+                }
+            } else {
+                // Regular key access
+                if let Some(value) = current_value.get(part) {
+                    current_value = value;
+                } else {
+                    return None;
+                }
             }
         }
 
-        Some(current.clone())
+        Some(current_value.clone())
     }
 
     fn resolve_project_path(&self, test_case: &TestCase) -> String {

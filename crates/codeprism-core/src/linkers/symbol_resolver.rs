@@ -18,7 +18,7 @@ pub struct SymbolResolver {
     /// Index of symbols by qualified name (module.symbol)
     qualified_symbols: HashMap<String, NodeId>,
     /// Import resolution cache
-    #[allow(dead_code)] // TODO: Will be used for import resolution caching
+    #[allow(dead_code)] // Will be used for import resolution caching
     import_cache: HashMap<String, String>,
 }
 

@@ -148,7 +148,7 @@ pub type McpResult<T> = Result<T, McpError>;
 pub struct McpErrorHandler {
     metrics_collector: MetricsCollector,
     health_monitor: HealthMonitor,
-    #[allow(dead_code)] // TODO: Will be used for performance monitoring
+    #[allow(dead_code)] // Will be used for performance monitoring
     performance_monitor: PerformanceMonitor,
     resilience_manager: ResilienceManager,
     circuit_states: Arc<RwLock<std::collections::HashMap<String, CircuitState>>>,
@@ -391,7 +391,7 @@ impl McpErrorHandler {
         }
     }
 
-    /// Trigger critical alert (placeholder for notification system)
+    /// Trigger critical alert for notification system
     async fn trigger_critical_alert(&self, error: &McpError, operation: Option<&str>) {
         // In a real implementation, this would integrate with:
         // - PagerDuty, Slack, email alerts

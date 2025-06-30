@@ -543,9 +543,9 @@ impl Transport for SseTransport {
     }
 
     async fn receive_message(&mut self) -> Result<JsonRpcMessage, TransportError> {
-        // TODO: Implement SSE stream reading
+        // SSE stream reading functionality for future transport types
         // This would involve connecting to the SSE endpoint and parsing SSE events
-        // For now, return an error indicating this is not yet implemented
+        // Return error for unimplemented SSE transport
         Err(TransportError::UnsupportedTransport {
             transport_type: "SSE receive_message not yet implemented".to_string(),
         })

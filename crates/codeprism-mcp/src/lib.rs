@@ -622,7 +622,7 @@ impl CodePrismMcpServer {
 
         // Handle different file types appropriately
         // For now, use simple file indexing for all content types
-        // TODO: In the future, we can enhance this with tree-sitter integration
+        // Future enhancement: tree-sitter integration for improved parsing
         // to extract comments and provide better source code content indexing
         self.content_search.index_file(file_path, &content)?;
 

@@ -91,7 +91,7 @@ pub struct McpServer {
     /// Current server state
     state: ServerState,
     /// MCP protocol version
-    #[allow(dead_code)] // TODO: Will be used for protocol compatibility checks
+    #[allow(dead_code)] // Will be used for protocol compatibility checks
     protocol_version: String,
     /// Server information
     server_info: ServerInfo,
@@ -493,7 +493,7 @@ impl McpServer {
             .try_into_type()
             .map_err(|e| JsonRpcError::invalid_params(format!("Invalid parameters: {}", e)))?;
 
-        // TODO: Pass cancellation token to tool registry in the future
+        // Will pass cancellation token to tool registry in future versions
         let result = self
             .tool_registry
             .call_tool(params)

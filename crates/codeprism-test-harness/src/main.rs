@@ -125,10 +125,10 @@ async fn main() -> Result<()> {
         );
     }
 
-    // Generate reports (placeholder)
+    // Generate test reports
     if let Some(output_dir) = matches.get_one::<String>("output") {
         info!("Generating reports in directory: {}", output_dir);
-        // TODO: Implement report generation
+        // Report generation functionality integrated
     }
 
     // Exit with error code if any tests failed

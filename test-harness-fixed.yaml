@@ -1,0 +1,131 @@
+global:
+  max_global_concurrency: 2
+  global_timeout_seconds: 300
+  default_project_path: "test-projects"
+  fail_fast: false
+  retry:
+    max_retries: 2
+    retry_delay_ms: 1000
+    exponential_backoff: true
+    retry_on_patterns:
+      - "connection refused"
+      - "timeout"
+  logging:
+    level: "info"
+    console: true
+    timestamps: true
+    json_format: false
+
+server:
+  start_command: "cargo"
+  args: ["run", "--bin", "codeprism-mcp", "--"]
+  env: {}
+  working_dir: "."
+  startup_timeout_seconds: 30
+  shutdown_timeout_seconds: 10
+  health_check:
+    enabled: false
+    interval_seconds: 10
+    failure_threshold: 3
+    timeout_seconds: 5
+
+test_suites:
+  - name: "basic-core-tools-fixed"
+    description: "Basic test of core MCP tools with correct validation"
+    parallel_execution: false
+    
+    test_cases:
+      - id: "repository_stats_fixed"
+        tool_name: "repository_stats"
+        enabled: true
+        description: "Test basic repository statistics with MCP response format"
+        project_path: "test-projects/rust-test-project"
+        input_params: {}
+        
+        expected:
+          patterns:
+            # Validate the MCP response structure first
+            - key: "content"
+              validation:
+                type: "ArrayLength"
+                min: 1
+              required: true
+              
+            - key: "content[0].type"
+              validation:
+                type: "Equals"
+                value: "text"
+              required: true
+              
+            - key: "isError"
+              validation:
+                type: "Equals"
+                value: false
+              required: true
+              
+            # For now, just validate that we have text content
+            # TODO: Parse the JSON within content[0].text
+            - key: "content[0].text"
+              validation:
+                type: "Regex"
+                pattern: ".*total_files.*"
+              required: true
+              
+          custom_scripts: []
+          allow_extra_fields: true
+              
+        performance:
+          max_execution_time_ms: 10000
+          max_memory_mb: 100
+          
+      - id: "search_symbols_fixed"  
+        tool_name: "search_symbols"
+        enabled: true
+        description: "Test basic symbol search with MCP response format"
+        project_path: "test-projects/rust-test-project"
+        input_params:
+          pattern: "main"
+          
+        expected:
+          patterns:
+            # Validate the MCP response structure
+            - key: "content"
+              validation:
+                type: "ArrayLength"
+                min: 1
+              required: true
+              
+            - key: "isError"
+              validation:
+                type: "Equals"
+                value: false
+              required: true
+              
+          custom_scripts: []
+          allow_extra_fields: true
+              
+        performance:
+          max_execution_time_ms: 10000
+          max_memory_mb: 100
+
+reporting:
+  output_dir: "test-reports"
+  formats: ["html", "json"]
+  open_html: false
+  include_debug_info: true
+  charts:
+    enabled: true
+    types: ["response_time", "memory_usage", "success_rate"]
+    size:
+      width: 800
+      height: 400
+  trend_analysis: false
+
+environment:
+  variables: {}
+  path_additions: []
+  limits:
+    max_memory_mb: 1024
+    max_cpu_seconds: 300
+    max_open_files: 1024
+    max_process_time_seconds: 300 

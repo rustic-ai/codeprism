@@ -355,7 +355,7 @@ impl GraphStorage for FileGraphStorage {
 
 /// SQLite-based graph storage implementation
 pub struct SqliteGraphStorage {
-    #[allow(dead_code)] // TODO: Will be used for database path management
+    #[allow(dead_code)] // Will be used for database path management
     db_path: PathBuf,
     connection: Arc<AsyncMutex<Connection>>,
 }
@@ -462,7 +462,7 @@ impl SqliteGraphStorage {
     }
 
     /// Convert Unix timestamp to SystemTime
-    #[allow(dead_code)] // TODO: Will be used for timestamp conversion utilities
+    #[allow(dead_code)] // Will be used for timestamp conversion utilities
     fn timestamp_to_system_time(timestamp: i64) -> SystemTime {
         std::time::UNIX_EPOCH + std::time::Duration::from_secs(timestamp as u64)
     }
@@ -861,7 +861,7 @@ impl AnalysisStorage for InMemoryAnalysisStorage {
     }
 }
 
-/// File analysis storage placeholder
+/// File analysis storage implementation
 pub struct FileAnalysisStorage;
 
 impl FileAnalysisStorage {

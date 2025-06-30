@@ -87,7 +87,7 @@ impl ProtocolValidator {
         result
     }
 
-    /// Validate message schema (placeholder for future implementation)
+    /// Validate message schema (implementation pending)
     pub fn validate_schema(&self, _message: &JsonRpcMessage) -> ValidationResult {
         ValidationResult {
             valid: true,

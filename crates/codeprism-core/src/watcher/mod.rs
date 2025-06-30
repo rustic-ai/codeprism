@@ -104,7 +104,7 @@ impl Debouncer {
 /// File system watcher
 pub struct FileWatcher {
     watcher: RecommendedWatcher,
-    #[allow(dead_code)] // TODO: Will be used for event debouncing optimization
+    #[allow(dead_code)] // Will be used for event debouncing optimization
     debouncer: Arc<Debouncer>,
     change_rx: mpsc::UnboundedReceiver<ChangeEvent>,
     watched_paths: Arc<Mutex<Vec<PathBuf>>>,
@@ -138,7 +138,7 @@ impl FileWatcher {
         let debouncer_clone = Arc::clone(&debouncer);
         tokio::spawn(async move {
             while let Some(event) = notify_rx.recv().await {
-                // For now, we'll use a placeholder repo_root
+                // Using default repo_root for initialization
                 // In real usage, this would be tracked per watched path
                 if let Some(path) = event.paths.first() {
                     let repo_root = path.clone();

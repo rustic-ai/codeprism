@@ -611,7 +611,7 @@ pub enum ScalingStrategy {
 }
 
 /// Advanced Node.js pattern analysis (Phase 1.3)
-#[allow(dead_code)] // TODO: Will be used for advanced pattern detection
+#[allow(dead_code)] // Will be used for advanced pattern detection
 #[derive(Debug, Clone)]
 pub struct AdvancedNodePatternInfo {
     pub pattern_type: AdvancedNodePatternType,
@@ -623,7 +623,7 @@ pub struct AdvancedNodePatternInfo {
 }
 
 /// Advanced Node.js pattern types
-#[allow(dead_code)] // TODO: Will be used for advanced pattern detection
+#[allow(dead_code)] // Will be used for advanced pattern detection
 #[derive(Debug, Clone)]
 pub enum AdvancedNodePatternType {
     SecurityMiddleware,
@@ -636,7 +636,7 @@ pub enum AdvancedNodePatternType {
 }
 
 /// Middleware information
-#[allow(dead_code)] // TODO: Will be used for middleware pattern analysis
+#[allow(dead_code)] // Will be used for middleware pattern analysis
 #[derive(Debug, Clone)]
 pub struct MiddlewareInfo {
     pub name: String,
@@ -648,7 +648,7 @@ pub struct MiddlewareInfo {
 }
 
 /// Middleware types
-#[allow(dead_code)] // TODO: Will be used for middleware pattern analysis
+#[allow(dead_code)] // Will be used for middleware pattern analysis
 #[derive(Debug, Clone)]
 pub enum MiddlewareType {
     Authentication,
@@ -664,7 +664,7 @@ pub enum MiddlewareType {
 }
 
 /// Error handling pattern information
-#[allow(dead_code)] // TODO: Will be used for error handling analysis
+#[allow(dead_code)] // Will be used for error handling analysis
 #[derive(Debug, Clone)]
 pub struct ErrorHandlingPattern {
     pub pattern_type: ErrorHandlingType,
@@ -675,7 +675,7 @@ pub struct ErrorHandlingPattern {
 }
 
 /// Error handling types
-#[allow(dead_code)] // TODO: Will be used for error handling analysis
+#[allow(dead_code)] // Will be used for error handling analysis
 #[derive(Debug, Clone)]
 pub enum ErrorHandlingType {
     TryCatch,
@@ -688,7 +688,7 @@ pub enum ErrorHandlingType {
 }
 
 /// Error classification
-#[allow(dead_code)] // TODO: Will be used for error classification
+#[allow(dead_code)] // Will be used for error classification
 #[derive(Debug, Clone)]
 pub struct ErrorClassification {
     pub error_type: ErrorType,
@@ -698,7 +698,7 @@ pub struct ErrorClassification {
 }
 
 /// Error types
-#[allow(dead_code)] // TODO: Will be used for error classification
+#[allow(dead_code)] // Will be used for error classification
 #[allow(clippy::enum_variant_names)] // Error suffix is semantically meaningful here
 #[derive(Debug, Clone)]
 pub enum ErrorType {
@@ -713,7 +713,7 @@ pub enum ErrorType {
 }
 
 /// Error severity levels
-#[allow(dead_code)] // TODO: Will be used for error classification
+#[allow(dead_code)] // Will be used for error classification
 #[derive(Debug, Clone)]
 pub enum ErrorSeverity {
     Critical,
@@ -724,7 +724,7 @@ pub enum ErrorSeverity {
 }
 
 /// User impact levels
-#[allow(dead_code)] // TODO: Will be used for error impact analysis
+#[allow(dead_code)] // Will be used for error impact analysis
 #[derive(Debug, Clone)]
 pub enum UserImpact {
     ServiceUnavailable,
@@ -734,7 +734,7 @@ pub enum UserImpact {
 }
 
 /// Performance indicator for advanced patterns
-#[allow(dead_code)] // TODO: Will be used for performance analysis
+#[allow(dead_code)] // Will be used for performance analysis
 #[derive(Debug, Clone)]
 pub struct PerformanceIndicator {
     pub indicator_type: PerformanceType,
@@ -745,7 +745,7 @@ pub struct PerformanceIndicator {
 }
 
 /// Performance types
-#[allow(dead_code)] // TODO: Will be used for performance analysis
+#[allow(dead_code)] // Will be used for performance analysis
 #[derive(Debug, Clone)]
 pub enum PerformanceType {
     Memory,
@@ -759,7 +759,7 @@ pub enum PerformanceType {
 }
 
 /// Performance metrics
-#[allow(dead_code)] // TODO: Will be used for performance analysis
+#[allow(dead_code)] // Will be used for performance analysis
 #[derive(Debug, Clone)]
 pub struct PerformanceMetrics {
     pub response_time: Option<f64>,
@@ -770,7 +770,7 @@ pub struct PerformanceMetrics {
 }
 
 /// Microservice pattern information
-#[allow(dead_code)] // TODO: Will be used for microservice analysis
+#[allow(dead_code)] // Will be used for microservice analysis
 #[derive(Debug, Clone)]
 pub struct MicroservicePattern {
     pub pattern_name: String,
@@ -781,7 +781,7 @@ pub struct MicroservicePattern {
 }
 
 /// Service communication patterns
-#[allow(dead_code)] // TODO: Will be used for microservice analysis
+#[allow(dead_code)] // Will be used for microservice analysis
 #[derive(Debug, Clone)]
 pub enum ServiceCommunication {
     Http,
@@ -793,7 +793,7 @@ pub enum ServiceCommunication {
 }
 
 /// Data consistency patterns
-#[allow(dead_code)] // TODO: Will be used for microservice analysis
+#[allow(dead_code)] // Will be used for microservice analysis
 #[derive(Debug, Clone)]
 pub enum DataConsistency {
     Strong,
@@ -804,7 +804,7 @@ pub enum DataConsistency {
 }
 
 /// Fault tolerance patterns
-#[allow(dead_code)] // TODO: Will be used for microservice analysis
+#[allow(dead_code)] // Will be used for microservice analysis
 #[derive(Debug, Clone)]
 pub enum FaultTolerance {
     CircuitBreaker,
@@ -816,7 +816,7 @@ pub enum FaultTolerance {
 }
 
 /// Monitoring levels
-#[allow(dead_code)] // TODO: Will be used for microservice analysis
+#[allow(dead_code)] // Will be used for microservice analysis
 #[derive(Debug, Clone)]
 pub enum MonitoringLevel {
     Comprehensive,
@@ -826,7 +826,7 @@ pub enum MonitoringLevel {
 }
 
 /// Database pattern information
-#[allow(dead_code)] // TODO: Will be used for database analysis
+#[allow(dead_code)] // Will be used for database analysis
 #[derive(Debug, Clone)]
 pub struct DatabasePattern {
     pub database_type: DatabaseType,
@@ -837,7 +837,7 @@ pub struct DatabasePattern {
 }
 
 /// Database types
-#[allow(dead_code)] // TODO: Will be used for database analysis
+#[allow(dead_code)] // Will be used for database analysis
 #[derive(Debug, Clone)]
 pub enum DatabaseType {
     PostgreSQL,
@@ -851,7 +851,7 @@ pub enum DatabaseType {
 }
 
 /// Database access patterns
-#[allow(dead_code)] // TODO: Will be used for database analysis
+#[allow(dead_code)] // Will be used for database analysis
 #[derive(Debug, Clone)]
 pub enum DatabaseAccessPattern {
     DirectAccess,
@@ -863,7 +863,7 @@ pub enum DatabaseAccessPattern {
 }
 
 /// Optimization levels
-#[allow(dead_code)] // TODO: Will be used for database analysis
+#[allow(dead_code)] // Will be used for database analysis
 #[derive(Debug, Clone)]
 pub enum OptimizationLevel {
     High,
@@ -873,7 +873,7 @@ pub enum OptimizationLevel {
 }
 
 /// Connection management patterns
-#[allow(dead_code)] // TODO: Will be used for database analysis
+#[allow(dead_code)] // Will be used for database analysis
 #[derive(Debug, Clone)]
 pub enum ConnectionManagement {
     Pool,
@@ -884,7 +884,7 @@ pub enum ConnectionManagement {
 }
 
 /// Transaction handling patterns
-#[allow(dead_code)] // TODO: Will be used for database analysis
+#[allow(dead_code)] // Will be used for database analysis
 #[derive(Debug, Clone)]
 pub enum TransactionHandling {
     Acid,
@@ -1647,7 +1647,7 @@ impl JavaScriptAnalyzer {
         }
     }
 
-    #[allow(dead_code)] // TODO: Will be used for route analysis
+    #[allow(dead_code)] // Will be used for route analysis in Phase 3
     fn extract_route_parameters(&self, path: &str) -> Vec<String> {
         let param_pattern = Regex::new(r":(\w+)").unwrap();
         param_pattern

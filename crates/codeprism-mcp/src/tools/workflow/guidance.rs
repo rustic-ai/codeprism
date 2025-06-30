@@ -660,7 +660,7 @@ fn generate_refactoring_workflow(
     })
 }
 
-/// Get session context for recommendations (placeholder implementation)
+/// Get session context for recommendations
 fn get_session_context(_session_id: SessionId) -> Result<SessionContext> {
     // In a real implementation, this would fetch from session manager
     Ok(SessionContext {

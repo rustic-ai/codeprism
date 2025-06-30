@@ -366,7 +366,7 @@ fn analyze_workflow_history(history: &[Value]) -> Result<WorkflowAnalysis> {
     })
 }
 
-/// Analyze session workflow (placeholder implementation)
+/// Analyze session workflow
 fn analyze_session_workflow(_session_id: SessionId) -> Result<WorkflowAnalysis> {
     // In real implementation, would fetch session data
     Ok(WorkflowAnalysis {

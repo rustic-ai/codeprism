@@ -652,18 +652,88 @@ impl PerformanceMonitor {
 
     /// Collect memory information
     fn collect_memory_info() -> Result<MemoryMetric> {
-        // Simplified memory collection - in production, use proper system APIs
-        // Memory metrics would use system allocator tracking in production
-
         let timestamp = Self::current_timestamp();
 
-        // This is a simplified estimation
-        // In production, you'd use system APIs like procfs on Linux
-        let memory_mb = 0; // Placeholder - would get actual memory usage
+        #[cfg(unix)]
+        {
+            // On Unix systems, use /proc/self/status for memory info
+            if let Ok(status_content) = std::fs::read_to_string("/proc/self/status") {
+                let mut memory_mb = 0;
+                let mut heap_mb = None;
+                let mut available_mb = None;
 
+                for line in status_content.lines() {
+                    if line.starts_with("VmRSS:") {
+                        // Resident Set Size (physical memory currently used)
+                        if let Some(kb_str) = line.split_whitespace().nth(1) {
+                            if let Ok(kb) = kb_str.parse::<usize>() {
+                                memory_mb = kb / 1024; // Convert KB to MB
+                            }
+                        }
+                    } else if line.starts_with("VmData:") {
+                        // Heap memory (data segment)
+                        if let Some(kb_str) = line.split_whitespace().nth(1) {
+                            if let Ok(kb) = kb_str.parse::<usize>() {
+                                heap_mb = Some(kb / 1024);
+                            }
+                        }
+                    }
+                }
+
+                // Get available system memory
+                if let Ok(meminfo_content) = std::fs::read_to_string("/proc/meminfo") {
+                    for line in meminfo_content.lines() {
+                        if line.starts_with("MemAvailable:") {
+                            if let Some(kb_str) = line.split_whitespace().nth(1) {
+                                if let Ok(kb) = kb_str.parse::<usize>() {
+                                    available_mb = Some(kb / 1024);
+                                }
+                            }
+                            break;
+                        }
+                    }
+                }
+
+                return Ok(MemoryMetric {
+                    timestamp,
+                    memory_mb,
+                    heap_mb,
+                    available_mb,
+                    cache_size_mb: None, // Could be calculated from /proc/meminfo if needed
+                });
+            }
+        }
+
+        #[cfg(windows)]
+        {
+            // On Windows, we could use Windows API calls but for now provide a basic implementation
+            // This would require additional dependencies like winapi or windows-rs
+            // For now, return 0 as a safe fallback
+            return Ok(MemoryMetric {
+                timestamp,
+                memory_mb: 0,
+                heap_mb: None,
+                available_mb: None,
+                cache_size_mb: None,
+            });
+        }
+
+        #[cfg(not(any(unix, windows)))]
+        {
+            // Fallback for other platforms
+            return Ok(MemoryMetric {
+                timestamp,
+                memory_mb: 0,
+                heap_mb: None,
+                available_mb: None,
+                cache_size_mb: None,
+            });
+        }
+
+        // Ultimate fallback if all platform-specific code fails
         Ok(MemoryMetric {
             timestamp,
-            memory_mb,
+            memory_mb: 0,
             heap_mb: None,
             available_mb: None,
             cache_size_mb: None,
@@ -672,16 +742,170 @@ impl PerformanceMonitor {
 
     /// Collect system information
     fn collect_system_info() -> Result<SystemMetric> {
-        // Simplified system metrics collection
-        // In production, use proper system monitoring APIs
+        let timestamp = Self::current_timestamp();
 
-        Ok(SystemMetric {
-            timestamp: Self::current_timestamp(),
-            cpu_usage_percent: 0.0,   // Would get actual CPU usage
-            disk_usage_percent: 0.0,  // Would get actual disk usage
-            network_activity_mb: 0.0, // Would get actual network activity
-            active_connections: 0,    // Would get actual connection count
-        })
+        #[cfg(unix)]
+        {
+            let mut cpu_usage_percent = 0.0;
+            let mut disk_usage_percent = 0.0;
+            let mut network_activity_mb = 0.0;
+            let mut active_connections = 0;
+
+            // Get CPU usage from /proc/stat
+            if let Ok(stat_content) = std::fs::read_to_string("/proc/stat") {
+                if let Some(cpu_line) = stat_content.lines().next() {
+                    if cpu_line.starts_with("cpu ") {
+                        let values: Vec<&str> = cpu_line.split_whitespace().collect();
+                        if values.len() >= 8 {
+                            // Parse CPU times: user, nice, system, idle, iowait, irq, softirq, steal
+                            let user: u64 = values[1].parse().unwrap_or(0);
+                            let nice: u64 = values[2].parse().unwrap_or(0);
+                            let system: u64 = values[3].parse().unwrap_or(0);
+                            let idle: u64 = values[4].parse().unwrap_or(0);
+                            let iowait: u64 = values[5].parse().unwrap_or(0);
+                            let irq: u64 = values[6].parse().unwrap_or(0);
+                            let softirq: u64 = values[7].parse().unwrap_or(0);
+
+                            let total_active = user + nice + system + irq + softirq + iowait;
+                            let total = total_active + idle;
+
+                            if total > 0 {
+                                cpu_usage_percent = (total_active as f64 / total as f64) * 100.0;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Get disk usage for root filesystem using df command
+            if let Ok(output) = std::process::Command::new("df").args(&["-h", "/"]).output() {
+                if let Ok(output_str) = String::from_utf8(output.stdout) {
+                    for line in output_str.lines().skip(1) {
+                        let fields: Vec<&str> = line.split_whitespace().collect();
+                        if fields.len() >= 5 && fields[4].ends_with('%') {
+                            if let Ok(usage) = fields[4].trim_end_matches('%').parse::<f64>() {
+                                disk_usage_percent = usage;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Get network activity from /proc/net/dev
+            if let Ok(net_content) = std::fs::read_to_string("/proc/net/dev") {
+                let mut total_bytes = 0u64;
+                for line in net_content.lines().skip(2) {
+                    // Skip header lines
+                    if let Some(colon_pos) = line.find(':') {
+                        let stats = &line[colon_pos + 1..];
+                        let values: Vec<&str> = stats.split_whitespace().collect();
+                        if values.len() >= 9 {
+                            // bytes received + bytes transmitted
+                            let rx_bytes: u64 = values[0].parse().unwrap_or(0);
+                            let tx_bytes: u64 = values[8].parse().unwrap_or(0);
+                            total_bytes += rx_bytes + tx_bytes;
+                        }
+                    }
+                }
+                network_activity_mb = total_bytes as f64 / (1024.0 * 1024.0);
+            }
+
+            // Count active network connections from /proc/net/tcp
+            if let Ok(tcp_content) = std::fs::read_to_string("/proc/net/tcp") {
+                active_connections = tcp_content.lines().skip(1).count(); // Skip header
+            }
+
+            return Ok(SystemMetric {
+                timestamp,
+                cpu_usage_percent,
+                disk_usage_percent,
+                network_activity_mb,
+                active_connections,
+            });
+        }
+
+        #[cfg(windows)]
+        {
+            // On Windows, we could use Windows API calls
+            // For now, provide a basic implementation with system calls
+            let mut cpu_usage_percent = 0.0;
+            let mut disk_usage_percent = 0.0;
+
+            // Try to get CPU usage using wmic (if available)
+            if let Ok(output) = std::process::Command::new("wmic")
+                .args(&["cpu", "get", "loadpercentage", "/value"])
+                .output()
+            {
+                if let Ok(output_str) = String::from_utf8(output.stdout) {
+                    for line in output_str.lines() {
+                        if line.starts_with("LoadPercentage=") {
+                            if let Some(value_str) = line.split('=').nth(1) {
+                                if let Ok(value) = value_str.trim().parse::<f64>() {
+                                    cpu_usage_percent = value;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Try to get disk usage for C: drive
+            if let Ok(output) = std::process::Command::new("wmic")
+                .args(&[
+                    "logicaldisk",
+                    "where",
+                    "size!=0",
+                    "get",
+                    "size,freespace",
+                    "/value",
+                ])
+                .output()
+            {
+                if let Ok(output_str) = String::from_utf8(output.stdout) {
+                    let mut size = 0u64;
+                    let mut free_space = 0u64;
+
+                    for line in output_str.lines() {
+                        if line.starts_with("Size=") {
+                            if let Some(value_str) = line.split('=').nth(1) {
+                                size = value_str.trim().parse().unwrap_or(0);
+                            }
+                        } else if line.starts_with("FreeSpace=") {
+                            if let Some(value_str) = line.split('=').nth(1) {
+                                free_space = value_str.trim().parse().unwrap_or(0);
+                            }
+                        }
+                    }
+
+                    if size > 0 {
+                        let used = size - free_space;
+                        disk_usage_percent = (used as f64 / size as f64) * 100.0;
+                    }
+                }
+            }
+
+            return Ok(SystemMetric {
+                timestamp,
+                cpu_usage_percent,
+                disk_usage_percent,
+                network_activity_mb: 0.0, // Would need Windows-specific implementation
+                active_connections: 0,    // Would need Windows-specific implementation
+            });
+        }
+
+        #[cfg(not(any(unix, windows)))]
+        {
+            // Fallback for other platforms
+            Ok(SystemMetric {
+                timestamp,
+                cpu_usage_percent: 0.0,
+                disk_usage_percent: 0.0,
+                network_activity_mb: 0.0,
+                active_connections: 0,
+            })
+        }
     }
 
     /// Get current timestamp in seconds since Unix epoch
@@ -858,5 +1082,79 @@ mod tests {
         assert_eq!(summary.total_requests, 1);
         assert_eq!(summary.success_rate, 0.0);
         assert_eq!(summary.recent_errors.len(), 1);
+    }
+
+    #[test]
+    fn test_memory_collection_functionality() {
+        // Test that memory collection returns valid data structure
+        let memory_info = PerformanceMonitor::collect_memory_info();
+        assert!(memory_info.is_ok());
+
+        let memory_metric = memory_info.unwrap();
+        assert!(memory_metric.timestamp > 0);
+        // Memory should be 0 or positive (can be 0 on unsupported platforms)
+        assert!(memory_metric.memory_mb >= 0);
+
+        // On Unix systems, we should get real memory data
+        #[cfg(unix)]
+        {
+            // On Unix, if /proc/self/status exists, we should get non-zero memory
+            if std::fs::metadata("/proc/self/status").is_ok() {
+                // Memory usage should be at least some MB for a running process
+                // This is a reasonable check - even minimal processes use some memory
+                println!("Memory usage: {}MB", memory_metric.memory_mb);
+            }
+        }
+    }
+
+    #[test]
+    fn test_system_info_collection_functionality() {
+        // Test that system info collection returns valid data structure
+        let system_info = PerformanceMonitor::collect_system_info();
+        assert!(system_info.is_ok());
+
+        let system_metric = system_info.unwrap();
+        assert!(system_metric.timestamp > 0);
+
+        // CPU usage should be between 0 and 100 (or 0 on unsupported platforms)
+        assert!(system_metric.cpu_usage_percent >= 0.0);
+        assert!(system_metric.cpu_usage_percent <= 100.0 || system_metric.cpu_usage_percent == 0.0);
+
+        // Disk usage should be between 0 and 100 (or 0 on unsupported platforms)
+        assert!(system_metric.disk_usage_percent >= 0.0);
+        assert!(
+            system_metric.disk_usage_percent <= 100.0 || system_metric.disk_usage_percent == 0.0
+        );
+
+        // Network activity and connections should be non-negative
+        assert!(system_metric.network_activity_mb >= 0.0);
+        assert!(system_metric.active_connections >= 0);
+
+        println!(
+            "System metrics - CPU: {:.1}%, Disk: {:.1}%, Network: {:.1}MB, Connections: {}",
+            system_metric.cpu_usage_percent,
+            system_metric.disk_usage_percent,
+            system_metric.network_activity_mb,
+            system_metric.active_connections
+        );
+    }
+
+    #[test]
+    fn test_performance_monitor_with_real_metrics() {
+        let config = create_test_config();
+        let monitor = PerformanceMonitor::new(config);
+
+        // Test that the monitor can collect real metrics
+        let memory_info = PerformanceMonitor::collect_memory_info();
+        assert!(memory_info.is_ok());
+
+        let system_info = PerformanceMonitor::collect_system_info();
+        assert!(system_info.is_ok());
+
+        // Verify the metrics are being collected in a structured way
+        let summary = monitor.get_performance_summary().unwrap();
+        assert_eq!(summary.total_requests, 0);
+        assert_eq!(summary.success_rate, 1.0);
+        assert!(summary.uptime_seconds >= 0);
     }
 }

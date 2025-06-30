@@ -12,6 +12,7 @@ pub mod executor;
 pub mod prompts;
 pub mod protocol;
 pub mod resources;
+pub mod script;
 pub mod server;
 pub mod tools;
 pub mod transport;
@@ -23,6 +24,7 @@ pub use executor::TestExecutor;
 pub use prompts::{PromptTester, PromptValidator};
 pub use protocol::{JsonRpcMessage, McpCapabilities, McpClient, ProtocolValidator};
 pub use resources::{ResourceTester, ResourceValidator};
+pub use script::{ScriptExecutor, ScriptResult, ScriptError, BuiltinValidationUtils};
 pub use tools::{ToolTester, ToolValidator};
 pub use types::{TestCase, TestResult, TestSuite, TestSuiteResult};
 

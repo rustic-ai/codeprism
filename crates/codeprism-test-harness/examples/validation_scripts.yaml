@@ -1,0 +1,207 @@
+# Example validation scripts for CodePrism Test Harness
+
+test_suites:
+  - name: "custom_validation_examples"
+    description: "Demonstration of custom validation scripts"
+    parallel_execution: false
+    test_cases:
+      - id: "test_security_validation"
+        description: "Test security vulnerability detection using custom Python script"
+        tool_name: "analyze_security"
+        input_params:
+          file_path: "test-projects/security-test.js"
+        expected:
+          patterns:
+            - key: "result.vulnerabilities_found"
+              validation:
+                type: "Range"
+                min: 0.0
+                max: 10.0
+              required: true
+          custom_scripts:
+            - name: "security_pattern_validator"
+              language: "python"
+              timeout_seconds: 10
+              env: {}
+              content: |
+                # Custom security validation script
+                security_data = INPUT_DATA.get('result', {})
+                vulnerabilities = security_data.get('vulnerabilities', [])
+                
+                # Use built-in security pattern validation
+                if 'code_content' in security_data:
+                    security_check = validate_security_patterns(
+                        security_data['code_content'],
+                        ['sql_injection', 'xss', 'command_injection']
+                    )
+                    
+                    result = {
+                        "passed": security_check['passed'] and len(vulnerabilities) == 0,
+                        "message": f"Security validation: {len(vulnerabilities)} vulnerabilities found",
+                        "score": 1.0 - (len(vulnerabilities) * 0.2),
+                        "details": {
+                            "vulnerabilities": vulnerabilities,
+                            "pattern_violations": security_check.get('violations', [])
+                        }
+                    }
+                else:
+                    result = {
+                        "passed": len(vulnerabilities) == 0,
+                        "message": f"Found {len(vulnerabilities)} vulnerabilities",
+                        "score": 1.0 - (len(vulnerabilities) * 0.2)
+                    }
+          allow_extra_fields: true
+        performance:
+          max_execution_time_ms: 15000
+        enabled: true
+
+      - id: "test_complexity_validation"
+        description: "Test code complexity analysis with custom scoring"
+        tool_name: "analyze_complexity"
+        input_params:
+          file_path: "test-projects/python-sample/core/events.py"
+        expected:
+          patterns:
+            - key: "result.cyclomatic_complexity"
+              validation:
+                type: "Range"
+                min: 0.0
+                max: 50.0
+              required: true
+          custom_scripts:
+            - name: "complexity_scorer"
+              language: "python"
+              timeout_seconds: 5
+              env: {}
+              content: |
+                # Custom complexity validation and scoring
+                complexity_data = INPUT_DATA.get('result', {})
+                
+                # Use built-in complexity calculation
+                complexity_score = calculate_complexity_score(complexity_data)
+                
+                # Additional custom validation
+                cyclomatic = complexity_data.get('cyclomatic_complexity', 0)
+                cognitive = complexity_data.get('cognitive_complexity', 0)
+                
+                # Custom thresholds
+                high_complexity_threshold = 15
+                very_high_threshold = 25
+                
+                if complexity_score['complexity_score'] > very_high_threshold:
+                    status = "critical"
+                    passed = False
+                elif complexity_score['complexity_score'] > high_complexity_threshold:
+                    status = "warning"
+                    passed = True  # Warning but not failure
+                else:
+                    status = "good"
+                    passed = True
+                
+                result = {
+                    "passed": passed,
+                    "message": f"Complexity status: {status} (score: {complexity_score['complexity_score']:.1f})",
+                    "score": complexity_score.get('complexity_score', 0) / 30.0,  # Normalize to 0-1
+                    "details": {
+                        "status": status,
+                        "cyclomatic": cyclomatic,
+                        "cognitive": cognitive,
+                        "recommendations": complexity_score.get('recommendations', [])
+                    }
+                }
+          allow_extra_fields: true
+        performance:
+          max_execution_time_ms: 10000
+        enabled: true
+
+      - id: "test_performance_validation"
+        description: "Test performance metrics validation"
+        tool_name: "analyze_performance"
+        input_params:
+          file_path: "test-projects/rust-test-project/src/main.rs"
+        expected:
+          patterns:
+            - key: "result.execution_time_ms"
+              validation:
+                type: "Range"
+                min: 0.0
+                max: 10000.0
+              required: true
+          custom_scripts:
+            - name: "performance_validator"
+              language: "python"
+              timeout_seconds: 5
+              env: {}
+              content: |
+                # Custom performance validation
+                perf_data = INPUT_DATA.get('result', {})
+                
+                # Define performance thresholds
+                thresholds = {
+                    'execution_time_ms': 5000,
+                    'memory_usage_mb': 256,
+                    'cpu_usage_percent': 80
+                }
+                
+                # Use built-in performance validation
+                validation_result = validate_performance_metrics(perf_data, thresholds)
+                
+                # Calculate performance score
+                violations = validation_result.get('violations', [])
+                score = max(0.0, 1.0 - (len(violations) * 0.25))
+                
+                result = {
+                    "passed": validation_result['passed'],
+                    "message": f"Performance validation: {len(violations)} threshold violations",
+                    "score": score,
+                    "details": {
+                        "violations": violations,
+                        "metrics_checked": validation_result.get('metrics_checked', 0),
+                        "thresholds": thresholds
+                    }
+                }
+          allow_extra_fields: true
+        performance:
+          max_execution_time_ms: 8000
+        enabled: true
+
+      - id: "test_bash_validation"
+        description: "Test bash script validation example"
+        tool_name: "search_content"
+        input_params:
+          pattern: "TODO"
+          file_types: ["py", "js", "rs"]
+        expected:
+          patterns:
+            - key: "result.total_matches"
+              validation:
+                type: "Range"
+                min: 0.0
+                max: 100.0
+              required: true
+          custom_scripts:
+            - name: "todo_counter"
+              language: "bash"
+              timeout_seconds: 5
+              env: {}
+              content: |
+                # Parse JSON input from environment variable
+                echo "Analyzing TODO matches from search results..."
+                
+                # Extract match count (simplified parsing for demo)
+                total_matches=$(echo "$INPUT_DATA" | grep -o '"total_matches":[0-9]*' | grep -o '[0-9]*' || echo "0")
+                
+                echo "Found $total_matches TODO items"
+                
+                # Simple validation logic
+                if [ "$total_matches" -gt 20 ]; then
+                    echo '{"passed": false, "message": "Too many TODOs found: '$total_matches'", "score": 0.5}'
+                elif [ "$total_matches" -gt 10 ]; then
+                    echo '{"passed": true, "message": "Moderate TODOs found: '$total_matches'", "score": 0.7}'
+                else
+                    echo '{"passed": true, "message": "Acceptable TODOs found: '$total_matches'", "score": 0.9}'
+                fi
+          allow_extra_fields: true
+        performance:
+          max_execution_time_ms: 8000
+        enabled: true 

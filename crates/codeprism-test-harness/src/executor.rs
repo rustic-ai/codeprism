@@ -1,10 +1,10 @@
 //! Test execution engine for the CodePrism Test Harness
 
 use crate::config::TestConfig;
-use crate::script::{ScriptExecutor, SandboxConfig};
+use crate::script::{SandboxConfig, ScriptExecutor};
 use crate::types::{
-    JsonPathPattern, PatternValidation, MemoryStats, ResponseTimePercentiles, TestCase, TestExecutionStats, TestResult, TestSuite,
-    TestSuiteResult, ValidationResult,
+    JsonPathPattern, MemoryStats, PatternValidation, ResponseTimePercentiles, TestCase,
+    TestExecutionStats, TestResult, TestSuite, TestSuiteResult, ValidationResult,
 };
 use anyhow::Result;
 use chrono::Utc;
@@ -26,7 +26,7 @@ impl TestExecutor {
     /// Create a new test executor with the given configuration
     pub fn new(config: TestConfig) -> Self {
         let concurrency_limiter = Arc::new(Semaphore::new(config.global.max_global_concurrency));
-        
+
         // Create script executor with default sandbox configuration
         let sandbox_config = SandboxConfig::default();
         let script_executor = ScriptExecutor::new(None, sandbox_config);
@@ -161,8 +161,10 @@ impl TestExecutor {
         let duration = execution_start.elapsed();
 
         let error_message = if !success {
-            Some(format!("Validation failed: {}", 
-                validation_results.iter()
+            Some(format!(
+                "Validation failed: {}",
+                validation_results
+                    .iter()
                     .filter(|v| !v.passed)
                     .map(|v| v.error_message.as_deref().unwrap_or("Unknown error"))
                     .collect::<Vec<_>>()
@@ -226,14 +228,18 @@ impl TestExecutor {
                     "status": "completed",
                     "message": format!("Mock execution of {}", test_case.tool_name)
                 }
-            })
+            }),
         };
 
         Ok(mock_response)
     }
 
     /// Validate response against test case expectations
-    async fn validate_response(&self, test_case: &TestCase, response: &Value) -> Result<Vec<ValidationResult>> {
+    async fn validate_response(
+        &self,
+        test_case: &TestCase,
+        response: &Value,
+    ) -> Result<Vec<ValidationResult>> {
         let mut validation_results = Vec::new();
 
         // Validate JSON path patterns
@@ -250,8 +256,8 @@ impl TestExecutor {
                     validation_results.push(ValidationResult {
                         pattern: JsonPathPattern {
                             key: format!("custom_script_{}", script.name),
-                            validation: PatternValidation::Expression { 
-                                expr: "custom_script".to_string() 
+                            validation: PatternValidation::Expression {
+                                expr: "custom_script".to_string(),
                             },
                             required: true,
                         },
@@ -261,10 +267,10 @@ impl TestExecutor {
                             "message": script_result.message,
                             "data": script_result.data
                         })),
-                        error_message: if script_result.passed { 
-                            None 
-                        } else { 
-                            Some(script_result.message) 
+                        error_message: if script_result.passed {
+                            None
+                        } else {
+                            Some(script_result.message)
                         },
                     });
                 }
@@ -273,8 +279,8 @@ impl TestExecutor {
                     validation_results.push(ValidationResult {
                         pattern: JsonPathPattern {
                             key: format!("custom_script_{}", script.name),
-                            validation: PatternValidation::Expression { 
-                                expr: "custom_script".to_string() 
+                            validation: PatternValidation::Expression {
+                                expr: "custom_script".to_string(),
                             },
                             required: true,
                         },
@@ -290,7 +296,11 @@ impl TestExecutor {
     }
 
     /// Validate a JSON path pattern against the response
-    async fn validate_json_path_pattern(&self, pattern: &JsonPathPattern, response: &Value) -> Result<ValidationResult> {
+    async fn validate_json_path_pattern(
+        &self,
+        pattern: &JsonPathPattern,
+        response: &Value,
+    ) -> Result<ValidationResult> {
         // Extract value from JSON path
         let actual_value = self.extract_json_path_value(&pattern.key, response);
 
@@ -319,9 +329,14 @@ impl TestExecutor {
             }
             PatternValidation::Contains { values } => {
                 if let Some(actual_array) = actual_value.as_ref().and_then(|v| v.as_array()) {
-                    let passed = values.iter().all(|expected| actual_array.contains(expected));
+                    let passed = values
+                        .iter()
+                        .all(|expected| actual_array.contains(expected));
                     let error = if !passed {
-                        Some(format!("Array does not contain all expected values: {:?}", values))
+                        Some(format!(
+                            "Array does not contain all expected values: {:?}",
+                            values
+                        ))
                     } else {
                         None
                     };

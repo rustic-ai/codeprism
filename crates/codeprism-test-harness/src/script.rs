@@ -101,7 +101,7 @@ impl ScriptExecutor {
     /// Create a new script executor
     pub fn new(python_interpreter: Option<String>, sandbox_config: SandboxConfig) -> Self {
         let python_interpreter = python_interpreter.unwrap_or_else(|| "python3".to_string());
-        
+
         Self {
             python_interpreter,
             sandbox_config,
@@ -117,15 +117,17 @@ impl ScriptExecutor {
         input_data: &serde_json::Value,
     ) -> Result<ScriptResult, ScriptError> {
         let start_time = Instant::now();
-        
+
         debug!("Executing custom script: {}", script.name);
-        
+
         match script.language.as_str() {
             "python" | "python3" => {
-                self.execute_python_script(script, input_data, start_time).await
+                self.execute_python_script(script, input_data, start_time)
+                    .await
             }
             "bash" | "sh" => {
-                self.execute_bash_script(script, input_data, start_time).await
+                self.execute_bash_script(script, input_data, start_time)
+                    .await
             }
             _ => Err(ScriptError::ExecutionFailed {
                 message: format!("Unsupported script language: {}", script.language),
@@ -149,14 +151,16 @@ impl ScriptExecutor {
 
         // Create the Python script with built-in utilities
         let full_script = self.create_python_script_with_utils(script, input_data)?;
-        
+
         // Execute the script with sandboxing
-        let output = self.execute_sandboxed_command(
-            &self.python_interpreter,
-            &["-c", &full_script],
-            &script.env,
-            script.timeout_seconds,
-        ).await?;
+        let output = self
+            .execute_sandboxed_command(
+                &self.python_interpreter,
+                &["-c", &full_script],
+                &script.env,
+                script.timeout_seconds,
+            )
+            .await?;
 
         // Parse the script output
         self.parse_script_output(&output, start_time)
@@ -171,15 +175,20 @@ impl ScriptExecutor {
     ) -> Result<ScriptResult, ScriptError> {
         // For bash scripts, we pass the input data as JSON via environment variable
         let mut env = script.env.clone();
-        env.insert("INPUT_DATA".to_string(), serde_json::to_string(input_data).unwrap());
-        
+        env.insert(
+            "INPUT_DATA".to_string(),
+            serde_json::to_string(input_data).unwrap(),
+        );
+
         // Execute the script
-        let output = self.execute_sandboxed_command(
-            "bash",
-            &["-c", &script.content],
-            &env,
-            script.timeout_seconds,
-        ).await?;
+        let output = self
+            .execute_sandboxed_command(
+                "bash",
+                &["-c", &script.content],
+                &env,
+                script.timeout_seconds,
+            )
+            .await?;
 
         // Parse the script output
         self.parse_script_output(&output, start_time)
@@ -206,11 +215,10 @@ impl ScriptExecutor {
         input_data: &serde_json::Value,
     ) -> Result<String, ScriptError> {
         let builtin_code = self.builtin_utils.get_python_utils_code();
-        let input_json = serde_json::to_string(input_data).map_err(|e| {
-            ScriptError::ExecutionFailed {
+        let input_json =
+            serde_json::to_string(input_data).map_err(|e| ScriptError::ExecutionFailed {
                 message: format!("Failed to serialize input data: {}", e),
-            }
-        })?;
+            })?;
 
         let full_script = format!(
             r#"
@@ -266,7 +274,7 @@ print(json.dumps(result))
         // Add sandbox environment variables
         cmd.env("PYTHONDONTWRITEBYTECODE", "1");
         cmd.env("PYTHONUNBUFFERED", "1");
-        
+
         // Disable network access (best effort)
         if !self.sandbox_config.allow_network {
             cmd.env("no_proxy", "*");
@@ -280,24 +288,26 @@ print(json.dumps(result))
         })?;
 
         // Set up timeout
-        let execution_timeout = Duration::from_secs(timeout_seconds.max(self.sandbox_config.max_execution_time));
-        
-        let output = timeout(execution_timeout, async {
-            child.wait_with_output().await
-        })
-        .await
-        .map_err(|_| ScriptError::Timeout {
-            timeout_seconds: execution_timeout.as_secs(),
-        })?
-        .map_err(|e| ScriptError::IoError {
-            message: format!("Failed to get process output: {}", e),
-        })?;
+        let execution_timeout =
+            Duration::from_secs(timeout_seconds.max(self.sandbox_config.max_execution_time));
+
+        let output = timeout(execution_timeout, async { child.wait_with_output().await })
+            .await
+            .map_err(|_| ScriptError::Timeout {
+                timeout_seconds: execution_timeout.as_secs(),
+            })?
+            .map_err(|e| ScriptError::IoError {
+                message: format!("Failed to get process output: {}", e),
+            })?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
             return Err(ScriptError::ExecutionFailed {
-                message: format!("Command failed with exit code {}: {}", 
-                    output.status.code().unwrap_or(-1), stderr),
+                message: format!(
+                    "Command failed with exit code {}: {}",
+                    output.status.code().unwrap_or(-1),
+                    stderr
+                ),
             });
         }
 
@@ -306,31 +316,33 @@ print(json.dumps(result))
     }
 
     /// Parse script output into ScriptResult
-    fn parse_script_output(&self, output: &str, start_time: Instant) -> Result<ScriptResult, ScriptError> {
+    fn parse_script_output(
+        &self,
+        output: &str,
+        start_time: Instant,
+    ) -> Result<ScriptResult, ScriptError> {
         let execution_time_ms = start_time.elapsed().as_millis() as u64;
-        
+
         // Try to parse as JSON first
         if let Ok(json_result) = serde_json::from_str::<serde_json::Value>(output.trim()) {
             if let Some(obj) = json_result.as_object() {
-                let passed = obj.get("passed")
-                    .and_then(|v| v.as_bool())
-                    .unwrap_or(false);
-                
-                let message = obj.get("message")
+                let passed = obj.get("passed").and_then(|v| v.as_bool()).unwrap_or(false);
+
+                let message = obj
+                    .get("message")
                     .and_then(|v| v.as_str())
                     .unwrap_or("No message provided")
                     .to_string();
-                
-                let score = obj.get("score")
-                    .and_then(|v| v.as_f64());
-                
+
+                let score = obj.get("score").and_then(|v| v.as_f64());
+
                 let mut data = HashMap::new();
                 for (key, value) in obj {
                     if !["passed", "message", "score"].contains(&key.as_str()) {
                         data.insert(key.clone(), value.clone());
                     }
                 }
-                
+
                 return Ok(ScriptResult {
                     passed,
                     score,
@@ -341,11 +353,11 @@ print(json.dumps(result))
                 });
             }
         }
-        
+
         // If not JSON, treat as simple text output
         let output = output.trim();
         let passed = !output.contains("FAIL") && !output.contains("ERROR") && !output.is_empty();
-        
+
         Ok(ScriptResult {
             passed,
             score: None,
@@ -371,32 +383,33 @@ impl BuiltinValidationUtils {
     /// Create new built-in validation utilities
     pub fn new() -> Self {
         let mut security_patterns = HashMap::new();
-        
+
         // SQL Injection patterns
         security_patterns.insert(
             "sql_injection".to_string(),
             r"(?i)(union\s+select|drop\s+table|insert\s+into|delete\s+from|update\s+set|select\s+.*\s+from|;\s*drop|'\s*or\s*'1'\s*=\s*'1)".to_string(),
         );
-        
+
         // XSS patterns
         security_patterns.insert(
             "xss".to_string(),
-            r"(?i)(<script|javascript:|onload\s*=|onerror\s*=|onclick\s*=|<iframe|<object|<embed)".to_string(),
+            r"(?i)(<script|javascript:|onload\s*=|onerror\s*=|onclick\s*=|<iframe|<object|<embed)"
+                .to_string(),
         );
-        
+
         // Command injection patterns
         security_patterns.insert(
             "command_injection".to_string(),
             r"(?i)(;\s*rm\s|;\s*cat\s|;\s*ls\s|&&\s*rm\s|&&\s*cat\s|`\s*rm\s|`\s*cat\s|\|\s*rm\s|\|\s*cat\s)".to_string(),
         );
-        
+
         Self { security_patterns }
     }
 
     /// Get Python code for built-in validation utilities
     pub fn get_python_utils_code(&self) -> String {
         let security_patterns_json = serde_json::to_string(&self.security_patterns).unwrap();
-        
+
         format!(
             r#"
 # Built-in validation utilities for CodePrism Test Harness
@@ -534,7 +547,7 @@ mod tests {
             execution_time_ms: 150,
             memory_usage_mb: None,
         };
-        
+
         assert!(result.passed);
         assert_eq!(result.score, Some(0.95));
         assert_eq!(result.execution_time_ms, 150);
@@ -559,7 +572,7 @@ mod tests {
     async fn test_python_script_creation() {
         let config = SandboxConfig::default();
         let executor = ScriptExecutor::new(Some("python3".to_string()), config);
-        
+
         let script = CustomScript {
             name: "test_script".to_string(),
             language: "python".to_string(),
@@ -567,12 +580,14 @@ mod tests {
             env: HashMap::new(),
             timeout_seconds: 10,
         };
-        
+
         let input_data = json!({"test": "data"});
-        let full_script = executor.create_python_script_with_utils(&script, &input_data).unwrap();
-        
+        let full_script = executor
+            .create_python_script_with_utils(&script, &input_data)
+            .unwrap();
+
         assert!(full_script.contains("INPUT_DATA"));
         assert!(full_script.contains("result = {'passed': True, 'message': 'Test'}"));
         assert!(full_script.contains("validate_security_patterns"));
     }
-} 
+}

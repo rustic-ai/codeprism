@@ -24,7 +24,7 @@ pub use executor::TestExecutor;
 pub use prompts::{PromptTester, PromptValidator};
 pub use protocol::{JsonRpcMessage, McpCapabilities, McpClient, ProtocolValidator};
 pub use resources::{ResourceTester, ResourceValidator};
-pub use script::{ScriptExecutor, ScriptResult, ScriptError, BuiltinValidationUtils};
+pub use script::{BuiltinValidationUtils, ScriptError, ScriptExecutor, ScriptResult};
 pub use tools::{ToolTester, ToolValidator};
 pub use types::{TestCase, TestResult, TestSuite, TestSuiteResult};
 

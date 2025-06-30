@@ -157,7 +157,8 @@ impl Transport for StdioTransport {
             self.writer.write_all(b"\n").await?;
             self.writer.flush().await?;
             Ok::<(), TransportError>(())
-        }).await;
+        })
+        .await;
 
         match send_result {
             Ok(Ok(())) => {
@@ -189,7 +190,8 @@ impl Transport for StdioTransport {
             self.reader.read_line(&mut line).await?;
             let message: JsonRpcMessage = serde_json::from_str(&line)?;
             Ok::<JsonRpcMessage, TransportError>(message)
-        }).await;
+        })
+        .await;
 
         match receive_result {
             Ok(Ok(message)) => {
@@ -221,9 +223,15 @@ impl Transport for StdioTransport {
     fn connection_info(&self) -> HashMap<String, String> {
         let mut info = HashMap::new();
         info.insert("type".to_string(), "stdio".to_string());
-        info.insert("last_activity".to_string(), 
-            format!("{:.1}s ago", self.last_activity.elapsed().as_secs_f64()));
-        if let TransportConfig::Stdio { timeout, buffer_size } = &self.config {
+        info.insert(
+            "last_activity".to_string(),
+            format!("{:.1}s ago", self.last_activity.elapsed().as_secs_f64()),
+        );
+        if let TransportConfig::Stdio {
+            timeout,
+            buffer_size,
+        } = &self.config
+        {
             info.insert("timeout".to_string(), format!("{}s", timeout));
             info.insert("buffer_size".to_string(), buffer_size.to_string());
         }
@@ -263,9 +271,17 @@ impl HttpTransport {
     /// Create a new HTTP transport
     pub fn new(config: TransportConfig) -> Result<Self, TransportError> {
         let (base_url, timeout, connect_timeout, headers) = match &config {
-            TransportConfig::Http { base_url, timeout, connect_timeout, headers } => {
-                (base_url.clone(), *timeout, *connect_timeout, headers.clone())
-            }
+            TransportConfig::Http {
+                base_url,
+                timeout,
+                connect_timeout,
+                headers,
+            } => (
+                base_url.clone(),
+                *timeout,
+                *connect_timeout,
+                headers.clone(),
+            ),
             _ => {
                 return Err(TransportError::UnsupportedTransport {
                     transport_type: "Expected HTTP config".to_string(),
@@ -309,19 +325,25 @@ impl HttpTransport {
 
     /// Generate next request ID
     fn next_request_id(&self) -> u64 {
-        self.request_id.fetch_add(1, std::sync::atomic::Ordering::SeqCst)
+        self.request_id
+            .fetch_add(1, std::sync::atomic::Ordering::SeqCst)
     }
 
     /// Send a request and receive response in one operation (HTTP pattern)
-    pub async fn request_response(&mut self, message: JsonRpcMessage) -> Result<JsonRpcMessage, TransportError> {
+    pub async fn request_response(
+        &mut self,
+        message: JsonRpcMessage,
+    ) -> Result<JsonRpcMessage, TransportError> {
         // Send the message
         self.send_message(message).await?;
-        
+
         // Get the response
         if let Some(response) = self.pending_response.take() {
             Ok(response)
         } else {
-            Err(TransportError::ProtocolError("No response received".to_string()))
+            Err(TransportError::ProtocolError(
+                "No response received".to_string(),
+            ))
         }
     }
 }
@@ -331,14 +353,15 @@ impl Transport for HttpTransport {
     async fn send_message(&mut self, mut message: JsonRpcMessage) -> Result<(), TransportError> {
         // For HTTP, we need to ensure requests have IDs
         if message.is_request() && message.id.is_none() {
-            message.id = Some(serde_json::Value::Number(
-                serde_json::Number::from(self.next_request_id())
-            ));
+            message.id = Some(serde_json::Value::Number(serde_json::Number::from(
+                self.next_request_id(),
+            )));
         }
 
         let json_body = serde_json::to_string(&message)?;
-        
-        let response = self.client
+
+        let response = self
+            .client
             .post(&self.base_url)
             .body(json_body)
             .send()
@@ -351,7 +374,7 @@ impl Transport for HttpTransport {
                 let response_message: JsonRpcMessage = serde_json::from_str(&response_text)?;
                 self.pending_response = Some(response_message);
             }
-            
+
             self.last_activity = Instant::now();
             self.health = TransportHealth::Healthy;
             Ok(())
@@ -372,7 +395,7 @@ impl Transport for HttpTransport {
             Ok(response)
         } else {
             Err(TransportError::ProtocolError(
-                "No pending response - use send_message first".to_string()
+                "No pending response - use send_message first".to_string(),
             ))
         }
     }
@@ -390,7 +413,7 @@ impl Transport for HttpTransport {
                 self.health = TransportHealth::Failed;
             }
         }
-        
+
         self.health.clone()
     }
 
@@ -398,11 +421,21 @@ impl Transport for HttpTransport {
         let mut info = HashMap::new();
         info.insert("type".to_string(), "http".to_string());
         info.insert("base_url".to_string(), self.base_url.clone());
-        info.insert("last_activity".to_string(), 
-            format!("{:.1}s ago", self.last_activity.elapsed().as_secs_f64()));
-        if let TransportConfig::Http { timeout, connect_timeout, .. } = &self.config {
+        info.insert(
+            "last_activity".to_string(),
+            format!("{:.1}s ago", self.last_activity.elapsed().as_secs_f64()),
+        );
+        if let TransportConfig::Http {
+            timeout,
+            connect_timeout,
+            ..
+        } = &self.config
+        {
             info.insert("timeout".to_string(), format!("{}s", timeout));
-            info.insert("connect_timeout".to_string(), format!("{}s", connect_timeout));
+            info.insert(
+                "connect_timeout".to_string(),
+                format!("{}s", connect_timeout),
+            );
         }
         info
     }
@@ -440,9 +473,12 @@ impl SseTransport {
     /// Create a new SSE transport
     pub fn new(config: TransportConfig) -> Result<Self, TransportError> {
         let (sse_url, send_url, timeout) = match &config {
-            TransportConfig::Sse { sse_url, send_url, timeout, .. } => {
-                (sse_url.clone(), send_url.clone(), *timeout)
-            }
+            TransportConfig::Sse {
+                sse_url,
+                send_url,
+                timeout,
+                ..
+            } => (sse_url.clone(), send_url.clone(), *timeout),
             _ => {
                 return Err(TransportError::UnsupportedTransport {
                     transport_type: "Expected SSE config".to_string(),
@@ -467,7 +503,8 @@ impl SseTransport {
 
     /// Generate next request ID
     fn next_request_id(&self) -> u64 {
-        self.request_id.fetch_add(1, std::sync::atomic::Ordering::SeqCst)
+        self.request_id
+            .fetch_add(1, std::sync::atomic::Ordering::SeqCst)
     }
 }
 
@@ -476,14 +513,15 @@ impl Transport for SseTransport {
     async fn send_message(&mut self, mut message: JsonRpcMessage) -> Result<(), TransportError> {
         // Ensure requests have IDs
         if message.is_request() && message.id.is_none() {
-            message.id = Some(serde_json::Value::Number(
-                serde_json::Number::from(self.next_request_id())
-            ));
+            message.id = Some(serde_json::Value::Number(serde_json::Number::from(
+                self.next_request_id(),
+            )));
         }
 
         let json_body = serde_json::to_string(&message)?;
-        
-        let response = self.client
+
+        let response = self
+            .client
             .post(&self.send_url)
             .header("Content-Type", "application/json")
             .body(json_body)
@@ -538,11 +576,21 @@ impl Transport for SseTransport {
         info.insert("type".to_string(), "sse".to_string());
         info.insert("sse_url".to_string(), self.sse_url.clone());
         info.insert("send_url".to_string(), self.send_url.clone());
-        info.insert("last_activity".to_string(), 
-            format!("{:.1}s ago", self.last_activity.elapsed().as_secs_f64()));
-        if let TransportConfig::Sse { timeout, reconnect_interval, .. } = &self.config {
+        info.insert(
+            "last_activity".to_string(),
+            format!("{:.1}s ago", self.last_activity.elapsed().as_secs_f64()),
+        );
+        if let TransportConfig::Sse {
+            timeout,
+            reconnect_interval,
+            ..
+        } = &self.config
+        {
             info.insert("timeout".to_string(), format!("{}s", timeout));
-            info.insert("reconnect_interval".to_string(), format!("{}s", reconnect_interval));
+            info.insert(
+                "reconnect_interval".to_string(),
+                format!("{}s", reconnect_interval),
+            );
         }
         info
     }
@@ -572,11 +620,11 @@ impl TransportFactory {
                 let transport = SseTransport::new(config)?;
                 Ok(Box::new(transport))
             }
-            TransportConfig::Stdio { .. } => {
-                Err(TransportError::UnsupportedTransport {
-                    transport_type: "Stdio transport requires process handles - use ServerProcess::spawn".to_string(),
-                })
-            }
+            TransportConfig::Stdio { .. } => Err(TransportError::UnsupportedTransport {
+                transport_type:
+                    "Stdio transport requires process handles - use ServerProcess::spawn"
+                        .to_string(),
+            }),
         }
     }
 
@@ -658,9 +706,12 @@ mod tests {
 
         let transport = HttpTransport::new(config).unwrap();
         let info = transport.connection_info();
-        
+
         assert_eq!(info.get("type"), Some(&"http".to_string()));
-        assert_eq!(info.get("base_url"), Some(&"http://localhost:8080/mcp".to_string()));
+        assert_eq!(
+            info.get("base_url"),
+            Some(&"http://localhost:8080/mcp".to_string())
+        );
         assert!(info.contains_key("timeout"));
     }
 
@@ -675,9 +726,15 @@ mod tests {
 
         let transport = SseTransport::new(config).unwrap();
         let info = transport.connection_info();
-        
+
         assert_eq!(info.get("type"), Some(&"sse".to_string()));
-        assert_eq!(info.get("sse_url"), Some(&"http://localhost:8080/sse".to_string()));
-        assert_eq!(info.get("send_url"), Some(&"http://localhost:8080/send".to_string()));
+        assert_eq!(
+            info.get("sse_url"),
+            Some(&"http://localhost:8080/sse".to_string())
+        );
+        assert_eq!(
+            info.get("send_url"),
+            Some(&"http://localhost:8080/send".to_string())
+        );
     }
-} 
+}

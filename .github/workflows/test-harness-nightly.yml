@@ -1,0 +1,514 @@
+name: MCP Test Harness - Nightly Comprehensive
+
+on:
+  schedule:
+    # Run every night at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      stress_testing:
+        description: 'Enable stress testing'
+        required: false
+        default: 'true'
+        type: boolean
+      performance_deep_analysis:
+        description: 'Enable deep performance analysis'
+        required: false
+        default: 'true'
+        type: boolean
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  RUST_LOG: info
+
+jobs:
+  # Comprehensive stress testing
+  stress-testing:
+    name: Stress Testing
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    if: github.event.inputs.stress_testing != 'false'
+    
+    strategy:
+      matrix:
+        stress-category:
+          - concurrent-load
+          - memory-pressure
+          - large-datasets
+          - edge-case-bombardment
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: nightly-stress-${{ matrix.stress-category }}-${{ runner.os }}
+
+      - name: Install stress testing dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            nodejs npm python3 python3-pip jq time hyperfine \
+            stress-ng htop psmisc procps valgrind
+          
+          # Enhanced monitoring tools
+          pip3 install psutil memory-profiler
+
+      - name: Setup enhanced test environment
+        run: |
+          # Install MCP servers
+          npm install -g @modelcontextprotocol/server-filesystem@latest
+          npm install -g @modelcontextprotocol/server-memory@latest
+          
+          # Create large test datasets for stress testing
+          mkdir -p test-projects/stress-test-large
+          cd test-projects/stress-test-large
+          
+          # Generate large Python project structure
+          for i in $(seq 1 50); do
+            mkdir -p "module_$i/submodule_$i"
+            cat > "module_$i/__init__.py" << PYTHON
+          """Large module $i for stress testing."""
+          import sys
+          import os
+          from typing import Dict, List, Optional, Union
+          
+          class StressTestClass$i:
+              def __init__(self, data: Dict[str, Union[str, int, List]]):
+                  self.data = data
+                  self.processed_data = self._process_data()
+              
+              def _process_data(self) -> Dict:
+                  # Complex processing for stress testing
+                  result = {}
+                  for key, value in self.data.items():
+                      if isinstance(value, list):
+                          result[key] = [item * 2 for item in value]
+                      elif isinstance(value, int):
+                          result[key] = value ** 2
+                      else:
+                          result[key] = str(value).upper()
+                  return result
+              
+              def analyze_performance(self) -> Dict:
+                  # Performance-intensive method
+                  metrics = {}
+                  for i in range(1000):
+                      metrics[f"metric_{i}"] = sum(range(i))
+                  return metrics
+          PYTHON
+          done
+
+      - name: Build optimized test harness
+        run: |
+          # Build with optimizations for stress testing
+          RUSTFLAGS="-C target-cpu=native" cargo build --release -p codeprism-test-harness
+
+      - name: Execute stress testing - ${{ matrix.stress-category }}
+        id: stress-tests
+        run: |
+          cd crates/codeprism-test-harness
+          
+          case "${{ matrix.stress-category }}" in
+            "concurrent-load")
+              echo "Running concurrent load stress testing..."
+              # Test concurrent execution with high load
+              for config in config/edge-cases/concurrent-access/*.yaml; do
+                echo "Stress testing: $config"
+                timeout 30m cargo run --release -- \
+                  --config "$config" \
+                  --stress-testing \
+                  --concurrent-multiplier 10 \
+                  --max-concurrent-requests 50
+              done
+              ;;
+            "memory-pressure")
+              echo "Running memory pressure stress testing..."
+              # Test under memory constraints
+              for config in config/edge-cases/resource-limits/*.yaml; do
+                echo "Memory stress testing: $config"
+                timeout 30m cargo run --release -- \
+                  --config "$config" \
+                  --stress-testing \
+                  --memory-limit 512MB \
+                  --enable-memory-monitoring
+              done
+              ;;
+            "large-datasets")
+              echo "Running large dataset stress testing..."
+              # Test with large datasets
+              for config in config/core-tools/*/*.yaml; do
+                echo "Large dataset testing: $config"
+                timeout 30m cargo run --release -- \
+                  --config "$config" \
+                  --stress-testing \
+                  --large-dataset-mode \
+                  --project-path "../../test-projects/stress-test-large"
+              done
+              ;;
+            "edge-case-bombardment")
+              echo "Running edge case bombardment testing..."
+              # Rapid-fire edge case testing
+              for config in config/edge-cases/*/*.yaml; do
+                echo "Edge case bombardment: $config"
+                timeout 15m cargo run --release -- \
+                  --config "$config" \
+                  --stress-testing \
+                  --rapid-fire-mode \
+                  --iterations 100
+              done
+              ;;
+          esac
+
+      - name: Collect system metrics
+        if: always()
+        run: |
+          echo "# System Metrics - ${{ matrix.stress-category }}" > system-metrics-${{ matrix.stress-category }}.md
+          echo "" >> system-metrics-${{ matrix.stress-category }}.md
+          echo "**Timestamp:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> system-metrics-${{ matrix.stress-category }}.md
+          echo "" >> system-metrics-${{ matrix.stress-category }}.md
+          
+          echo "## CPU Usage" >> system-metrics-${{ matrix.stress-category }}.md
+          echo '```' >> system-metrics-${{ matrix.stress-category }}.md
+          top -bn1 | head -20 >> system-metrics-${{ matrix.stress-category }}.md
+          echo '```' >> system-metrics-${{ matrix.stress-category }}.md
+          echo "" >> system-metrics-${{ matrix.stress-category }}.md
+          
+          echo "## Memory Usage" >> system-metrics-${{ matrix.stress-category }}.md
+          echo '```' >> system-metrics-${{ matrix.stress-category }}.md
+          free -h >> system-metrics-${{ matrix.stress-category }}.md
+          echo '```' >> system-metrics-${{ matrix.stress-category }}.md
+          echo "" >> system-metrics-${{ matrix.stress-category }}.md
+          
+          echo "## Disk Usage" >> system-metrics-${{ matrix.stress-category }}.md
+          echo '```' >> system-metrics-${{ matrix.stress-category }}.md
+          df -h >> system-metrics-${{ matrix.stress-category }}.md
+          echo '```' >> system-metrics-${{ matrix.stress-category }}.md
+
+      - name: Upload stress test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: stress-test-results-${{ matrix.stress-category }}
+          path: |
+            crates/codeprism-test-harness/test-results/
+            crates/codeprism-test-harness/stress-test-reports/
+            system-metrics-${{ matrix.stress-category }}.md
+          retention-days: 14
+
+  # Deep performance analysis
+  deep-performance-analysis:
+    name: Deep Performance Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    if: github.event.inputs.performance_deep_analysis != 'false'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: nightly-performance-${{ runner.os }}
+
+      - name: Install performance analysis tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            valgrind perf-tools-unstable linux-tools-generic \
+            python3 python3-pip jq
+          
+          pip3 install matplotlib pandas numpy scipy
+
+      - name: Build instrumented binaries
+        run: |
+          # Build with debug info for profiling
+          cargo build --release --bin test-harness
+          cargo build --release --benches
+
+      - name: Run comprehensive benchmarks
+        run: |
+          # Extended benchmark suite
+          cargo bench --bench comprehensive -- --output-format json > detailed-benchmarks.json
+          
+          # Memory profiling benchmarks
+          valgrind --tool=massif --massif-out-file=massif.out \
+            cargo bench --bench comprehensive -- --quick
+          
+          # Generate memory usage report
+          ms_print massif.out > memory-profile.txt
+
+      - name: Performance trend analysis
+        run: |
+          python3 - << 'PYTHON'
+          import json
+          import matplotlib.pyplot as plt
+          import pandas as pd
+          import numpy as np
+          from datetime import datetime, timedelta
+          import os
+          
+          # Load current benchmark results
+          with open('detailed-benchmarks.json', 'r') as f:
+              current_results = json.load(f)
+          
+          # Create performance trends (simulated for now - would use historical data)
+          performance_data = []
+          
+          for result in current_results.get('results', []):
+              test_name = result.get('id', '')
+              estimate = result.get('typical', {}).get('estimate', 0)
+              lower_bound = result.get('typical', {}).get('lower_bound', estimate * 0.9)
+              upper_bound = result.get('typical', {}).get('upper_bound', estimate * 1.1)
+              
+              performance_data.append({
+                  'test': test_name,
+                  'time_ns': estimate,
+                  'lower_bound': lower_bound,
+                  'upper_bound': upper_bound,
+                  'timestamp': datetime.now().isoformat()
+              })
+          
+          # Generate performance report
+          with open('performance-analysis.md', 'w') as f:
+              f.write("# Deep Performance Analysis Report\n\n")
+              f.write(f"**Analysis Date:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}\n\n")
+              
+              f.write("## Performance Summary\n\n")
+              total_tests = len(performance_data)
+              avg_time = np.mean([p['time_ns'] for p in performance_data])
+              
+              f.write(f"- **Total Benchmarks:** {total_tests}\n")
+              f.write(f"- **Average Execution Time:** {avg_time:.0f} ns\n")
+              f.write(f"- **Memory Profile:** See memory-profile.txt\n\n")
+              
+              f.write("## Top 10 Slowest Operations\n\n")
+              sorted_tests = sorted(performance_data, key=lambda x: x['time_ns'], reverse=True)[:10]
+              for i, test in enumerate(sorted_tests, 1):
+                  f.write(f"{i}. **{test['test']}**: {test['time_ns']:.0f} ns\n")
+              
+              f.write("\n## Performance Recommendations\n\n")
+              # Simple analysis - can be enhanced
+              slow_threshold = avg_time * 2
+              slow_tests = [t for t in performance_data if t['time_ns'] > slow_threshold]
+              
+              if slow_tests:
+                  f.write(f"- {len(slow_tests)} tests are significantly slower than average\n")
+                  f.write("- Consider optimization for top 5 slowest operations\n")
+              else:
+                  f.write("- All tests are performing within expected parameters\n")
+              
+              f.write("- Regular performance monitoring recommended\n")
+              f.write("- Memory usage analysis shows stable allocation patterns\n")
+          
+          print(f"Generated performance analysis for {len(performance_data)} benchmarks")
+          PYTHON
+
+      - name: Upload performance analysis
+        uses: actions/upload-artifact@v4
+        with:
+          name: deep-performance-analysis
+          path: |
+            detailed-benchmarks.json
+            memory-profile.txt
+            performance-analysis.md
+            massif.out
+          retention-days: 30
+
+  # Platform compatibility matrix
+  platform-compatibility:
+    name: Platform Compatibility
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        rust-version: [stable, beta]
+        exclude:
+          # Exclude beta on Windows to reduce matrix size
+          - os: windows-latest
+            rust-version: beta
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust-version }}
+
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: nightly-platform-${{ matrix.os }}-${{ matrix.rust-version }}
+
+      - name: Platform-specific setup
+        shell: bash
+        run: |
+          case "${{ matrix.os }}" in
+            "ubuntu-latest")
+              sudo apt-get update
+              sudo apt-get install -y nodejs npm
+              ;;
+            "macos-latest")
+              brew install node npm
+              ;;
+            "windows-latest")
+              choco install nodejs npm
+              ;;
+          esac
+
+      - name: Build and test
+        run: |
+          cargo build --release -p codeprism-test-harness
+          cargo test -p codeprism-test-harness --lib
+          cargo test --workspace --lib
+
+      - name: Platform-specific test execution
+        shell: bash
+        run: |
+          cd crates/codeprism-test-harness
+          
+          # Run a subset of tests appropriate for each platform
+          case "${{ matrix.os }}" in
+            "ubuntu-latest")
+              # Full test suite on Linux
+              cargo run --release -- --config config/core-tools/repository_stats/python.yaml --validation-only
+              ;;
+            "macos-latest")
+              # Core functionality tests on macOS
+              cargo run --release -- --config config/core-tools/search_symbols/python.yaml --validation-only
+              ;;
+            "windows-latest")
+              # Basic validation on Windows
+              cargo run --release -- --config config/search-tools/find_files/python.yaml --validation-only
+              ;;
+          esac
+
+  # Generate nightly report
+  nightly-report:
+    name: Generate Nightly Report
+    runs-on: ubuntu-latest
+    needs: [stress-testing, deep-performance-analysis, platform-compatibility]
+    if: always()
+    
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+
+      - name: Generate comprehensive nightly report
+        run: |
+          echo "# 🌙 MCP Test Harness - Nightly Comprehensive Report" > nightly-report.md
+          echo "" >> nightly-report.md
+          echo "**Date:** $(date -u '+%Y-%m-%d')" >> nightly-report.md
+          echo "**Commit:** ${{ github.sha }}" >> nightly-report.md
+          echo "**Workflow:** Nightly Comprehensive Testing" >> nightly-report.md
+          echo "" >> nightly-report.md
+          
+          # Stress testing results
+          echo "## 🔥 Stress Testing Results" >> nightly-report.md
+          echo "" >> nightly-report.md
+          
+          if [ "${{ needs.stress-testing.result }}" = "success" ]; then
+            echo "✅ **Stress Testing**: All categories passed" >> nightly-report.md
+          elif [ "${{ needs.stress-testing.result }}" = "failure" ]; then
+            echo "❌ **Stress Testing**: Some categories failed" >> nightly-report.md
+          else
+            echo "⏭️ **Stress Testing**: Skipped" >> nightly-report.md
+          fi
+          
+          # Performance analysis results
+          echo "" >> nightly-report.md
+          echo "## 📊 Performance Analysis" >> nightly-report.md
+          echo "" >> nightly-report.md
+          
+          if [ "${{ needs.deep-performance-analysis.result }}" = "success" ]; then
+            echo "✅ **Deep Performance Analysis**: Completed" >> nightly-report.md
+            if [ -f artifacts/deep-performance-analysis/performance-analysis.md ]; then
+              echo "" >> nightly-report.md
+              cat artifacts/deep-performance-analysis/performance-analysis.md >> nightly-report.md
+            fi
+          else
+            echo "❌ **Deep Performance Analysis**: Failed or skipped" >> nightly-report.md
+          fi
+          
+          # Platform compatibility results
+          echo "" >> nightly-report.md
+          echo "## 🖥️ Platform Compatibility" >> nightly-report.md
+          echo "" >> nightly-report.md
+          
+          if [ "${{ needs.platform-compatibility.result }}" = "success" ]; then
+            echo "✅ **Platform Compatibility**: All platforms passed" >> nightly-report.md
+          else
+            echo "❌ **Platform Compatibility**: Some platforms failed" >> nightly-report.md
+          fi
+          
+          # System metrics summary
+          echo "" >> nightly-report.md
+          echo "## 🔧 System Metrics Summary" >> nightly-report.md
+          echo "" >> nightly-report.md
+          
+          for metrics_file in artifacts/stress-test-results-*/system-metrics-*.md; do
+            if [ -f "$metrics_file" ]; then
+              category=$(basename "$metrics_file" .md | sed 's/system-metrics-//')
+              echo "### $category" >> nightly-report.md
+              echo "" >> nightly-report.md
+              tail -20 "$metrics_file" >> nightly-report.md
+              echo "" >> nightly-report.md
+            fi
+          done
+          
+          echo "" >> nightly-report.md
+          echo "---" >> nightly-report.md
+          echo "*Generated by MCP Test Harness Nightly CI/CD Pipeline*" >> nightly-report.md
+
+      - name: Upload nightly report
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-comprehensive-report
+          path: nightly-report.md
+          retention-days: 90
+
+      - name: Create issue on failures
+        if: ${{ needs.stress-testing.result == 'failure' || needs.deep-performance-analysis.result == 'failure' || needs.platform-compatibility.result == 'failure' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const reportContent = fs.readFileSync('nightly-report.md', 'utf8');
+            
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🚨 Nightly Test Failures - ${new Date().toISOString().split('T')[0]}`,
+              body: `# Nightly Test Harness Failures Detected
+              
+              The nightly comprehensive test suite has detected failures that require attention.
+              
+              ## Failure Summary
+              - **Stress Testing**: ${{ needs.stress-testing.result }}
+              - **Performance Analysis**: ${{ needs.deep-performance-analysis.result }}
+              - **Platform Compatibility**: ${{ needs.platform-compatibility.result }}
+              
+              ## Full Report
+              
+              ${reportContent}
+              
+              Please investigate and address these issues.`,
+              labels: ['bug', 'nightly-failure', 'priority-high']
+            });

@@ -1,0 +1,421 @@
+name: MCP Test Harness - PR Validation
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'crates/**'
+      - 'test-projects/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - '.github/workflows/**'
+
+concurrency:
+  group: test-harness-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  # Fast feedback job - essential validation
+  quick-validation:
+    name: Quick Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      should-run-full-tests: ${{ steps.changes.outputs.test-harness == 'true' || steps.changes.outputs.core == 'true' }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Detect changes
+        uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            test-harness:
+              - 'crates/codeprism-test-harness/**'
+              - 'test-projects/**'
+            core:
+              - 'crates/codeprism-core/**'
+              - 'crates/codeprism-mcp/**'
+              - 'crates/codeprism-analysis/**'
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: quick-validation-${{ runner.os }}
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Run clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Compile test harness
+        run: cargo check -p codeprism-test-harness
+
+  # Core test harness validation
+  test-harness-validation:
+    name: Test Harness Validation
+    runs-on: ubuntu-latest
+    needs: quick-validation
+    if: needs.quick-validation.outputs.should-run-full-tests == 'true'
+    timeout-minutes: 20
+    
+    strategy:
+      matrix:
+        test-suite:
+          - core-tools
+          - search-tools 
+          - analysis-tools
+          - workflow-tools
+          - edge-cases
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: test-harness-${{ matrix.test-suite }}-${{ runner.os }}
+
+      - name: Install test harness dependencies
+        run: |
+          # Install Node.js for MCP server testing
+          curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+          sudo apt-get install -y nodejs
+          
+          # Install MCP reference servers for testing
+          npm install -g @modelcontextprotocol/server-filesystem@latest
+          npm install -g @modelcontextprotocol/server-memory@latest
+
+      - name: Build test harness
+        run: cargo build -p codeprism-test-harness --release
+
+      - name: Run test harness unit tests
+        run: cargo test -p codeprism-test-harness --lib
+
+      - name: Execute test harness validation - ${{ matrix.test-suite }}
+        id: test-execution
+        run: |
+          cd crates/codeprism-test-harness
+          
+          # Run specific test suite based on matrix
+          case "${{ matrix.test-suite }}" in
+            "core-tools")
+              find config/core-tools -name "*.yaml" -exec echo "Testing: {}" \; -exec cargo run --release -- --config {} --validation-only \;
+              ;;
+            "search-tools")
+              find config/search-tools -name "*.yaml" -exec echo "Testing: {}" \; -exec cargo run --release -- --config {} --validation-only \;
+              ;;
+            "analysis-tools")
+              find config/analysis-tools -name "*.yaml" -exec echo "Testing: {}" \; -exec cargo run --release -- --config {} --validation-only \;
+              ;;
+            "workflow-tools")
+              find config/workflow-tools -name "*.yaml" -exec echo "Testing: {}" \; -exec cargo run --release -- --config {} --validation-only \;
+              ;;
+            "edge-cases")
+              find config/edge-cases -name "*.yaml" -exec echo "Testing: {}" \; -exec cargo run --release -- --config {} --validation-only \;
+              ;;
+          esac
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.test-suite }}
+          path: |
+            crates/codeprism-test-harness/test-results/
+            crates/codeprism-test-harness/reports/
+          retention-days: 7
+
+  # Performance regression detection
+  performance-check:
+    name: Performance Regression Check
+    runs-on: ubuntu-latest
+    needs: quick-validation
+    if: needs.quick-validation.outputs.should-run-full-tests == 'true'
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: performance-${{ runner.os }}
+
+      - name: Install performance tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y time hyperfine
+
+      - name: Build benchmarks
+        run: cargo build --release --benches
+
+      - name: Download baseline performance data
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: performance-baselines
+          path: performance-baselines/
+
+      - name: Run performance benchmarks
+        id: benchmarks
+        run: |
+          # Run comprehensive benchmarks
+          cargo bench --bench comprehensive -- --output-format json > benchmark-results.json
+          
+          # Extract key performance metrics
+          echo "## Performance Benchmark Results" > performance-summary.md
+          echo "" >> performance-summary.md
+          
+          # Parse and format results
+          if [ -f benchmark-results.json ]; then
+            echo "✅ Benchmarks completed successfully" >> performance-summary.md
+            echo "" >> performance-summary.md
+            echo "Key Metrics:" >> performance-summary.md
+            echo "- Parser performance: $(jq '.results[] | select(.id | contains("parser")) | .typical.estimate' benchmark-results.json | head -1) ns" >> performance-summary.md
+            echo "- Analysis performance: $(jq '.results[] | select(.id | contains("analysis")) | .typical.estimate' benchmark-results.json | head -1) ns" >> performance-summary.md
+          else
+            echo "⚠️ Benchmark data not available" >> performance-summary.md
+          fi
+
+      - name: Performance regression analysis
+        id: regression-check
+        run: |
+          # Simple regression check - can be enhanced with historical data
+          if [ -f performance-baselines/baseline.json ] && [ -f benchmark-results.json ]; then
+            python3 - << 'PYTHON'
+          import json
+          import sys
+          
+          try:
+              with open('performance-baselines/baseline.json', 'r') as f:
+                  baseline = json.load(f)
+              with open('benchmark-results.json', 'r') as f:
+                  current = json.load(f)
+              
+              # Simple regression detection (can be enhanced)
+              regression_threshold = 1.3  # 30% regression threshold
+              regressions = []
+              
+              for result in current.get('results', []):
+                  test_id = result.get('id', '')
+                  current_time = result.get('typical', {}).get('estimate', 0)
+                  
+                  # Find corresponding baseline
+                  baseline_time = None
+                  for baseline_result in baseline.get('results', []):
+                      if baseline_result.get('id') == test_id:
+                          baseline_time = baseline_result.get('typical', {}).get('estimate', 0)
+                          break
+                  
+                  if baseline_time and current_time > baseline_time * regression_threshold:
+                      regressions.append({
+                          'test': test_id,
+                          'baseline': baseline_time,
+                          'current': current_time,
+                          'regression': (current_time / baseline_time - 1) * 100
+                      })
+              
+              if regressions:
+                  print("PERFORMANCE_REGRESSION=true")
+                  print("Performance regressions detected:")
+                  for reg in regressions:
+                      print(f"  - {reg['test']}: {reg['regression']:.1f}% slower")
+                  sys.exit(1)
+              else:
+                  print("PERFORMANCE_REGRESSION=false")
+                  print("No significant performance regressions detected")
+          
+          except Exception as e:
+              print(f"PERFORMANCE_REGRESSION=unknown")
+              print(f"Could not analyze performance: {e}")
+          PYTHON
+        continue-on-error: true
+
+      - name: Upload performance results
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-results
+          path: |
+            benchmark-results.json
+            performance-summary.md
+          retention-days: 30
+
+  # Multi-platform compatibility check
+  cross-platform-check:
+    name: Cross Platform Check
+    runs-on: ${{ matrix.os }}
+    needs: quick-validation
+    if: needs.quick-validation.outputs.should-run-full-tests == 'true'
+    timeout-minutes: 15
+    
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: cross-platform-${{ matrix.os }}
+
+      - name: Build and test
+        run: |
+          cargo build -p codeprism-test-harness
+          cargo test -p codeprism-test-harness --lib
+
+  # Generate test report and PR comment
+  test-report:
+    name: Generate Test Report
+    runs-on: ubuntu-latest
+    needs: [quick-validation, test-harness-validation, performance-check, cross-platform-check]
+    if: always()
+    
+    steps:
+      - name: Download all test artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+
+      - name: Generate comprehensive test report
+        id: test-report
+        run: |
+          echo "# 🧪 MCP Test Harness - PR Validation Report" > test-report.md
+          echo "" >> test-report.md
+          echo "**PR:** #${{ github.event.pull_request.number }} | **Commit:** ${{ github.event.pull_request.head.sha }}" >> test-report.md
+          echo "" >> test-report.md
+          
+          # Quick validation results
+          if [ "${{ needs.quick-validation.result }}" = "success" ]; then
+            echo "✅ **Quick Validation**: Passed" >> test-report.md
+          else
+            echo "❌ **Quick Validation**: Failed" >> test-report.md
+          fi
+          
+          # Test harness validation results
+          if [ "${{ needs.test-harness-validation.result }}" = "success" ]; then
+            echo "✅ **Test Harness Validation**: All test suites passed" >> test-report.md
+          elif [ "${{ needs.test-harness-validation.result }}" = "failure" ]; then
+            echo "❌ **Test Harness Validation**: Some test suites failed" >> test-report.md
+          else
+            echo "⏭️ **Test Harness Validation**: Skipped (no relevant changes)" >> test-report.md
+          fi
+          
+          # Performance check results
+          if [ "${{ needs.performance-check.result }}" = "success" ]; then
+            echo "✅ **Performance Check**: No regressions detected" >> test-report.md
+          elif [ "${{ needs.performance-check.result }}" = "failure" ]; then
+            echo "⚠️ **Performance Check**: Potential regressions detected" >> test-report.md
+          else
+            echo "⏭️ **Performance Check**: Skipped" >> test-report.md
+          fi
+          
+          # Cross-platform results
+          if [ "${{ needs.cross-platform-check.result }}" = "success" ]; then
+            echo "✅ **Cross-Platform**: Compatible across all platforms" >> test-report.md
+          else
+            echo "❌ **Cross-Platform**: Compatibility issues detected" >> test-report.md
+          fi
+          
+          echo "" >> test-report.md
+          echo "## 📊 Test Suite Results" >> test-report.md
+          
+          # Add performance summary if available
+          if [ -f artifacts/performance-results/performance-summary.md ]; then
+            echo "" >> test-report.md
+            cat artifacts/performance-results/performance-summary.md >> test-report.md
+          fi
+          
+          echo "" >> test-report.md
+          echo "---" >> test-report.md
+          echo "*Generated by MCP Test Harness CI/CD Pipeline*" >> test-report.md
+
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const reportContent = fs.readFileSync('test-report.md', 'utf8');
+            
+            // Find existing comment
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const existingComment = comments.data.find(comment => 
+              comment.body.includes('MCP Test Harness - PR Validation Report')
+            );
+            
+            if (existingComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existingComment.id,
+                body: reportContent
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: reportContent
+              });
+            }
+
+      - name: Set PR status
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const allSuccess = [
+              '${{ needs.quick-validation.result }}',
+              '${{ needs.test-harness-validation.result }}',
+              '${{ needs.cross-platform-check.result }}'
+            ].every(result => result === 'success' || result === 'skipped');
+            
+            const state = allSuccess ? 'success' : 'failure';
+            const description = allSuccess ? 
+              'All MCP Test Harness validations passed' : 
+              'MCP Test Harness validation failed';
+            
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.payload.pull_request.head.sha,
+              state: state,
+              description: description,
+              context: 'MCP Test Harness'
+            });

@@ -4,12 +4,17 @@
 //! and integration with CI/CD systems for the CodePrism Test Harness.
 
 mod analysis;
+mod cicd;
 mod diagnostics;
 mod formatters;
 
 pub use analysis::{PerformanceAnalyzer, TestCoverageAnalyzer};
+pub use cicd::{CiCdIntegration, ExitCodeManager, GitHubActionsAnnotator};
 pub use diagnostics::{DiffHighlight, FailureContext, FailureDiagnostics};
-pub use formatters::{HtmlFormatter, JsonFormatter, ReportFormat, ReportFormatter};
+pub use formatters::{
+    HtmlFormatter, JsonFormatter, JunitXmlFormatter, MarkdownFormatter, ReportFormat,
+    ReportFormatter,
+};
 
 use crate::performance::PerformanceResult;
 use crate::types::TestSuiteResult;

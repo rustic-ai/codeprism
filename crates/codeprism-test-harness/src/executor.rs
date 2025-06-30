@@ -2,7 +2,7 @@
 
 use crate::config::TestConfig;
 use crate::performance::{PerformanceConfig, PerformanceMonitor};
-use crate::reporting::{ReportFormat, ReportGenerator};
+use crate::reporting::{CiCdIntegration, ReportFormat, ReportGenerator};
 use crate::script::{SandboxConfig, ScriptExecutor};
 use crate::types::{
     JsonPathPattern, MemoryStats, PatternValidation, ResponseTimePercentiles, TestCase,
@@ -549,17 +549,23 @@ impl TestExecutor {
         }
     }
 
-    /// Generate comprehensive test report
+    /// Generate comprehensive test report with CI/CD integration
     pub async fn generate_report(
         &self,
         test_results: &[TestSuiteResult],
         format: ReportFormat,
         output_path: Option<PathBuf>,
-    ) -> Result<crate::reporting::Report> {
+    ) -> Result<(crate::reporting::Report, i32)> {
         let report_generator = ReportGenerator::new();
-        report_generator
+        let report = report_generator
             .generate_report(test_results, format, output_path)
-            .await
+            .await?;
+
+        // Integrate with CI/CD systems for enhanced error reporting
+        let cicd_integration = CiCdIntegration::new();
+        let exit_code = cicd_integration.process_report(&report).await?;
+
+        Ok((report, exit_code))
     }
 
     /// Generate multiple report formats at once

@@ -1,13 +1,12 @@
 //! MCP protocol implementation for communication with servers
 
+use crate::transport::Transport;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use std::process::Stdio;
 use std::time::Duration;
 use thiserror::Error;
-use tokio::process::{Child, Command};
-use tracing::{debug, error, info, warn};
+use tracing::{debug, error, warn};
 
 /// MCP protocol error types
 #[derive(Debug, Error)]
@@ -22,6 +21,8 @@ pub enum McpError {
     JsonRpc { code: i32, message: String },
     #[error("Server process error: {0}")]
     Process(String),
+    #[error("Transport error: {0}")]
+    Transport(String),
     #[error("Serialization error: {0}")]
     Serialization(String),
 }
@@ -52,88 +53,39 @@ pub struct JsonRpcError {
     pub data: Option<Value>,
 }
 
-/// MCP server process management
-#[derive(Debug)]
-pub struct McpServerProcess {
-    process: Option<Child>,
-    command: String,
-    args: Vec<String>,
-    working_dir: Option<String>,
-}
-
-impl McpServerProcess {
-    pub fn new(command: String, args: Vec<String>, working_dir: Option<String>) -> Self {
-        Self {
-            process: None,
-            command,
-            args,
-            working_dir,
-        }
-    }
-
-    pub async fn start(&mut self) -> Result<(), McpError> {
-        info!("Starting MCP server: {} {:?}", self.command, self.args);
-
-        let mut command = Command::new(&self.command);
-        command
-            .args(&self.args)
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped());
-
-        if let Some(ref dir) = self.working_dir {
-            command.current_dir(dir);
-        }
-
-        let child = command
-            .spawn()
-            .map_err(|e| McpError::Process(format!("Failed to start server: {}", e)))?;
-
-        self.process = Some(child);
-        Ok(())
-    }
-
-    pub async fn stop(&mut self) -> Result<(), McpError> {
-        if let Some(mut process) = self.process.take() {
-            info!("Stopping MCP server process");
-
-            // Try graceful shutdown first
-            if let Err(e) = process.kill().await {
-                warn!("Failed to kill server process: {}", e);
-            }
-
-            match process.wait().await {
-                Ok(status) => {
-                    info!("Server process exited with status: {}", status);
-                }
-                Err(e) => {
-                    error!("Error waiting for server process: {}", e);
-                }
-            }
-        }
-        Ok(())
-    }
-
-    pub fn is_running(&self) -> bool {
-        self.process.is_some()
-    }
-}
-
 /// Core MCP client functionality
-#[derive(Debug)]
 pub struct McpClient {
-    server_process: Option<McpServerProcess>,
     request_id_counter: u64,
     timeout_duration: Duration,
+    transport: Option<Box<dyn Transport>>,
+}
+
+impl std::fmt::Debug for McpClient {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("McpClient")
+            .field("request_id_counter", &self.request_id_counter)
+            .field("timeout_duration", &self.timeout_duration)
+            .field("transport", &self.transport.as_ref().map(|_| "Transport"))
+            .finish()
+    }
 }
 
 impl McpClient {
     /// Create a new MCP client
     pub fn new() -> Self {
         Self {
-            server_process: None,
             request_id_counter: 0,
             timeout_duration: Duration::from_secs(30),
+            transport: None,
+        }
+    }
+
+    /// Create a new MCP client with a specific transport
+    pub fn with_transport(transport: Box<dyn Transport>) -> Self {
+        Self {
+            request_id_counter: 0,
+            timeout_duration: Duration::from_secs(30),
+            transport: Some(transport),
         }
     }
 
@@ -142,23 +94,38 @@ impl McpClient {
         self.timeout_duration = duration;
     }
 
-    /// Start MCP server with given command
-    pub async fn start_server(
+    /// Connect to an MCP server using stdio transport
+    pub async fn connect_stdio(
         &mut self,
         command: String,
         args: Vec<String>,
         working_dir: Option<String>,
     ) -> Result<(), McpError> {
-        let mut server_process = McpServerProcess::new(command, args, working_dir);
-        server_process.start().await?;
-        self.server_process = Some(server_process);
+        // Create stdio transport with server configuration
+        let mut transport = crate::transport::stdio::StdioTransport::new().with_server_config(
+            command,
+            args,
+            Default::default(),
+            working_dir,
+        );
+
+        // Connect to the server
+        transport
+            .connect()
+            .await
+            .map_err(|e| McpError::Transport(format!("Failed to connect: {}", e)))?;
+
+        self.transport = Some(Box::new(transport));
         Ok(())
     }
 
-    /// Stop the MCP server
-    pub async fn stop_server(&mut self) -> Result<(), McpError> {
-        if let Some(mut server) = self.server_process.take() {
-            server.stop().await?;
+    /// Disconnect from the MCP server
+    pub async fn disconnect(&mut self) -> Result<(), McpError> {
+        if let Some(mut transport) = self.transport.take() {
+            transport
+                .disconnect()
+                .await
+                .map_err(|e| McpError::Transport(format!("Failed to disconnect: {}", e)))?;
         }
         Ok(())
     }
@@ -207,14 +174,31 @@ impl McpClient {
     ) -> Result<JsonRpcResponse, McpError> {
         debug!("Sending request: {}", request.method);
 
-        // Serialize request for future use
-        let _request_json = serde_json::to_string(&request)
+        let transport = self.transport.as_mut().ok_or_else(|| {
+            McpError::Connection("No transport available - call connect_stdio first".to_string())
+        })?;
+
+        // Serialize request to JSON
+        let request_json = serde_json::to_value(&request)
             .map_err(|e| McpError::Serialization(format!("Failed to serialize request: {}", e)))?;
 
-        // NOTE: Simulate a response based on the request during development
-        // FUTURE: Implement actual stdio communication with server process (tracked in #125)
-        let response = self.simulate_server_response(&request).await?;
+        // Send request via transport
+        transport
+            .send(request_json)
+            .await
+            .map_err(|e| McpError::Transport(format!("Failed to send request: {}", e)))?;
 
+        // Receive response via transport
+        let response_json = transport
+            .receive()
+            .await
+            .map_err(|e| McpError::Transport(format!("Failed to receive response: {}", e)))?;
+
+        // Parse response from JSON
+        let response: JsonRpcResponse = serde_json::from_value(response_json)
+            .map_err(|e| McpError::Serialization(format!("Failed to parse response: {}", e)))?;
+
+        debug!("Received response for request: {}", request.method);
         Ok(response)
     }
 
@@ -291,91 +275,6 @@ impl McpClient {
         self.request_id_counter += 1;
         self.request_id_counter
     }
-
-    /// Simulate server response for testing purposes
-    /// FUTURE: Replace with actual stdio communication (tracked in #125)
-    async fn simulate_server_response(
-        &self,
-        request: &JsonRpcRequest,
-    ) -> Result<JsonRpcResponse, McpError> {
-        // This is a temporary simulation - will be replaced with real stdio communication
-        match request.method.as_str() {
-            "initialize" => Ok(JsonRpcResponse {
-                jsonrpc: "2.0".to_string(),
-                id: request.id.clone(),
-                result: Some(json!({
-                    "protocolVersion": "2024-11-05",
-                    "capabilities": {
-                        "tools": {}
-                    },
-                    "serverInfo": {
-                        "name": "test-server",
-                        "version": "1.0.0"
-                    }
-                })),
-                error: None,
-            }),
-            "tools/call" => {
-                let tool_name = request
-                    .params
-                    .as_ref()
-                    .and_then(|p| p.get("name"))
-                    .and_then(|n| n.as_str())
-                    .unwrap_or("unknown");
-
-                // Generate realistic mock response based on tool name
-                let result = match tool_name {
-                    "repository_stats" => json!({
-                        "content": [{
-                            "type": "text",
-                            "text": "Repository Statistics:\n- Total files: 150\n- Total lines: 25000\n- Languages: Rust (80%), Python (15%), JavaScript (5%)"
-                        }]
-                    }),
-                    "search_content" => json!({
-                        "content": [{
-                            "type": "text",
-                            "text": "Search Results:\n- Found 5 matches in 3 files\n- Files: src/lib.rs, src/main.rs, tests/integration.rs"
-                        }]
-                    }),
-                    "analyze_complexity" => json!({
-                        "content": [{
-                            "type": "text",
-                            "text": "Complexity Analysis:\n- Cyclomatic complexity: 8\n- Cognitive complexity: 12\n- Functions over threshold: 3"
-                        }]
-                    }),
-                    _ => json!({
-                        "content": [{
-                            "type": "text",
-                            "text": format!("Tool '{}' executed successfully", tool_name)
-                        }]
-                    }),
-                };
-
-                Ok(JsonRpcResponse {
-                    jsonrpc: "2.0".to_string(),
-                    id: request.id.clone(),
-                    result: Some(result),
-                    error: None,
-                })
-            }
-            "tools/list" => Ok(JsonRpcResponse {
-                jsonrpc: "2.0".to_string(),
-                id: request.id.clone(),
-                result: Some(json!({
-                    "tools": [
-                        {"name": "repository_stats", "description": "Get repository statistics"},
-                        {"name": "search_content", "description": "Search content in files"},
-                        {"name": "analyze_complexity", "description": "Analyze code complexity"}
-                    ]
-                })),
-                error: None,
-            }),
-            _ => Err(McpError::Protocol(format!(
-                "Unknown method: {}",
-                request.method
-            ))),
-        }
-    }
 }
 
 impl Default for McpClient {
@@ -448,31 +347,15 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_simulate_server_response() {
-        let client = McpClient::new();
-        let request = JsonRpcRequest {
-            jsonrpc: "2.0".to_string(),
-            id: Some(json!(1)),
-            method: "initialize".to_string(),
-            params: Some(json!({})),
-        };
-
-        let response = client.simulate_server_response(&request).await.unwrap();
-        assert_eq!(response.jsonrpc, "2.0");
-        assert!(response.result.is_some());
-        assert!(response.error.is_none());
-    }
-
-    #[tokio::test]
-    async fn test_tool_call_simulation() {
+    async fn test_tool_call_requires_connection() {
         let mut client = McpClient::new();
-        let result = client
-            .call_tool("repository_stats", json!({}))
-            .await
-            .unwrap();
+        let result = client.call_tool("repository_stats", json!({})).await;
 
-        assert!(result.get("content").is_some());
-        let content = &result["content"][0]["text"];
-        assert!(content.as_str().unwrap().contains("Repository Statistics"));
+        // Should fail because no transport is connected
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("No transport available"));
     }
 }

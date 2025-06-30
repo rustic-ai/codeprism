@@ -93,3 +93,8 @@ mod tests {
         let _harness = TestHarness::new(config);
     }
 }
+
+// Security testing framework
+pub mod security;
+
+// Security testing framework

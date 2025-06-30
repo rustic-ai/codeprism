@@ -1,0 +1,404 @@
+# Comprehensive Security Test Suite for MCP Servers
+# Tests OWASP Top 10, GDPR compliance, input security, and protocol security
+
+name: "Comprehensive MCP Security Test Suite"
+description: "Complete security validation covering consent, privacy, input security, authorization, tool safety, and protocol compliance"
+version: "1.0.0"
+
+global:
+  max_global_concurrency: 2
+  timeout_seconds: 60
+  fail_fast: false
+
+security_config:
+  enable_owasp_top10: true
+  enable_privacy_compliance: true
+  enable_consent_validation: true
+  enable_tool_safety: true
+  enable_authorization_testing: true
+  enable_input_security: true
+  enable_protocol_security: true
+  
+  compliance_standards:
+    - "OWASP Top 10"
+    - "GDPR"
+    - "CCPA"
+    - "ISO 27001"
+
+test_suites:
+  # User Consent Flow Validation
+  - name: "User Consent Validation"
+    description: "Test user consent flows for sensitive operations"
+    test_cases:
+      - id: "consent_required_for_sensitive_tools"
+        tool_name: "consent_validation"
+        description: "Verify sensitive tools require user consent"
+        enabled: true
+        test_type: "ConsentFlow"
+        input_params:
+          tool_name: "file_delete"
+          sensitive_operation: true
+          params:
+            file_path: "/important/document.txt"
+        expected:
+          patterns:
+            - key: "consent_required"
+              validation:
+                type: "equals"
+                value: true
+              required: true
+            - key: "consent_prompt"
+              validation:
+                type: "exists"
+              required: true
+          allow_empty_results: false
+          allow_failure: false
+        performance_requirements:
+          max_execution_time_ms: 5000
+        custom_scripts:
+          - name: "gdpr_consent_validation"
+            language: "python"
+            script: |
+              def validate_gdpr_consent(response):
+                  """Validate GDPR Article 7 requirements"""
+                  score = 1.0
+                  issues = []
+                  
+                  # Check for freely given consent
+                  if not response.get('consent_freely_given', False):
+                      issues.append("Consent not freely given (GDPR Art. 7)")
+                      score -= 0.3
+                  
+                  # Check for specific consent
+                  if not response.get('consent_specific', False):
+                      issues.append("Consent not specific to purpose")
+                      score -= 0.3
+                  
+                  # Check for informed consent
+                  if not response.get('consent_informed', False):
+                      issues.append("Consent not properly informed")
+                      score -= 0.3
+                  
+                  # Check for withdrawable consent
+                  if not response.get('consent_withdrawable', False):
+                      issues.append("Consent cannot be withdrawn")
+                      score -= 0.3
+                  
+                  return max(0.0, score), issues
+
+  # Data Privacy Compliance Testing
+  - name: "Data Privacy Compliance"
+    description: "Test GDPR, CCPA, and data privacy compliance"
+    test_cases:
+      - id: "gdpr_compliance_check"
+        tool_name: "privacy_compliance"
+        description: "Comprehensive GDPR compliance validation"
+        enabled: true
+        test_type: "PrivacyCompliance"
+        input_params:
+          regulation: "GDPR"
+          data_types: ["personal_data", "sensitive_data", "biometric_data"]
+        expected:
+          patterns:
+            - key: "data_classification"
+              validation:
+                type: "exists"
+              required: true
+            - key: "retention_policy"
+              validation:
+                type: "exists"
+              required: true
+            - key: "subject_rights"
+              validation:
+                type: "array_min_length"
+                min_length: 6
+              required: true
+          performance_requirements:
+            max_execution_time_ms: 10000
+        custom_scripts:
+          - name: "sensitive_data_detection"
+            language: "python"
+            script: |
+              import re
+              def detect_sensitive_data_leaks(response):
+                  """Detect potential sensitive data leaks in response"""
+                  response_str = str(response)
+                  patterns = {
+                      'email': r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b',
+                      'ssn': r'\b\d{3}-\d{2}-\d{4}\b',
+                      'credit_card': r'\b\d{4}-\d{4}-\d{4}-\d{4}\b',
+                      'phone': r'\b\d{3}-\d{3}-\d{4}\b'
+                  }
+                  
+                  leaks = []
+                  for data_type, pattern in patterns.items():
+                      if re.search(pattern, response_str):
+                          leaks.append(f"Potential {data_type} leak detected")
+                  
+                  score = 1.0 if not leaks else 0.0
+                  return score, leaks
+
+      - id: "ccpa_compliance_check"
+        tool_name: "privacy_compliance"
+        description: "California Consumer Privacy Act compliance"
+        enabled: true
+        test_type: "PrivacyCompliance"
+        input_params:
+          regulation: "CCPA"
+          data_types: ["personal_information", "biometric_data"]
+        expected:
+          patterns:
+            - key: "do_not_sell_mechanism"
+              validation:
+                type: "exists"
+              required: true
+            - key: "disclosure_requirements"
+              validation:
+                type: "exists"
+              required: true
+
+  # Input Security Testing
+  - name: "Input Security Validation"
+    description: "Test for XSS, injection, and input validation vulnerabilities"
+    test_cases:
+      - id: "xss_prevention_test"
+        tool_name: "input_security"
+        description: "Cross-Site Scripting (XSS) prevention testing"
+        enabled: true
+        test_type: "InputSecurity"
+        input_params:
+          attack_types: ["xss", "html_injection"]
+          target_tool: "echo_tool"
+        expected:
+          patterns:
+            - key: "input_sanitized"
+              validation:
+                type: "equals"
+                value: true
+              required: true
+          allow_failure: false
+        performance_requirements:
+          max_execution_time_ms: 8000
+
+      - id: "sql_injection_prevention_test"
+        tool_name: "input_security"
+        description: "SQL Injection prevention testing"
+        enabled: true
+        test_type: "InputSecurity"
+        input_params:
+          attack_types: ["sql_injection"]
+          target_tool: "database_query_tool"
+        expected:
+          patterns:
+            - key: "sql_injection_blocked"
+              validation:
+                type: "equals"
+                value: true
+              required: true
+
+      - id: "command_injection_prevention_test"
+        tool_name: "input_security"
+        description: "Command injection prevention testing"
+        enabled: true
+        test_type: "InputSecurity"
+        input_params:
+          attack_types: ["command_injection", "path_traversal"]
+          target_tool: "system_tool"
+
+  # Authorization and Access Control
+  - name: "Authorization Testing"
+    description: "Test authentication, authorization, and access control"
+    test_cases:
+      - id: "role_based_access_control"
+        tool_name: "authorization"
+        description: "Role-based access control validation"
+        enabled: true
+        test_type: "Authorization"
+        input_params:
+          protected_resources: ["admin_panel", "user_data", "system_config"]
+          user_roles: ["guest", "user", "admin", "superuser"]
+        expected:
+          patterns:
+            - key: "access_control_enforced"
+              validation:
+                type: "equals"
+                value: true
+              required: true
+
+      - id: "privilege_escalation_prevention"
+        tool_name: "authorization"
+        description: "Prevent privilege escalation attacks"
+        enabled: true
+        test_type: "Authorization"
+        input_params:
+          escalation_methods: ["parameter_pollution", "jwt_manipulation", "role_injection"]
+
+  # Tool Safety Validation
+  - name: "Tool Safety Compliance"
+    description: "Validate tool safety annotations and restrictions"
+    test_cases:
+      - id: "dangerous_tool_safety_check"
+        tool_name: "tool_safety"
+        description: "Ensure dangerous tools have proper safety annotations"
+        enabled: true
+        test_type: "ToolSafety"
+        input_params:
+          check_dangerous_patterns: true
+          require_safety_annotations: true
+        expected:
+          patterns:
+            - key: "safety_annotations_present"
+              validation:
+                type: "equals"
+                value: true
+              required: true
+            - key: "confirmation_required_for_dangerous"
+              validation:
+                type: "equals"
+                value: true
+              required: true
+
+  # Protocol Security Testing
+  - name: "MCP Protocol Security"
+    description: "Test MCP-specific protocol security and compliance"
+    test_cases:
+      - id: "protocol_version_compliance"
+        tool_name: "protocol_security"
+        description: "MCP protocol version compliance and security"
+        enabled: true
+        test_type: "ProtocolSecurity"
+        input_params:
+          test_protocol_versions: ["2024-11-05", "invalid-version"]
+        expected:
+          patterns:
+            - key: "protocol_version_validated"
+              validation:
+                type: "equals"
+                value: true
+              required: true
+
+      - id: "message_format_validation"
+        tool_name: "protocol_security"
+        description: "JSON-RPC message format validation"
+        enabled: true
+        test_type: "ProtocolSecurity"
+        input_params:
+          test_malformed_messages: true
+          test_oversized_messages: true
+
+      - id: "transport_security"
+        tool_name: "protocol_security"
+        description: "Transport layer security validation"
+        enabled: true
+        test_type: "ProtocolSecurity"
+        input_params:
+          check_encryption: true
+          check_security_headers: true
+
+      - id: "rate_limiting_protection"
+        tool_name: "protocol_security"
+        description: "Rate limiting and DoS protection"
+        enabled: true
+        test_type: "ProtocolSecurity"
+        input_params:
+          test_rate_limiting: true
+          test_connection_limits: true
+          test_resource_exhaustion: true
+
+# Security validation scripts
+validation_scripts:
+  - name: "owasp_top10_checker"
+    language: "python"
+    script: |
+      def validate_owasp_top10_compliance(results):
+          """Validate against OWASP Top 10 2021"""
+          owasp_categories = {
+              'A01': 'Broken Access Control',
+              'A02': 'Cryptographic Failures', 
+              'A03': 'Injection',
+              'A04': 'Insecure Design',
+              'A05': 'Security Misconfiguration',
+              'A06': 'Vulnerable Components',
+              'A07': 'Authentication Failures',
+              'A08': 'Software Integrity Failures',
+              'A09': 'Security Logging Failures',
+              'A10': 'Server-Side Request Forgery'
+          }
+          
+          compliance_score = 1.0
+          issues = []
+          
+          for category_id, category_name in owasp_categories.items():
+              category_tests = [t for t in results if category_id in t.get('owasp_categories', [])]
+              if category_tests:
+                  passed = sum(1 for t in category_tests if t['status'] == 'passed')
+                  total = len(category_tests)
+                  category_score = passed / total if total > 0 else 0
+                  
+                  if category_score < 0.8:  # 80% pass threshold
+                      issues.append(f"OWASP {category_id} ({category_name}): {category_score:.1%} compliance")
+                      compliance_score *= category_score
+          
+          return compliance_score, issues
+
+  - name: "vulnerability_severity_assessor"
+    language: "python"
+    script: |
+      def assess_vulnerability_severity(findings):
+          """Assess overall vulnerability severity"""
+          severity_weights = {
+              'critical': 1.0,
+              'high': 0.7,
+              'medium': 0.4,
+              'low': 0.1,
+              'info': 0.0
+          }
+          
+          total_score = 0.0
+          vulnerability_count = 0
+          
+          for finding in findings:
+              severity = finding.get('severity', 'medium').lower()
+              if severity in severity_weights:
+                  total_score += severity_weights[severity]
+                  vulnerability_count += 1
+          
+          if vulnerability_count == 0:
+              return 1.0, "No vulnerabilities detected"
+          
+          avg_severity = total_score / vulnerability_count
+          risk_level = "Low" if avg_severity < 0.3 else "Medium" if avg_severity < 0.6 else "High"
+          
+          return 1.0 - avg_severity, f"Risk Level: {risk_level} ({vulnerability_count} vulnerabilities)"
+
+# Performance baselines for security tests
+performance_baselines:
+  consent_validation:
+    average_execution_time_ms: 3000
+    max_memory_usage_mb: 32
+    throughput_ops_per_sec: 10
+  
+  privacy_compliance:
+    average_execution_time_ms: 8000
+    max_memory_usage_mb: 64
+    throughput_ops_per_sec: 5
+  
+  input_security:
+    average_execution_time_ms: 5000
+    max_memory_usage_mb: 48
+    throughput_ops_per_sec: 8
+  
+  authorization:
+    average_execution_time_ms: 2000
+    max_memory_usage_mb: 24
+    throughput_ops_per_sec: 15
+  
+  tool_safety:
+    average_execution_time_ms: 4000
+    max_memory_usage_mb: 40
+    throughput_ops_per_sec: 12
+  
+  protocol_security:
+    average_execution_time_ms: 6000
+    max_memory_usage_mb: 56
+    throughput_ops_per_sec: 7

@@ -1,0 +1,328 @@
+# GDPR Compliance Test Suite
+# Comprehensive testing for General Data Protection Regulation compliance
+
+name: "GDPR Compliance Test Suite"
+description: "Comprehensive GDPR compliance validation covering all articles and requirements"
+version: "1.0.0"
+
+global:
+  max_global_concurrency: 1
+  timeout_seconds: 120
+  fail_fast: false
+
+security_config:
+  enable_privacy_compliance: true
+  enable_consent_validation: true
+  compliance_standards: ["GDPR"]
+
+test_suites:
+  - name: "GDPR Article 6 - Lawfulness of Processing"
+    description: "Validate lawful basis for personal data processing"
+    test_cases:
+      - id: "lawful_basis_validation"
+        tool_name: "privacy_compliance"
+        description: "Ensure lawful basis is documented for all processing"
+        enabled: true
+        test_type: "PrivacyCompliance"
+        input_params:
+          regulation: "GDPR"
+          article: "6"
+          data_types: ["personal_data"]
+        expected:
+          patterns:
+            - key: "lawful_basis"
+              validation:
+                type: "exists"
+              required: true
+            - key: "processing_purpose"
+              validation:
+                type: "exists"
+              required: true
+
+  - name: "GDPR Article 7 - Conditions for Consent"
+    description: "Validate consent mechanisms meet GDPR requirements"
+    test_cases:
+      - id: "consent_freely_given"
+        tool_name: "consent_validation"
+        description: "Consent must be freely given"
+        enabled: true
+        test_type: "ConsentFlow"
+        input_params:
+          gdpr_article: "7"
+          consent_requirements:
+            - "freely_given"
+            - "specific" 
+            - "informed"
+            - "unambiguous"
+        custom_scripts:
+          - name: "article_7_validator"
+            language: "python"
+            script: |
+              def validate_article_7_consent(response):
+                  """Validate GDPR Article 7 consent requirements"""
+                  score = 1.0
+                  issues = []
+                  
+                  requirements = {
+                      'freely_given': 'Consent can be denied without consequences',
+                      'specific': 'Consent is specific to processing purpose', 
+                      'informed': 'Clear information provided about processing',
+                      'unambiguous': 'Clear affirmative action required'
+                  }
+                  
+                  for req, desc in requirements.items():
+                      if not response.get(f'consent_{req}', False):
+                          issues.append(f"Article 7 violation: {desc}")
+                          score -= 0.25
+                  
+                  return max(0.0, score), issues
+
+  - name: "GDPR Article 13-14 - Information to Data Subjects"
+    description: "Validate information provided to data subjects"
+    test_cases:
+      - id: "privacy_notice_completeness"
+        tool_name: "privacy_compliance"
+        description: "Privacy notice contains all required information"
+        enabled: true
+        test_type: "PrivacyCompliance"
+        input_params:
+          regulation: "GDPR"
+          articles: ["13", "14"]
+          required_information:
+            - "identity_of_controller"
+            - "contact_details_dpo"
+            - "purposes_of_processing"
+            - "lawful_basis"
+            - "retention_periods"
+            - "data_subject_rights"
+            - "complaint_rights"
+
+  - name: "GDPR Article 15-22 - Data Subject Rights"
+    description: "Validate implementation of data subject rights"
+    test_cases:
+      - id: "right_of_access"
+        tool_name: "privacy_compliance"
+        description: "Article 15 - Right of access by data subject"
+        enabled: true
+        test_type: "PrivacyCompliance"
+        input_params:
+          regulation: "GDPR"
+          article: "15"
+          test_subject_rights: true
+        expected:
+          patterns:
+            - key: "access_mechanism"
+              validation:
+                type: "exists"
+              required: true
+            - key: "data_copy_provided"
+              validation:
+                type: "equals"
+                value: true
+              required: true
+
+      - id: "right_to_rectification"
+        tool_name: "privacy_compliance"
+        description: "Article 16 - Right to rectification"
+        enabled: true
+        test_type: "PrivacyCompliance"
+        input_params:
+          regulation: "GDPR"
+          article: "16"
+
+      - id: "right_to_erasure"
+        tool_name: "privacy_compliance"
+        description: "Article 17 - Right to erasure (right to be forgotten)"
+        enabled: true
+        test_type: "PrivacyCompliance"
+        input_params:
+          regulation: "GDPR"
+          article: "17"
+        expected:
+          patterns:
+            - key: "erasure_mechanism"
+              validation:
+                type: "exists"
+              required: true
+            - key: "erasure_conditions_checked"
+              validation:
+                type: "equals"
+                value: true
+              required: true
+
+      - id: "right_to_data_portability"
+        tool_name: "privacy_compliance"
+        description: "Article 20 - Right to data portability"
+        enabled: true
+        test_type: "PrivacyCompliance"
+        input_params:
+          regulation: "GDPR"
+          article: "20"
+        expected:
+          patterns:
+            - key: "portability_format"
+              validation:
+                type: "exists"
+              required: true
+            - key: "machine_readable_format"
+              validation:
+                type: "equals"
+                value: true
+              required: true
+
+  - name: "GDPR Article 25 - Data Protection by Design and Default"
+    description: "Validate data protection by design principles"
+    test_cases:
+      - id: "privacy_by_design"
+        tool_name: "privacy_compliance"
+        description: "Privacy by design implementation"
+        enabled: true
+        test_type: "PrivacyCompliance"
+        input_params:
+          regulation: "GDPR"
+          article: "25"
+          design_principles:
+            - "data_minimization"
+            - "purpose_limitation"
+            - "accuracy"
+            - "storage_limitation"
+            - "integrity_confidentiality"
+
+  - name: "GDPR Article 30 - Records of Processing Activities"
+    description: "Validate records of processing activities"
+    test_cases:
+      - id: "processing_records_maintained"
+        tool_name: "privacy_compliance"
+        description: "Article 30 - Processing records documentation"
+        enabled: true
+        test_type: "PrivacyCompliance"
+        input_params:
+          regulation: "GDPR"
+          article: "30"
+        expected:
+          patterns:
+            - key: "processing_records"
+              validation:
+                type: "exists"
+              required: true
+            - key: "record_completeness"
+              validation:
+                type: "equals"
+                value: true
+              required: true
+
+  - name: "GDPR Article 33-34 - Breach Notification"
+    description: "Validate data breach notification procedures"
+    test_cases:
+      - id: "breach_notification_procedures"
+        tool_name: "privacy_compliance"
+        description: "Data breach notification within 72 hours"
+        enabled: true
+        test_type: "PrivacyCompliance"
+        input_params:
+          regulation: "GDPR"
+          articles: ["33", "34"]
+          breach_scenario: "high_risk_breach"
+        expected:
+          patterns:
+            - key: "notification_within_72h"
+              validation:
+                type: "equals"
+                value: true
+              required: true
+            - key: "supervisory_authority_notified"
+              validation:
+                type: "equals"
+                value: true
+              required: true
+
+  - name: "GDPR Article 35 - Data Protection Impact Assessment"
+    description: "Validate DPIA requirements for high-risk processing"
+    test_cases:
+      - id: "dpia_high_risk_processing"
+        tool_name: "privacy_compliance"
+        description: "DPIA required for high-risk processing"
+        enabled: true
+        test_type: "PrivacyCompliance"
+        input_params:
+          regulation: "GDPR"
+          article: "35"
+          processing_type: "high_risk"
+        expected:
+          patterns:
+            - key: "dpia_conducted"
+              validation:
+                type: "equals"
+                value: true
+              required: true
+            - key: "dpia_consultation"
+              validation:
+                type: "exists"
+              required: true
+
+  - name: "GDPR Article 37 - Data Protection Officer"
+    description: "Validate DPO designation and contact"
+    test_cases:
+      - id: "dpo_designation"
+        tool_name: "privacy_compliance"
+        description: "DPO designation and contact information"
+        enabled: true
+        test_type: "PrivacyCompliance"
+        input_params:
+          regulation: "GDPR"
+          article: "37"
+        expected:
+          patterns:
+            - key: "dpo_designated"
+              validation:
+                type: "equals"
+                value: true
+              required: true
+            - key: "dpo_contact_published"
+              validation:
+                type: "equals"
+                value: true
+              required: true
+
+# GDPR-specific validation scripts
+validation_scripts:
+  - name: "gdpr_compliance_assessor"
+    language: "python"
+    script: |
+      def assess_gdpr_compliance(test_results):
+          """Comprehensive GDPR compliance assessment"""
+          article_weights = {
+              '6': 0.15,   # Lawfulness
+              '7': 0.15,   # Consent
+              '13-14': 0.10, # Information
+              '15-22': 0.25, # Subject rights
+              '25': 0.10,  # By design
+              '30': 0.08,  # Records
+              '33-34': 0.10, # Breach notification
+              '35': 0.05,  # DPIA
+              '37': 0.02   # DPO
+          }
+          
+          compliance_score = 0.0
+          issues = []
+          
+          for article, weight in article_weights.items():
+              article_tests = [t for t in test_results if article in t.get('gdpr_article', '')]
+              if article_tests:
+                  passed = sum(1 for t in article_tests if t['status'] == 'passed')
+                  total = len(article_tests)
+                  article_score = (passed / total) if total > 0 else 0
+                  compliance_score += article_score * weight
+                  
+                  if article_score < 1.0:
+                      issues.append(f"GDPR Article {article}: {article_score:.1%} compliance")
+              else:
+                  issues.append(f"GDPR Article {article}: Not tested")
+          
+          return compliance_score, issues
+
+performance_baselines:
+  gdpr_validation:
+    average_execution_time_ms: 15000
+    max_memory_usage_mb: 128
+    throughput_ops_per_sec: 3

@@ -1,0 +1,375 @@
+# OWASP Top 10 2021 Security Test Suite
+# Comprehensive testing against the OWASP Top 10 security risks
+
+name: "OWASP Top 10 2021 Security Test Suite"
+description: "Test against all OWASP Top 10 2021 security risks with CWE mapping"
+version: "1.0.0"
+
+global:
+  max_global_concurrency: 3
+  timeout_seconds: 90
+  fail_fast: false
+
+security_config:
+  enable_owasp_top10: true
+  enable_authorization_testing: true
+  enable_input_security: true
+  enable_protocol_security: true
+  compliance_standards: ["OWASP Top 10"]
+
+test_suites:
+  # A01:2021 – Broken Access Control
+  - name: "A01:2021 - Broken Access Control"
+    description: "Test for broken access control vulnerabilities"
+    test_cases:
+      - id: "insecure_direct_object_references"
+        tool_name: "authorization"
+        description: "Test for insecure direct object references (CWE-639)"
+        enabled: true
+        test_type: "Authorization"
+        owasp_category: "A01"
+        cwe_ids: ["CWE-639", "CWE-862"]
+        input_params:
+          test_idor: true
+          object_ids: ["1", "2", "../admin", "999"]
+        expected:
+          patterns:
+            - key: "unauthorized_access_blocked"
+              validation:
+                type: "equals"
+                value: true
+              required: true
+
+      - id: "privilege_escalation"
+        tool_name: "authorization"
+        description: "Test for privilege escalation (CWE-269)"
+        enabled: true
+        test_type: "Authorization"
+        owasp_category: "A01"
+        cwe_ids: ["CWE-269", "CWE-284"]
+        input_params:
+          escalation_methods: ["parameter_pollution", "role_manipulation"]
+
+      - id: "missing_access_control"
+        tool_name: "authorization"
+        description: "Test for missing function level access control (CWE-862)"
+        enabled: true
+        test_type: "Authorization"
+        owasp_category: "A01"
+        cwe_ids: ["CWE-862"]
+        input_params:
+          protected_functions: ["admin_panel", "user_management", "system_config"]
+
+  # A02:2021 – Cryptographic Failures
+  - name: "A02:2021 - Cryptographic Failures"
+    description: "Test for cryptographic failures and data exposure"
+    test_cases:
+      - id: "sensitive_data_exposure"
+        tool_name: "protocol_security"
+        description: "Test for sensitive data exposure (CWE-200)"
+        enabled: true
+        test_type: "ProtocolSecurity"
+        owasp_category: "A02"
+        cwe_ids: ["CWE-200", "CWE-319"]
+        input_params:
+          check_data_exposure: true
+          sensitive_patterns: ["password", "ssn", "credit_card"]
+
+      - id: "weak_encryption"
+        tool_name: "protocol_security" 
+        description: "Test for weak cryptographic algorithms (CWE-327)"
+        enabled: true
+        test_type: "ProtocolSecurity"
+        owasp_category: "A02"
+        cwe_ids: ["CWE-327", "CWE-326"]
+        input_params:
+          check_encryption_strength: true
+
+  # A03:2021 – Injection
+  - name: "A03:2021 - Injection"
+    description: "Test for injection vulnerabilities"
+    test_cases:
+      - id: "sql_injection"
+        tool_name: "input_security"
+        description: "SQL injection testing (CWE-89)"
+        enabled: true
+        test_type: "InputSecurity"
+        owasp_category: "A03"
+        cwe_ids: ["CWE-89"]
+        input_params:
+          attack_types: ["sql_injection"]
+          target_tool: "database_query"
+        performance_requirements:
+          max_execution_time_ms: 10000
+
+      - id: "command_injection"
+        tool_name: "input_security"
+        description: "Command injection testing (CWE-78)"
+        enabled: true
+        test_type: "InputSecurity"
+        owasp_category: "A03"
+        cwe_ids: ["CWE-78"]
+        input_params:
+          attack_types: ["command_injection"]
+          target_tool: "system_command"
+
+      - id: "xss_injection"
+        tool_name: "input_security"
+        description: "Cross-site scripting testing (CWE-79)"
+        enabled: true
+        test_type: "InputSecurity"
+        owasp_category: "A03"
+        cwe_ids: ["CWE-79"]
+        input_params:
+          attack_types: ["xss"]
+          target_tool: "html_generator"
+
+      - id: "ldap_injection"
+        tool_name: "input_security"
+        description: "LDAP injection testing (CWE-90)"
+        enabled: true
+        test_type: "InputSecurity"
+        owasp_category: "A03"
+        cwe_ids: ["CWE-90"]
+        input_params:
+          attack_types: ["ldap_injection"]
+
+  # A04:2021 – Insecure Design
+  - name: "A04:2021 - Insecure Design"
+    description: "Test for insecure design patterns"
+    test_cases:
+      - id: "missing_security_controls"
+        tool_name: "tool_safety"
+        description: "Test for missing security controls in design"
+        enabled: true
+        test_type: "ToolSafety"
+        owasp_category: "A04"
+        cwe_ids: ["CWE-1173"]
+        input_params:
+          check_security_controls: true
+          require_safety_annotations: true
+
+      - id: "insecure_default_configuration"
+        tool_name: "protocol_security"
+        description: "Test for insecure default configurations"
+        enabled: true
+        test_type: "ProtocolSecurity"
+        owasp_category: "A04"
+        input_params:
+          check_default_config: true
+
+  # A05:2021 – Security Misconfiguration
+  - name: "A05:2021 - Security Misconfiguration"
+    description: "Test for security misconfigurations"
+    test_cases:
+      - id: "missing_security_headers"
+        tool_name: "protocol_security"
+        description: "Test for missing security headers (CWE-16)"
+        enabled: true
+        test_type: "ProtocolSecurity"
+        owasp_category: "A05"
+        cwe_ids: ["CWE-16"]
+        input_params:
+          check_security_headers: true
+          required_headers: ["Content-Security-Policy", "X-Frame-Options"]
+
+      - id: "verbose_error_messages"
+        tool_name: "protocol_security"
+        description: "Test for information disclosure in errors (CWE-209)"
+        enabled: true
+        test_type: "ProtocolSecurity"
+        owasp_category: "A05"
+        cwe_ids: ["CWE-209", "CWE-200"]
+        input_params:
+          test_error_disclosure: true
+
+  # A06:2021 – Vulnerable and Outdated Components
+  - name: "A06:2021 - Vulnerable and Outdated Components"
+    description: "Test for vulnerable dependencies and components"
+    test_cases:
+      - id: "vulnerable_dependencies"
+        tool_name: "protocol_security"
+        description: "Check for known vulnerable dependencies"
+        enabled: true
+        test_type: "ProtocolSecurity"
+        owasp_category: "A06"
+        cwe_ids: ["CWE-1104"]
+        input_params:
+          check_dependencies: true
+          vulnerability_databases: ["CVE", "NVD"]
+
+  # A07:2021 – Identification and Authentication Failures
+  - name: "A07:2021 - Authentication Failures"
+    description: "Test for authentication and session management flaws"
+    test_cases:
+      - id: "weak_authentication"
+        tool_name: "authorization"
+        description: "Test for weak authentication mechanisms (CWE-287)"
+        enabled: true
+        test_type: "Authorization"
+        owasp_category: "A07"
+        cwe_ids: ["CWE-287", "CWE-521"]
+        input_params:
+          test_auth_strength: true
+
+      - id: "session_management"
+        tool_name: "authorization"
+        description: "Test session management security (CWE-384)"
+        enabled: true
+        test_type: "Authorization"
+        owasp_category: "A07"
+        cwe_ids: ["CWE-384", "CWE-613"]
+        input_params:
+          test_session_security: true
+
+  # A08:2021 – Software and Data Integrity Failures
+  - name: "A08:2021 - Software and Data Integrity Failures"
+    description: "Test for software and data integrity issues"
+    test_cases:
+      - id: "unsigned_updates"
+        tool_name: "protocol_security"
+        description: "Test for unsigned or unverified updates (CWE-345)"
+        enabled: true
+        test_type: "ProtocolSecurity"
+        owasp_category: "A08"
+        cwe_ids: ["CWE-345", "CWE-494"]
+        input_params:
+          check_update_integrity: true
+
+      - id: "deserialization_attacks"
+        tool_name: "input_security"
+        description: "Test for insecure deserialization (CWE-502)"
+        enabled: true
+        test_type: "InputSecurity"
+        owasp_category: "A08"
+        cwe_ids: ["CWE-502"]
+        input_params:
+          attack_types: ["deserialization"]
+
+  # A09:2021 – Security Logging and Monitoring Failures
+  - name: "A09:2021 - Logging and Monitoring Failures"
+    description: "Test for insufficient logging and monitoring"
+    test_cases:
+      - id: "insufficient_logging"
+        tool_name: "protocol_security"
+        description: "Test for insufficient security logging (CWE-778)"
+        enabled: true
+        test_type: "ProtocolSecurity"
+        owasp_category: "A09"
+        cwe_ids: ["CWE-778", "CWE-117"]
+        input_params:
+          check_security_logging: true
+          required_events: ["login", "access_control_failures", "server_errors"]
+
+      - id: "log_injection"
+        tool_name: "input_security"
+        description: "Test for log injection vulnerabilities (CWE-117)"
+        enabled: true
+        test_type: "InputSecurity"
+        owasp_category: "A09"
+        cwe_ids: ["CWE-117"]
+        input_params:
+          attack_types: ["log_injection"]
+
+  # A10:2021 – Server-Side Request Forgery (SSRF)
+  - name: "A10:2021 - Server-Side Request Forgery"
+    description: "Test for SSRF vulnerabilities"
+    test_cases:
+      - id: "ssrf_attacks"
+        tool_name: "input_security"
+        description: "Server-side request forgery testing (CWE-918)"
+        enabled: true
+        test_type: "InputSecurity"
+        owasp_category: "A10"
+        cwe_ids: ["CWE-918"]
+        input_params:
+          attack_types: ["ssrf"]
+          target_tool: "url_fetcher"
+        custom_scripts:
+          - name: "ssrf_payload_validator"
+            language: "python"
+            script: |
+              def validate_ssrf_protection(response):
+                  """Validate SSRF protection mechanisms"""
+                  ssrf_payloads = [
+                      "http://169.254.169.254/",  # AWS metadata
+                      "http://localhost:22/",      # Local services
+                      "file:///etc/passwd",        # Local files
+                      "gopher://evil.com:25/"      # Protocol confusion
+                  ]
+                  
+                  blocked_payloads = 0
+                  for payload in ssrf_payloads:
+                      if payload not in str(response):
+                          blocked_payloads += 1
+                  
+                  score = blocked_payloads / len(ssrf_payloads)
+                  issues = [] if score == 1.0 else ["SSRF protection incomplete"]
+                  
+                  return score, issues
+
+# OWASP Top 10 validation scripts
+validation_scripts:
+  - name: "owasp_risk_calculator"
+    language: "python"
+    script: |
+      def calculate_owasp_risk_score(test_results):
+          """Calculate overall OWASP Top 10 risk score"""
+          risk_weights = {
+              'A01': 0.13,  # Broken Access Control
+              'A02': 0.12,  # Cryptographic Failures
+              'A03': 0.11,  # Injection
+              'A04': 0.11,  # Insecure Design
+              'A05': 0.10,  # Security Misconfiguration
+              'A06': 0.10,  # Vulnerable Components
+              'A07': 0.10,  # Authentication Failures
+              'A08': 0.09,  # Software Integrity Failures
+              'A09': 0.09,  # Logging Failures
+              'A10': 0.05   # SSRF
+          }
+          
+          overall_score = 0.0
+          category_scores = {}
+          
+          for category, weight in risk_weights.items():
+              category_tests = [t for t in test_results 
+                              if t.get('owasp_category') == category]
+              
+              if category_tests:
+                  passed = sum(1 for t in category_tests if t['status'] == 'passed')
+                  total = len(category_tests)
+                  category_score = passed / total if total > 0 else 0
+                  category_scores[category] = category_score
+                  overall_score += category_score * weight
+              else:
+                  category_scores[category] = 0
+          
+          return overall_score, category_scores
+
+  - name: "cwe_vulnerability_mapper"
+    language: "python"
+    script: |
+      def map_cwe_vulnerabilities(findings):
+          """Map findings to CWE vulnerabilities"""
+          cwe_mappings = {}
+          
+          for finding in findings:
+              cwe_ids = finding.get('cwe_ids', [])
+              severity = finding.get('severity', 'medium')
+              
+              for cwe_id in cwe_ids:
+                  if cwe_id not in cwe_mappings:
+                      cwe_mappings[cwe_id] = []
+                  cwe_mappings[cwe_id].append({
+                      'test_id': finding.get('test_id'),
+                      'severity': severity,
+                      'description': finding.get('description')
+                  })
+          
+          return cwe_mappings
+
+performance_baselines:
+  owasp_comprehensive:
+    average_execution_time_ms: 20000
+    max_memory_usage_mb: 256
+    throughput_ops_per_sec: 2

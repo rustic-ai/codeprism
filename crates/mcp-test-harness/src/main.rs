@@ -251,12 +251,12 @@ async fn run_spec_test(
 /// Discover capabilities of an MCP server
 async fn discover_server(server_cmd: String, args: Vec<String>) -> Result<()> {
     info!("Discovering server capabilities: {} {:?}", server_cmd, args);
-    
+
     // FUTURE: Implement server discovery by connecting to server and querying capabilities
     //         Will include JSON-RPC initialization, capability enumeration, and report generation
     //         Essential for generating initial server specifications automatically
     info!("Discovery functionality will query server capabilities and generate spec template");
-    
+
     Ok(())
 }
 
@@ -321,13 +321,16 @@ async fn test_protocol_only(server_cmd: String, server_args: Vec<String>, cli: &
 
 /// Generate example server specifications
 async fn generate_examples(output_dir: PathBuf) -> Result<()> {
-    info!("Generating example specifications in: {}", output_dir.display());
-    
+    info!(
+        "Generating example specifications in: {}",
+        output_dir.display()
+    );
+
     // FUTURE: Generate example specs for common server types (CodePrism, custom tools, etc.)
     //         Will include templates for different MCP server architectures
     //         Helps users get started quickly with their own specifications
     info!("Example generation will create template specifications for common use cases");
-    
+
     Ok(())
 }
 

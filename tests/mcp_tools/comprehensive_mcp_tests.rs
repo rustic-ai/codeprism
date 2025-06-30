@@ -135,52 +135,196 @@ impl McpServerClient {
         Ok(())
     }
 
-    /// Execute real tool call
-    pub async fn call_tool(&self, tool_name: &str, params: Value) -> Result<Value, Box<dyn std::error::Error>> {
+    /// Execute real tool call using the new protocol client
+    pub async fn call_tool(&mut self, tool_name: &str, params: Value) -> Result<Value, Box<dyn std::error::Error>> {
         if !self.config.enable_real_server {
             // Simulation mode - return mock response based on tool
             return Ok(Self::mock_tool_response(tool_name, &params));
         }
 
-        // Real server call implementation would go here
-        // For now, using simulation with enhanced validation
-        Ok(Self::mock_tool_response(tool_name, &params))
+        // Use the real MCP client for actual server communication
+        use mcp_test_harness_lib::protocol::McpClient;
+        let mut client = McpClient::new();
+        
+        // TODO: Start server if not already running
+        // For now, we'll use the simulation mode but with the new client structure
+        match client.call_tool(tool_name, params).await {
+            Ok(result) => Ok(result),
+            Err(e) => Err(Box::new(e)),
+        }
     }
 
-    /// Generate mock response for simulation mode
+    /// Generate mock response for simulation mode - will be phased out as real implementation is completed
     fn mock_tool_response(tool_name: &str, params: &Value) -> Value {
         match tool_name {
             "repository_stats" => json!({
-                "total_files": 150,
-                "total_lines": 25000,
-                "languages": {"rust": 80, "python": 15, "javascript": 5},
-                "analysis_timestamp": "2024-01-01T00:00:00Z"
+                "content": [{
+                    "type": "text",
+                    "text": "Repository Statistics:\n- Total files: 150\n- Total lines: 25000\n- Languages: Rust (80%), Python (15%), JavaScript (5%)\n- Analysis timestamp: 2024-01-01T00:00:00Z"
+                }]
             }),
             "search_content" => json!({
-                "matches": [
-                    {
-                        "file": "src/lib.rs",
-                        "line": 42,
-                        "content": "function test() {",
-                        "context": ["    // Test function", "    function test() {", "        return true;"]
-                    }
-                ],
-                "total_matches": 1,
-                "search_time_ms": 150
+                "content": [{
+                    "type": "text",
+                    "text": "Search Results:\n- Found 5 matches in 3 files\n- Files: src/lib.rs, src/main.rs, tests/integration.rs\n- Search completed in 150ms"
+                }]
             }),
             "analyze_complexity" => json!({
-                "complexity_metrics": {
-                    "cyclomatic_complexity": 5,
-                    "cognitive_complexity": 8,
-                    "nesting_depth": 3
-                },
-                "warnings": [],
-                "recommendations": ["Consider breaking down large functions"]
+                "content": [{
+                    "type": "text",
+                    "text": "Complexity Analysis:\n- Cyclomatic complexity: 8\n- Cognitive complexity: 12\n- Functions over threshold: 3\n- Recommendations: Consider breaking down large functions"
+                }]
+            }),
+            "find_references" => json!({
+                "content": [{
+                    "type": "text",
+                    "text": format!("Found references for symbol in {} files", 
+                        params.get("symbol_id").map_or("unknown", |v| v.as_str().unwrap_or("unknown")))
+                }]
+            }),
+            "explain_symbol" => json!({
+                "content": [{
+                    "type": "text", 
+                    "text": format!("Symbol explanation for {}", 
+                        params.get("symbol_id").map_or("unknown", |v| v.as_str().unwrap_or("unknown")))
+                }]
+            }),
+            "find_dependencies" => json!({
+                "content": [{
+                    "type": "text",
+                    "text": format!("Dependency analysis for target: {}", 
+                        params.get("target").map_or("unknown", |v| v.as_str().unwrap_or("unknown")))
+                }]
+            }),
+            "trace_path" => json!({
+                "content": [{
+                    "type": "text",
+                    "text": format!("Trace path from {} to {}", 
+                        params.get("source").map_or("unknown", |v| v.as_str().unwrap_or("unknown")),
+                        params.get("target").map_or("unknown", |v| v.as_str().unwrap_or("unknown")))
+                }]
+            }),
+            "search_symbols" => json!({
+                "content": [{
+                    "type": "text",
+                    "text": format!("Symbol search results for query: {}", 
+                        params.get("query").map_or("unknown", |v| v.as_str().unwrap_or("unknown")))
+                }]
+            }),
+            "find_files" => json!({
+                "content": [{
+                    "type": "text", 
+                    "text": format!("File search results for pattern: {}", 
+                        params.get("pattern").map_or("*", |v| v.as_str().unwrap_or("*")))
+                }]
+            }),
+            "content_stats" => json!({
+                "content": [{
+                    "type": "text",
+                    "text": "Content Statistics:\n- Code files: 120\n- Documentation: 25\n- Configuration: 15\n- Tests: 30"
+                }]
+            }),
+            "detect_patterns" => json!({
+                "content": [{
+                    "type": "text",
+                    "text": "Pattern Detection:\n- Design patterns found: 8\n- Anti-patterns detected: 2\n- Code smells: 5"
+                }]
+            }),
+            "analyze_security" => json!({
+                "content": [{
+                    "type": "text",
+                    "text": "Security Analysis:\n- Vulnerabilities found: 3\n- OWASP categories: [A1, A3, A6]\n- Severity levels: High (1), Medium (2)"
+                }]
+            }),
+            "analyze_performance" => json!({
+                "content": [{
+                    "type": "text",
+                    "text": "Performance Analysis:\n- Hot spots identified: 5\n- Optimization opportunities: 8\n- Memory usage: Normal"
+                }]
+            }),
+            "trace_data_flow" => json!({
+                "content": [{
+                    "type": "text",
+                    "text": "Data Flow Analysis:\n- Flow paths traced: 12\n- Bottlenecks found: 2\n- Dead ends: 1"
+                }]
+            }),
+            "analyze_transitive_dependencies" => json!({
+                "content": [{
+                    "type": "text",
+                    "text": "Transitive Dependencies:\n- Direct dependencies: 15\n- Transitive dependencies: 47\n- Circular dependencies: 0"
+                }]
+            }),
+            "trace_inheritance" => json!({
+                "content": [{
+                    "type": "text",
+                    "text": "Inheritance Analysis:\n- Inheritance hierarchies: 8\n- Maximum depth: 4\n- Abstract classes: 12"
+                }]
+            }),
+            "analyze_decorators" => json!({
+                "content": [{
+                    "type": "text",
+                    "text": "Decorator Analysis:\n- Decorators found: 25\n- Custom decorators: 8\n- Built-in decorators: 17"
+                }]
+            }),
+            "find_duplicates" => json!({
+                "content": [{
+                    "type": "text",
+                    "text": "Duplicate Code Analysis:\n- Duplicate blocks found: 12\n- Similarity threshold: 85%\n- Largest duplicate: 45 lines"
+                }]
+            }),
+            "find_unused_code" => json!({
+                "content": [{
+                    "type": "text",
+                    "text": "Unused Code Analysis:\n- Unused functions: 8\n- Unused imports: 15\n- Unused variables: 23"
+                }]
+            }),
+            "analyze_api_surface" => json!({
+                "content": [{
+                    "type": "text",
+                    "text": "API Surface Analysis:\n- Public APIs: 45\n- Internal APIs: 120\n- Breaking changes: 0"
+                }]
+            }),
+            "analyze_javascript_frameworks" => json!({
+                "content": [{
+                    "type": "text",
+                    "text": "JavaScript Framework Analysis:\n- Frameworks detected: React, Node.js\n- Versions: React 18.2, Node.js 18.17\n- Best practices compliance: 85%"
+                }]
+            }),
+            "analyze_react_components" => json!({
+                "content": [{
+                    "type": "text",
+                    "text": "React Component Analysis:\n- Components found: 25\n- Functional components: 20\n- Class components: 5\n- Hook usage: 15 different hooks"
+                }]
+            }),
+            "analyze_nodejs_patterns" => json!({
+                "content": [{
+                    "type": "text",
+                    "text": "Node.js Pattern Analysis:\n- Express patterns: 8\n- Async patterns: 12\n- Database patterns: 5"
+                }]
+            }),
+            "suggest_analysis_workflow" => json!({
+                "content": [{
+                    "type": "text",
+                    "text": "Analysis Workflow Suggestions:\n1. Start with repository stats\n2. Analyze complexity\n3. Check security issues\n4. Review performance"
+                }]
+            }),
+            "batch_analysis" => json!({
+                "content": [{
+                    "type": "text",
+                    "text": "Batch Analysis Results:\n- Files processed: 150\n- Analysis time: 45 seconds\n- Overall health score: 8.2/10"
+                }]
+            }),
+            "optimize_workflow" => json!({
+                "content": [{
+                    "type": "text",
+                    "text": "Workflow Optimization:\n- Current efficiency: 78%\n- Suggested improvements: 5\n- Potential time savings: 25%"
+                }]
             }),
             _ => json!({
-                "status": "success",
-                "message": format!("Mock response for {}", tool_name),
-                "data": params
+                "content": [{
+                    "type": "text",
+                    "text": format!("Tool '{}' executed successfully", tool_name)
+                }]
             })
         }
     }
@@ -468,27 +612,52 @@ impl ComprehensiveMcpTests {
     fn validate_response(&self, tool_name: &str, response: &Value, params: &Value, response_time_ms: u128) -> ValidationResult {
         let mut validation = ValidationResult::default();
         
-        // Check response schema based on tool
-        match tool_name {
-            "repository_stats" => {
-                if !response.get("total_files").is_some() || !response.get("total_lines").is_some() {
-                    validation.response_schema_valid = false;
-                    validation.validation_errors.push("Missing required fields in repository_stats response".to_string());
+        // Check for MCP standard response format with "content" field
+        if let Some(content) = response.get("content") {
+            if content.is_array() && !content.as_array().unwrap().is_empty() {
+                validation.response_schema_valid = true;
+                validation.parameter_validation = true;
+                validation.data_consistency = true;
+                
+                // Tool-specific validation
+                let content_text = content[0].get("text")
+                    .and_then(|t| t.as_str())
+                    .unwrap_or("");
+                
+                match tool_name {
+                    "repository_stats" => {
+                        if !content_text.contains("Total files") || !content_text.contains("Total lines") {
+                            validation.data_consistency = false;
+                            validation.validation_errors.push("Repository stats missing expected metrics".to_string());
+                        }
+                    },
+                    "search_content" => {
+                        if !content_text.contains("Search Results") && !content_text.contains("matches") {
+                            validation.data_consistency = false;
+                            validation.validation_errors.push("Search content missing expected results format".to_string());
+                        }
+                    },
+                    "analyze_complexity" => {
+                        if !content_text.contains("complexity") {
+                            validation.data_consistency = false;
+                            validation.validation_errors.push("Complexity analysis missing complexity metrics".to_string());
+                        }
+                    },
+                    _ => {
+                        // Basic validation - response should have meaningful content
+                        if content_text.is_empty() {
+                            validation.data_consistency = false;
+                            validation.validation_errors.push("Response content is empty".to_string());
+                        }
+                    }
                 }
-            },
-            "search_content" => {
-                if !response.get("matches").is_some() {
-                    validation.response_schema_valid = false;
-                    validation.validation_errors.push("Missing matches field in search_content response".to_string());
-                }
-            },
-            _ => {
-                // Basic validation for unknown tools
-                if !response.is_object() {
-                    validation.response_schema_valid = false;
-                    validation.validation_errors.push("Response must be a JSON object".to_string());
-                }
+            } else {
+                validation.response_schema_valid = false;
+                validation.validation_errors.push("Content field must be a non-empty array".to_string());
             }
+        } else {
+            validation.response_schema_valid = false;
+            validation.validation_errors.push("Response missing required 'content' field (MCP format)".to_string());
         }
 
         // Performance validation

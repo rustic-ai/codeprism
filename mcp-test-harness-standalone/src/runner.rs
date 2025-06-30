@@ -7,7 +7,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
-use tracing::{debug, info, warn};
+use tracing::{debug, error, info, warn};
+use std::sync::Arc;
 
 use crate::config::{TestConfig, TestCase, TestSuite};
 use crate::server::McpServer;
@@ -434,12 +435,196 @@ impl TestRunner {
     }
     
     async fn run_suite_parallel(&mut self, suite: &TestSuite) -> Result<SuiteResult> {
-        // Simplified parallel implementation - would use proper async concurrency
-        info!("Running suite '{}' with parallel execution ({})", suite.name, self.parallel_execution);
-        
-        // For now, fall back to sequential execution
-        // Real implementation would use tokio::spawn and semaphores for concurrency control
-        self.run_suite_sequential(suite).await
+        let start_time = Instant::now();
+        let mut test_case_results = Vec::new();
+        let mut passed_cases = 0;
+        let mut failed_cases = 0;
+        let mut skipped_cases = 0;
+
+        info!("Running suite '{}' with parallel execution (max concurrent: {})", suite.name, self.parallel_execution);
+
+        // Create semaphore to limit concurrent execution
+        let semaphore = Arc::new(tokio::sync::Semaphore::new(self.parallel_execution));
+        let mut handles = Vec::new();
+
+        // Spawn tasks for each test case
+        for test_case in &suite.test_cases {
+            let test_case = test_case.clone();
+            let semaphore = semaphore.clone();
+            let fail_fast = self.config.global.fail_fast;
+            let validator = self.validator.clone();
+            let validation_only = self.validation_only;
+            let server_config = self.config.server.clone();
+
+            let handle = tokio::spawn(async move {
+                // Acquire semaphore permit
+                let _permit = semaphore.acquire().await.expect("Semaphore should not be closed");
+                
+                // Execute test case
+                Self::execute_test_case_standalone(test_case, validator, validation_only, server_config).await
+            });
+
+            handles.push(handle);
+        }
+
+        // Collect results as they complete
+        for handle in handles {
+            match handle.await {
+                Ok(result) => {
+                    match result.status {
+                        TestStatus::Passed => passed_cases += 1,
+                        TestStatus::Failed | TestStatus::Error => failed_cases += 1,
+                        TestStatus::Skipped => skipped_cases += 1,
+                    }
+                    
+                    test_case_results.push(result);
+                    
+                    // Check fail_fast condition
+                    if self.config.global.fail_fast && failed_cases > 0 {
+                        warn!("Fail-fast enabled, cancelling remaining tests");
+                        break;
+                    }
+                }
+                Err(e) => {
+                    error!("Task execution error: {}", e);
+                    failed_cases += 1;
+                    test_case_results.push(TestCaseResult {
+                        test_id: "unknown".to_string(),
+                        test_name: "unknown".to_string(),
+                        status: TestStatus::Error,
+                        execution_time_ms: 0,
+                        memory_usage_mb: None,
+                        error_message: Some(format!("Task execution error: {}", e)),
+                        response: None,
+                        validation_results: vec![],
+                        performance_metrics: None,
+                    });
+                }
+            }
+        }
+
+        Ok(SuiteResult {
+            suite_name: suite.name.clone(),
+            test_case_results,
+            suite_summary: SuiteSummary {
+                total_cases: suite.test_cases.len(),
+                passed_cases,
+                failed_cases,
+                skipped_cases,
+                execution_time_seconds: start_time.elapsed().as_secs_f64(),
+            },
+        })
+    }
+    
+    /// Execute a single test case in a standalone context (for parallel execution)
+    async fn execute_test_case_standalone(
+        test_case: TestCase,
+        validator: TestValidator,
+        validation_only: bool,
+        server_config: ServerConfig,
+    ) -> TestCaseResult {
+        if !test_case.enabled {
+            return TestCaseResult {
+                test_id: test_case.id.clone(),
+                test_name: test_case.tool_name.clone(),
+                status: TestStatus::Skipped,
+                execution_time_ms: 0,
+                memory_usage_mb: None,
+                error_message: Some("Test case disabled".to_string()),
+                response: None,
+                validation_results: vec![],
+                performance_metrics: None,
+            };
+        }
+
+        debug!("Running test case: {} ({})", test_case.id, test_case.tool_name);
+        let start_time = Instant::now();
+
+        // Validation-only mode
+        if validation_only {
+            let validation_results = validator.validate_test_case(&test_case);
+            return TestCaseResult {
+                test_id: test_case.id.clone(),
+                test_name: test_case.tool_name.clone(),
+                status: if validation_results.iter().all(|r| r.passed) {
+                    TestStatus::Passed
+                } else {
+                    TestStatus::Failed
+                },
+                execution_time_ms: start_time.elapsed().as_millis() as u64,
+                memory_usage_mb: None,
+                error_message: None,
+                response: None,
+                validation_results,
+                performance_metrics: None,
+            };
+        }
+
+        // Execute actual test with real MCP client
+        match Self::execute_mcp_test_case(&test_case, &server_config).await {
+            Ok(response) => {
+                let validation_results = validator.validate_response(&test_case, &response);
+                let status = if validation_results.iter().all(|r| r.passed) {
+                    TestStatus::Passed
+                } else {
+                    TestStatus::Failed
+                };
+
+                TestCaseResult {
+                    test_id: test_case.id.clone(),
+                    test_name: test_case.tool_name.clone(),
+                    status,
+                    execution_time_ms: start_time.elapsed().as_millis() as u64,
+                    memory_usage_mb: None, // TODO: Implement memory tracking
+                    error_message: None,
+                    response: Some(response),
+                    validation_results,
+                    performance_metrics: None, // TODO: Implement performance metrics
+                }
+            }
+            Err(e) => {
+                TestCaseResult {
+                    test_id: test_case.id.clone(),
+                    test_name: test_case.tool_name.clone(),
+                    status: TestStatus::Error,
+                    execution_time_ms: start_time.elapsed().as_millis() as u64,
+                    memory_usage_mb: None,
+                    error_message: Some(e.to_string()),
+                    response: None,
+                    validation_results: vec![],
+                    performance_metrics: None,
+                }
+            }
+        }
+    }
+
+    /// Execute MCP test case with real server communication
+    async fn execute_mcp_test_case(
+        test_case: &TestCase,
+        server_config: &ServerConfig,
+    ) -> Result<serde_json::Value> {
+        // Create MCP client for this test
+        use mcp_test_harness_lib::protocol::McpClient;
+        let mut client = McpClient::new();
+
+        // Start server if command is provided
+        if let Some(ref command) = server_config.command {
+            let args = server_config.args.clone().unwrap_or_default();
+            let working_dir = server_config.working_dir.clone();
+            
+            client.start_server(command.clone(), args, working_dir).await
+                .map_err(|e| anyhow::anyhow!("Failed to start MCP server: {}", e))?;
+        }
+
+        // Execute tool call
+        let result = client.call_tool(&test_case.tool_name, test_case.input_params.clone()).await
+            .map_err(|e| anyhow::anyhow!("Tool call failed: {}", e))?;
+
+        // Stop server
+        client.stop_server().await
+            .map_err(|e| anyhow::anyhow!("Failed to stop MCP server: {}", e))?;
+
+        Ok(result)
     }
     
     async fn run_test_case(&mut self, test_case: &TestCase) -> Result<TestCaseResult> {

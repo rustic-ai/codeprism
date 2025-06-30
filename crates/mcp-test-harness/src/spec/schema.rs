@@ -87,8 +87,6 @@ impl Default for SchemaValidator {
 /// Server specification schema definitions
 ///
 /// This module defines the Rust types that correspond to the JSON schema
-/// for MCP server specifications.
-
 /// Comprehensive server specification format compatible with JSON Schema validation
 /// for MCP server specifications.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

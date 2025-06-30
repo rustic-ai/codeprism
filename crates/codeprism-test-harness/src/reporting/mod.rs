@@ -3,16 +3,16 @@
 //! This module provides detailed error reporting, multiple output formats,
 //! and integration with CI/CD systems for the CodePrism Test Harness.
 
-mod formatters;
-mod diagnostics;
 mod analysis;
+mod diagnostics;
+mod formatters;
 
-pub use diagnostics::{FailureDiagnostics, FailureContext, DiffHighlight};
-pub use formatters::{ReportFormat, ReportFormatter, HtmlFormatter, JsonFormatter};
 pub use analysis::{PerformanceAnalyzer, TestCoverageAnalyzer};
+pub use diagnostics::{DiffHighlight, FailureContext, FailureDiagnostics};
+pub use formatters::{HtmlFormatter, JsonFormatter, ReportFormat, ReportFormatter};
 
-use crate::types::TestSuiteResult;
 use crate::performance::PerformanceResult;
+use crate::types::TestSuiteResult;
 use anyhow::Result;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -223,7 +223,10 @@ impl ReportGenerator {
     async fn build_report(&self, test_results: &[TestSuiteResult]) -> Result<Report> {
         let metadata = self.build_metadata().await?;
         let summary = self.build_summary(test_results);
-        let failure_analysis = self.failure_diagnostics.analyze_failures(test_results).await?;
+        let failure_analysis = self
+            .failure_diagnostics
+            .analyze_failures(test_results)
+            .await?;
         let performance_analysis = self.performance_analyzer.analyze(test_results).await?;
         let coverage_analysis = self.coverage_analyzer.analyze(test_results).await?;
 
@@ -258,21 +261,21 @@ impl ReportGenerator {
     fn build_summary(&self, test_results: &[TestSuiteResult]) -> TestSummary {
         let total_suites = test_results.len();
         let passed_suites = test_results.iter().filter(|r| r.suite_passed).count();
-        
+
         let total_tests: usize = test_results.iter().map(|r| r.stats.total_tests).sum();
         let passed_tests: usize = test_results.iter().map(|r| r.stats.passed_tests).sum();
-        
+
         let total_execution_time_ms: u64 = test_results
             .iter()
             .map(|r| r.stats.total_duration.as_millis() as u64)
             .sum();
-        
+
         let average_execution_time_ms = if total_tests > 0 {
             total_execution_time_ms / total_tests as u64
         } else {
             0
         };
-        
+
         let success_rate_percent = if total_tests > 0 {
             (passed_tests as f64 / total_tests as f64) * 100.0
         } else {
@@ -391,4 +394,4 @@ pub struct CoverageTrend {
 }
 
 // Re-export RegressionAlert from performance module
-pub use crate::performance::RegressionAlert; 
+pub use crate::performance::RegressionAlert;

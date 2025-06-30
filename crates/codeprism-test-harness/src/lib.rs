@@ -26,7 +26,7 @@ pub use executor::TestExecutor;
 pub use performance::{BaselineManager, PerformanceMetrics, PerformanceMonitor, RegressionAlert};
 pub use prompts::{PromptTester, PromptValidator};
 pub use protocol::{JsonRpcMessage, McpCapabilities, McpClient, ProtocolValidator};
-pub use reporting::{ReportGenerator, ReportFormat, FailureDiagnostics, Report};
+pub use reporting::{FailureDiagnostics, Report, ReportFormat, ReportGenerator};
 pub use resources::{ResourceTester, ResourceValidator};
 pub use script::{BuiltinValidationUtils, ScriptError, ScriptExecutor, ScriptResult};
 pub use tools::{ToolTester, ToolValidator};

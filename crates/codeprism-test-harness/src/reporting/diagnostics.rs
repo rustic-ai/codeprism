@@ -1,6 +1,6 @@
 //! Failure diagnostics and context analysis
 
-use crate::types::{TestSuiteResult, TestResult};
+use crate::types::{TestResult, TestSuiteResult};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -14,7 +14,10 @@ impl FailureDiagnostics {
     }
 
     /// Analyze failures across test results
-    pub async fn analyze_failures(&self, test_results: &[TestSuiteResult]) -> Result<super::FailureAnalysis> {
+    pub async fn analyze_failures(
+        &self,
+        test_results: &[TestSuiteResult],
+    ) -> Result<super::FailureAnalysis> {
         let mut failure_details = Vec::new();
         let mut failure_categories = HashMap::new();
         let mut total_failures = 0;
@@ -23,15 +26,20 @@ impl FailureDiagnostics {
             for test in &suite.test_results {
                 if !test.success {
                     total_failures += 1;
-                    
+
                     let category = self.categorize_failure(test);
-                    *failure_categories.entry(format!("{:?}", category)).or_insert(0) += 1;
+                    *failure_categories
+                        .entry(format!("{:?}", category))
+                        .or_insert(0) += 1;
 
                     let failure_detail = super::FailureDetail {
                         test_id: test.test_case.id.clone(),
                         tool_name: test.test_case.tool_name.clone(),
                         category,
-                        message: test.error_message.clone().unwrap_or_else(|| "Unknown error".to_string()),
+                        message: test
+                            .error_message
+                            .clone()
+                            .unwrap_or_else(|| "Unknown error".to_string()),
                         comparison: self.build_comparison(test),
                         stack_trace: None,
                         request_context: serde_json::json!({
@@ -39,7 +47,9 @@ impl FailureDiagnostics {
                             "params": test.test_case.input_params
                         }),
                         response_context: test.actual_response.clone(),
-                        performance_context: test.debug_info.get("performance")
+                        performance_context: test
+                            .debug_info
+                            .get("performance")
                             .and_then(|v| serde_json::from_value(v.clone()).ok()),
                     };
 
@@ -110,9 +120,10 @@ impl FailureDiagnostics {
             for keyword in keywords {
                 let count = pattern_counts.entry(keyword.clone()).or_insert(0);
                 *count += 1;
-                
-                tool_mapping.entry(keyword)
-                    .or_insert_with(Vec::new)
+
+                tool_mapping
+                    .entry(keyword)
+                    .or_default()
                     .push(failure.tool_name.clone());
             }
         }
@@ -131,7 +142,14 @@ impl FailureDiagnostics {
 
     /// Extract keywords from error messages for pattern detection
     fn extract_keywords(&self, message: &str) -> Vec<String> {
-        let keywords = ["timeout", "connection", "validation", "network", "config", "permission"];
+        let keywords = [
+            "timeout",
+            "connection",
+            "validation",
+            "network",
+            "config",
+            "permission",
+        ];
         keywords
             .iter()
             .filter(|&&keyword| message.to_lowercase().contains(keyword))
@@ -142,9 +160,13 @@ impl FailureDiagnostics {
     /// Suggest fixes for common patterns
     fn suggest_fix(&self, pattern: &str) -> Option<String> {
         match pattern {
-            "timeout" => Some("Consider increasing timeout values or optimizing tool performance".to_string()),
+            "timeout" => Some(
+                "Consider increasing timeout values or optimizing tool performance".to_string(),
+            ),
             "connection" => Some("Check network connectivity and server availability".to_string()),
-            "validation" => Some("Review expected values and ensure test data is correct".to_string()),
+            "validation" => {
+                Some("Review expected values and ensure test data is correct".to_string())
+            }
             "config" => Some("Verify configuration files and environment settings".to_string()),
             _ => None,
         }
@@ -218,4 +240,4 @@ pub enum DiffLineType {
     Added,
     Removed,
     Context,
-} 
+}

@@ -1,6 +1,6 @@
 //! Report formatters for different output formats
 
-use super::{Report};
+use super::Report;
 use anyhow::Result;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
@@ -23,10 +23,10 @@ pub enum ReportFormat {
 pub trait ReportFormatter: Send + Sync {
     /// Format a report into the target format
     async fn format(&self, report: &Report) -> Result<String>;
-    
+
     /// Get the file extension for this format
     fn file_extension(&self) -> &'static str;
-    
+
     /// Get the MIME type for this format
     fn mime_type(&self) -> &'static str;
 }
@@ -44,7 +44,7 @@ impl HtmlFormatter {
 impl ReportFormatter for HtmlFormatter {
     async fn format(&self, report: &Report) -> Result<String> {
         let mut html = String::new();
-        
+
         // HTML header
         html.push_str(&format!(
             r#"<!DOCTYPE html>
@@ -79,7 +79,7 @@ impl ReportFormatter for HtmlFormatter {
 "#,
             chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC")
         ));
-        
+
         // Summary section
         html.push_str(&format!(
             r#"        <div class="section">
@@ -105,25 +105,44 @@ impl ReportFormatter for HtmlFormatter {
         </div>
 "#,
             report.summary.total_tests,
-            if report.summary.passed_tests == report.summary.total_tests { "success" } else { "error" },
+            if report.summary.passed_tests == report.summary.total_tests {
+                "success"
+            } else {
+                "error"
+            },
             report.summary.passed_tests,
-            if report.summary.success_rate_percent >= 90.0 { "success" } else if report.summary.success_rate_percent >= 70.0 { "warning" } else { "error" },
+            if report.summary.success_rate_percent >= 90.0 {
+                "success"
+            } else if report.summary.success_rate_percent >= 70.0 {
+                "warning"
+            } else {
+                "error"
+            },
             report.summary.success_rate_percent,
             report.summary.total_execution_time_ms
         ));
-        
+
         // Test details
-        html.push_str(r#"        <div class="section">
+        html.push_str(
+            r#"        <div class="section">
             <h2>Test Results</h2>
-"#);
-        
+"#,
+        );
+
         for suite in &report.test_suites {
-            html.push_str(&format!(r#"            <h3>{}</h3>"#, suite.test_suite.name));
-            
+            html.push_str(&format!(
+                r#"            <h3>{}</h3>"#,
+                suite.test_suite.name
+            ));
+
             for test in &suite.test_results {
-                let class = if test.success { "test-pass" } else { "test-fail" };
+                let class = if test.success {
+                    "test-pass"
+                } else {
+                    "test-fail"
+                };
                 let status = if test.success { "✅" } else { "❌" };
-                
+
                 html.push_str(&format!(
                     r#"            <div class="test-result {}">
                 {} {} - {}ms {}
@@ -134,20 +153,24 @@ impl ReportFormatter for HtmlFormatter {
                     test.test_case.id,
                     test.duration.as_millis(),
                     if !test.success {
-                        format!("<br><small>Error: {}</small>", 
-                            test.error_message.as_deref().unwrap_or("Unknown error"))
+                        format!(
+                            "<br><small>Error: {}</small>",
+                            test.error_message.as_deref().unwrap_or("Unknown error")
+                        )
                     } else {
                         String::new()
                     }
                 ));
             }
         }
-        
-        html.push_str(r#"        </div>
+
+        html.push_str(
+            r#"        </div>
     </div>
 </body>
-</html>"#);
-        
+</html>"#,
+        );
+
         Ok(html)
     }
 
@@ -208,7 +231,7 @@ impl ReportFormatter for JunitXmlFormatter {
     async fn format(&self, report: &Report) -> Result<String> {
         let mut xml = String::from(r#"<?xml version="1.0" encoding="UTF-8"?>"#);
         xml.push('\n');
-        
+
         // Root testsuites element
         xml.push_str(&format!(
             r#"<testsuites name="CodePrism Tests" tests="{}" failures="{}" time="{:.3}">"#,
@@ -217,7 +240,7 @@ impl ReportFormatter for JunitXmlFormatter {
             report.summary.total_execution_time_ms as f64 / 1000.0
         ));
         xml.push('\n');
-        
+
         // Individual test suites
         for suite in &report.test_suites {
             xml.push_str(&format!(
@@ -228,7 +251,7 @@ impl ReportFormatter for JunitXmlFormatter {
                 suite.stats.total_duration.as_secs_f64()
             ));
             xml.push('\n');
-            
+
             // Individual test cases
             for test_result in &suite.test_results {
                 xml.push_str(&format!(
@@ -237,27 +260,33 @@ impl ReportFormatter for JunitXmlFormatter {
                     test_result.test_case.tool_name,
                     test_result.duration.as_secs_f64()
                 ));
-                
+
                 if test_result.success {
                     xml.push_str(" />");
                 } else {
-                    xml.push_str(">");
+                    xml.push('>');
                     xml.push('\n');
                     xml.push_str(&format!(
                         r#"      <failure message="{}">{}</failure>"#,
-                        test_result.error_message.as_deref().unwrap_or("Test failed"),
-                        test_result.error_message.as_deref().unwrap_or("Unknown error")
+                        test_result
+                            .error_message
+                            .as_deref()
+                            .unwrap_or("Test failed"),
+                        test_result
+                            .error_message
+                            .as_deref()
+                            .unwrap_or("Unknown error")
                     ));
                     xml.push('\n');
                     xml.push_str("    </testcase>");
                 }
                 xml.push('\n');
             }
-            
+
             xml.push_str("  </testsuite>");
             xml.push('\n');
         }
-        
+
         xml.push_str("</testsuites>");
         Ok(xml)
     }
@@ -284,19 +313,31 @@ impl MarkdownFormatter {
 impl ReportFormatter for MarkdownFormatter {
     async fn format(&self, report: &Report) -> Result<String> {
         let mut md = String::new();
-        
+
         md.push_str("# 🧪 CodePrism Test Report\n\n");
-        
+
         // Summary table
         md.push_str("## 📊 Summary\n\n");
         md.push_str("| Metric | Value |\n");
         md.push_str("|--------|-------|\n");
-        md.push_str(&format!("| Total Tests | {} |\n", report.summary.total_tests));
-        md.push_str(&format!("| Passed Tests | {} |\n", report.summary.passed_tests));
-        md.push_str(&format!("| Success Rate | {:.1}% |\n", report.summary.success_rate_percent));
-        md.push_str(&format!("| Total Time | {}ms |\n", report.summary.total_execution_time_ms));
+        md.push_str(&format!(
+            "| Total Tests | {} |\n",
+            report.summary.total_tests
+        ));
+        md.push_str(&format!(
+            "| Passed Tests | {} |\n",
+            report.summary.passed_tests
+        ));
+        md.push_str(&format!(
+            "| Success Rate | {:.1}% |\n",
+            report.summary.success_rate_percent
+        ));
+        md.push_str(&format!(
+            "| Total Time | {}ms |\n",
+            report.summary.total_execution_time_ms
+        ));
         md.push('\n');
-        
+
         // Status emoji
         let status_emoji = if report.summary.success_rate_percent >= 90.0 {
             "✅"
@@ -305,8 +346,9 @@ impl ReportFormatter for MarkdownFormatter {
         } else {
             "❌"
         };
-        
-        md.push_str(&format!("**Overall Status: {} {}**\n\n", 
+
+        md.push_str(&format!(
+            "**Overall Status: {} {}**\n\n",
             status_emoji,
             if report.summary.passed_tests == report.summary.total_tests {
                 "All tests passed!"
@@ -314,28 +356,34 @@ impl ReportFormatter for MarkdownFormatter {
                 "Some tests failed"
             }
         ));
-        
+
         // Failures section
         if report.failure_analysis.total_failures > 0 {
             md.push_str("## ❌ Failures\n\n");
             for detail in &report.failure_analysis.failure_details {
-                md.push_str(&format!("- **{}** ({}): {}\n", 
-                    detail.test_id, 
-                    detail.tool_name, 
-                    detail.message
+                md.push_str(&format!(
+                    "- **{}** ({}): {}\n",
+                    detail.test_id, detail.tool_name, detail.message
                 ));
             }
             md.push('\n');
         }
-        
+
         // Performance section
         md.push_str("## ⚡ Performance\n\n");
-        md.push_str(&format!("- Average execution time: {:.1}ms\n", 
-            report.performance_analysis.summary.average_execution_time_ms));
-        md.push_str(&format!("- 95th percentile: {}ms\n", 
-            report.performance_analysis.summary.p95_execution_time_ms));
+        md.push_str(&format!(
+            "- Average execution time: {:.1}ms\n",
+            report
+                .performance_analysis
+                .summary
+                .average_execution_time_ms
+        ));
+        md.push_str(&format!(
+            "- 95th percentile: {}ms\n",
+            report.performance_analysis.summary.p95_execution_time_ms
+        ));
         md.push('\n');
-        
+
         Ok(md)
     }
 
@@ -370,4 +418,4 @@ impl Default for MarkdownFormatter {
     fn default() -> Self {
         Self::new()
     }
-} 
+}

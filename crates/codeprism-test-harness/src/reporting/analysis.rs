@@ -14,7 +14,10 @@ impl PerformanceAnalyzer {
     }
 
     /// Analyze performance across test results
-    pub async fn analyze(&self, test_results: &[TestSuiteResult]) -> Result<super::PerformanceAnalysis> {
+    pub async fn analyze(
+        &self,
+        test_results: &[TestSuiteResult],
+    ) -> Result<super::PerformanceAnalysis> {
         let summary = self.calculate_performance_summary(test_results);
         let trends = self.generate_performance_trends(test_results);
         let regression_alerts = Vec::new(); // Will be populated by performance monitoring integration
@@ -29,10 +32,13 @@ impl PerformanceAnalyzer {
     }
 
     /// Calculate overall performance summary statistics
-    fn calculate_performance_summary(&self, test_results: &[TestSuiteResult]) -> super::PerformanceSummary {
+    fn calculate_performance_summary(
+        &self,
+        test_results: &[TestSuiteResult],
+    ) -> super::PerformanceSummary {
         let mut execution_times = Vec::new();
         let mut total_memory = 0.0;
-        let mut total_tests = 0;
+        let mut _total_tests = 0;
 
         for suite in test_results {
             for test in &suite.test_results {
@@ -40,7 +46,7 @@ impl PerformanceAnalyzer {
                 if let Some(memory) = test.memory_usage_mb {
                     total_memory += memory;
                 }
-                total_tests += 1;
+                _total_tests += 1;
             }
         }
 
@@ -70,27 +76,39 @@ impl PerformanceAnalyzer {
     }
 
     /// Generate performance trend data over time
-    fn generate_performance_trends(&self, test_results: &[TestSuiteResult]) -> Vec<super::PerformanceTrend> {
+    fn generate_performance_trends(
+        &self,
+        test_results: &[TestSuiteResult],
+    ) -> Vec<super::PerformanceTrend> {
         // For now, create a simple trend with current data
         // In a real implementation, this would compare against historical data
         let current_time = Utc::now();
-        
+
         vec![
             super::PerformanceTrend {
                 metric_name: "Average Execution Time".to_string(),
-                data_points: vec![(current_time, self.calculate_average_execution_time(test_results))],
+                data_points: vec![(
+                    current_time,
+                    self.calculate_average_execution_time(test_results),
+                )],
                 trend_direction: super::TrendDirection::Stable,
             },
             super::PerformanceTrend {
                 metric_name: "Memory Usage".to_string(),
-                data_points: vec![(current_time, self.calculate_average_memory_usage(test_results))],
+                data_points: vec![(
+                    current_time,
+                    self.calculate_average_memory_usage(test_results),
+                )],
                 trend_direction: super::TrendDirection::Stable,
             },
         ]
     }
 
     /// Generate baseline comparisons
-    fn generate_baseline_comparisons(&self, test_results: &[TestSuiteResult]) -> Vec<super::BaselineComparison> {
+    fn generate_baseline_comparisons(
+        &self,
+        test_results: &[TestSuiteResult],
+    ) -> Vec<super::BaselineComparison> {
         let mut comparisons = Vec::new();
         let mut tool_performances: HashMap<String, Vec<f64>> = HashMap::new();
 
@@ -174,7 +192,10 @@ impl TestCoverageAnalyzer {
     }
 
     /// Analyze test coverage across results
-    pub async fn analyze(&self, test_results: &[TestSuiteResult]) -> Result<super::CoverageAnalysis> {
+    pub async fn analyze(
+        &self,
+        test_results: &[TestSuiteResult],
+    ) -> Result<super::CoverageAnalysis> {
         let tool_coverage = self.calculate_tool_coverage(test_results);
         let feature_coverage = self.calculate_feature_coverage(test_results);
         let coverage_trends = self.generate_coverage_trends();
@@ -208,10 +229,7 @@ impl TestCoverageAnalyzer {
             100.0
         };
 
-        let untested_tools: Vec<String> = all_tools
-            .difference(&tested_tools)
-            .cloned()
-            .collect();
+        let untested_tools: Vec<String> = all_tools.difference(&tested_tools).cloned().collect();
 
         super::ToolCoverage {
             total_tools,
@@ -222,7 +240,10 @@ impl TestCoverageAnalyzer {
     }
 
     /// Calculate feature coverage statistics
-    fn calculate_feature_coverage(&self, test_results: &[TestSuiteResult]) -> super::FeatureCoverage {
+    fn calculate_feature_coverage(
+        &self,
+        test_results: &[TestSuiteResult],
+    ) -> super::FeatureCoverage {
         let mut feature_breakdown = HashMap::new();
         let mut total_features = 0;
         let mut tested_features = 0;
@@ -232,10 +253,10 @@ impl TestCoverageAnalyzer {
             for test in &suite.test_results {
                 let feature_name = self.extract_feature_name(&test.test_case.id);
                 total_features += 1;
-                
+
                 let is_tested = test.success;
                 feature_breakdown.insert(feature_name, is_tested);
-                
+
                 if is_tested {
                     tested_features += 1;
                 }
@@ -276,4 +297,4 @@ impl Default for TestCoverageAnalyzer {
     fn default() -> Self {
         Self::new()
     }
-} 
+}

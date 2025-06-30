@@ -2,7 +2,7 @@
 
 use crate::config::TestConfig;
 use crate::performance::{PerformanceConfig, PerformanceMonitor};
-use crate::reporting::{ReportGenerator, ReportFormat};
+use crate::reporting::{ReportFormat, ReportGenerator};
 use crate::script::{SandboxConfig, ScriptExecutor};
 use crate::types::{
     JsonPathPattern, MemoryStats, PatternValidation, ResponseTimePercentiles, TestCase,
@@ -506,14 +506,16 @@ impl TestExecutor {
         output_path: Option<PathBuf>,
     ) -> Result<crate::reporting::Report> {
         let report_generator = ReportGenerator::new();
-        report_generator.generate_report(test_results, format, output_path).await
+        report_generator
+            .generate_report(test_results, format, output_path)
+            .await
     }
 
     /// Generate multiple report formats at once
     pub async fn generate_reports(
         &self,
         test_results: &[TestSuiteResult],
-        output_dir: &PathBuf,
+        output_dir: &std::path::Path,
     ) -> Result<Vec<crate::reporting::Report>> {
         let report_generator = ReportGenerator::new();
         let mut reports = Vec::new();

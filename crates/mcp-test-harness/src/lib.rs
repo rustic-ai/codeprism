@@ -69,16 +69,9 @@ use tracing_subscriber::{fmt, EnvFilter};
 /// # Example
 ///
 /// ```rust,no_run
-/// use mcp_test_harness_lib;
-///
-/// #[tokio::main]
-/// async fn main() -> anyhow::Result<()> {
-///     mcp_test_harness_lib::init()?;
-///     
-///     // Your test harness code here
-///     
-///     Ok(())
-/// }
+/// // Initialize the MCP test harness
+/// mcp_test_harness_lib::init()?;
+/// # Ok::<(), anyhow::Error>(())
 /// ```
 pub fn init() -> Result<()> {
     // Initialize tracing subscriber for logging

@@ -5,7 +5,7 @@ use crate::types::ValidationResult;
 
 /// Response validator for test expectations
 pub struct ResponseValidator {
-    // TODO: Add JSONPath evaluation, pattern matching, etc.
+    // FUTURE: Add JSONPath evaluation, pattern matching for enhanced validation (tracked in #122)
 }
 
 impl ResponseValidator {
@@ -20,7 +20,7 @@ impl ResponseValidator {
         _response: &serde_json::Value,
         _expected: &ExpectedOutput,
     ) -> ValidationResult {
-        // TODO: Implement comprehensive response validation
+        // FUTURE: Implement comprehensive response validation (tracked in #122)
         ValidationResult::success()
     }
 
@@ -30,7 +30,7 @@ impl ResponseValidator {
         _response: &serde_json::Value,
         _field: &FieldValidation,
     ) -> ValidationResult {
-        // TODO: Implement field validation using JSONPath
+        // FUTURE: Implement field validation using JSONPath (tracked in #122)
         ValidationResult::success()
     }
 }

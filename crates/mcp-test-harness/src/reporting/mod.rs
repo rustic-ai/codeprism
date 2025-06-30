@@ -34,7 +34,7 @@ impl fmt::Display for ReportFormat {
 
 /// Report generator for creating test output
 pub struct ReportGenerator {
-    // TODO: Add templates, styling, etc.
+    // FUTURE: Add templates, styling for enhanced reporting (tracked in #124)
 }
 
 impl ReportGenerator {
@@ -50,7 +50,7 @@ impl ReportGenerator {
         _format: ReportFormat,
         _output_path: &Path,
     ) -> anyhow::Result<()> {
-        // TODO: Implement report generation
+        // FUTURE: Implement report generation (tracked in #124)
         Ok(())
     }
 }

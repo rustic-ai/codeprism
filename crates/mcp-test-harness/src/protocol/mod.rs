@@ -211,8 +211,8 @@ impl McpClient {
         let _request_json = serde_json::to_string(&request)
             .map_err(|e| McpError::Serialization(format!("Failed to serialize request: {}", e)))?;
 
-        // For now, simulate a response based on the request
-        // TODO: Implement actual stdio communication with server process
+        // NOTE: Simulate a response based on the request during development
+        // FUTURE: Implement actual stdio communication with server process (tracked in #125)
         let response = self.simulate_server_response(&request).await?;
 
         Ok(response)
@@ -293,7 +293,7 @@ impl McpClient {
     }
 
     /// Simulate server response for testing purposes
-    /// TODO: Replace with actual stdio communication
+    /// FUTURE: Replace with actual stdio communication (tracked in #125)
     async fn simulate_server_response(
         &self,
         request: &JsonRpcRequest,

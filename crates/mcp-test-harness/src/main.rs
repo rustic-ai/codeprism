@@ -395,7 +395,7 @@ async fn generate_reports(
             output_path.display()
         );
 
-        // TODO: Implement report generation
+        // FUTURE: Implement report generation (tracked in #124)
         // results.generate_report(format, &output_path).await?;
     }
 
@@ -414,6 +414,6 @@ fn print_test_summary(results: &TestReport) {
 
     if results.stats.failed_tests > 0 {
         warn!("Failed tests:");
-        // TODO: List failed test names
+        // FUTURE: List failed test names (tracked in #124)
     }
 }

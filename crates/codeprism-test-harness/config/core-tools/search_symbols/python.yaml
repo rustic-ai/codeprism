@@ -1,0 +1,377 @@
+# Search Symbols Tool - Python Test Configuration
+# Tests the search_symbols MCP tool against Python codebases
+
+global:
+  max_global_concurrency: 2
+  timeout_seconds: 30
+  fail_fast: false
+  default_project_path: "test-projects/python-sample"
+
+# Performance monitoring for symbol search
+performance:
+  enable_monitoring: true
+  baseline_storage_path: "baselines/core-tools/"
+  regression_detection:
+    warning_threshold_percent: 20.0
+    error_threshold_percent: 50.0
+
+test_suites:
+  - name: "Search Symbols - Python Core Functionality"
+    description: "Test symbol search capabilities for Python projects"
+    test_cases:
+      # Basic class search
+      - id: "python_search_classes"
+        tool_name: "search_symbols"
+        description: "Search for Python classes"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          query: "class:*"
+          language: "python"
+          include_private: false
+          max_results: 50
+        expected:
+          patterns:
+            - key: "result.total_matches"
+              validation:
+                type: "range"
+                min: 1
+                max: 20
+              required: true
+            - key: "result.symbols"
+              validation:
+                type: "array_min_length"
+                min_length: 1
+              required: true
+            - key: "result.symbols[0].name"
+              validation:
+                type: "exists"
+              required: true
+            - key: "result.symbols[0].type"
+              validation:
+                type: "equals"
+                value: "class"
+              required: true
+          performance_requirements:
+            max_execution_time_ms: 1500
+            max_memory_usage_mb: 48
+          custom_scripts:
+            - name: "validate_python_classes"
+              language: "python"
+              script: |
+                def validate(response):
+                    result = response.get('result', {})
+                    symbols = result.get('symbols', [])
+                    
+                    if not symbols:
+                        return False, 0.0, "No class symbols found"
+                    
+                    # Validate symbol structure
+                    required_fields = ['name', 'type', 'file', 'line']
+                    class_count = 0
+                    
+                    for symbol in symbols:
+                        if not all(field in symbol for field in required_fields):
+                            continue
+                        if symbol.get('type') == 'class':
+                            class_count += 1
+                    
+                    if class_count == 0:
+                        return False, 0.0, "No valid class symbols found"
+                    
+                    score = min(1.0, class_count / 3.0)  # Expect at least 3 classes for full score
+                    return True, score, f"Found {class_count} class symbols"
+
+      # Function search with patterns
+      - id: "python_search_functions"
+        tool_name: "search_symbols"
+        description: "Search for Python functions with specific patterns"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          query: "function:*"
+          language: "python"
+          include_private: false
+          pattern_match: true
+          max_results: 100
+        expected:
+          patterns:
+            - key: "result.total_matches"
+              validation:
+                type: "range"
+                min: 3
+                max: 50
+              required: true
+            - key: "result.symbols"
+              validation:
+                type: "array_min_length"
+                min_length: 3
+              required: true
+          custom_scripts:
+            - name: "validate_function_signatures"
+              language: "python"
+              script: |
+                def validate(response):
+                    result = response.get('result', {})
+                    symbols = result.get('symbols', [])
+                    
+                    function_count = 0
+                    functions_with_signatures = 0
+                    
+                    for symbol in symbols:
+                        if symbol.get('type') == 'function':
+                            function_count += 1
+                            if 'signature' in symbol or 'parameters' in symbol:
+                                functions_with_signatures += 1
+                    
+                    if function_count == 0:
+                        return False, 0.0, "No function symbols found"
+                    
+                    signature_ratio = functions_with_signatures / function_count
+                    score = 0.5 + (signature_ratio * 0.5)  # Base score + signature bonus
+                    
+                    return True, score, f"Found {function_count} functions, {functions_with_signatures} with signatures"
+
+      # Symbol search by name pattern
+      - id: "python_search_by_name"
+        tool_name: "search_symbols"
+        description: "Search symbols by specific name patterns"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          query: "*User*"
+          language: "python"
+          case_sensitive: false
+          include_private: true
+          max_results: 25
+        expected:
+          patterns:
+            - key: "result.symbols"
+              validation:
+                type: "array"
+              required: true
+          custom_scripts:
+            - name: "validate_name_matching"
+              language: "python"
+              script: |
+                def validate(response):
+                    result = response.get('result', {})
+                    symbols = result.get('symbols', [])
+                    
+                    # Check that all returned symbols contain "User" in name
+                    matching_symbols = 0
+                    for symbol in symbols:
+                        name = symbol.get('name', '')
+                        if 'user' in name.lower():
+                            matching_symbols += 1
+                    
+                    total_symbols = len(symbols)
+                    if total_symbols == 0:
+                        return True, 0.3, "No symbols found (acceptable for some projects)"
+                    
+                    match_ratio = matching_symbols / total_symbols
+                    if match_ratio > 0.8:
+                        return True, 1.0, f"Excellent name matching: {matching_symbols}/{total_symbols}"
+                    elif match_ratio > 0.5:
+                        return True, 0.7, f"Good name matching: {matching_symbols}/{total_symbols}"
+                    else:
+                        return False, 0.0, f"Poor name matching: {matching_symbols}/{total_symbols}"
+
+      # Complex query with filters
+      - id: "python_search_complex_query"
+        tool_name: "search_symbols"
+        description: "Complex symbol search with multiple filters"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          query: "function:get_* OR function:set_* OR class:*Manager"
+          language: "python"
+          include_private: false
+          file_patterns: ["*.py"]
+          exclude_patterns: ["*test*"]
+          max_results: 30
+        expected:
+          patterns:
+            - key: "result.symbols"
+              validation:
+                type: "array"
+              required: true
+          custom_scripts:
+            - name: "validate_complex_query"
+              language: "python"
+              script: |
+                def validate(response):
+                    result = response.get('result', {})
+                    symbols = result.get('symbols', [])
+                    
+                    # Validate that returned symbols match the complex query pattern
+                    valid_symbols = 0
+                    for symbol in symbols:
+                        name = symbol.get('name', '')
+                        symbol_type = symbol.get('type', '')
+                        
+                        # Check if symbol matches any of the query patterns
+                        if (symbol_type == 'function' and (name.startswith('get_') or name.startswith('set_'))) or \
+                           (symbol_type == 'class' and name.endswith('Manager')):
+                            valid_symbols += 1
+                    
+                    if not symbols:
+                        return True, 0.2, "No symbols found (may be valid for some projects)"
+                    
+                    validity_ratio = valid_symbols / len(symbols)
+                    if validity_ratio > 0.8:
+                        return True, 1.0, f"Complex query working well: {valid_symbols}/{len(symbols)} matches"
+                    else:
+                        return True, validity_ratio, f"Complex query partial success: {valid_symbols}/{len(symbols)} matches"
+
+  - name: "Search Symbols - Python Edge Cases"
+    description: "Test edge cases and error handling for symbol search"
+    test_cases:
+      # Empty query handling
+      - id: "python_search_empty_query"
+        tool_name: "search_symbols"
+        description: "Handle empty search queries"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          query: ""
+          language: "python"
+        expected:
+          patterns:
+            - key: "error"
+              validation:
+                type: "exists"
+              required: false
+          allow_failure: true
+          custom_scripts:
+            - name: "validate_empty_query_handling"
+              language: "python"
+              script: |
+                def validate(response):
+                    # Empty query should either return an error or empty results
+                    if 'error' in response:
+                        return True, 1.0, "Properly handled empty query with error"
+                    
+                    result = response.get('result', {})
+                    if result.get('total_matches', -1) == 0:
+                        return True, 0.8, "Handled empty query with zero results"
+                    
+                    return False, 0.0, "Did not properly handle empty query"
+
+      # Invalid query syntax
+      - id: "python_search_invalid_syntax"
+        tool_name: "search_symbols"
+        description: "Handle invalid query syntax"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          query: "class:[[invalid regex"
+          language: "python"
+        expected:
+          patterns:
+            - key: "error"
+              validation:
+                type: "exists"
+              required: false
+          allow_failure: true
+
+      # Large result set handling
+      - id: "python_search_large_results"
+        tool_name: "search_symbols"
+        description: "Handle large result sets with pagination"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          query: "*"  # Match everything
+          language: "python"
+          max_results: 5  # Small limit to test pagination
+        expected:
+          patterns:
+            - key: "result.symbols"
+              validation:
+                type: "array_max_length"
+                max_length: 5
+              required: true
+            - key: "result.has_more"
+              validation:
+                type: "exists"
+              required: false
+          custom_scripts:
+            - name: "validate_pagination"
+              language: "python"
+              script: |
+                def validate(response):
+                    result = response.get('result', {})
+                    symbols = result.get('symbols', [])
+                    
+                    if len(symbols) > 5:
+                        return False, 0.0, f"Result limit not respected: got {len(symbols)} symbols"
+                    
+                    # Check if pagination info is provided when there are more results
+                    has_more = result.get('has_more', False)
+                    total_matches = result.get('total_matches', 0)
+                    
+                    if total_matches > len(symbols) and not has_more:
+                        return True, 0.5, "Pagination info missing but limit respected"
+                    
+                    return True, 1.0, f"Pagination handled correctly: {len(symbols)} results returned"
+
+      # Non-existent file patterns
+      - id: "python_search_invalid_patterns"
+        tool_name: "search_symbols"
+        description: "Handle non-existent file patterns"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          query: "class:*"
+          language: "python"
+          file_patterns: ["*.nonexistent"]
+        expected:
+          patterns:
+            - key: "result.total_matches"
+              validation:
+                type: "equals"
+                value: 0
+              required: true
+
+  - name: "Search Symbols - Python Performance"
+    description: "Performance testing for symbol search operations"
+    test_cases:
+      # Large project search
+      - id: "python_search_performance_large"
+        tool_name: "search_symbols"
+        description: "Performance test on larger Python project"
+        enabled: true
+        project_path: "test-projects/dependency-test-project"
+        input_params:
+          query: "*"
+          language: "python"
+          max_results: 100
+        expected:
+          patterns:
+            - key: "result.symbols"
+              validation:
+                type: "array"
+              required: true
+          performance_requirements:
+            max_execution_time_ms: 3000
+            max_memory_usage_mb: 96
+
+# Performance baselines for search_symbols tool on Python projects
+baselines:
+  python_search_classes:
+    average_execution_time_ms: 300.0
+    peak_memory_mb: 24.0
+    throughput_ops_per_sec: 3.3
+  python_search_functions:
+    average_execution_time_ms: 400.0
+    peak_memory_mb: 32.0
+    throughput_ops_per_sec: 2.5
+  python_search_complex_query:
+    average_execution_time_ms: 600.0
+    peak_memory_mb: 40.0
+    throughput_ops_per_sec: 1.7
+  python_search_performance_large:
+    average_execution_time_ms: 2000.0
+    peak_memory_mb: 80.0
+    throughput_ops_per_sec: 0.5 

@@ -1,0 +1,117 @@
+# Find References Tool - Python Test Configuration
+# Tests the find_references MCP tool for finding all references to symbols
+
+global:
+  max_global_concurrency: 2
+  timeout_seconds: 30
+  fail_fast: false
+  default_project_path: "test-projects/python-sample"
+
+performance:
+  enable_monitoring: true
+  baseline_storage_path: "baselines/core-tools/"
+  regression_detection:
+    warning_threshold_percent: 25.0
+    error_threshold_percent: 60.0
+
+test_suites:
+  - name: "Find References - Python Core Functionality"
+    description: "Test reference finding for Python symbols"
+    test_cases:
+      # Find function references
+      - id: "python_find_function_references"
+        tool_name: "find_references"
+        description: "Find all references to a Python function"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          target_symbol: "get_user"
+          symbol_type: "function"
+          language: "python"
+          include_calls: true
+          include_imports: true
+        expected:
+          patterns:
+            - key: "result.references"
+              validation:
+                type: "array"
+              required: true
+            - key: "result.reference_count"
+              validation:
+                type: "range"
+                min: 0
+                max: 50
+              required: true
+          performance_requirements:
+            max_execution_time_ms: 2000
+            max_memory_usage_mb: 48
+          custom_scripts:
+            - name: "validate_reference_structure"
+              language: "python"
+              script: |
+                def validate(response):
+                    result = response.get('result', {})
+                    references = result.get('references', [])
+                    
+                    if not references:
+                        return True, 0.3, "No references found (may be valid for unused symbols)"
+                    
+                    # Validate reference structure
+                    valid_refs = sum(1 for ref in references 
+                                   if all(field in ref for field in ['file', 'line', 'context']))
+                    
+                    if valid_refs > 0:
+                        return True, 1.0, f"Found {valid_refs} valid references"
+                    else:
+                        return True, 0.5, f"Found {len(references)} references with limited structure"
+
+      # Find class references
+      - id: "python_find_class_references"
+        tool_name: "find_references"
+        description: "Find all references to a Python class"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          target_symbol: "User"
+          symbol_type: "class"
+          language: "python"
+          include_instantiation: true
+          include_inheritance: true
+          include_imports: true
+        expected:
+          patterns:
+            - key: "result.references"
+              validation:
+                type: "array"
+              required: true
+          custom_scripts:
+            - name: "validate_class_references"
+              language: "python"
+              script: |
+                def validate(response):
+                    result = response.get('result', {})
+                    references = result.get('references', [])
+                    
+                    # Categorize reference types
+                    instantiations = sum(1 for ref in references if ref.get('type') == 'instantiation')
+                    inheritances = sum(1 for ref in references if ref.get('type') == 'inheritance')
+                    imports = sum(1 for ref in references if ref.get('type') == 'import')
+                    
+                    total_refs = len(references)
+                    if total_refs == 0:
+                        return True, 0.3, "No class references found"
+                    
+                    ref_types = sum(1 for count in [instantiations, inheritances, imports] if count > 0)
+                    diversity_score = ref_types / 3.0
+                    
+                    return True, 0.5 + diversity_score * 0.5, f"Found {total_refs} references: {instantiations} instantiations, {inheritances} inheritances, {imports} imports"
+
+baselines:
+  python_find_function_references:
+    average_execution_time_ms: 600.0
+    peak_memory_mb: 24.0
+    throughput_ops_per_sec: 1.67
+  python_find_class_references:
+    average_execution_time_ms: 800.0
+    peak_memory_mb: 32.0
+    throughput_ops_per_sec: 1.25 

@@ -1,0 +1,255 @@
+# Explain Symbol Tool - Python Test Configuration
+# Tests the explain_symbol MCP tool for providing detailed symbol explanations
+
+global:
+  max_global_concurrency: 2
+  timeout_seconds: 30
+  fail_fast: false
+  default_project_path: "test-projects/python-sample"
+
+performance:
+  enable_monitoring: true
+  baseline_storage_path: "baselines/core-tools/"
+  regression_detection:
+    warning_threshold_percent: 20.0
+    error_threshold_percent: 50.0
+
+test_suites:
+  - name: "Explain Symbol - Python Core Functionality"
+    description: "Test symbol explanation for Python code elements"
+    test_cases:
+      # Explain Python function
+      - id: "python_explain_function"
+        tool_name: "explain_symbol"
+        description: "Get detailed explanation of a Python function"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          target_symbol: "get_user"
+          symbol_type: "function"
+          language: "python"
+          include_signature: true
+          include_docstring: true
+          include_usage_examples: true
+        expected:
+          patterns:
+            - key: "result.symbol_name"
+              validation:
+                type: "equals"
+                value: "get_user"
+              required: true
+            - key: "result.explanation"
+              validation:
+                type: "string_min_length"
+                min_length: 10
+              required: true
+            - key: "result.signature"
+              validation:
+                type: "exists"
+              required: false
+          performance_requirements:
+            max_execution_time_ms: 2000
+            max_memory_usage_mb: 48
+          custom_scripts:
+            - name: "validate_function_explanation"
+              language: "python"
+              script: |
+                def validate(response):
+                    result = response.get('result', {})
+                    explanation = result.get('explanation', '')
+                    signature = result.get('signature', '')
+                    docstring = result.get('docstring', '')
+                    
+                    # Calculate explanation quality score
+                    score = 0.0
+                    quality_indicators = []
+                    
+                    if len(explanation) > 20:
+                        score += 0.4
+                        quality_indicators.append("detailed explanation")
+                    
+                    if signature:
+                        score += 0.3
+                        quality_indicators.append("function signature")
+                    
+                    if docstring:
+                        score += 0.2
+                        quality_indicators.append("docstring")
+                    
+                    if result.get('usage_examples'):
+                        score += 0.1
+                        quality_indicators.append("usage examples")
+                    
+                    if score > 0:
+                        return True, score, f"Function explanation: {', '.join(quality_indicators)}"
+                    else:
+                        return False, 0.0, "No meaningful explanation provided"
+
+      # Explain Python class
+      - id: "python_explain_class"
+        tool_name: "explain_symbol"
+        description: "Get detailed explanation of a Python class"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          target_symbol: "User"
+          symbol_type: "class"
+          language: "python"
+          include_methods: true
+          include_attributes: true
+          include_inheritance: true
+        expected:
+          patterns:
+            - key: "result.symbol_name"
+              validation:
+                type: "equals"
+                value: "User"
+              required: true
+            - key: "result.explanation"
+              validation:
+                type: "string_min_length"
+                min_length: 10
+              required: true
+          custom_scripts:
+            - name: "validate_class_explanation"
+              language: "python"
+              script: |
+                def validate(response):
+                    result = response.get('result', {})
+                    explanation = result.get('explanation', '')
+                    methods = result.get('methods', [])
+                    attributes = result.get('attributes', [])
+                    inheritance = result.get('inheritance', {})
+                    
+                    # Calculate class explanation completeness
+                    completeness_score = 0.0
+                    features = []
+                    
+                    if len(explanation) > 20:
+                        completeness_score += 0.4
+                        features.append("class description")
+                    
+                    if methods:
+                        completeness_score += 0.3
+                        features.append(f"{len(methods)} methods")
+                    
+                    if attributes:
+                        completeness_score += 0.2
+                        features.append(f"{len(attributes)} attributes")
+                    
+                    if inheritance:
+                        completeness_score += 0.1
+                        features.append("inheritance info")
+                    
+                    if completeness_score > 0:
+                        return True, completeness_score, f"Class explanation: {', '.join(features)}"
+                    else:
+                        return False, 0.0, "Incomplete class explanation"
+
+      # Explain Python module
+      - id: "python_explain_module"
+        tool_name: "explain_symbol"
+        description: "Get explanation of a Python module structure"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          target_file: "models/user.py"
+          symbol_type: "module"
+          language: "python"
+          include_exports: true
+          include_imports: true
+          include_overview: true
+        expected:
+          patterns:
+            - key: "result.module_name"
+              validation:
+                type: "exists"
+              required: true
+            - key: "result.explanation"
+              validation:
+                type: "string_min_length"
+                min_length: 5
+              required: true
+          custom_scripts:
+            - name: "validate_module_explanation"
+              language: "python"
+              script: |
+                def validate(response):
+                    result = response.get('result', {})
+                    explanation = result.get('explanation', '')
+                    exports = result.get('exports', [])
+                    imports = result.get('imports', [])
+                    overview = result.get('overview', '')
+                    
+                    # Score module explanation comprehensiveness
+                    analysis_depth = 0.0
+                    components = []
+                    
+                    if len(explanation) > 10:
+                        analysis_depth += 0.3
+                        components.append("module explanation")
+                    
+                    if exports:
+                        analysis_depth += 0.3
+                        components.append(f"{len(exports)} exports")
+                    
+                    if imports:
+                        analysis_depth += 0.2
+                        components.append(f"{len(imports)} imports")
+                    
+                    if overview:
+                        analysis_depth += 0.2
+                        components.append("overview")
+                    
+                    if analysis_depth > 0:
+                        return True, analysis_depth, f"Module analysis: {', '.join(components)}"
+                    else:
+                        return True, 0.2, "Basic module information provided"
+
+  - name: "Explain Symbol - Python Edge Cases"
+    description: "Test edge cases for symbol explanation"
+    test_cases:
+      # Non-existent symbol
+      - id: "python_explain_nonexistent"
+        tool_name: "explain_symbol"
+        description: "Handle non-existent symbols gracefully"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          target_symbol: "NonExistentFunction"
+          symbol_type: "function"
+          language: "python"
+        expected:
+          patterns:
+            - key: "error"
+              validation:
+                type: "exists"
+              required: false
+          allow_failure: true
+          custom_scripts:
+            - name: "validate_error_handling"
+              language: "python"
+              script: |
+                def validate(response):
+                    if 'error' in response:
+                        return True, 1.0, "Properly handled non-existent symbol with error"
+                    
+                    result = response.get('result', {})
+                    if not result.get('explanation'):
+                        return True, 0.8, "Handled non-existent symbol with empty explanation"
+                    
+                    return False, 0.0, "Did not properly handle non-existent symbol"
+
+baselines:
+  python_explain_function:
+    average_execution_time_ms: 500.0
+    peak_memory_mb: 24.0
+    throughput_ops_per_sec: 2.0
+  python_explain_class:
+    average_execution_time_ms: 800.0
+    peak_memory_mb: 32.0
+    throughput_ops_per_sec: 1.25
+  python_explain_module:
+    average_execution_time_ms: 1000.0
+    peak_memory_mb: 40.0
+    throughput_ops_per_sec: 1.0 

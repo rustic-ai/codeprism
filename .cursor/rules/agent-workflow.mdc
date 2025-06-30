@@ -36,6 +36,9 @@ Why: Agile development focuses on value delivery over time predictions. Estimate
 
 ## Git Workflow Compliance
 
+**Rule: After completing work on an issue make sure all the changes are committed and there are no staged or untracked changes**
+Why: The work done is in the files and it is essential to commit the files to git. Untracked, staged artifacts left behind will mean that our project will not be functional. 
+
 **Rule: Never bypass git pre-commit hooks - always run validation before committing.**
 Why: Pre-commit hooks maintain code quality and catch issues early. Bypassing them, even for documentation, can introduce inconsistencies and break CI/CD pipelines.
 

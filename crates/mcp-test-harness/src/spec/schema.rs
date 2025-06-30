@@ -1,9 +1,11 @@
 //! JSON Schema validation for MCP test harness
 
 use anyhow::Result;
+use jsonschema::{Draft, JSONSchema};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use thiserror::Error;
 
 /// Validation error for specifications
@@ -28,6 +30,10 @@ pub enum ValidationError {
     /// JSON schema validation error
     #[error("Schema validation error: {0}")]
     SchemaValidation(String),
+
+    /// JSON schema compilation error
+    #[error("Schema compilation error: {0}")]
+    SchemaCompilation(String),
 
     /// Invalid format or content
     #[error("Invalid format: {0}")]
@@ -56,25 +62,202 @@ impl From<anyhow::Error> for ValidationError {
     }
 }
 
-/// JSON Schema validator
+/// JSON Schema validator with compilation and caching
 pub struct SchemaValidator {
-    // FUTURE: Add schema compilation and validation for enhanced spec validation
+    /// Compiled schemas cache for performance
+    schema_cache: HashMap<String, Arc<JSONSchema>>,
+    /// Base directory for resolving relative schema paths
+    base_dir: Option<PathBuf>,
 }
 
 impl SchemaValidator {
     /// Create a new schema validator
     pub fn new() -> Self {
-        Self {}
+        Self {
+            schema_cache: HashMap::new(),
+            base_dir: None,
+        }
     }
 
-    /// Validate a JSON value against a schema
-    pub fn validate(
+    /// Create a schema validator with a base directory for schema file resolution
+    pub fn with_base_dir<P: AsRef<Path>>(base_dir: P) -> Self {
+        Self {
+            schema_cache: HashMap::new(),
+            base_dir: Some(base_dir.as_ref().to_path_buf()),
+        }
+    }
+
+    /// Load and compile a JSON schema from file
+    pub fn load_schema<P: AsRef<Path>>(
+        &mut self,
+        schema_path: P,
+    ) -> Result<Arc<JSONSchema>, ValidationError> {
+        let path = schema_path.as_ref();
+        let path_str = path.to_string_lossy().to_string();
+
+        // Check cache first
+        if let Some(schema) = self.schema_cache.get(&path_str) {
+            return Ok(Arc::clone(schema));
+        }
+
+        // Resolve path relative to base directory if needed
+        let resolved_path = if path.is_relative() {
+            if let Some(base) = &self.base_dir {
+                base.join(path)
+            } else {
+                path.to_path_buf()
+            }
+        } else {
+            path.to_path_buf()
+        };
+
+        // Check if file exists
+        if !resolved_path.exists() {
+            return Err(ValidationError::FileNotFound(resolved_path));
+        }
+
+        // Read and parse JSON schema
+        let schema_content = std::fs::read_to_string(&resolved_path)?;
+        let schema_json: serde_json::Value = serde_json::from_str(&schema_content)?;
+
+        // Compile schema
+        let compiled_schema = JSONSchema::options()
+            .with_draft(Draft::Draft7)
+            .compile(&schema_json)
+            .map_err(|e| {
+                ValidationError::SchemaCompilation(format!(
+                    "Failed to compile schema '{}': {}",
+                    path_str, e
+                ))
+            })?;
+
+        let schema_arc = Arc::new(compiled_schema);
+
+        // Cache for future use
+        self.schema_cache.insert(path_str, Arc::clone(&schema_arc));
+
+        Ok(schema_arc)
+    }
+
+    /// Compile a JSON schema from a value
+    pub fn compile_schema(
+        &mut self,
+        schema: &serde_json::Value,
+        schema_id: Option<&str>,
+    ) -> Result<Arc<JSONSchema>, ValidationError> {
+        let id = schema_id.unwrap_or("inline_schema");
+
+        // Check cache first
+        if let Some(cached_schema) = self.schema_cache.get(id) {
+            return Ok(Arc::clone(cached_schema));
+        }
+
+        // Compile schema
+        let compiled_schema = JSONSchema::options()
+            .with_draft(Draft::Draft7)
+            .compile(schema)
+            .map_err(|e| {
+                ValidationError::SchemaCompilation(format!(
+                    "Failed to compile schema '{}': {}",
+                    id, e
+                ))
+            })?;
+
+        let schema_arc = Arc::new(compiled_schema);
+
+        // Cache for future use
+        self.schema_cache
+            .insert(id.to_string(), Arc::clone(&schema_arc));
+
+        Ok(schema_arc)
+    }
+
+    /// Validate a JSON value against a compiled schema
+    pub fn validate_with_schema(
         &self,
-        _value: &serde_json::Value,
-        _schema: &serde_json::Value,
-    ) -> Result<bool> {
-        // FUTURE: Implement JSON schema validation using jsonschema crate for runtime validation
-        Ok(true)
+        value: &serde_json::Value,
+        schema: &JSONSchema,
+    ) -> Result<bool, ValidationError> {
+        let result = schema.validate(value);
+
+        match result {
+            Ok(_) => Ok(true),
+            Err(errors) => {
+                let error_messages: Vec<String> = errors
+                    .map(|error| {
+                        format!("Validation error at '{}': {}", error.instance_path, error)
+                    })
+                    .collect();
+
+                Err(ValidationError::SchemaValidation(error_messages.join("; ")))
+            }
+        }
+    }
+
+    /// Validate a JSON value against a schema (load schema if needed)
+    pub fn validate<P: AsRef<Path>>(
+        &mut self,
+        value: &serde_json::Value,
+        schema_path: P,
+    ) -> Result<bool, ValidationError> {
+        let schema = self.load_schema(schema_path)?;
+        self.validate_with_schema(value, &schema)
+    }
+
+    /// Validate a JSON value against an inline schema
+    pub fn validate_inline(
+        &mut self,
+        value: &serde_json::Value,
+        schema: &serde_json::Value,
+    ) -> Result<bool, ValidationError> {
+        let compiled_schema = self.compile_schema(schema, None)?;
+        self.validate_with_schema(value, &compiled_schema)
+    }
+
+    /// Validate a server specification against the main server spec schema
+    pub fn validate_server_spec(&mut self, spec: &ServerSpec) -> Result<bool, ValidationError> {
+        // Serialize the spec to JSON for validation
+        let spec_json = serde_json::to_value(spec).map_err(ValidationError::Json)?;
+
+        // Load the main server spec schema
+        let schema_path = if let Some(base) = &self.base_dir {
+            base.join("schemas/server-spec.json")
+        } else {
+            PathBuf::from("schemas/server-spec.json")
+        };
+
+        self.validate(&spec_json, schema_path)
+    }
+
+    /// Get validation errors as detailed messages
+    pub fn get_validation_errors(
+        &self,
+        value: &serde_json::Value,
+        schema: &JSONSchema,
+    ) -> Vec<String> {
+        match schema.validate(value) {
+            Ok(_) => Vec::new(),
+            Err(errors) => errors
+                .map(|error| {
+                    format!(
+                        "Path '{}': {} (got: {})",
+                        error.instance_path,
+                        error,
+                        serde_json::to_string(value).unwrap_or_else(|_| "invalid JSON".to_string())
+                    )
+                })
+                .collect(),
+        }
+    }
+
+    /// Clear the schema cache
+    pub fn clear_cache(&mut self) {
+        self.schema_cache.clear();
+    }
+
+    /// Get the number of cached schemas
+    pub fn cache_size(&self) -> usize {
+        self.schema_cache.len()
     }
 }
 

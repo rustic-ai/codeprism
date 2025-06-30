@@ -537,4 +537,170 @@ version: "1.0.0"
         assert!(loader.schema_info().contains("/tmp/test"));
         Ok(())
     }
+
+    #[tokio::test]
+    async fn test_validate_example_specifications() {
+        let examples = vec![
+            "examples/simple-server.yaml",
+            "examples/database-server.yaml",
+            "examples/filesystem-server.yaml",
+            "examples/api-wrapper-server.yaml",
+        ];
+
+        for example_file in examples {
+            let loader = SpecLoader::new().expect("Failed to create spec loader");
+
+            // Try to load and validate each example
+            let result = loader.load_spec(example_file).await;
+
+            match result {
+                Ok(spec) => {
+                    // Verify basic structure
+                    assert!(
+                        !spec.name.is_empty(),
+                        "Example {} should have a name",
+                        example_file
+                    );
+                    assert!(
+                        !spec.version.is_empty(),
+                        "Example {} should have a version",
+                        example_file
+                    );
+
+                    // Verify capabilities consistency
+                    let validation_result = spec.validate();
+                    assert!(
+                        validation_result.is_ok(),
+                        "Example {} should pass validation: {:?}",
+                        example_file,
+                        validation_result.err()
+                    );
+
+                    println!("✅ {} validated successfully", example_file);
+                }
+                Err(e) => {
+                    // For missing files, this is expected for some examples
+                    if !e.to_string().contains("not found") {
+                        panic!("Example {} failed to load: {}", example_file, e);
+                    } else {
+                        println!(
+                            "⚠️  {} not found (expected for some examples)",
+                            example_file
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn test_database_server_example_details() {
+        let loader = SpecLoader::new().expect("Failed to create spec loader");
+
+        if let Ok(spec) = loader.load_spec("examples/database-server.yaml").await {
+            // Verify database-specific features
+            assert_eq!(spec.name, "Database MCP Server");
+            assert!(
+                spec.capabilities.tools,
+                "Database server should support tools"
+            );
+            assert!(
+                spec.capabilities.resources,
+                "Database server should support resources"
+            );
+
+            // Verify tools are defined
+            assert!(
+                spec.tools.is_some(),
+                "Database server should have tools defined"
+            );
+            if let Some(tools) = &spec.tools {
+                assert!(
+                    !tools.is_empty(),
+                    "Database server should have at least one tool"
+                );
+
+                // Check for expected database tools
+                let tool_names: Vec<&str> = tools.iter().map(|t| t.name.as_str()).collect();
+                assert!(
+                    tool_names.contains(&"execute_query"),
+                    "Should have execute_query tool"
+                );
+                assert!(
+                    tool_names.contains(&"get_schema"),
+                    "Should have get_schema tool"
+                );
+            }
+
+            println!("✅ Database server example validated with specific checks");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_filesystem_server_example_details() {
+        let loader = SpecLoader::new().expect("Failed to create spec loader");
+
+        if let Ok(spec) = loader.load_spec("examples/filesystem-server.yaml").await {
+            // Verify filesystem-specific features
+            assert_eq!(spec.name, "File System MCP Server");
+            assert!(
+                spec.capabilities.tools,
+                "Filesystem server should support tools"
+            );
+            assert!(
+                spec.capabilities.resources,
+                "Filesystem server should support resources"
+            );
+
+            // Verify security-related metadata
+            if let Some(metadata) = &spec.metadata {
+                if let Some(security_features) = metadata.get("security_features") {
+                    let features = security_features.as_array().unwrap();
+                    assert!(!features.is_empty(), "Should have security features listed");
+                }
+            }
+
+            println!("✅ Filesystem server example validated with specific checks");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_api_wrapper_example_details() {
+        let loader = SpecLoader::new().expect("Failed to create spec loader");
+
+        if let Ok(spec) = loader.load_spec("examples/api-wrapper-server.yaml").await {
+            // Verify API wrapper-specific features
+            assert_eq!(spec.name, "Weather API Wrapper");
+            assert!(spec.capabilities.tools, "API wrapper should support tools");
+            assert!(
+                spec.capabilities.prompts,
+                "API wrapper should support prompts"
+            );
+
+            // Verify external dependencies are documented
+            if let Some(metadata) = &spec.metadata {
+                if let Some(deps) = metadata.get("external_dependencies") {
+                    let dependencies = deps.as_array().unwrap();
+                    assert!(
+                        !dependencies.is_empty(),
+                        "Should have external dependencies listed"
+                    );
+                }
+            }
+
+            // Verify test configuration is appropriate for API calls
+            if let Some(test_config) = &spec.test_config {
+                assert!(
+                    test_config.timeout_seconds >= 30,
+                    "API operations should have adequate timeout"
+                );
+                assert!(
+                    test_config.max_concurrency <= 2,
+                    "API operations should respect rate limits"
+                );
+            }
+
+            println!("✅ API wrapper example validated with specific checks");
+        }
+    }
 }

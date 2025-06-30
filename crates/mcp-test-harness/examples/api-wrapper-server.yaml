@@ -1,0 +1,356 @@
+# API Wrapper MCP Server Specification
+# Demonstrates external API integration, authentication, and rate limiting
+
+name: "Weather API Wrapper"
+version: "3.0.1"
+description: "MCP server providing weather data via external API integration"
+
+# API wrapper servers typically support tools and prompts
+capabilities:
+  tools: true
+  resources: false
+  prompts: true
+  sampling: false
+  logging: true
+  experimental:
+    caching: true
+    rate_limiting: true
+    circuit_breaker: true
+
+# API server startup configuration
+server:
+  command: "python"
+  args: ["-m", "weather_api_server", "--config", "api_config.yaml"]
+  env:
+    API_KEY: "${WEATHER_API_KEY}"  # Environment variable reference
+    BASE_URL: "https://api.openweathermap.org/data/2.5"
+    RATE_LIMIT: "60"  # Requests per minute
+    CACHE_TTL: "300"  # 5 minutes
+    LOG_LEVEL: "info"
+  working_dir: "./api_server"
+  transport: "stdio"
+  startup_timeout_seconds: 20
+  shutdown_timeout_seconds: 10
+
+# API wrapper tools
+tools:
+  - name: "get_current_weather"
+    description: "Get current weather conditions for a location"
+    input_schema: "./schemas/current_weather_input.json"
+    output_schema: "./schemas/current_weather_output.json"
+    tests:
+      - name: "weather_by_city"
+        description: "Get weather for a major city"
+        input:
+          location: "London, UK"
+          units: "metric"
+          include_forecast: false
+        expected:
+          allow_extra_fields: true
+          schema:
+            type: object
+            required: ["location", "temperature", "description", "humidity", "timestamp"]
+            properties:
+              location:
+                type: string
+              temperature:
+                type: number
+              description:
+                type: string
+              humidity:
+                type: number
+              timestamp:
+                type: string
+          fields:
+            - path: "$.location"
+              pattern: ".*London.*"
+              required: true
+            - path: "$.temperature"
+              field_type: "number"
+              min: -50
+              max: 60
+              required: true
+            - path: "$.humidity"
+              field_type: "number"
+              min: 0
+              max: 100
+              required: true
+            - path: "$.timestamp"
+              pattern: "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}"
+              required: true
+        performance:
+          max_duration_ms: 8000  # Network requests take longer
+          max_memory_mb: 25
+        tags: ["api", "weather", "current", "city"]
+
+      - name: "weather_by_coordinates"
+        description: "Get weather using latitude/longitude"
+        input:
+          latitude: 51.5074
+          longitude: -0.1278
+          units: "imperial"
+          include_forecast: false
+        expected:
+          allow_extra_fields: true
+          fields:
+            - path: "$.temperature"
+              field_type: "number"
+              required: true
+            - path: "$.location"
+              field_type: "string"
+              required: true
+        performance:
+          max_duration_ms: 6000
+        tags: ["api", "weather", "coordinates"]
+
+      - name: "invalid_location"
+        description: "Test error handling for invalid location"
+        input:
+          location: "InvalidCityName123456"
+          units: "metric"
+        expected:
+          error: true
+          error_code: -32000
+          error_message_contains: "location not found"
+          allow_extra_fields: true
+        tags: ["api", "error-handling", "validation"]
+
+      - name: "missing_api_key"
+        description: "Test authentication failure handling"
+        input:
+          location: "Paris, France"
+          units: "metric"
+          test_auth_failure: true  # Special flag for testing
+        expected:
+          error: true
+          error_code: -32001
+          error_message_contains: "authentication"
+          allow_extra_fields: true
+        tags: ["api", "authentication", "security"]
+
+  - name: "get_weather_forecast"
+    description: "Get weather forecast for next 5 days"
+    tests:
+      - name: "five_day_forecast"
+        description: "Get 5-day weather forecast"
+        input:
+          location: "New York, US"
+          days: 5
+          units: "metric"
+        expected:
+          allow_extra_fields: true
+          schema:
+            type: object
+            required: ["location", "forecast", "forecast_days"]
+            properties:
+              location:
+                type: string
+              forecast:
+                type: array
+                items:
+                  type: object
+                  required: ["date", "temperature_high", "temperature_low", "description"]
+              forecast_days:
+                type: integer
+          fields:
+            - path: "$.forecast"
+              field_type: "array"
+              required: true
+            - path: "$.forecast_days"
+              value: 5
+              required: true
+            - path: "$.forecast[0].date"
+              field_type: "string"
+              required: true
+            - path: "$.forecast[0].temperature_high"
+              field_type: "number"
+              required: true
+        performance:
+          max_duration_ms: 10000
+        tags: ["api", "weather", "forecast", "multi-day"]
+
+      - name: "forecast_with_cache"
+        description: "Test caching behavior for repeated requests"
+        input:
+          location: "Berlin, Germany"
+          days: 3
+          units: "metric"
+          test_cache: true
+        expected:
+          allow_extra_fields: true
+          fields:
+            - path: "$.cached"
+              value: false  # First request should not be cached
+              required: false
+            - path: "$.forecast_days"
+              value: 3
+              required: true
+        performance:
+          max_duration_ms: 8000
+        tags: ["api", "caching", "performance"]
+
+  - name: "get_air_quality"
+    description: "Get air quality index for a location"
+    tests:
+      - name: "air_quality_by_city"
+        description: "Get air quality data for a city"
+        input:
+          location: "Beijing, China"
+          include_pollutants: true
+        expected:
+          allow_extra_fields: true
+          schema:
+            type: object
+            required: ["location", "aqi", "category", "timestamp"]
+            properties:
+              location:
+                type: string
+              aqi:
+                type: integer
+              category:
+                type: string
+                enum: ["Good", "Moderate", "Unhealthy for Sensitive Groups", "Unhealthy", "Very Unhealthy", "Hazardous"]
+              timestamp:
+                type: string
+              pollutants:
+                type: object
+          fields:
+            - path: "$.aqi"
+              field_type: "integer"
+              min: 0
+              max: 500
+              required: true
+            - path: "$.category"
+              field_type: "string"
+              required: true
+        tags: ["api", "air-quality", "environment"]
+
+  - name: "batch_weather_request"
+    description: "Get weather for multiple locations in one request"
+    tests:
+      - name: "multiple_cities"
+        description: "Get weather for several cities at once"
+        input:
+          locations: ["Tokyo, Japan", "São Paulo, Brazil", "Cairo, Egypt"]
+          units: "metric"
+        expected:
+          allow_extra_fields: true
+          schema:
+            type: object
+            required: ["results"]
+            properties:
+              results:
+                type: array
+                items:
+                  type: object
+                  required: ["location", "temperature", "status"]
+          fields:
+            - path: "$.results"
+              field_type: "array"
+              required: true
+            - path: "$.results.length"
+              value: 3
+              required: true
+        performance:
+          max_duration_ms: 15000  # Multiple API calls
+          max_memory_mb: 50
+        tags: ["api", "batch", "performance"]
+
+      - name: "rate_limit_handling"
+        description: "Test rate limiting behavior"
+        input:
+          locations: ["City1", "City2", "City3", "City4", "City5", "City6"]
+          units: "metric"
+          test_rate_limit: true
+        expected:
+          error: true
+          error_code: -32003
+          error_message_contains: "rate limit"
+          allow_extra_fields: true
+        tags: ["api", "rate-limiting", "error-handling"]
+
+# API prompts for generating requests
+prompts:
+  - name: "weather_report_prompt"
+    description: "Generate a formatted weather report"
+    arguments:
+      - name: "location"
+        description: "Location for weather report"
+        required: true
+      - name: "format"
+        description: "Report format (brief, detailed, json)"
+        required: false
+      - name: "include_forecast"
+        description: "Whether to include forecast data"
+        required: false
+    tests:
+      - name: "brief_weather_report"
+        description: "Generate a brief weather report"
+        input:
+          location: "San Francisco, CA"
+          format: "brief"
+          include_forecast: false
+        expected:
+          allow_extra_fields: true
+          schema:
+            type: object
+            required: ["prompt", "temperature"]
+            properties:
+              prompt:
+                type: string
+              temperature:
+                type: number
+          fields:
+            - path: "$.prompt"
+              field_type: "string"
+              pattern: ".*weather.*"
+              required: true
+        tags: ["api", "prompt", "weather-report"]
+
+      - name: "detailed_weather_with_forecast"
+        description: "Generate detailed report with forecast"
+        input:
+          location: "Miami, FL"
+          format: "detailed"
+          include_forecast: true
+        expected:
+          allow_extra_fields: true
+          fields:
+            - path: "$.prompt"
+              field_type: "string"
+              pattern: ".*forecast.*"
+              required: true
+        tags: ["api", "prompt", "detailed", "forecast"]
+
+# Test execution configuration for API operations
+test_config:
+  timeout_seconds: 45  # API calls need more time
+  max_concurrency: 1   # Respect API rate limits
+  fail_fast: false
+  retry:
+    max_retries: 3     # Retry failed network requests
+    retry_delay_ms: 5000
+    exponential_backoff: true
+
+# Additional metadata
+metadata:
+  author: "Weather API Team"
+  documentation: "https://docs.example.com/weather-api-server"
+  license: "GPL-3.0"
+  tags: ["api", "weather", "external-service", "http"]
+  external_dependencies:
+    - name: "OpenWeatherMap API"
+      url: "https://openweathermap.org/api"
+      version: "2.5"
+      rate_limit: "60 requests/minute"
+      authentication: "API key required"
+  performance_characteristics:
+    - "Caching reduces API calls by ~70%"
+    - "Average response time: 2-5 seconds"
+    - "Rate limited to 60 requests/minute"
+    - "Circuit breaker activates after 5 consecutive failures"
+  requirements:
+    - "Python 3.9+"
+    - "Valid OpenWeatherMap API key"
+    - "Internet connection for API access"
+    - "Optional: Redis for caching" 

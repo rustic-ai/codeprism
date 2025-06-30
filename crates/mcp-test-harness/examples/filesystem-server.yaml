@@ -1,0 +1,405 @@
+# File System MCP Server Specification
+# Demonstrates file operations, directory traversal, and security considerations
+
+name: "File System MCP Server"
+version: "1.5.2"
+description: "MCP server providing secure file system operations with sandboxing"
+
+# File system servers support tools and resources
+capabilities:
+  tools: true
+  resources: true
+  prompts: false
+  sampling: false
+  logging: true
+  experimental:
+    symlink_support: true
+    compression: true
+    file_watching: true
+
+# File system server configuration
+server:
+  command: "node"
+  args: ["filesystem-server.js", "--sandbox", "/allowed/path"]
+  env:
+    MAX_FILE_SIZE: "10485760"  # 10MB
+    ALLOWED_EXTENSIONS: ".txt,.json,.md,.log,.csv"
+    LOG_LEVEL: "warn"
+  working_dir: "./filesystem_server"
+  transport: "stdio"
+  startup_timeout_seconds: 10
+  shutdown_timeout_seconds: 5
+
+# File operation tools
+tools:
+  - name: "read_file"
+    description: "Read contents of a file within sandbox"
+    input_schema: "./schemas/read_file_input.json"
+    output_schema: "./schemas/read_file_output.json"
+    tests:
+      - name: "read_text_file"
+        description: "Read a plain text file"
+        input:
+          path: "/allowed/path/test.txt"
+          encoding: "utf8"
+        expected:
+          allow_extra_fields: true
+          schema:
+            type: object
+            required: ["content", "size", "mime_type"]
+            properties:
+              content:
+                type: string
+              size:
+                type: integer
+              mime_type:
+                type: string
+          fields:
+            - path: "$.content"
+              field_type: "string"
+              required: true
+            - path: "$.size"
+              field_type: "integer"
+              min: 0
+              required: true
+            - path: "$.mime_type"
+              value: "text/plain"
+              required: true
+        performance:
+          max_duration_ms: 2000
+          max_memory_mb: 50
+        tags: ["filesystem", "read", "text"]
+
+      - name: "read_json_file"
+        description: "Read and parse JSON file"
+        input:
+          path: "/allowed/path/config.json"
+          encoding: "utf8"
+          parse_json: true
+        expected:
+          allow_extra_fields: true
+          fields:
+            - path: "$.content"
+              field_type: "object"
+              required: true
+            - path: "$.mime_type"
+              value: "application/json"
+              required: true
+        tags: ["filesystem", "read", "json"]
+
+      - name: "read_file_outside_sandbox"
+        description: "Test sandbox security - should fail"
+        input:
+          path: "/etc/passwd"
+          encoding: "utf8"
+        expected:
+          error: true
+          error_code: -32603
+          error_message_contains: "access denied"
+          allow_extra_fields: true
+        tags: ["filesystem", "security", "sandbox"]
+
+      - name: "read_nonexistent_file"
+        description: "Test error handling for missing file"
+        input:
+          path: "/allowed/path/nonexistent.txt"
+          encoding: "utf8"
+        expected:
+          error: true
+          error_code: -32000
+          error_message_contains: "not found"
+          allow_extra_fields: true
+        tags: ["filesystem", "error-handling"]
+
+      - name: "read_large_file"
+        description: "Test reading large file with size limits"
+        input:
+          path: "/allowed/path/large_file.log"
+          encoding: "utf8"
+          max_size: 1048576  # 1MB limit
+        expected:
+          allow_extra_fields: true
+          fields:
+            - path: "$.size"
+              field_type: "integer"
+              max: 1048576
+              required: true
+        performance:
+          max_duration_ms: 5000
+          max_memory_mb: 100
+        tags: ["filesystem", "performance", "large-file"]
+
+  - name: "write_file"
+    description: "Write content to a file within sandbox"
+    tests:
+      - name: "write_text_file"
+        description: "Write plain text to file"
+        input:
+          path: "/allowed/path/output.txt"
+          content: "Hello, World!\nSecond line here."
+          encoding: "utf8"
+          create_dirs: true
+        expected:
+          allow_extra_fields: true
+          schema:
+            type: object
+            required: ["success", "bytes_written"]
+            properties:
+              success:
+                type: boolean
+              bytes_written:
+                type: integer
+          fields:
+            - path: "$.success"
+              value: true
+              required: true
+            - path: "$.bytes_written"
+              field_type: "integer"
+              min: 1
+              required: true
+        performance:
+          max_duration_ms: 3000
+        tags: ["filesystem", "write", "text"]
+
+      - name: "write_json_file"
+        description: "Write JSON data to file"
+        input:
+          path: "/allowed/path/data.json"
+          content:
+            name: "test"
+            values: [1, 2, 3]
+            active: true
+          encoding: "utf8"
+          format_json: true
+        expected:
+          allow_extra_fields: true
+          fields:
+            - path: "$.success"
+              value: true
+              required: true
+        tags: ["filesystem", "write", "json"]
+
+      - name: "write_outside_sandbox"
+        description: "Test write access outside sandbox - should fail"
+        input:
+          path: "/tmp/unauthorized.txt"
+          content: "Should not work"
+          encoding: "utf8"
+        expected:
+          error: true
+          error_code: -32603
+          error_message_contains: "access denied"
+          allow_extra_fields: true
+        tags: ["filesystem", "security", "sandbox"]
+
+  - name: "list_directory"
+    description: "List contents of a directory"
+    tests:
+      - name: "list_root_directory"
+        description: "List files in allowed root directory"
+        input:
+          path: "/allowed/path"
+          include_hidden: false
+          recursive: false
+        expected:
+          allow_extra_fields: true
+          schema:
+            type: object
+            required: ["entries", "total_count"]
+            properties:
+              entries:
+                type: array
+                items:
+                  type: object
+                  required: ["name", "type", "size"]
+                  properties:
+                    name:
+                      type: string
+                    type:
+                      type: string
+                      enum: ["file", "directory", "symlink"]
+                    size:
+                      type: integer
+              total_count:
+                type: integer
+          fields:
+            - path: "$.entries"
+              field_type: "array"
+              required: true
+            - path: "$.total_count"
+              field_type: "integer"
+              min: 0
+              required: true
+        performance:
+          max_duration_ms: 4000
+        tags: ["filesystem", "directory", "list"]
+
+      - name: "list_with_filters"
+        description: "List directory with file type filters"
+        input:
+          path: "/allowed/path"
+          include_hidden: true
+          recursive: true
+          max_depth: 2
+          filter_extensions: [".txt", ".json"]
+        expected:
+          allow_extra_fields: true
+          fields:
+            - path: "$.entries"
+              field_type: "array"
+              required: true
+        tags: ["filesystem", "directory", "filter"]
+
+  - name: "get_file_info"
+    description: "Get detailed file metadata"
+    tests:
+      - name: "file_metadata"
+        description: "Get comprehensive file information"
+        input:
+          path: "/allowed/path/test.txt"
+          include_checksum: true
+          checksum_algorithm: "sha256"
+        expected:
+          allow_extra_fields: true
+          schema:
+            type: object
+            required: ["name", "size", "type", "created", "modified"]
+            properties:
+              name:
+                type: string
+              size:
+                type: integer
+              type:
+                type: string
+              created:
+                type: string
+              modified:
+                type: string
+              checksum:
+                type: string
+          fields:
+            - path: "$.type"
+              value: "file"
+              required: true
+            - path: "$.size"
+              field_type: "integer"
+              min: 0
+              required: true
+            - path: "$.checksum"
+              pattern: "^[a-f0-9]{64}$"  # SHA256 hex pattern
+              required: false
+        tags: ["filesystem", "metadata", "checksum"]
+
+  - name: "delete_file"
+    description: "Delete a file or directory"
+    tests:
+      - name: "delete_single_file"
+        description: "Delete a single file"
+        input:
+          path: "/allowed/path/temp.txt"
+          recursive: false
+        expected:
+          allow_extra_fields: true
+          schema:
+            type: object
+            required: ["success", "deleted_count"]
+            properties:
+              success:
+                type: boolean
+              deleted_count:
+                type: integer
+          fields:
+            - path: "$.success"
+              value: true
+              required: true
+            - path: "$.deleted_count"
+              value: 1
+              required: true
+        tags: ["filesystem", "delete", "single"]
+
+      - name: "delete_directory_recursive"
+        description: "Delete directory and all contents"
+        input:
+          path: "/allowed/path/temp_dir"
+          recursive: true
+        expected:
+          allow_extra_fields: true
+          fields:
+            - path: "$.success"
+              value: true
+              required: true
+            - path: "$.deleted_count"
+              field_type: "integer"
+              min: 1
+              required: true
+        tags: ["filesystem", "delete", "recursive"]
+
+# File system resources
+resources:
+  - uri_template: "file://{path}"
+    name: "File Content"
+    mime_type: "application/octet-stream"
+    tests:
+      - name: "get_file_resource"
+        description: "Access file as a resource"
+        input:
+          path: "/allowed/path/document.pdf"
+        expected:
+          allow_extra_fields: true
+          schema:
+            type: object
+            required: ["content", "mime_type"]
+            properties:
+              content:
+                type: string  # Base64 encoded for binary
+              mime_type:
+                type: string
+          fields:
+            - path: "$.mime_type"
+              value: "application/pdf"
+              required: true
+        performance:
+          max_duration_ms: 8000
+        tags: ["filesystem", "resource", "binary"]
+
+  - uri_template: "dir://{path}"
+    name: "Directory Listing"
+    mime_type: "application/json"
+    tests:
+      - name: "get_directory_resource"
+        description: "Access directory listing as resource"
+        input:
+          path: "/allowed/path/documents"
+        expected:
+          allow_extra_fields: true
+          fields:
+            - path: "$.entries"
+              field_type: "array"
+              required: true
+        tags: ["filesystem", "resource", "directory"]
+
+# Test configuration for file operations
+test_config:
+  timeout_seconds: 30
+  max_concurrency: 3
+  fail_fast: false
+  retry:
+    max_retries: 2
+    retry_delay_ms: 1000
+    exponential_backoff: false
+
+# Additional metadata
+metadata:
+  author: "File System MCP Team"
+  documentation: "https://docs.example.com/filesystem-mcp-server"
+  license: "MIT"
+  tags: ["filesystem", "files", "security", "sandbox"]
+  security_features:
+    - "Path sanitization"
+    - "Sandbox enforcement"
+    - "File size limits"
+    - "Extension filtering"
+  supported_platforms: ["linux", "macOS", "windows"]
+  requirements:
+    - "Node.js 16+"
+    - "File system read/write permissions in sandbox" 

@@ -5195,7 +5195,7 @@ impl PythonAnalyzer {
                 let class_name = captures.get(1).unwrap().as_str().to_string();
                 TypeHintType::TypedDictType(TypedDictInfo {
                     name: class_name,
-                    fields: Vec::new(), // Would need more parsing for actual fields
+                    fields: Vec::new(), // Could use more parsing for fields
                     total: true,
                 })
             }

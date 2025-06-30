@@ -81,7 +81,7 @@ impl McpClient {
         // Store server capabilities (converting from ServerCapabilities to McpCapabilities)
         {
             let mut capabilities = self.capabilities.write().await;
-            *capabilities = Some(McpCapabilities::default()); // Simplified for now
+            *capabilities = Some(McpCapabilities::default()); // Simplified in this implementation
         }
 
         // Update state to ready

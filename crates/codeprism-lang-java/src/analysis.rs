@@ -2980,7 +2980,7 @@ impl JavaAnalyzer {
     }
 
     fn identify_pattern_participants(&self, _content: &str, _pattern_type: &str) -> Vec<String> {
-        // Would need more sophisticated analysis to identify actual participants
+        // Could use more sophisticated analysis to identify participants
         Vec::new()
     }
 

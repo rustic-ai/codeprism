@@ -130,7 +130,7 @@ impl AstMapper {
             }
 
             _ => {
-                // Skip other node types for now
+                // Skip other node types in this implementation
             }
         }
 

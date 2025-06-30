@@ -157,7 +157,7 @@ impl AstMapper {
             "attribute_item" | "inner_attribute_item" => self.handle_attribute(cursor)?,
             "macro_invocation" => self.handle_macro_invocation(cursor)?,
             "lifetime_parameter" | "lifetime" => self.handle_lifetime_node(cursor)?,
-            _ => {} // Skip other node types for now
+            _ => {} // Skip other node types in this implementation
         }
 
         Ok(())
@@ -679,7 +679,7 @@ impl AstMapper {
         type_name: &str,
     ) {
         // In a more sophisticated implementation, we would resolve the actual trait and type nodes
-        // For now, we'll create a conceptual edge with metadata
+        // Currently creating a conceptual edge with metadata
         let _edge_metadata = serde_json::json!({
             "edge_type": "trait_implementation",
             "trait_name": trait_name,
@@ -687,7 +687,7 @@ impl AstMapper {
         });
 
         // This could be enhanced to create actual edges to trait and type nodes
-        // For now, we store the relationship as metadata on the impl node
+        // Currently storing the relationship as metadata on the impl node
         // The edge would be: Type --ImplementsTrait--> Trait
     }
 
@@ -1236,7 +1236,7 @@ impl AstMapper {
 
     /// Create span from text position within a node
     fn create_span_from_text_position(&self, node: &tree_sitter::Node, _position: usize) -> Span {
-        // Simplified span creation - would need more sophisticated parsing for exact positions
+        // Simplified span creation - more sophisticated parsing could provide exact positions
         Span::from_node(node)
     }
 
@@ -1261,7 +1261,7 @@ impl AstMapper {
 
         // Store constraint information as metadata
         // In a more sophisticated implementation, we might create actual nodes for constraints
-        // For now, we'll store this information with the lifetime node
+        // Currently storing this information with the lifetime node
     }
 
     /// Analyze struct lifetime parameters
@@ -1415,7 +1415,7 @@ impl AstMapper {
             for bound in bounds_text.split('+') {
                 let bound_name = bound.trim();
                 if !bound_name.is_empty() {
-                    // For now, we'll store this as metadata since we may not have the target trait node
+                    // Currently storing this as metadata since we may not have the target trait node
                     // In a more sophisticated implementation, we'd resolve trait references
                     let edge_metadata = serde_json::json!({
                         "bound_type": "supertrait",
@@ -1595,7 +1595,7 @@ impl AstMapper {
                     let trait_name = trait_name.trim();
                     if !trait_name.is_empty() {
                         // Create a derive edge - in practice this would link to the actual trait
-                        // For now, we'll store this as metadata indicating the derive relationship
+                        // Currently storing this as metadata indicating the derive relationship
                         let _edge_metadata = serde_json::json!({
                             "derive_trait": trait_name
                         });

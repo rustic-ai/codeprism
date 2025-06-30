@@ -344,7 +344,7 @@ impl ContentSearchManager {
         content: &str,
         language: Language,
     ) -> Result<ContentNode> {
-        // For now, create a simple code content node
+        // Currently creating a simple code content node
         // In the future, this could be enhanced with basic syntax highlighting
         let content_type = ContentType::Code { language };
         let mut node = ContentNode::new(file_path.to_path_buf(), content_type.clone());

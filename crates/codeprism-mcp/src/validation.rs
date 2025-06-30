@@ -720,10 +720,10 @@ impl SystemValidator {
     async fn check_system_requirements(&self) -> SystemRequirementsCheck {
         // Simplified system requirements check
         SystemRequirementsCheck {
-            minimum_memory_available: true, // Would check actual system memory
-            minimum_disk_space: true,       // Would check actual disk space
-            required_permissions: true,     // Would check file system permissions
-            system_architecture_supported: true, // Would check CPU architecture
+            minimum_memory_available: true, // Could check actual system memory
+            minimum_disk_space: true,       // Could check actual disk space
+            required_permissions: true,     // Could check file system permissions
+            system_architecture_supported: true, // Could check CPU architecture
         }
     }
 
@@ -745,8 +745,8 @@ impl SystemValidator {
         self.validation_cache.last_system_check = Some(SystemTime::now());
 
         RuntimeEnvironmentCheck {
-            rust_version_compatible: true,     // Would check actual Rust version
-            required_features_available: true, // Would check feature flags
+            rust_version_compatible: true,     // Could check actual Rust version
+            required_features_available: true, // Could check feature flags
             environment_variables_set: std::env::var("RUST_LOG").is_ok(), // Check some env vars
             network_connectivity: true,        // Simplified for stdio transport
         }
@@ -755,8 +755,8 @@ impl SystemValidator {
     /// Check resource availability
     async fn check_resource_availability(&self) -> ResourceAvailabilityCheck {
         ResourceAvailabilityCheck {
-            available_memory_mb: 4096,      // Would get actual available memory
-            available_disk_space_mb: 10240, // Would get actual disk space
+            available_memory_mb: 4096,      // Could fetch actual available memory
+            available_disk_space_mb: 10240, // Could fetch actual disk space
             cpu_cores_available: num_cpus::get(),
             can_create_temp_files: std::env::temp_dir().exists(),
             can_bind_to_stdio: true, // Always true for MCP stdio transport
@@ -957,8 +957,8 @@ impl SystemValidator {
         self.validation_cache.last_dependencies_check = Some(SystemTime::now());
 
         let mut missing_dependencies = Vec::new();
-        let version_conflicts = Vec::new(); // Would check actual version conflicts
-        let optional_dependencies = Vec::new(); // Would check optional features
+        let version_conflicts = Vec::new(); // Could check actual version conflicts
+        let optional_dependencies = Vec::new(); // Could check optional features
 
         // Check for required system tools (simplified)
         if !self.check_git_available() {

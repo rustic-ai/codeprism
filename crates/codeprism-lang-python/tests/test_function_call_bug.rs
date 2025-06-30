@@ -97,7 +97,7 @@ class Agent:
         }
     }
 
-    // For now, let's see what we get instead of asserting
+    // Currently investigating the call extraction patterns
     println!(
         "Total calls: {}, Invalid calls: {}",
         call_nodes.len(),

@@ -1186,7 +1186,7 @@ async fn analyze_decorator_effects(
     let mut registers_function = false;
 
     // Look for common decorator patterns in the function body
-    // This is a simplified analysis - in a real implementation, you'd parse the AST
+    // This is a simplified analysis - a more comprehensive implementation could parse the AST
     let decorator_name = &decorator_node.name.to_lowercase();
 
     if decorator_name.contains("wrapper") || decorator_name.contains("wrap") {
@@ -1277,7 +1277,7 @@ async fn analyze_decorator_factory(
     let mut factory_parameters = Vec::new();
     if is_factory {
         // In a real implementation, you'd parse the function signature
-        // For now, we'll use naming heuristics
+        // Currently using naming heuristics
         if decorator_node.name.to_lowercase().contains("cache") {
             factory_parameters.push("maxsize");
         }

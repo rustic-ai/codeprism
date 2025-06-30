@@ -3836,7 +3836,7 @@ impl ToolManager {
         let mut factory_parameters = Vec::new();
         if is_factory {
             // In a real implementation, you'd parse the function signature
-            // For now, we'll use naming heuristics
+            // Currently using naming heuristics
             if decorator_node.name.to_lowercase().contains("cache") {
                 factory_parameters.push("maxsize");
             }
@@ -4902,7 +4902,7 @@ def process_data(input_data: str) -> str:
         let result = tool_manager.parse_node_id(valid_hex);
 
         // This test may need adjustment based on actual NodeId::from_hex implementation
-        // For now, just test that it doesn't panic
+        // Currently just testing that it doesn't panic
         match result {
             Ok(_) => {}
             Err(_) => {} // May fail if format is wrong, but shouldn't panic

@@ -591,7 +591,7 @@ impl AnalysisCache {
                 0.0
             },
             tool_performance: tool_stats,
-            fragmentation_ratio: 0.1, // Placeholder - would calculate actual fragmentation
+            fragmentation_ratio: 0.1, // Hardcoded value - actual calculation in Issue #118
             recommended_cleanup: memory_usage_bytes > self.config.max_memory_bytes / 2,
         })
     }

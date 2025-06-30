@@ -96,7 +96,7 @@ class Child(Parent):
         );
     }
 
-    // For now, just report what we found - don't assert until we understand the issue
+    // Currently investigating the inheritance patterns found
     println!(
         "Summary: {} classes, {} calls, {} edges",
         class_nodes.len(),

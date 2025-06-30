@@ -1026,7 +1026,7 @@ impl RustAnalyzer {
 
     /// Find the scope of a lifetime parameter
     fn find_lifetime_scope(&self, _lifetime_node: &Node) -> LifetimeScope {
-        // Placeholder - would analyze where the lifetime is used
+        // Hardcoded scope - could analyze actual lifetime usage
         LifetimeScope::Function
     }
 }

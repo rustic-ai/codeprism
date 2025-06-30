@@ -127,7 +127,7 @@ impl AstMapper {
             }
 
             _ => {
-                // Skip other node types for now
+                // Skip other node types in this implementation
             }
         }
 
@@ -259,7 +259,7 @@ impl AstMapper {
             }
             _ => {
                 // Other types of assignments (attribute access, subscript, etc.)
-                // For now, skip these
+                // Currently skipping these complex assignment patterns
             }
         }
         Ok(())

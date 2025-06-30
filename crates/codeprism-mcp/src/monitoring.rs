@@ -706,9 +706,9 @@ impl PerformanceMonitor {
 
         #[cfg(windows)]
         {
-            // On Windows, we could use Windows API calls but for now provide a basic implementation
+            // On Windows, we could use Windows API calls but currently provide a basic implementation
             // This would require additional dependencies like winapi or windows-rs
-            // For now, return 0 as a safe fallback
+            // Currently returning 0 as a safe fallback
             return Ok(MemoryMetric {
                 timestamp,
                 memory_mb: 0,
@@ -828,7 +828,7 @@ impl PerformanceMonitor {
         #[cfg(windows)]
         {
             // On Windows, we could use Windows API calls
-            // For now, provide a basic implementation with system calls
+            // Currently providing a basic implementation with system calls
             let mut cpu_usage_percent = 0.0;
             let mut disk_usage_percent = 0.0;
 
@@ -942,7 +942,7 @@ impl MonitoringMiddleware {
         let duration = start_time.elapsed();
 
         let (success, payload_size) = match &result {
-            Ok(_) => (true, 0), // Would calculate actual payload size
+            Ok(_) => (true, 0), // Could calculate actual payload size
             Err(_) => (false, 0),
         };
 

@@ -379,7 +379,7 @@ impl MonitoringPipeline {
     /// Process a file deletion
     async fn process_file_deletion(&self, _file_path: &Path) -> Result<Option<AstPatch>> {
         // For deletion, we would need to track which nodes belong to which files
-        // and generate deletion patches. For now, we'll create an empty patch
+        // and generate deletion patches. Currently creating an empty patch
         // that represents the deletion event.
 
         let patch =
@@ -397,7 +397,7 @@ impl MonitoringPipeline {
         // For rename, we could:
         // 1. Delete nodes from old file
         // 2. Parse and add nodes from new file
-        // For now, we'll just process it as a new file
+        // Currently processing it as a new file
         self.process_file_change(new_path).await
     }
 

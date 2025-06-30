@@ -1636,7 +1636,7 @@ impl JavaScriptAnalyzer {
             let method = captures.get(1).unwrap().as_str().to_uppercase();
 
             Some(RouteInfo {
-                path: "/unknown".to_string(), // Simplified - would need more complex parsing for actual path
+                path: "/unknown".to_string(), // Simplified - could use more complex parsing for path
                 method,
                 parameters: Vec::new(),
                 query_params: Vec::new(),

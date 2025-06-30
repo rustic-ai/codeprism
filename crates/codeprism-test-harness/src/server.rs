@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::process::Stdio;
+use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::{anyhow, Result};
@@ -7,7 +8,8 @@ use serde::{Deserialize, Serialize};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader, BufWriter};
 use tokio::process::{Child, Command};
 use tokio::sync::RwLock;
-use tokio::time::{timeout, Instant};
+use tokio::task::JoinHandle;
+use tokio::time::{interval, timeout, Instant};
 
 use crate::protocol::jsonrpc::{JsonRpcMessage, JsonRpcRequest};
 #[cfg(test)]
@@ -48,7 +50,7 @@ impl Default for ServerConfig {
 }
 
 /// Server health status
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum ServerHealth {
     /// Server is healthy and responsive
     Healthy,
@@ -148,6 +150,97 @@ impl ServerComm {
     }
 }
 
+/// Server resource usage statistics
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ResourceUsage {
+    /// Peak memory usage in MB
+    pub memory_mb: f64,
+    /// CPU usage percentage (0.0 to 100.0)
+    pub cpu_percent: f64,
+    /// Number of file descriptors in use
+    pub file_descriptors: u32,
+    /// Last time resources were measured
+    #[serde(skip, default = "Instant::now")]
+    pub measured_at: Instant,
+}
+
+impl Default for ResourceUsage {
+    fn default() -> Self {
+        Self {
+            memory_mb: 0.0,
+            cpu_percent: 0.0,
+            file_descriptors: 0,
+            measured_at: Instant::now(),
+        }
+    }
+}
+
+/// Health check configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HealthConfig {
+    /// Health check interval in seconds
+    pub check_interval: u64,
+    /// Memory limit in MB (0 = no limit)
+    pub memory_limit_mb: f64,
+    /// CPU limit percentage (0.0 = no limit)
+    pub cpu_limit_percent: f64,
+    /// Maximum allowed response time in milliseconds
+    pub max_response_time_ms: u64,
+    /// Number of consecutive failures before marking as unhealthy
+    pub failure_threshold: u32,
+}
+
+impl Default for HealthConfig {
+    fn default() -> Self {
+        Self {
+            check_interval: 30,
+            memory_limit_mb: 512.0,
+            cpu_limit_percent: 80.0,
+            max_response_time_ms: 5000,
+            failure_threshold: 3,
+        }
+    }
+}
+
+/// Health monitoring data
+#[derive(Debug)]
+pub struct HealthMonitor {
+    /// Current health status
+    pub status: ServerHealth,
+    /// Resource usage statistics
+    pub resource_usage: ResourceUsage,
+    /// Number of consecutive health check failures
+    pub consecutive_failures: u32,
+    /// Last successful health check
+    pub last_successful_check: Option<Instant>,
+    /// Health monitoring task handle
+    pub monitor_task: Option<JoinHandle<()>>,
+}
+
+impl Clone for HealthMonitor {
+    fn clone(&self) -> Self {
+        Self {
+            status: self.status.clone(),
+            resource_usage: self.resource_usage.clone(),
+            consecutive_failures: self.consecutive_failures,
+            last_successful_check: self.last_successful_check,
+            monitor_task: None, // JoinHandle cannot be cloned
+        }
+    }
+}
+
+impl Default for HealthMonitor {
+    fn default() -> Self {
+        Self {
+            status: ServerHealth::Starting,
+            resource_usage: ResourceUsage::default(),
+            consecutive_failures: 0,
+            last_successful_check: None,
+            monitor_task: None,
+        }
+    }
+}
+
 /// Represents a managed MCP server process
 #[derive(Debug)]
 pub struct ServerProcess {
@@ -163,6 +256,10 @@ pub struct ServerProcess {
     last_activity: RwLock<Instant>,
     /// Process ID for tracking
     process_id: u32,
+    /// Health monitoring
+    health_monitor: Arc<RwLock<HealthMonitor>>,
+    /// Health check configuration
+    health_config: HealthConfig,
 }
 
 impl ServerProcess {
@@ -222,6 +319,8 @@ impl ServerProcess {
             start_time,
             last_activity: RwLock::new(start_time),
             process_id,
+            health_monitor: Arc::new(RwLock::new(HealthMonitor::default())),
+            health_config: HealthConfig::default(),
         };
 
         Ok(server_process)
@@ -237,6 +336,14 @@ impl ServerProcess {
         match init_result {
             Ok(Ok(_)) => {
                 self.update_last_activity().await;
+                // Mark as healthy after successful initialization
+                {
+                    let mut health = self.health_monitor.write().await;
+                    health.status = ServerHealth::Healthy;
+                    health.last_successful_check = Some(Instant::now());
+                }
+                // Start health monitoring
+                self.start_health_monitoring().await;
                 Ok(())
             }
             Ok(Err(e)) => Err(ServerError::CommunicationError(format!(
@@ -249,12 +356,164 @@ impl ServerProcess {
         }
     }
 
+    /// Start health monitoring background task
+    pub async fn start_health_monitoring(&mut self) {
+        let process_id = self.process_id;
+        let health_config = self.health_config.clone();
+        let health_monitor = Arc::clone(&self.health_monitor);
+
+        let monitor_task = tokio::spawn(async move {
+            let mut interval = interval(Duration::from_secs(health_config.check_interval));
+
+            loop {
+                interval.tick().await;
+
+                // Perform health check
+                let health_result = Self::perform_health_check(process_id, &health_config).await;
+
+                // Update health status
+                {
+                    let mut health = health_monitor.write().await;
+                    match health_result {
+                        Ok(resource_usage) => {
+                            health.status = ServerHealth::Healthy;
+                            health.resource_usage = resource_usage;
+                            health.consecutive_failures = 0;
+                            health.last_successful_check = Some(Instant::now());
+                        }
+                        Err(_) => {
+                            health.consecutive_failures += 1;
+                            if health.consecutive_failures >= health_config.failure_threshold {
+                                health.status = ServerHealth::Unresponsive;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Store the task handle
+        {
+            let mut health = self.health_monitor.write().await;
+            health.monitor_task = Some(monitor_task);
+        }
+    }
+
+    /// Perform health check on the server process
+    async fn perform_health_check(
+        process_id: u32,
+        _health_config: &HealthConfig,
+    ) -> Result<ResourceUsage, ServerError> {
+        // Check if process is still running
+        #[cfg(unix)]
+        {
+            use std::process::Command;
+
+            // Check if process exists
+            let status = Command::new("ps")
+                .args(["-p", &process_id.to_string()])
+                .output()
+                .map_err(|e| {
+                    ServerError::CommunicationError(format!("Failed to check process: {}", e))
+                })?;
+
+            if !status.status.success() {
+                return Err(ServerError::ProcessCrashed {
+                    reason: "Process no longer exists".to_string(),
+                });
+            }
+
+            // Get memory usage (RSS in KB)
+            let memory_output = Command::new("ps")
+                .args(["-p", &process_id.to_string(), "-o", "rss="])
+                .output()
+                .map_err(|e| {
+                    ServerError::CommunicationError(format!("Failed to get memory usage: {}", e))
+                })?;
+
+            let memory_kb = if memory_output.status.success() {
+                String::from_utf8_lossy(&memory_output.stdout)
+                    .trim()
+                    .parse::<f64>()
+                    .unwrap_or(0.0)
+            } else {
+                0.0
+            };
+
+            // Get CPU usage (this is a simplified approach)
+            let cpu_output = Command::new("ps")
+                .args(["-p", &process_id.to_string(), "-o", "pcpu="])
+                .output()
+                .map_err(|e| {
+                    ServerError::CommunicationError(format!("Failed to get CPU usage: {}", e))
+                })?;
+
+            let cpu_percent = if cpu_output.status.success() {
+                String::from_utf8_lossy(&cpu_output.stdout)
+                    .trim()
+                    .parse::<f64>()
+                    .unwrap_or(0.0)
+            } else {
+                0.0
+            };
+
+            // Get file descriptor count
+            let fd_count =
+                if let Ok(entries) = std::fs::read_dir(format!("/proc/{}/fd", process_id)) {
+                    entries.count() as u32
+                } else {
+                    0
+                };
+
+            Ok(ResourceUsage {
+                memory_mb: memory_kb / 1024.0, // Convert KB to MB
+                cpu_percent,
+                file_descriptors: fd_count,
+                measured_at: Instant::now(),
+            })
+        }
+
+        #[cfg(not(unix))]
+        {
+            // Simplified health check for non-Unix systems
+            Ok(ResourceUsage {
+                memory_mb: 0.0,
+                cpu_percent: 0.0,
+                file_descriptors: 0,
+                measured_at: Instant::now(),
+            })
+        }
+    }
+
+    /// Get current health status
+    pub async fn get_health(&self) -> ServerHealth {
+        let health = self.health_monitor.read().await;
+        health.status.clone()
+    }
+
+    /// Get current resource usage
+    pub async fn get_resource_usage(&self) -> ResourceUsage {
+        let health = self.health_monitor.read().await;
+        health.resource_usage.clone()
+    }
+
+    /// Check if server is healthy
+    pub async fn is_healthy(&self) -> bool {
+        let health = self.health_monitor.read().await;
+        matches!(health.status, ServerHealth::Healthy)
+    }
+
     /// Send a request to the server
     pub async fn send_request(
         &mut self,
         method: &str,
         params: serde_json::Value,
     ) -> Result<JsonRpcMessage, ServerError> {
+        // Check health before sending request
+        if !self.is_healthy().await {
+            return Err(ServerError::Unresponsive);
+        }
+
         let timeout_duration = Duration::from_secs(self.config.request_timeout);
 
         let request = JsonRpcRequest {
@@ -279,16 +538,40 @@ impl ServerProcess {
                 "Request failed: {}",
                 e
             ))),
-            Err(_) => Err(ServerError::Unresponsive),
+            Err(_) => {
+                // Update health status on timeout
+                {
+                    let mut health = self.health_monitor.write().await;
+                    health.consecutive_failures += 1;
+                    if health.consecutive_failures >= self.health_config.failure_threshold {
+                        health.status = ServerHealth::Unresponsive;
+                    }
+                }
+                Err(ServerError::Unresponsive)
+            }
         }
     }
 
     /// Check if process is still running
     pub async fn is_running(&mut self) -> bool {
         match self.process.try_wait() {
-            Ok(Some(_)) => false, // Process has exited
-            Ok(None) => true,     // Process is still running
-            Err(_) => false,      // Error checking process
+            Ok(Some(_)) => {
+                // Process has exited, update health status
+                {
+                    let mut health = self.health_monitor.write().await;
+                    health.status = ServerHealth::Crashed;
+                }
+                false
+            }
+            Ok(None) => true, // Process is still running
+            Err(_) => {
+                // Error checking process
+                {
+                    let mut health = self.health_monitor.write().await;
+                    health.status = ServerHealth::Crashed;
+                }
+                false
+            }
         }
     }
 
@@ -304,6 +587,14 @@ impl ServerProcess {
 
     /// Gracefully shutdown the server
     pub async fn shutdown(mut self) -> Result<(), ServerError> {
+        // Cancel health monitoring task
+        {
+            let mut health = self.health_monitor.write().await;
+            if let Some(task) = health.monitor_task.take() {
+                task.abort();
+            }
+        }
+
         // Give process time to shutdown gracefully
         let shutdown_timeout = Duration::from_secs(5);
         let shutdown_result = timeout(shutdown_timeout, self.process.wait()).await;
@@ -330,6 +621,21 @@ impl ServerProcess {
     async fn update_last_activity(&self) {
         *self.last_activity.write().await = Instant::now();
     }
+}
+
+/// Server statistics
+#[derive(Debug, Clone, Serialize)]
+pub struct ServerStats {
+    pub server_id: String,
+    pub process_id: u32,
+    pub uptime: Duration,
+    pub idle_time: Duration,
+    pub is_idle_timeout: bool,
+    pub health_status: ServerHealth,
+    pub resource_usage: ResourceUsage,
+    pub consecutive_failures: u32,
+    #[serde(skip)]
+    pub last_successful_check: Option<Instant>,
 }
 
 /// Manages multiple MCP server instances
@@ -422,6 +728,141 @@ impl ServerManager {
         servers.keys().cloned().collect()
     }
 
+    /// Get detailed server statistics
+    pub async fn get_server_stats(&self, server_id: &str) -> Result<ServerStats, ServerError> {
+        let servers = self.servers.read().await;
+        let server = servers.get(server_id).ok_or_else(|| {
+            ServerError::ConfigurationError(format!("Server '{}' not found", server_id))
+        })?;
+
+        let health_status = server.get_health().await;
+        let resource_usage = server.get_resource_usage().await;
+        let uptime = server.uptime();
+
+        // Calculate idle time based on last activity
+        let last_activity = *server.last_activity.read().await;
+        let idle_time = last_activity.elapsed();
+        let is_idle_timeout = idle_time.as_secs() > server.config.max_idle_time;
+
+        let health_monitor = server.health_monitor.read().await;
+
+        Ok(ServerStats {
+            server_id: server_id.to_string(),
+            process_id: server.process_id(),
+            uptime,
+            idle_time,
+            is_idle_timeout,
+            health_status,
+            resource_usage,
+            consecutive_failures: health_monitor.consecutive_failures,
+            last_successful_check: health_monitor.last_successful_check,
+        })
+    }
+
+    /// Get stats for all servers
+    pub async fn get_all_server_stats(&self) -> HashMap<String, ServerStats> {
+        let mut stats = HashMap::new();
+        let server_ids = self.list_servers().await;
+
+        for server_id in server_ids {
+            if let Ok(server_stats) = self.get_server_stats(&server_id).await {
+                stats.insert(server_id, server_stats);
+            }
+        }
+
+        stats
+    }
+
+    /// Get health status for a specific server
+    pub async fn get_server_health(&self, server_id: &str) -> Result<ServerHealth, ServerError> {
+        let servers = self.servers.read().await;
+        let server = servers.get(server_id).ok_or_else(|| {
+            ServerError::ConfigurationError(format!("Server '{}' not found", server_id))
+        })?;
+
+        Ok(server.get_health().await)
+    }
+
+    /// Get resource usage for a specific server
+    pub async fn get_server_resources(
+        &self,
+        server_id: &str,
+    ) -> Result<ResourceUsage, ServerError> {
+        let servers = self.servers.read().await;
+        let server = servers.get(server_id).ok_or_else(|| {
+            ServerError::ConfigurationError(format!("Server '{}' not found", server_id))
+        })?;
+
+        Ok(server.get_resource_usage().await)
+    }
+
+    /// Check if a server is healthy
+    pub async fn is_server_healthy(&self, server_id: &str) -> Result<bool, ServerError> {
+        let servers = self.servers.read().await;
+        let server = servers.get(server_id).ok_or_else(|| {
+            ServerError::ConfigurationError(format!("Server '{}' not found", server_id))
+        })?;
+
+        Ok(server.is_healthy().await)
+    }
+
+    /// Restart an unhealthy server
+    pub async fn restart_server(
+        &self,
+        server_id: &str,
+        init_params: InitializeParams,
+    ) -> Result<(), ServerError> {
+        // Get server configuration before stopping
+        let config = {
+            let servers = self.servers.read().await;
+            let server = servers.get(server_id).ok_or_else(|| {
+                ServerError::ConfigurationError(format!("Server '{}' not found", server_id))
+            })?;
+            server.config.clone()
+        };
+
+        // Stop the existing server
+        self.stop_server(server_id).await?;
+
+        // Start a new server with the same configuration
+        self.start_server(server_id.to_string(), config, init_params)
+            .await
+    }
+
+    /// Perform health check on all servers and return unhealthy ones
+    pub async fn check_all_servers_health(&self) -> Vec<(String, ServerHealth)> {
+        let mut unhealthy_servers = Vec::new();
+        let server_ids = self.list_servers().await;
+
+        for server_id in server_ids {
+            if let Ok(health) = self.get_server_health(&server_id).await {
+                if !matches!(health, ServerHealth::Healthy) {
+                    unhealthy_servers.push((server_id, health));
+                }
+            }
+        }
+
+        unhealthy_servers
+    }
+
+    /// Cleanup idle servers that have exceeded their idle timeout
+    pub async fn cleanup_idle_servers(&self) -> Vec<String> {
+        let mut cleaned_servers = Vec::new();
+        let server_ids = self.list_servers().await;
+
+        for server_id in server_ids {
+            if let Ok(stats) = self.get_server_stats(&server_id).await {
+                if stats.is_idle_timeout {
+                    if let Ok(()) = self.stop_server(&server_id).await {
+                        cleaned_servers.push(server_id);
+                    }
+                }
+            }
+        }
+
+        cleaned_servers
+    }
+
     /// Shutdown all servers
     pub async fn shutdown_all(&self) -> Result<(), Vec<ServerError>> {
         let mut servers = {
@@ -443,16 +884,6 @@ impl ServerManager {
             Err(errors)
         }
     }
-}
-
-/// Server statistics
-#[derive(Debug, Clone, Serialize)]
-pub struct ServerStats {
-    pub server_id: String,
-    pub process_id: u32,
-    pub uptime: Duration,
-    pub idle_time: Duration,
-    pub is_idle_timeout: bool,
 }
 
 /// Reference MCP server configurations for testing
@@ -650,12 +1081,26 @@ mod tests {
             uptime: Duration::from_secs(60),
             idle_time: Duration::from_secs(10),
             is_idle_timeout: false,
+            health_status: ServerHealth::Healthy,
+            resource_usage: ResourceUsage {
+                memory_mb: 123.45,
+                cpu_percent: 50.0,
+                file_descriptors: 10,
+                measured_at: Instant::now(),
+            },
+            consecutive_failures: 0,
+            last_successful_check: None,
         };
 
         assert_eq!(stats.server_id, "test");
         assert_eq!(stats.process_id, 1234);
         assert_eq!(stats.uptime, Duration::from_secs(60));
+        assert_eq!(stats.idle_time, Duration::from_secs(10));
         assert!(!stats.is_idle_timeout);
+        assert_eq!(stats.health_status, ServerHealth::Healthy);
+        assert_eq!(stats.resource_usage.memory_mb, 123.45);
+        assert_eq!(stats.resource_usage.cpu_percent, 50.0);
+        assert_eq!(stats.resource_usage.file_descriptors, 10);
     }
 
     #[tokio::test]
@@ -882,5 +1327,197 @@ mod tests {
             "Configuration creation too slow: {}ms",
             duration.as_millis()
         );
+    }
+
+    // Tests for new health monitoring functionality
+    #[tokio::test]
+    async fn test_health_monitor_creation() {
+        let health_monitor = HealthMonitor::default();
+        assert_eq!(health_monitor.status, ServerHealth::Starting);
+        assert_eq!(health_monitor.consecutive_failures, 0);
+        assert!(health_monitor.last_successful_check.is_none());
+        assert!(health_monitor.monitor_task.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_resource_usage_creation() {
+        let resource_usage = ResourceUsage::default();
+        assert_eq!(resource_usage.memory_mb, 0.0);
+        assert_eq!(resource_usage.cpu_percent, 0.0);
+        assert_eq!(resource_usage.file_descriptors, 0);
+    }
+
+    #[tokio::test]
+    async fn test_health_config_defaults() {
+        let config = HealthConfig::default();
+        assert_eq!(config.check_interval, 30);
+        assert_eq!(config.memory_limit_mb, 512.0);
+        assert_eq!(config.cpu_limit_percent, 80.0);
+        assert_eq!(config.max_response_time_ms, 5000);
+        assert_eq!(config.failure_threshold, 3);
+    }
+
+    #[tokio::test]
+    async fn test_server_health_serialization() {
+        let health = ServerHealth::Healthy;
+        let serialized = serde_json::to_string(&health).unwrap();
+        let deserialized: ServerHealth = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(health, deserialized);
+    }
+
+    #[tokio::test]
+    async fn test_resource_usage_serialization() {
+        let resource_usage = ResourceUsage {
+            memory_mb: 123.45,
+            cpu_percent: 67.8,
+            file_descriptors: 42,
+            measured_at: Instant::now(),
+        };
+
+        // Should serialize without the measured_at field
+        let serialized = serde_json::to_string(&resource_usage).unwrap();
+        let deserialized: ResourceUsage = serde_json::from_str(&serialized).unwrap();
+
+        assert_eq!(resource_usage.memory_mb, deserialized.memory_mb);
+        assert_eq!(resource_usage.cpu_percent, deserialized.cpu_percent);
+        assert_eq!(
+            resource_usage.file_descriptors,
+            deserialized.file_descriptors
+        );
+        // measured_at will be different due to default
+    }
+
+    #[tokio::test]
+    async fn test_server_manager_health_methods() {
+        let manager = ServerManager::with_defaults();
+
+        // Test health check on non-existent server
+        let result = manager.get_server_health("nonexistent").await;
+        assert!(result.is_err());
+
+        // Test resource check on non-existent server
+        let result = manager.get_server_resources("nonexistent").await;
+        assert!(result.is_err());
+
+        // Test health status check on non-existent server
+        let result = manager.is_server_healthy("nonexistent").await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_server_manager_stats_methods() {
+        let manager = ServerManager::with_defaults();
+
+        // Test stats on empty manager
+        let all_stats = manager.get_all_server_stats().await;
+        assert!(all_stats.is_empty());
+
+        // Test health check on all servers (empty)
+        let unhealthy = manager.check_all_servers_health().await;
+        assert!(unhealthy.is_empty());
+
+        // Test cleanup idle servers (none to clean)
+        let cleaned = manager.cleanup_idle_servers().await;
+        assert!(cleaned.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_server_health_enum_variants() {
+        // Test all health enum variants
+        let variants = vec![
+            ServerHealth::Healthy,
+            ServerHealth::Unresponsive,
+            ServerHealth::Crashed,
+            ServerHealth::Starting,
+        ];
+
+        for variant in variants {
+            let serialized = serde_json::to_string(&variant).unwrap();
+            let deserialized: ServerHealth = serde_json::from_str(&serialized).unwrap();
+            assert_eq!(variant, deserialized);
+        }
+    }
+
+        #[tokio::test]
+    async fn test_health_monitor_clone() {
+        let health_monitor = HealthMonitor {
+            status: ServerHealth::Healthy,
+            consecutive_failures: 5,
+            ..Default::default()
+        };
+        
+        let cloned = health_monitor.clone();
+        assert_eq!(cloned.status, ServerHealth::Healthy);
+        assert_eq!(cloned.consecutive_failures, 5);
+        assert!(cloned.monitor_task.is_none()); // Should be None after clone
+    }
+
+        #[tokio::test]
+    async fn test_server_config_with_health_settings() {
+        let config = ServerConfig {
+            max_idle_time: 600, // 10 minutes
+            request_timeout: 30, // 30 seconds
+            startup_timeout: 60, // 1 minute
+            ..Default::default()
+        };
+        
+        assert_eq!(config.max_idle_time, 600);
+        assert_eq!(config.request_timeout, 30);
+        assert_eq!(config.startup_timeout, 60);
+    }
+
+    // Mock health check test (since we can't easily test real process monitoring in unit tests)
+    #[tokio::test]
+    async fn test_resource_usage_calculations() {
+        let resource_usage = ResourceUsage {
+            memory_mb: 256.0,
+            cpu_percent: 45.5,
+            file_descriptors: 25,
+            measured_at: Instant::now(),
+        };
+
+        // Test basic resource usage data
+        assert!(resource_usage.memory_mb > 0.0);
+        assert!(resource_usage.cpu_percent >= 0.0 && resource_usage.cpu_percent <= 100.0);
+        assert!(resource_usage.file_descriptors > 0);
+    }
+
+    #[tokio::test]
+    async fn test_server_stats_comprehensive() {
+        let stats = ServerStats {
+            server_id: "comprehensive-test".to_string(),
+            process_id: 9999,
+            uptime: Duration::from_secs(3600),   // 1 hour
+            idle_time: Duration::from_secs(300), // 5 minutes
+            is_idle_timeout: false,
+            health_status: ServerHealth::Healthy,
+            resource_usage: ResourceUsage {
+                memory_mb: 512.0,
+                cpu_percent: 25.0,
+                file_descriptors: 50,
+                measured_at: Instant::now(),
+            },
+            consecutive_failures: 0,
+            last_successful_check: Some(Instant::now()),
+        };
+
+        // Comprehensive stats validation
+        assert_eq!(stats.server_id, "comprehensive-test");
+        assert_eq!(stats.process_id, 9999);
+        assert_eq!(stats.uptime, Duration::from_secs(3600));
+        assert_eq!(stats.idle_time, Duration::from_secs(300));
+        assert!(!stats.is_idle_timeout);
+        assert_eq!(stats.health_status, ServerHealth::Healthy);
+        assert_eq!(stats.resource_usage.memory_mb, 512.0);
+        assert_eq!(stats.resource_usage.cpu_percent, 25.0);
+        assert_eq!(stats.resource_usage.file_descriptors, 50);
+        assert_eq!(stats.consecutive_failures, 0);
+        assert!(stats.last_successful_check.is_some());
+
+        // Test serialization of comprehensive stats
+        let serialized = serde_json::to_string(&stats).unwrap();
+        assert!(serialized.contains("comprehensive-test"));
+        assert!(serialized.contains("Healthy"));
+        assert!(serialized.contains("512"));
     }
 }

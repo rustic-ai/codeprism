@@ -417,7 +417,7 @@ impl DynamicToolManager {
 
     /// Determine primary language based on file count
     fn determine_primary_language(&self, languages: &[String]) -> Option<String> {
-        // For now, simple heuristic - could be enhanced with actual file counting
+        // Current implementation uses simple heuristic - could be enhanced with actual file counting
         languages.first().cloned()
     }
 
@@ -465,7 +465,7 @@ impl DynamicToolManager {
                 repo_types.contains(&analysis.repo_type)
             }
             EnablementCondition::Custom { expression: _ } => {
-                // For now, custom expressions are not implemented
+                // Custom expressions require expression evaluation engine - not yet implemented
                 warn!("Custom enablement conditions not yet implemented");
                 false
             }

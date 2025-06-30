@@ -621,7 +621,7 @@ impl CodePrismMcpServer {
         let _language = self.detect_language(file_path);
 
         // Handle different file types appropriately
-        // For now, use simple file indexing for all content types
+        // Current implementation uses simple file indexing for all content types
         // Future enhancement: tree-sitter integration for improved parsing
         // to extract comments and provide better source code content indexing
         self.content_search.index_file(file_path, &content)?;

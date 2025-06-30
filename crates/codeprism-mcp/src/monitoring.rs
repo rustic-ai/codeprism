@@ -778,7 +778,7 @@ impl PerformanceMonitor {
             }
 
             // Get disk usage for root filesystem using df command
-            if let Ok(output) = std::process::Command::new("df").args(&["-h", "/"]).output() {
+            if let Ok(output) = std::process::Command::new("df").args(["-h", "/"]).output() {
                 if let Ok(output_str) = String::from_utf8(output.stdout) {
                     for line in output_str.lines().skip(1) {
                         let fields: Vec<&str> = line.split_whitespace().collect();
@@ -816,13 +816,13 @@ impl PerformanceMonitor {
                 active_connections = tcp_content.lines().skip(1).count(); // Skip header
             }
 
-            return Ok(SystemMetric {
+            Ok(SystemMetric {
                 timestamp,
                 cpu_usage_percent,
                 disk_usage_percent,
                 network_activity_mb,
                 active_connections,
-            });
+            })
         }
 
         #[cfg(windows)]
@@ -1093,7 +1093,7 @@ mod tests {
         let memory_metric = memory_info.unwrap();
         assert!(memory_metric.timestamp > 0);
         // Memory should be 0 or positive (can be 0 on unsupported platforms)
-        assert!(memory_metric.memory_mb >= 0);
+        // Note: memory_mb is usize, which is always >= 0
 
         // On Unix systems, we should get real memory data
         #[cfg(unix)]
@@ -1128,7 +1128,7 @@ mod tests {
 
         // Network activity and connections should be non-negative
         assert!(system_metric.network_activity_mb >= 0.0);
-        assert!(system_metric.active_connections >= 0);
+        // Note: active_connections is usize, which is always >= 0
 
         println!(
             "System metrics - CPU: {:.1}%, Disk: {:.1}%, Network: {:.1}MB, Connections: {}",
@@ -1155,6 +1155,6 @@ mod tests {
         let summary = monitor.get_performance_summary().unwrap();
         assert_eq!(summary.total_requests, 0);
         assert_eq!(summary.success_rate, 1.0);
-        assert!(summary.uptime_seconds >= 0);
+        // Note: uptime_seconds is u64, which is always >= 0
     }
 }

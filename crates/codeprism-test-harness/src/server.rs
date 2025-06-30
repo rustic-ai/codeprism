@@ -1438,29 +1438,29 @@ mod tests {
         }
     }
 
-        #[tokio::test]
+    #[tokio::test]
     async fn test_health_monitor_clone() {
         let health_monitor = HealthMonitor {
             status: ServerHealth::Healthy,
             consecutive_failures: 5,
             ..Default::default()
         };
-        
+
         let cloned = health_monitor.clone();
         assert_eq!(cloned.status, ServerHealth::Healthy);
         assert_eq!(cloned.consecutive_failures, 5);
         assert!(cloned.monitor_task.is_none()); // Should be None after clone
     }
 
-        #[tokio::test]
+    #[tokio::test]
     async fn test_server_config_with_health_settings() {
         let config = ServerConfig {
-            max_idle_time: 600, // 10 minutes
+            max_idle_time: 600,  // 10 minutes
             request_timeout: 30, // 30 seconds
             startup_timeout: 60, // 1 minute
             ..Default::default()
         };
-        
+
         assert_eq!(config.max_idle_time, 600);
         assert_eq!(config.request_timeout, 30);
         assert_eq!(config.startup_timeout, 60);

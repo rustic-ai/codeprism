@@ -113,11 +113,14 @@ Dragonscale Industries Inc supports the development of cutting-edge AI-powered c
 # Clone and build
 git clone https://github.com/rustic-ai/codeprism
 cd codeprism
+
 cargo build --release
 
 # Verify installation
 ./target/release/codeprism-mcp --help
 ```
+
+**⚠️ Development Note**: This project enforces strict implementation completeness standards via git pre-commit hooks. All commits must contain complete, functional implementations with zero placeholder code. The existing `.git/hooks/pre-commit` script automatically validates code quality and implementation completeness.
 
 ### MCP Client Integration
 

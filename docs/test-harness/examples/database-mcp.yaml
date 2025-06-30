@@ -1,0 +1,511 @@
+# Database MCP Server Test Configuration
+#
+# This configuration tests a database MCP server that provides SQL query
+# execution, schema management, and data manipulation capabilities.
+#
+# Usage: mcp-test-harness test --config database-mcp.yaml
+
+global:
+  max_global_concurrency: 2  # Lower concurrency to avoid database locks
+  global_timeout_seconds: 120
+  fail_fast: false
+  
+  retry:
+    max_retries: 3
+    retry_delay_ms: 2000
+    exponential_backoff: true
+    retry_on_patterns:
+      - "database locked"
+      - "connection timeout"
+      - "temporary unavailable"
+
+server:
+  transport: "stdio"
+  start_command: "python"
+  args: ["database_server.py", "stdio"]
+  working_dir: "servers/database"
+  
+  env:
+    DATABASE_URL: "sqlite:///tmp/test_database.db"
+    SQL_LOG_LEVEL: "info"
+    MAX_CONNECTIONS: "10"
+  
+  startup_timeout_seconds: 20
+  shutdown_timeout_seconds: 10
+  
+  health_check:
+    enabled: true
+    interval_seconds: 15
+    failure_threshold: 2
+
+environment:
+  variables:
+    TEST_DATABASE_PATH: "/tmp/test_database.db"
+    BACKUP_DIR: "/tmp/db_backups"
+  
+  setup_commands:
+    - "mkdir -p /tmp/db_backups"
+    - "rm -f /tmp/test_database.db"
+    - "sqlite3 /tmp/test_database.db < test-data/schema.sql"
+    - "sqlite3 /tmp/test_database.db < test-data/sample_data.sql"
+  
+  teardown_commands:
+    - "rm -f /tmp/test_database.db"
+    - "rm -rf /tmp/db_backups"
+
+test_suites:
+  # Database Connection and Setup
+  - name: "connection_management"
+    description: "Test database connection and initialization"
+    
+    test_cases:
+      - id: "initialize_database"
+        description: "Initialize database connection"
+        tool_name: "initialize"
+        input_params:
+          protocolVersion: "2024-11-05"
+          capabilities:
+            experimental: {}
+        
+        expected:
+          patterns:
+            - key: "protocolVersion"
+              validation: { type: "equals", value: "2024-11-05" }
+              required: true
+            - key: "capabilities.tools"
+              validation: { type: "equals", value: true }
+              required: true
+            - key: "serverInfo.name"
+              validation: { type: "contains", value: "database" }
+              required: true
+
+      - id: "list_database_tools"
+        description: "List available database tools"
+        tool_name: "tools/list"
+        input_params: {}
+        
+        expected:
+          patterns:
+            - key: "tools"
+              validation: { type: "array" }
+              required: true
+          
+          custom_scripts:
+            - script: |
+                import json
+                import sys
+                
+                response = json.loads(sys.argv[1])
+                tools = response.get('tools', [])
+                tool_names = [tool['name'] for tool in tools]
+                
+                expected_tools = [
+                    'execute_query',
+                    'list_tables', 
+                    'describe_table',
+                    'get_schema',
+                    'backup_database'
+                ]
+                
+                missing_tools = [tool for tool in expected_tools if tool not in tool_names]
+                if missing_tools:
+                    print(f"Missing database tools: {missing_tools}")
+                    sys.exit(1)
+                
+                print(f"Found all {len(expected_tools)} expected database tools")
+              language: "python"
+
+  # Schema Operations
+  - name: "schema_operations"
+    description: "Test database schema inspection and management"
+    
+    test_cases:
+      - id: "list_tables"
+        description: "List all tables in database"
+        tool_name: "list_tables"
+        input_params:
+          include_system_tables: false
+        
+        expected:
+          patterns:
+            - key: "tables"
+              validation: { type: "array" }
+              required: true
+            - key: "table_count"
+              validation: { type: "greater_than", value: 0 }
+              required: true
+          
+          custom_scripts:
+            - script: |
+                import json
+                import sys
+                
+                response = json.loads(sys.argv[1])
+                tables = response.get('tables', [])
+                table_names = [table['name'] for table in tables]
+                
+                # Expect sample tables from test data
+                expected_tables = ['users', 'orders', 'products']
+                
+                for table in expected_tables:
+                    if table not in table_names:
+                        print(f"Missing expected table: {table}")
+                        sys.exit(1)
+                
+                print(f"Found all expected tables: {expected_tables}")
+              language: "python"
+
+      - id: "describe_users_table"
+        description: "Get schema for users table"
+        tool_name: "describe_table"
+        input_params:
+          table_name: "users"
+          include_indexes: true
+        
+        expected:
+          patterns:
+            - key: "table_name"
+              validation: { type: "equals", value: "users" }
+              required: true
+            - key: "columns"
+              validation: { type: "array" }
+              required: true
+            - key: "columns[0].name"
+              validation: { type: "exists" }
+              required: true
+            - key: "columns[0].type"
+              validation: { type: "exists" }
+              required: true
+
+      - id: "get_full_schema"
+        description: "Get complete database schema"
+        tool_name: "get_schema"
+        input_params:
+          format: "json"
+          include_data_types: true
+        
+        expected:
+          patterns:
+            - key: "schema_version"
+              validation: { type: "exists" }
+              required: true
+            - key: "tables"
+              validation: { type: "object" }
+              required: true
+        
+        performance:
+          max_execution_time_ms: 5000
+
+  # Data Query Operations
+  - name: "query_operations"
+    description: "Test SQL query execution and data retrieval"
+    
+    test_cases:
+      - id: "simple_select"
+        description: "Execute simple SELECT query"
+        tool_name: "execute_query"
+        input_params:
+          query: "SELECT COUNT(*) as user_count FROM users"
+          read_only: true
+        
+        expected:
+          patterns:
+            - key: "rows"
+              validation: { type: "array" }
+              required: true
+            - key: "rows[0].user_count"
+              validation: { type: "integer" }
+              required: true
+            - key: "execution_time_ms"
+              validation: { type: "greater_than", value: 0 }
+              required: true
+        
+        performance:
+          max_execution_time_ms: 3000
+
+      - id: "parameterized_query"
+        description: "Execute parameterized query"
+        tool_name: "execute_query"
+        input_params:
+          query: "SELECT * FROM users WHERE age > ? AND city = ?"
+          parameters: [25, "New York"]
+          read_only: true
+        
+        expected:
+          patterns:
+            - key: "rows"
+              validation: { type: "array" }
+              required: true
+            - key: "column_names"
+              validation: { type: "array" }
+              required: true
+          
+          custom_scripts:
+            - script: |
+                import json
+                import sys
+                
+                response = json.loads(sys.argv[1])
+                rows = response.get('rows', [])
+                columns = response.get('column_names', [])
+                
+                # Verify expected columns exist
+                expected_columns = ['id', 'name', 'email', 'age', 'city']
+                missing_columns = [col for col in expected_columns if col not in columns]
+                
+                if missing_columns:
+                    print(f"Missing expected columns: {missing_columns}")
+                    sys.exit(1)
+                
+                # Verify all returned users meet criteria
+                for row in rows:
+                    user_data = dict(zip(columns, row))
+                    if user_data.get('age', 0) <= 25:
+                        print(f"User doesn't meet age criteria: {user_data}")
+                        sys.exit(1)
+                    if user_data.get('city') != 'New York':
+                        print(f"User doesn't meet city criteria: {user_data}")
+                        sys.exit(1)
+                
+                print(f"Parameterized query returned {len(rows)} valid users")
+              language: "python"
+
+      - id: "join_query"
+        description: "Execute JOIN query across tables"
+        tool_name: "execute_query"
+        input_params:
+          query: |
+            SELECT u.name, u.email, COUNT(o.id) as order_count
+            FROM users u
+            LEFT JOIN orders o ON u.id = o.user_id
+            GROUP BY u.id, u.name, u.email
+            ORDER BY order_count DESC
+            LIMIT 10
+          read_only: true
+        
+        expected:
+          patterns:
+            - key: "rows"
+              validation: { type: "array" }
+              required: true
+            - key: "column_names"
+              validation: { type: "array_length", min: 3, max: 3 }
+              required: true
+
+  # Data Modification Operations
+  - name: "data_modification"
+    description: "Test INSERT, UPDATE, DELETE operations"
+    
+    test_cases:
+      - id: "insert_new_user"
+        description: "Insert new user record"
+        tool_name: "execute_query"
+        input_params:
+          query: |
+            INSERT INTO users (name, email, age, city)
+            VALUES ('Test User', 'test@example.com', 30, 'Test City')
+          read_only: false
+        
+        expected:
+          patterns:
+            - key: "affected_rows"
+              validation: { type: "equals", value: 1 }
+              required: true
+            - key: "last_insert_id"
+              validation: { type: "integer" }
+              required: true
+
+      - id: "update_user_data"
+        description: "Update existing user data"
+        tool_name: "execute_query"
+        input_params:
+          query: "UPDATE users SET age = 31 WHERE email = 'test@example.com'"
+          read_only: false
+        
+        expected:
+          patterns:
+            - key: "affected_rows"
+              validation: { type: "equals", value: 1 }
+              required: true
+
+      - id: "verify_update"
+        description: "Verify user data was updated"
+        tool_name: "execute_query"
+        input_params:
+          query: "SELECT age FROM users WHERE email = 'test@example.com'"
+          read_only: true
+        
+        expected:
+          patterns:
+            - key: "rows[0][0]"
+              validation: { type: "equals", value: 31 }
+              required: true
+
+      - id: "delete_test_user"
+        description: "Delete test user"
+        tool_name: "execute_query"
+        input_params:
+          query: "DELETE FROM users WHERE email = 'test@example.com'"
+          read_only: false
+        
+        expected:
+          patterns:
+            - key: "affected_rows"
+              validation: { type: "equals", value: 1 }
+              required: true
+
+  # Transaction and Backup Operations
+  - name: "advanced_operations"
+    description: "Test transactions and backup operations"
+    
+    test_cases:
+      - id: "transaction_test"
+        description: "Test transaction rollback"
+        tool_name: "execute_transaction"
+        input_params:
+          queries:
+            - "INSERT INTO users (name, email, age, city) VALUES ('Temp User 1', 'temp1@test.com', 25, 'Test')"
+            - "INSERT INTO users (name, email, age, city) VALUES ('Temp User 2', 'temp2@test.com', 26, 'Test')"
+            - "SELECT COUNT(*) FROM users WHERE email LIKE 'temp%@test.com'"
+          rollback_on_error: true
+        
+        expected:
+          patterns:
+            - key: "transaction_success"
+              validation: { type: "equals", value: true }
+              required: true
+            - key: "queries_executed"
+              validation: { type: "equals", value: 3 }
+              required: true
+
+      - id: "backup_database"
+        description: "Create database backup"
+        tool_name: "backup_database"
+        input_params:
+          backup_path: "/tmp/db_backups/test_backup.sql"
+          include_data: true
+        
+        expected:
+          patterns:
+            - key: "backup_success"
+              validation: { type: "equals", value: true }
+              required: true
+            - key: "backup_size_bytes"
+              validation: { type: "greater_than", value: 0 }
+              required: true
+            - key: "backup_path"
+              validation: { type: "equals", value: "/tmp/db_backups/test_backup.sql" }
+              required: true
+        
+        performance:
+          max_execution_time_ms: 10000
+
+  # Error Handling and Edge Cases
+  - name: "error_handling"
+    description: "Test error handling for invalid operations"
+    
+    test_cases:
+      - id: "invalid_sql_syntax"
+        description: "Handle invalid SQL syntax"
+        tool_name: "execute_query"
+        input_params:
+          query: "INVALID SQL SYNTAX HERE"
+          read_only: true
+        
+        expected:
+          error_expected: true
+          patterns:
+            - key: "error.code"
+              validation: { type: "one_of", values: ["SYNTAX_ERROR", "SQL_ERROR"] }
+              required: true
+            - key: "error.message"
+              validation: { type: "contains", value: "syntax" }
+              required: true
+
+      - id: "nonexistent_table"
+        description: "Query nonexistent table"
+        tool_name: "execute_query"
+        input_params:
+          query: "SELECT * FROM nonexistent_table"
+          read_only: true
+        
+        expected:
+          error_expected: true
+          patterns:
+            - key: "error.code"
+              validation: { type: "one_of", values: ["TABLE_NOT_FOUND", "NO_SUCH_TABLE"] }
+              required: true
+
+      - id: "describe_nonexistent_table"
+        description: "Describe nonexistent table"
+        tool_name: "describe_table"
+        input_params:
+          table_name: "nonexistent_table"
+        
+        expected:
+          error_expected: true
+          patterns:
+            - key: "error.code"
+              validation: { type: "equals", value: "TABLE_NOT_FOUND" }
+              required: true
+
+  # Performance Testing
+  - name: "performance_testing"
+    description: "Test database performance under load"
+    
+    test_cases:
+      - id: "large_result_set"
+        description: "Handle large result sets efficiently"
+        tool_name: "execute_query"
+        input_params:
+          query: "SELECT * FROM users ORDER BY id"
+          read_only: true
+          limit: 1000
+        
+        performance:
+          max_execution_time_ms: 8000
+          max_memory_usage_mb: 128
+        
+        expected:
+          patterns:
+            - key: "rows"
+              validation: { type: "array" }
+              required: true
+
+      - id: "concurrent_queries"
+        description: "Handle concurrent query execution"
+        tool_name: "execute_query"
+        input_params:
+          query: "SELECT COUNT(*) FROM orders WHERE order_date > '2023-01-01'"
+          read_only: true
+        
+        performance:
+          max_execution_time_ms: 5000
+        
+        expected:
+          patterns:
+            - key: "rows"
+              validation: { type: "array" }
+              required: true
+
+# Reporting Configuration
+reporting:
+  output_dir: "test-reports/database"
+  formats: ["html", "json", "junit"]
+  include_debug_info: true
+  include_server_logs: true
+  
+  html:
+    include_charts: true
+    chart_types: ["response_time", "success_rate", "query_performance"]
+  
+  json:
+    pretty_print: true
+    include_raw_responses: false
+    include_sql_queries: true
+
+# Performance monitoring
+performance:
+  establish_baseline: true
+  baseline_file: "baselines/database-baseline.json"
+  regression_threshold: 30  # Allow 30% performance variation for DB operations 

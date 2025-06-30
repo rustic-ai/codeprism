@@ -1,0 +1,186 @@
+# Example MCP Server Specification
+# This demonstrates the YAML format for defining any MCP server
+
+name: "Simple Example MCP Server"
+version: "1.0.0"
+description: "A basic example showing MCP server specification format"
+
+# MCP capabilities this server supports
+capabilities:
+  tools: true
+  resources: true
+  prompts: false
+  sampling: false
+  logging: true
+  experimental:
+    custom_capability: true
+
+# Server startup configuration
+server:
+  command: "node"
+  args: ["simple-server.js", "--stdio"]
+  env:
+    NODE_ENV: "test"
+    LOG_LEVEL: "info"
+  working_dir: "./examples"
+  transport: "stdio"
+  startup_timeout_seconds: 30
+  shutdown_timeout_seconds: 10
+
+# Tool definitions
+tools:
+  - name: "echo"
+    description: "Echoes back the input message"
+    input_schema: "./schemas/echo_input.json"
+    output_schema: "./schemas/echo_output.json"
+    tests:
+      - name: "basic_echo"
+        description: "Test basic echo functionality"
+        input:
+          message: "Hello, World!"
+        expected:
+          allow_extra_fields: true
+          schema:
+            type: object
+            required: ["message"]
+            properties:
+              message:
+                type: string
+          fields:
+            - path: "$.message"
+              value: "Hello, World!"
+              required: true
+        performance:
+          max_duration_ms: 1000
+          max_memory_mb: 10
+        tags: ["basic", "echo"]
+
+      - name: "empty_message"
+        description: "Test echo with empty message"
+        input:
+          message: ""
+        expected:
+          allow_extra_fields: true
+          schema:
+            type: object
+            required: ["message"]
+            properties:
+              message:
+                type: string
+          fields:
+            - path: "$.message"
+              value: ""
+              required: true
+        tags: ["edge-case"]
+
+      - name: "large_message"
+        description: "Test echo with large message"
+        input:
+          message: "A very long message that tests the server's ability to handle larger inputs without performance degradation or memory issues"
+        expected:
+          allow_extra_fields: true
+          schema:
+            type: object
+            required: ["message"]
+            properties:
+              message:
+                type: string
+          fields:
+            - path: "$.message"
+              field_type: "string"
+              required: true
+        performance:
+          max_duration_ms: 2000
+          max_memory_mb: 50
+        tags: ["performance", "large-input"]
+
+  - name: "math_add"
+    description: "Adds two numbers together"
+    tests:
+      - name: "positive_numbers"
+        description: "Add two positive numbers"
+        input:
+          a: 5
+          b: 3
+        expected:
+          allow_extra_fields: true
+          schema:
+            type: object
+            required: ["result"]
+            properties:
+              result:
+                type: number
+          fields:
+            - path: "$.result"
+              value: 8
+              required: true
+        tags: ["math", "positive"]
+
+      - name: "negative_numbers"
+        description: "Add negative numbers"
+        input:
+          a: -5
+          b: -3
+        expected:
+          allow_extra_fields: true
+          fields:
+            - path: "$.result"
+              value: -8
+              required: true
+        tags: ["math", "negative"]
+
+      - name: "invalid_input_missing_parameter"
+        description: "Test error handling for missing parameter"
+        input:
+          a: 5
+          # b is missing
+        expected:
+          error: true
+          error_code: -32602
+          error_message_contains: "missing parameter"
+          allow_extra_fields: true
+          fields: []
+        tags: ["error-handling", "validation"]
+
+# Resource definitions
+resources:
+  - uri_template: "file://{path}"
+    name: "File Resource"
+    mime_type: "text/plain"
+    tests:
+      - name: "read_existing_file"
+        description: "Read an existing file"
+        input:
+          path: "/tmp/test.txt"
+        expected:
+          allow_extra_fields: true
+          schema:
+            type: object
+            required: ["content"]
+            properties:
+              content:
+                type: string
+          fields:
+            - path: "$.content"
+              field_type: "string"
+              required: true
+        tags: ["resource", "file"]
+
+      - name: "read_nonexistent_file"
+        description: "Try to read a file that doesn't exist"
+        input:
+          path: "/tmp/nonexistent.txt"
+        expected:
+          error: true
+          error_code: -32000
+          error_message_contains: "file not found"
+          allow_extra_fields: true
+          fields: []
+        tags: ["resource", "error-handling"]
+
+# Additional metadata
+metadata:
+  author: "MCP Test Harness Team"
+  documentation: "https://github.com/example/simple-mcp-server"
+  license: "MIT"
+  tags: ["example", "simple", "testing"] 

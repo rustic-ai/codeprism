@@ -31,3 +31,6 @@ criterion/
 # Generated files
 *.pb.rs
 generated/ 
+
+#Cursor Workspace
+cursor_workspace/

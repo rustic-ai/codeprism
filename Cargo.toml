@@ -1,17 +1,18 @@
 [workspace]
-resolver = "2"
 members = [
     "crates/codeprism-core",
-    "crates/codeprism-storage",
-    "crates/codeprism-analysis",
-    "crates/codeprism-mcp",
-    "crates/codeprism-lang-js",
-    "crates/codeprism-lang-python",
     "crates/codeprism-lang-rust",
+    "crates/codeprism-lang-python",
+    "crates/codeprism-lang-js", 
     "crates/codeprism-lang-java",
+    "crates/codeprism-analysis",
+    "crates/codeprism-storage",
+    "crates/codeprism-mcp",
     "crates/codeprism-dev-tools",
     "crates/codeprism-test-harness",
+    "crates/mcp-test-harness",
 ]
+resolver = "2"
 
 [workspace.package]
 version = "0.3.4"

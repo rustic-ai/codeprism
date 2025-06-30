@@ -1,0 +1,412 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MCP Server Specification",
+  "description": "Schema for defining MCP server capabilities, tools, resources, and test cases",
+  "type": "object",
+  "required": ["name", "version", "capabilities", "server"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Human-readable name of the MCP server",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "version": {
+      "type": "string",
+      "description": "Semantic version of the server",
+      "pattern": "^\\d+\\.\\d+\\.\\d+(-[\\w.-]+)?(\\+[\\w.-]+)?$"
+    },
+    "description": {
+      "type": "string",
+      "description": "Optional description of the server functionality"
+    },
+    "capabilities": {
+      "type": "object",
+      "description": "MCP capabilities supported by this server",
+      "required": ["tools", "resources", "prompts", "sampling", "logging"],
+      "properties": {
+        "tools": {
+          "type": "boolean",
+          "description": "Whether the server supports tools"
+        },
+        "resources": {
+          "type": "boolean", 
+          "description": "Whether the server supports resources"
+        },
+        "prompts": {
+          "type": "boolean",
+          "description": "Whether the server supports prompts"
+        },
+        "sampling": {
+          "type": "boolean",
+          "description": "Whether the server supports sampling"
+        },
+        "logging": {
+          "type": "boolean",
+          "description": "Whether the server supports logging"
+        },
+        "experimental": {
+          "type": "object",
+          "description": "Additional experimental capabilities",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "server": {
+      "type": "object",
+      "description": "Server startup and connection configuration",
+      "required": ["command", "transport"],
+      "properties": {
+        "command": {
+          "type": "string",
+          "description": "Command to start the MCP server",
+          "minLength": 1
+        },
+        "args": {
+          "type": "array",
+          "description": "Arguments to pass to the server command",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        },
+        "env": {
+          "type": "object",
+          "description": "Environment variables to set for the server",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "default": {}
+        },
+        "working_dir": {
+          "type": "string",
+          "description": "Working directory for the server process"
+        },
+        "transport": {
+          "type": "string",
+          "enum": ["stdio", "http", "websocket"],
+          "description": "Transport mechanism for MCP communication"
+        },
+        "startup_timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 300,
+          "default": 30,
+          "description": "Timeout for server startup in seconds"
+        },
+        "shutdown_timeout_seconds": {
+          "type": "integer", 
+          "minimum": 1,
+          "maximum": 60,
+          "default": 10,
+          "description": "Timeout for server shutdown in seconds"
+        }
+      },
+      "additionalProperties": false
+    },
+    "tools": {
+      "type": "array",
+      "description": "Tool specifications (if server supports tools)",
+      "items": {
+        "$ref": "#/definitions/tool_spec"
+      }
+    },
+    "resources": {
+      "type": "array",
+      "description": "Resource specifications (if server supports resources)",
+      "items": {
+        "$ref": "#/definitions/resource_spec"
+      }
+    },
+    "prompts": {
+      "type": "array",
+      "description": "Prompt specifications (if server supports prompts)",
+      "items": {
+        "$ref": "#/definitions/prompt_spec"
+      }
+    },
+    "test_config": {
+      "type": "object",
+      "description": "Test execution configuration",
+      "properties": {
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3600,
+          "default": 30
+        },
+        "max_concurrency": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 4
+        },
+        "fail_fast": {
+          "type": "boolean",
+          "default": false
+        },
+        "retry": {
+          "type": "object",
+          "properties": {
+            "max_retries": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10,
+              "default": 2
+            },
+            "retry_delay_ms": {
+              "type": "integer",
+              "minimum": 100,
+              "maximum": 10000,
+              "default": 1000
+            },
+            "exponential_backoff": {
+              "type": "boolean",
+              "default": true
+            }
+          }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional metadata for the server",
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "tool_spec": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Tool name as defined by the MCP server",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable description of the tool"
+        },
+        "input_schema": {
+          "type": "string",
+          "description": "Path to JSON schema file for input parameters"
+        },
+        "output_schema": {
+          "type": "string", 
+          "description": "Path to JSON schema file for output/result"
+        },
+        "tests": {
+          "type": "array",
+          "description": "Test cases for this tool",
+          "items": {
+            "$ref": "#/definitions/test_case"
+          }
+        }
+      }
+    },
+    "resource_spec": {
+      "type": "object", 
+      "required": ["uri_template", "name"],
+      "properties": {
+        "uri_template": {
+          "type": "string",
+          "description": "URI template for the resource (RFC 6570)",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable name for the resource"
+        },
+        "mime_type": {
+          "type": "string",
+          "description": "MIME type of the resource content"
+        },
+        "tests": {
+          "type": "array",
+          "description": "Test cases for this resource",
+          "items": {
+            "$ref": "#/definitions/test_case"
+          }
+        }
+      }
+    },
+    "prompt_spec": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Prompt name as defined by the MCP server",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable description of the prompt"
+        },
+        "arguments": {
+          "type": "array",
+          "description": "Arguments the prompt accepts",
+          "items": {
+            "type": "object",
+            "required": ["name", "required"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "description": {
+                "type": "string"
+              },
+              "required": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "tests": {
+          "type": "array",
+          "description": "Test cases for this prompt",
+          "items": {
+            "$ref": "#/definitions/test_case"
+          }
+        }
+      }
+    },
+    "test_case": {
+      "type": "object",
+      "required": ["name", "input", "expected"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Test case name",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of what this test case validates"
+        },
+        "input": {
+          "description": "Input parameters for the test",
+          "oneOf": [
+            {"type": "object"},
+            {"type": "array"},
+            {"type": "string"},
+            {"type": "number"},
+            {"type": "boolean"},
+            {"type": "null"}
+          ]
+        },
+        "expected": {
+          "type": "object",
+          "description": "Expected output specification",
+          "properties": {
+            "error": {
+              "type": "boolean",
+              "description": "Whether an error response is expected"
+            },
+            "error_code": {
+              "type": "integer",
+              "description": "Expected JSON-RPC error code (if error is true)"
+            },
+            "error_message_contains": {
+              "type": "string",
+              "description": "Pattern that error message should contain"
+            },
+            "schema_file": {
+              "type": "string",
+              "description": "Path to JSON schema file for validating the result"
+            },
+            "schema": {
+              "type": "object",
+              "description": "Inline JSON schema for validation"
+            },
+            "fields": {
+              "type": "array",
+              "description": "Specific field validations",
+              "items": {
+                "$ref": "#/definitions/field_validation"
+              }
+            },
+            "allow_extra_fields": {
+              "type": "boolean",
+              "default": true,
+              "description": "Whether extra fields are allowed in response"
+            }
+          }
+        },
+        "performance": {
+          "type": "object",
+          "description": "Performance requirements for this test",
+          "properties": {
+            "max_duration_ms": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Maximum response time in milliseconds"
+            },
+            "max_memory_mb": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Maximum memory usage in megabytes"
+            },
+            "min_ops_per_sec": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Minimum operations per second (for throughput tests)"
+            }
+          }
+        },
+        "skip": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether to skip this test case"
+        },
+        "tags": {
+          "type": "array",
+          "description": "Tags for test categorization",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "field_validation": {
+      "type": "object",
+      "required": ["path"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "JSONPath expression for the field to validate",
+          "minLength": 1
+        },
+        "value": {
+          "description": "Expected value (exact match)"
+        },
+        "field_type": {
+          "type": "string",
+          "enum": ["string", "number", "integer", "boolean", "array", "object", "null"],
+          "description": "Expected field type"
+        },
+        "required": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether this field is required"
+        },
+        "pattern": {
+          "type": "string",
+          "description": "Regular expression pattern for string validation"
+        },
+        "min": {
+          "type": "number",
+          "description": "Minimum value (for numbers)"
+        },
+        "max": {
+          "type": "number", 
+          "description": "Maximum value (for numbers)"
+        }
+      }
+    }
+  }
+} 

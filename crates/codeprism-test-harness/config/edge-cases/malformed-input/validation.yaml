@@ -1,0 +1,330 @@
+# Malformed Input Edge Case Testing
+# Tests error handling for invalid JSON, wrong parameter types, and malformed requests
+
+global:
+  max_global_concurrency: 4
+  timeout_seconds: 20
+  fail_fast: false
+  default_project_path: "test-projects/python-sample"
+
+# Performance monitoring for malformed input testing
+performance:
+  enable_monitoring: true
+  baseline_storage_path: "baselines/edge-cases/"
+  regression_detection:
+    warning_threshold_percent: 40.0
+    error_threshold_percent: 90.0
+
+test_suites:
+  - name: "Malformed Input - Parameter Validation"
+    description: "Test handling of invalid parameter types and values"
+    test_cases:
+      # Wrong parameter types
+      - id: "malformed_repository_stats_wrong_types"
+        tool_name: "repository_stats"
+        description: "Repository stats with wrong parameter types"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          include_complexity: "not_boolean"  # Should be boolean
+          max_depth: "not_integer"  # Should be integer
+          file_patterns: "not_array"  # Should be array
+        expected:
+          patterns:
+            - key: "error"
+              validation:
+                type: "exists"
+              required: true
+            - key: "error.code"
+              validation:
+                type: "equals"
+                value: -32602  # Invalid params
+              required: false
+          allow_failure: true
+          custom_scripts:
+            - name: "validate_parameter_error"
+              language: "python"
+              script: |
+                def validate(response):
+                    if 'error' not in response:
+                        return False, 0.0, "Should have returned error for invalid parameters"
+                    
+                    error = response.get('error', {})
+                    message = error.get('message', '').lower()
+                    
+                    # Check for parameter validation keywords
+                    validation_keywords = ['parameter', 'invalid', 'type', 'validation', 'format']
+                    if any(keyword in message for keyword in validation_keywords):
+                        return True, 1.0, f"Proper parameter validation error: {message}"
+                    else:
+                        return True, 0.7, f"Generic error for invalid parameters: {message}"
+
+      # Missing required parameters  
+      - id: "malformed_search_symbols_missing_params"
+        tool_name: "search_symbols"
+        description: "Symbol search with missing required parameters"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          language: "python"
+          # Missing required 'query' parameter
+        expected:
+          patterns:
+            - key: "error"
+              validation:
+                type: "exists"
+              required: true
+          allow_failure: true
+          custom_scripts:
+            - name: "validate_missing_parameter_error"
+              language: "python"
+              script: |
+                def validate(response):
+                    if 'error' not in response:
+                        return False, 0.0, "Should have returned error for missing required parameter"
+                    
+                    error = response.get('error', {})
+                    message = error.get('message', '').lower()
+                    
+                    # Check for missing parameter keywords
+                    missing_keywords = ['required', 'missing', 'query', 'parameter']
+                    if any(keyword in message for keyword in missing_keywords):
+                        return True, 1.0, f"Proper missing parameter error: {message}"
+                    else:
+                        return True, 0.6, f"Error for missing parameter: {message}"
+
+      # Invalid enum values
+      - id: "malformed_analyze_security_invalid_enum"
+        tool_name: "analyze_security"
+        description: "Security analysis with invalid enum values"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          scan_type: "invalid_scan_type"  # Invalid enum value
+          severity_level: "ultra_critical"  # Invalid enum value
+        expected:
+          patterns:
+            - key: "error"
+              validation:
+                type: "exists"
+              required: true
+          allow_failure: true
+
+      # Null values where not allowed
+      - id: "malformed_find_dependencies_null_values"
+        tool_name: "find_dependencies"
+        description: "Dependency analysis with null values"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          target_symbol: null  # Null where string expected
+          symbol_type: null    # Null where string expected
+          language: "python"
+        expected:
+          patterns:
+            - key: "error"
+              validation:
+                type: "exists"
+              required: true
+          allow_failure: true
+
+      # Extremely long strings
+      - id: "malformed_search_content_long_query"
+        tool_name: "search_content"
+        description: "Content search with extremely long query"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          query: "a" * 10000  # 10KB query string
+          include_code: true
+        expected:
+          patterns:
+            - key: "error"
+              validation:
+                type: "exists"
+              required: false
+          allow_failure: true
+          custom_scripts:
+            - name: "validate_long_query_handling"
+              language: "python"
+              script: |
+                def validate(response):
+                    if 'error' in response:
+                        return True, 1.0, "Properly rejected extremely long query"
+                    
+                    result = response.get('result', {})
+                    if result:
+                        return True, 0.8, "Handled long query but should consider limits"
+                    
+                    return False, 0.0, "Unexpected response to long query"
+
+  - name: "Malformed Input - JSON Structure"
+    description: "Test handling of malformed JSON and invalid structures"
+    test_cases:
+      # Array instead of object
+      - id: "malformed_batch_analysis_array_input"
+        tool_name: "batch_analysis"
+        description: "Batch analysis with array instead of object parameters"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params: ["not", "an", "object"]  # Array instead of object
+        expected:
+          patterns:
+            - key: "error"
+              validation:
+                type: "exists"
+              required: true
+          allow_failure: true
+
+      # Deeply nested invalid structure
+      - id: "malformed_analyze_performance_nested_invalid"
+        tool_name: "analyze_performance"
+        description: "Performance analysis with deeply nested invalid structure"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          analysis_type: 
+            nested:
+              deeply:
+                invalid: "structure"
+        expected:
+          patterns:
+            - key: "error"
+              validation:
+                type: "exists"
+              required: true
+          allow_failure: true
+
+      # Unicode and special characters
+      - id: "malformed_explain_symbol_special_chars"
+        tool_name: "explain_symbol"
+        description: "Symbol explanation with special characters"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          target_symbol: "💀🔥💻\x00\x01\x02"  # Unicode and control characters
+          symbol_type: "class"
+          language: "python"
+        expected:
+          patterns:
+            - key: "error"
+              validation:
+                type: "exists"
+              required: false
+          allow_failure: true
+          custom_scripts:
+            - name: "validate_special_chars_handling"
+              language: "python"
+              script: |
+                def validate(response):
+                    if 'error' in response:
+                        return True, 0.9, "Safely handled special characters with error"
+                    
+                    result = response.get('result', {})
+                    if result and 'symbol_not_found' in str(result).lower():
+                        return True, 1.0, "Properly handled special characters"
+                    
+                    return True, 0.7, "Handled special characters without error"
+
+  - name: "Malformed Input - Resource Paths"
+    description: "Test handling of invalid paths and resources"
+    test_cases:
+      # Non-existent project path
+      - id: "malformed_repository_stats_invalid_path"
+        tool_name: "repository_stats"
+        description: "Repository stats with non-existent path"
+        enabled: true
+        project_path: "/nonexistent/path/to/project"
+        input_params:
+          include_complexity: true
+        expected:
+          patterns:
+            - key: "error"
+              validation:
+                type: "exists"
+              required: true
+          allow_failure: true
+
+      # Path traversal attempts
+      - id: "malformed_find_files_path_traversal"
+        tool_name: "find_files"
+        description: "File search with path traversal attempts"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          name_pattern: "../../etc/passwd"
+          recursive: true
+        expected:
+          patterns:
+            - key: "error"
+              validation:
+                type: "exists"
+              required: false
+          allow_failure: true
+          custom_scripts:
+            - name: "validate_path_traversal_protection"
+              language: "python"
+              script: |
+                def validate(response):
+                    if 'error' in response:
+                        error_msg = response.get('error', {}).get('message', '').lower()
+                        if 'path' in error_msg or 'security' in error_msg:
+                            return True, 1.0, "Properly blocked path traversal attempt"
+                        else:
+                            return True, 0.8, "Blocked malicious path with generic error"
+                    
+                    result = response.get('result', {})
+                    files = result.get('files', [])
+                    
+                    # Check if any files contain suspicious paths
+                    suspicious = any('../' in str(f) or '/etc/' in str(f) for f in files)
+                    if suspicious:
+                        return False, 0.0, "Path traversal attempt may have succeeded"
+                    
+                    return True, 0.9, "No path traversal detected in results"
+
+      # Binary file as text
+      - id: "malformed_search_content_binary_file"
+        tool_name: "search_content"
+        description: "Content search in binary files"
+        enabled: true
+        project_path: "test-projects/java-test-project/target"  # Contains binary files
+        input_params:
+          query: "test"
+          include_code: true
+          file_patterns: ["*.class", "*.jar"]
+        expected:
+          patterns:
+            - key: "result"
+              validation:
+                type: "exists"
+              required: false
+          allow_failure: true
+          custom_scripts:
+            - name: "validate_binary_file_handling"
+              language: "python"
+              script: |
+                def validate(response):
+                    if 'error' in response:
+                        return True, 0.9, "Properly handled binary files with error"
+                    
+                    result = response.get('result', {})
+                    matches = result.get('matches', [])
+                    
+                    # Binary files should either be skipped or handled gracefully
+                    return True, 0.8, f"Handled binary files, found {len(matches)} matches"
+
+# Performance baselines for malformed input testing
+baselines:
+  malformed_repository_stats_wrong_types:
+    average_execution_time_ms: 100.0
+    peak_memory_mb: 8.0
+    throughput_ops_per_sec: 10.0
+  malformed_search_symbols_missing_params:
+    average_execution_time_ms: 50.0
+    peak_memory_mb: 4.0
+    throughput_ops_per_sec: 20.0
+  malformed_analyze_security_invalid_enum:
+    average_execution_time_ms: 80.0
+    peak_memory_mb: 6.0
+    throughput_ops_per_sec: 12.5

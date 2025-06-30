@@ -1,0 +1,351 @@
+# Workflow & Edge Case Integration Testing
+# Comprehensive integration tests combining workflow orchestration with edge case handling
+
+global:
+  max_global_concurrency: 3
+  timeout_seconds: 120
+  fail_fast: false
+  default_project_path: "test-projects/python-sample"
+
+# Performance monitoring for integration testing
+performance:
+  enable_monitoring: true
+  baseline_storage_path: "baselines/integration/"
+  regression_detection:
+    warning_threshold_percent: 40.0
+    error_threshold_percent: 90.0
+
+test_suites:
+  - name: "Workflow Edge Case Integration"
+    description: "Integration tests combining workflow orchestration with edge case scenarios"
+    test_cases:
+      # Workflow suggestion for edge case project
+      - id: "integration_workflow_suggestion_empty_project"
+        tool_name: "suggest_analysis_workflow"
+        description: "Suggest workflow for empty/minimal project"
+        enabled: true  
+        project_path: "test-projects/empty-project"
+        setup_commands:
+          - "mkdir -p test-projects/empty-project"
+          - "touch test-projects/empty-project/minimal.py"
+          - "echo '# Minimal project' > test-projects/empty-project/README.md"
+        input_params:
+          project_type: "python"
+          project_size: "minimal"
+          analysis_goals: ["basic_validation", "structure_analysis"]
+          handle_empty_project: true
+        expected:
+          patterns:
+            - key: "result.recommended_workflow"
+              validation:
+                type: "array_min_length"
+                min_length: 1
+              required: true
+            - key: "result.empty_project_adaptations"
+              validation:
+                type: "exists"
+              required: false
+          custom_scripts:
+            - name: "validate_empty_project_workflow"
+              language: "python"
+              script: |
+                def validate(response):
+                    result = response.get('result', {})
+                    workflow = result.get('recommended_workflow', [])
+                    
+                    if not workflow:
+                        return False, 0.0, "No workflow suggested for empty project"
+                    
+                    # Check for appropriate tools for empty projects
+                    appropriate_tools = ['repository_stats', 'search_content', 'find_files']
+                    suggested_tools = [step.get('tool', '') for step in workflow]
+                    
+                    appropriate_count = sum(1 for tool in suggested_tools if tool in appropriate_tools)
+                    appropriateness_score = appropriate_count / len(workflow) if workflow else 0
+                    
+                    if appropriateness_score >= 0.7:
+                        return True, 1.0, f"Appropriate workflow for empty project: {suggested_tools}"
+                    else:
+                        return True, 0.6, f"Workflow may be too complex for empty project: {suggested_tools}"
+
+      # Batch analysis with error recovery
+      - id: "integration_batch_analysis_error_recovery"
+        tool_name: "batch_analysis"
+        description: "Batch analysis with mixed valid/invalid operations"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          analysis_sequence:
+            - tool: "repository_stats"
+              params:
+                include_complexity: true
+            - tool: "nonexistent_tool"  # This will fail
+              params:
+                invalid_param: true
+            - tool: "search_symbols"
+              params:
+                query: "class:*"
+                language: "python"
+            - tool: "analyze_security"
+              params:
+                scan_type: "invalid_type"  # This will also fail
+            - tool: "find_files"
+              params:
+                name_pattern: "*.py"
+          execution_mode: "sequential"
+          continue_on_error: true
+          error_recovery_strategy: "skip_and_continue"
+        expected:
+          patterns:
+            - key: "result.batch_results"
+              validation:
+                type: "array"
+              required: true
+            - key: "result.execution_errors"
+              validation:
+                type: "array_min_length"
+                min_length: 2
+              required: true
+            - key: "result.successful_operations"
+              validation:
+                type: "range"
+                min: 2
+                max: 5
+              required: true
+          custom_scripts:
+            - name: "validate_error_recovery"
+              language: "python"
+              script: |
+                def validate(response):
+                    result = response.get('result', {})
+                    batch_results = result.get('batch_results', [])
+                    execution_errors = result.get('execution_errors', [])
+                    successful_ops = result.get('successful_operations', 0)
+                    
+                    # Should have both successes and failures
+                    if successful_ops >= 2 and len(execution_errors) >= 2:
+                        recovery_score = successful_ops / (successful_ops + len(execution_errors))
+                        return True, recovery_score, f"Good error recovery: {successful_ops} successes, {len(execution_errors)} errors"
+                    elif successful_ops > 0:
+                        return True, 0.6, f"Partial error recovery: {successful_ops} successes"
+                    else:
+                        return False, 0.0, "Failed to recover from any errors"
+
+      # Workflow optimization with resource constraints
+      - id: "integration_workflow_optimization_constraints"
+        tool_name: "optimize_workflow"
+        description: "Workflow optimization under resource constraints"
+        enabled: true
+        project_path: "test-projects/dependency-test-project"
+        input_params:
+          workflow_definition:
+            - tool: "analyze_security"
+              estimated_time: 15000
+              memory_usage: 120
+              priority: "high"
+            - tool: "analyze_performance"
+              estimated_time: 10000
+              memory_usage: 80
+              priority: "medium"
+            - tool: "find_duplicates"
+              estimated_time: 12000
+              memory_usage: 100
+              priority: "low"
+            - tool: "analyze_complexity"
+              estimated_time: 5000
+              memory_usage: 40
+              priority: "medium"
+          optimization_goals: ["minimize_time", "respect_memory_limits"]
+          resource_constraints:
+            max_memory_mb: 96  # Tight constraint
+            max_execution_time_ms: 25000  # Tight constraint
+            max_concurrent_tools: 2
+          handle_impossible_constraints: true
+        expected:
+          patterns:
+            - key: "result.optimized_workflow"
+              validation:
+                type: "array"
+              required: true
+            - key: "result.constraint_handling"
+              validation:
+                type: "exists"
+              required: true
+          custom_scripts:
+            - name: "validate_constraint_optimization"
+              language: "python"
+              script: |
+                def validate(response):
+                    result = response.get('result', {})
+                    optimized_workflow = result.get('optimized_workflow', [])
+                    constraint_handling = result.get('constraint_handling', {})
+                    
+                    if not optimized_workflow:
+                        return False, 0.0, "No optimized workflow provided"
+                    
+                    # Check if constraints were respected or properly handled
+                    constraints_respected = constraint_handling.get('constraints_respected', False)
+                    dropped_tools = constraint_handling.get('dropped_tools', [])
+                    
+                    if constraints_respected:
+                        return True, 1.0, f"Successfully optimized within constraints: {len(optimized_workflow)} tools"
+                    elif dropped_tools:
+                        return True, 0.8, f"Handled impossible constraints by dropping {len(dropped_tools)} tools"
+                    else:
+                        return True, 0.6, "Attempted optimization despite constraint violations"
+
+      # Concurrent workflow execution with edge cases
+      - id: "integration_concurrent_workflow_edge_cases"
+        tool_name: "batch_analysis"
+        description: "Concurrent workflow execution handling edge cases"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          analysis_sequence:
+            - tool: "repository_stats"
+              params:
+                include_complexity: true
+                max_depth: 10
+            - tool: "search_symbols"
+              params:
+                query: "class:*"
+                language: "python"
+                max_results: 100
+          execution_mode: "parallel_safe"
+          concurrent_execution: true
+          handle_race_conditions: true
+        expected:
+          patterns:
+            - key: "result.batch_results"
+              validation:
+                type: "array_min_length"
+                min_length: 2
+              required: true
+        # Run this test multiple times concurrently
+        concurrency_config:
+          concurrent_instances: 3
+          validate_consistency: true
+          custom_scripts:
+            - name: "validate_concurrent_workflow_stability"
+              language: "python"
+              script: |
+                def validate(responses):
+                    successful_workflows = 0
+                    total_operations = 0
+                    
+                    for response in responses:
+                        if 'result' in response:
+                            result = response['result']
+                            batch_results = result.get('batch_results', [])
+                            if len(batch_results) >= 2:
+                                successful_workflows += 1
+                                total_operations += len(batch_results)
+                    
+                    success_rate = successful_workflows / len(responses)
+                    
+                    if success_rate >= 0.9:
+                        return True, 1.0, f"Excellent concurrent stability: {successful_workflows}/{len(responses)} successful"
+                    elif success_rate >= 0.7:
+                        return True, 0.8, f"Good concurrent stability: {successful_workflows}/{len(responses)} successful"
+                    else:
+                        return False, 0.4, f"Poor concurrent stability: {successful_workflows}/{len(responses)} successful"
+
+  - name: "End-to-End Workflow Integration"
+    description: "Complete end-to-end workflow scenarios with comprehensive edge case coverage"
+    test_cases:
+      # Complete analysis pipeline with edge case handling
+      - id: "integration_complete_analysis_pipeline"
+        tool_name: "comprehensive_pipeline"
+        description: "Complete analysis pipeline with edge case resilience"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        # Custom pipeline test
+        custom_test_runner:
+          name: "run_comprehensive_pipeline"
+          language: "python"
+          script: |
+            async def run_comprehensive_pipeline():
+                pipeline_steps = []
+                errors = []
+                
+                try:
+                    # Step 1: Suggest optimal workflow
+                    workflow_response = await call_mcp_tool("suggest_analysis_workflow", {
+                        "project_type": "python",
+                        "analysis_goals": ["code_quality", "security", "performance"],
+                        "time_budget": "medium"
+                    })
+                    pipeline_steps.append({"step": "suggest_workflow", "success": "result" in workflow_response})
+                    
+                    if "result" not in workflow_response:
+                        errors.append("Workflow suggestion failed")
+                        return {"pipeline_steps": pipeline_steps, "errors": errors, "overall_success": False}
+                    
+                    # Step 2: Execute suggested workflow with batch analysis
+                    suggested_workflow = workflow_response["result"].get("recommended_workflow", [])
+                    if not suggested_workflow:
+                        errors.append("No workflow suggestions provided")
+                        return {"pipeline_steps": pipeline_steps, "errors": errors, "overall_success": False}
+                    
+                    batch_response = await call_mcp_tool("batch_analysis", {
+                        "analysis_sequence": suggested_workflow[:3],  # Limit to first 3 steps
+                        "execution_mode": "sequential",
+                        "continue_on_error": True
+                    })
+                    pipeline_steps.append({"step": "execute_batch", "success": "result" in batch_response})
+                    
+                    # Step 3: Optimize workflow based on results
+                    if "result" in batch_response:
+                        optimize_response = await call_mcp_tool("optimize_workflow", {
+                            "workflow_definition": suggested_workflow,
+                            "optimization_goals": ["minimize_time"],
+                            "historical_performance": batch_response["result"]
+                        })
+                        pipeline_steps.append({"step": "optimize_workflow", "success": "result" in optimize_response})
+                    
+                    # Calculate overall success
+                    successful_steps = sum(1 for step in pipeline_steps if step["success"])
+                    overall_success = successful_steps >= 2  # At least 2 out of 3 steps
+                    
+                    return {
+                        "pipeline_steps": pipeline_steps,
+                        "errors": errors,
+                        "overall_success": overall_success,
+                        "success_rate": successful_steps / len(pipeline_steps)
+                    }
+                    
+                except Exception as e:
+                    errors.append(f"Pipeline execution error: {str(e)}")
+                    return {"pipeline_steps": pipeline_steps, "errors": errors, "overall_success": False}
+        expected:
+          patterns:
+            - key: "overall_success"
+              validation:
+                type: "boolean"
+                value: true
+              required: true
+            - key: "success_rate"
+              validation:
+                type: "range"
+                min: 0.6
+                max: 1.0
+              required: true
+
+# Performance baselines for integration testing
+baselines:
+  integration_workflow_suggestion_empty_project:
+    average_execution_time_ms: 1000.0
+    peak_memory_mb: 24.0
+    throughput_ops_per_sec: 1.0
+  integration_batch_analysis_error_recovery:
+    average_execution_time_ms: 8000.0
+    peak_memory_mb: 64.0
+    throughput_ops_per_sec: 0.125
+  integration_workflow_optimization_constraints:
+    average_execution_time_ms: 2000.0
+    peak_memory_mb: 32.0
+    throughput_ops_per_sec: 0.5
+  integration_concurrent_workflow_edge_cases:
+    average_execution_time_ms: 6000.0
+    peak_memory_mb: 48.0
+    throughput_ops_per_sec: 0.167

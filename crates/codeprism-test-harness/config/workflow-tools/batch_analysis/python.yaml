@@ -1,0 +1,263 @@
+# Batch Analysis Tool - Python Test Configuration
+# Tests the batch_analysis MCP tool for executing multiple analyses in sequence
+
+global:
+  max_global_concurrency: 1  # Sequential execution for batch operations
+  timeout_seconds: 120
+  fail_fast: false
+  default_project_path: "test-projects/python-sample"
+
+# Performance monitoring for batch analysis
+performance:
+  enable_monitoring: true
+  baseline_storage_path: "baselines/workflow-tools/"
+  regression_detection:
+    warning_threshold_percent: 35.0
+    error_threshold_percent: 80.0
+
+test_suites:
+  - name: "Batch Analysis - Core Functionality"
+    description: "Test batch execution of multiple analysis tools"
+    test_cases:
+      # Basic batch analysis
+      - id: "python_batch_basic_analysis"
+        tool_name: "batch_analysis"
+        description: "Basic batch analysis with multiple tools"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          analysis_sequence:
+            - tool: "repository_stats"
+              params:
+                include_complexity: true
+            - tool: "search_symbols"
+              params:
+                query: "class:*"
+                language: "python"
+            - tool: "find_dependencies"
+              params:
+                target_symbol: "User"
+                symbol_type: "class"
+                language: "python"
+          execution_mode: "sequential"
+          continue_on_error: true
+          aggregate_results: true
+        expected:
+          patterns:
+            - key: "result.batch_results"
+              validation:
+                type: "array_min_length"
+                min_length: 3
+              required: true
+            - key: "result.execution_summary"
+              validation:
+                type: "exists"
+              required: true
+            - key: "result.aggregated_insights"
+              validation:
+                type: "exists"
+              required: false
+          performance_requirements:
+            max_execution_time_ms: 15000
+            max_memory_usage_mb: 128
+
+      # Security analysis batch
+      - id: "python_batch_security_analysis"
+        tool_name: "batch_analysis"
+        description: "Batch security analysis workflow"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          analysis_sequence:
+            - tool: "analyze_security"
+              params:
+                scan_type: "comprehensive"
+                include_dependencies: true
+            - tool: "find_unused_code"
+              params:
+                analysis_type: "comprehensive"
+            - tool: "find_duplicates"
+              params:
+                similarity_threshold: 0.8
+          execution_mode: "sequential"
+          security_focused: true
+          generate_security_report: true
+        expected:
+          patterns:
+            - key: "result.batch_results"
+              validation:
+                type: "array"
+              required: true
+            - key: "result.security_summary"
+              validation:
+                type: "exists"
+              required: true
+
+      # Performance analysis batch
+      - id: "python_batch_performance_analysis"
+        tool_name: "batch_analysis"
+        description: "Batch performance analysis workflow"
+        enabled: true
+        project_path: "test-projects/dependency-test-project"
+        input_params:
+          analysis_sequence:
+            - tool: "analyze_performance"
+              params:
+                analysis_type: "comprehensive"
+                include_bottlenecks: true
+            - tool: "analyze_complexity"
+              params:
+                analysis_scope: "project"
+                complexity_threshold: 10
+            - tool: "find_duplicates"
+              params:
+                analysis_scope: "cross-file"
+          execution_mode: "parallel_safe"
+          performance_focused: true
+          optimization_suggestions: true
+        expected:
+          patterns:
+            - key: "result.batch_results"
+              validation:
+                type: "array"
+              required: true
+            - key: "result.performance_summary"
+              validation:
+                type: "exists"
+              required: true
+            - key: "result.optimization_recommendations"
+              validation:
+                type: "array"
+              required: false
+
+      # Cross-tool dependency resolution
+      - id: "python_batch_dependency_resolution"
+        tool_name: "batch_analysis"
+        description: "Batch analysis with tool dependency resolution"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          analysis_sequence:
+            - tool: "repository_stats"
+              params:
+                include_complexity: true
+              dependencies: []
+            - tool: "search_symbols"
+              params:
+                query: "class:*"
+                language: "python"
+              dependencies: ["repository_stats"]
+            - tool: "explain_symbol"
+              params:
+                target_symbol: "${search_symbols.symbols[0].name}"
+                symbol_type: "class"
+                language: "python"
+              dependencies: ["search_symbols"]
+          resolve_dependencies: true
+          pass_results_between_tools: true
+        expected:
+          patterns:
+            - key: "result.batch_results"
+              validation:
+                type: "array"
+              required: true
+            - key: "result.dependency_resolution"
+              validation:
+                type: "exists"
+              required: true
+
+  - name: "Batch Analysis - Error Handling"
+    description: "Test error handling in batch operations"
+    test_cases:
+      # Partial failure handling
+      - id: "python_batch_partial_failure"
+        tool_name: "batch_analysis"
+        description: "Handle partial failures in batch execution"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          analysis_sequence:
+            - tool: "repository_stats"
+              params:
+                include_complexity: true
+            - tool: "nonexistent_tool"
+              params:
+                invalid_param: true
+            - tool: "search_symbols"
+              params:
+                query: "class:*"
+                language: "python"
+          execution_mode: "sequential"
+          continue_on_error: true
+          collect_errors: true
+        expected:
+          patterns:
+            - key: "result.batch_results"
+              validation:
+                type: "array"
+              required: true
+            - key: "result.execution_errors"
+              validation:
+                type: "array"
+              required: true
+            - key: "result.partial_success"
+              validation:
+                type: "boolean"
+              required: true
+
+      # Invalid sequence handling
+      - id: "python_batch_invalid_sequence"
+        tool_name: "batch_analysis"
+        description: "Handle invalid analysis sequences"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          analysis_sequence: []  # Empty sequence
+          execution_mode: "sequential"
+        expected:
+          patterns:
+            - key: "error"
+              validation:
+                type: "exists"
+              required: false
+          allow_failure: true
+
+      # Circular dependency detection
+      - id: "python_batch_circular_dependency"
+        tool_name: "batch_analysis"
+        description: "Detect and handle circular dependencies"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          analysis_sequence:
+            - tool: "tool_a"
+              dependencies: ["tool_b"]
+            - tool: "tool_b"
+              dependencies: ["tool_a"]
+          resolve_dependencies: true
+        expected:
+          patterns:
+            - key: "error"
+              validation:
+                type: "exists"
+              required: false
+          allow_failure: true
+
+# Performance baselines for batch analysis tool
+baselines:
+  python_batch_basic_analysis:
+    average_execution_time_ms: 8000.0
+    peak_memory_mb: 96.0
+    throughput_ops_per_sec: 0.125
+  python_batch_security_analysis:
+    average_execution_time_ms: 12000.0
+    peak_memory_mb: 128.0
+    throughput_ops_per_sec: 0.083
+  python_batch_performance_analysis:
+    average_execution_time_ms: 10000.0
+    peak_memory_mb: 112.0
+    throughput_ops_per_sec: 0.1
+  python_batch_dependency_resolution:
+    average_execution_time_ms: 6000.0
+    peak_memory_mb: 80.0
+    throughput_ops_per_sec: 0.167

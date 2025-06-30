@@ -2,6 +2,7 @@
 
 use crate::config::TestConfig;
 use crate::performance::{PerformanceConfig, PerformanceMonitor};
+use crate::reporting::{ReportGenerator, ReportFormat};
 use crate::script::{SandboxConfig, ScriptExecutor};
 use crate::types::{
     JsonPathPattern, MemoryStats, PatternValidation, ResponseTimePercentiles, TestCase,
@@ -11,6 +12,7 @@ use anyhow::Result;
 use chrono::Utc;
 use serde_json::Value;
 use std::collections::HashMap;
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::Semaphore;
@@ -494,6 +496,65 @@ impl TestExecutor {
                 p99_ms: Some(0),
             },
         }
+    }
+
+    /// Generate comprehensive test report
+    pub async fn generate_report(
+        &self,
+        test_results: &[TestSuiteResult],
+        format: ReportFormat,
+        output_path: Option<PathBuf>,
+    ) -> Result<crate::reporting::Report> {
+        let report_generator = ReportGenerator::new();
+        report_generator.generate_report(test_results, format, output_path).await
+    }
+
+    /// Generate multiple report formats at once
+    pub async fn generate_reports(
+        &self,
+        test_results: &[TestSuiteResult],
+        output_dir: &PathBuf,
+    ) -> Result<Vec<crate::reporting::Report>> {
+        let report_generator = ReportGenerator::new();
+        let mut reports = Vec::new();
+
+        // Generate HTML report
+        if let Ok(report) = report_generator
+            .generate_report(
+                test_results,
+                ReportFormat::Html,
+                Some(output_dir.join("test-report.html")),
+            )
+            .await
+        {
+            reports.push(report);
+        }
+
+        // Generate JSON report
+        if let Ok(report) = report_generator
+            .generate_report(
+                test_results,
+                ReportFormat::Json,
+                Some(output_dir.join("test-report.json")),
+            )
+            .await
+        {
+            reports.push(report);
+        }
+
+        // Generate JUnit XML report
+        if let Ok(report) = report_generator
+            .generate_report(
+                test_results,
+                ReportFormat::JunitXml,
+                Some(output_dir.join("test-report.xml")),
+            )
+            .await
+        {
+            reports.push(report);
+        }
+
+        Ok(reports)
     }
 }
 

@@ -1,0 +1,255 @@
+# Comprehensive Test Report Configuration Example
+# This example demonstrates how to use the detailed error reporting system
+
+global:
+  max_global_concurrency: 4
+  timeout_seconds: 30
+  fail_fast: false
+  default_project_path: "test-projects/python-sample"
+  
+# Performance monitoring configuration
+performance:
+  enable_monitoring: true
+  baseline_storage_path: "baselines/"
+  regression_detection:
+    warning_threshold_percent: 20.0
+    error_threshold_percent: 50.0
+    
+# Report generation configuration  
+reporting:
+  enable_auto_generation: true
+  output_directory: "test-reports/"
+  formats:
+    - html          # Rich interactive HTML report
+    - json          # Machine-readable JSON
+    - junit_xml     # CI/CD integration
+    - markdown      # GitHub PR comments
+  include_performance_charts: true
+  include_debug_info: true
+  max_failure_details: 100
+
+test_suites:
+  - name: "Comprehensive MCP Tool Testing"
+    description: "Full test suite with detailed reporting examples"
+    test_cases:
+      # Repository analysis tool
+      - id: "repo_stats_basic"
+        tool_name: "repository_stats"
+        description: "Basic repository statistics"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          include_hidden: false
+          file_patterns: ["*.py", "*.md"]
+        expected:
+          patterns:
+            - key: "result.total_files"
+              validation:
+                type: "range"
+                min: 5
+                max: 50
+              required: true
+            - key: "result.languages_detected"
+              validation:
+                type: "contains"
+                values: ["Python"]
+              required: true
+          custom_scripts:
+            - name: "validate_file_count"
+              language: "python"
+              script: |
+                def validate(response):
+                    result = response.get('result', {})
+                    total_files = result.get('total_files', 0)
+                    
+                    if total_files < 5:
+                        return False, 0.0, "Too few files detected"
+                    if total_files > 100:
+                        return False, 0.0, "Too many files detected"
+                    
+                    # Calculate quality score based on file count
+                    score = min(1.0, total_files / 20.0)
+                    return True, score, f"Found {total_files} files"
+
+      # Symbol search with complex validation
+      - id: "symbol_search_advanced"
+        tool_name: "search_symbols"
+        description: "Advanced symbol search with pattern matching"
+        enabled: true
+        input_params:
+          query: "class:User"
+          include_private: false
+          max_results: 50
+        expected:
+          patterns:
+            - key: "result.total_matches"
+              validation:
+                type: "range"
+                min: 1
+                max: 25
+              required: true
+            - key: "result.symbols"
+              validation:
+                type: "array_min_length"
+                min_length: 1
+              required: true
+          custom_scripts:
+            - name: "validate_symbol_quality"
+              language: "python"
+              script: |
+                def validate(response):
+                    result = response.get('result', {})
+                    symbols = result.get('symbols', [])
+                    
+                    if not symbols:
+                        return False, 0.0, "No symbols found"
+                    
+                    # Validate symbol structure
+                    required_fields = ['name', 'type', 'file']
+                    quality_score = 0.0
+                    valid_symbols = 0
+                    
+                    for symbol in symbols:
+                        if all(field in symbol for field in required_fields):
+                            valid_symbols += 1
+                    
+                    if valid_symbols == 0:
+                        return False, 0.0, "No valid symbols found"
+                    
+                    quality_score = valid_symbols / len(symbols)
+                    
+                    return True, quality_score, f"Found {valid_symbols}/{len(symbols)} valid symbols"
+
+      # Performance sensitive test
+      - id: "complexity_analysis_performance"
+        tool_name: "analyze_complexity"
+        description: "Performance-sensitive complexity analysis"
+        enabled: true
+        input_params:
+          include_cognitive: true
+          include_cyclomatic: true
+          max_depth: 10
+        expected:
+          patterns:
+            - key: "result.cyclomatic_complexity"
+              validation:
+                type: "range"
+                min: 1
+                max: 50
+              required: true
+            - key: "result.cognitive_complexity"
+              validation:
+                type: "range"
+                min: 1
+                max: 100
+              required: true
+          performance_requirements:
+            max_execution_time_ms: 1000
+            max_memory_usage_mb: 100
+          custom_scripts:
+            - name: "complexity_thresholds"
+              language: "python"
+              script: |
+                def validate(response):
+                    result = response.get('result', {})
+                    cyclomatic = result.get('cyclomatic_complexity', 0)
+                    cognitive = result.get('cognitive_complexity', 0)
+                    
+                    # Industry standard thresholds
+                    cyclomatic_threshold = 10
+                    cognitive_threshold = 15
+                    
+                    score = 1.0
+                    messages = []
+                    
+                    if cyclomatic > cyclomatic_threshold:
+                        score *= 0.7
+                        messages.append(f"Cyclomatic complexity {cyclomatic} exceeds threshold {cyclomatic_threshold}")
+                    
+                    if cognitive > cognitive_threshold:
+                        score *= 0.7
+                        messages.append(f"Cognitive complexity {cognitive} exceeds threshold {cognitive_threshold}")
+                    
+                    if not messages:
+                        messages.append("Complexity within acceptable thresholds")
+                    
+                    return True, score, "; ".join(messages)
+
+      # Error handling test case
+      - id: "error_handling_test"
+        tool_name: "invalid_tool"
+        description: "Test error handling and reporting"
+        enabled: true
+        input_params:
+          invalid_param: "this should fail"
+        expected:
+          patterns:
+            - key: "error"
+              validation:
+                type: "exists"
+              required: false
+          allow_failure: true  # This test is expected to fail for error reporting demo
+
+# Custom validation scripts with enhanced error reporting
+validation_scripts:
+  - name: "comprehensive_validation"
+    description: "Comprehensive validation with detailed error reporting"
+    language: "python"
+    script: |
+      import json
+      import statistics
+      
+      def validate(response):
+          """
+          Comprehensive validation function that demonstrates
+          detailed error reporting capabilities.
+          """
+          try:
+              # Performance validation
+              execution_time = response.get('_execution_time_ms', 0)
+              memory_usage = response.get('_memory_usage_mb', 0)
+              
+              # Result validation
+              result = response.get('result', {})
+              
+              issues = []
+              score = 1.0
+              
+              # Performance checks
+              if execution_time > 500:
+                  issues.append(f"Execution time {execution_time}ms exceeds 500ms threshold")
+                  score *= 0.8
+              
+              if memory_usage > 50:
+                  issues.append(f"Memory usage {memory_usage}MB exceeds 50MB threshold")
+                  score *= 0.8
+              
+              # Data quality checks
+              if not result:
+                  issues.append("Empty result object")
+                  score *= 0.5
+              
+              # Comprehensive success determination
+              success = len(issues) == 0 or score > 0.6
+              
+              message = "Validation passed" if success else f"Issues found: {'; '.join(issues)}"
+              
+              return success, score, message
+              
+          except Exception as e:
+              return False, 0.0, f"Validation script error: {str(e)}"
+
+# Performance baseline definitions
+baselines:
+  repository_stats:
+    average_execution_time_ms: 150.0
+    peak_memory_mb: 32.0
+    throughput_ops_per_sec: 6.67
+  search_symbols:
+    average_execution_time_ms: 200.0
+    peak_memory_mb: 48.0
+    throughput_ops_per_sec: 5.0
+  analyze_complexity:
+    average_execution_time_ms: 800.0
+    peak_memory_mb: 96.0
+    throughput_ops_per_sec: 1.25 

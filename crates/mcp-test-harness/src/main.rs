@@ -152,7 +152,7 @@ async fn main() -> Result<()> {
         Some(Commands::Discover {
             server_cmd,
             server_args,
-            output,
+            output: _,
         }) => discover_server(server_cmd.clone(), server_args.clone()).await,
         Some(Commands::Validate { spec_file }) => validate_spec(spec_file.clone()).await,
         Some(Commands::Protocol {

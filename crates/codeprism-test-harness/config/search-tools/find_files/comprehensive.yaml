@@ -1,0 +1,264 @@
+# Find Files Tool - Comprehensive Test Configuration
+# Tests the find_files MCP tool for finding files by patterns, filters, and metadata
+
+global:
+  max_global_concurrency: 4
+  timeout_seconds: 20
+  fail_fast: false
+  default_project_path: "test-projects"
+
+# Performance monitoring for file search
+performance:
+  enable_monitoring: true
+  baseline_storage_path: "baselines/search-tools/"
+  regression_detection:
+    warning_threshold_percent: 20.0
+    error_threshold_percent: 50.0
+
+test_suites:
+  - name: "Find Files - Core Search Functionality"
+    description: "Test file finding with patterns, filters, and metadata search"
+    test_cases:
+      # Basic pattern matching
+      - id: "basic_pattern_search"
+        tool_name: "find_files"
+        description: "Basic file pattern search across test projects"
+        enabled: true
+        project_path: "test-projects"
+        input_params:
+          patterns: ["*.py", "*.js", "*.rs", "*.java"]
+          include_hidden: false
+          case_sensitive: false
+          max_depth: 10
+          include_metadata: true
+        expected:
+          patterns:
+            - key: "result.files_found"
+              validation:
+                type: "array_min_length"
+                min_length: 5
+              required: true
+            - key: "result.total_count"
+              validation:
+                type: "range"
+                min: 5
+                max: 200
+              required: true
+            - key: "result.search_metadata"
+              validation:
+                type: "exists"
+              required: true
+          performance_requirements:
+            max_execution_time_ms: 3000
+            max_memory_usage_mb: 64
+
+      # Advanced filtering with size and date constraints
+      - id: "advanced_filtering_search"
+        tool_name: "find_files"
+        description: "Advanced file search with size, date, and content filters"
+        enabled: true
+        project_path: "test-projects"
+        input_params:
+          patterns: ["*.py", "*.js"]
+          min_size_bytes: 100
+          max_size_bytes: 50000
+          include_size_metadata: true
+          include_last_modified: true
+          exclude_patterns: ["**/node_modules/**", "**/__pycache__/**"]
+          content_filters:
+            - type: "contains"
+              value: "def "
+            - type: "contains"
+              value: "function"
+        expected:
+          patterns:
+            - key: "result.files_found"
+              validation:
+                type: "array"
+              required: true
+            - key: "result.size_distribution"
+              validation:
+                type: "exists"
+              required: false
+          custom_scripts:
+            - name: "validate_file_filtering"
+              language: "python"
+              script: |
+                def validate(response):
+                    result = response.get('result', {})
+                    files_found = result.get('files_found', [])
+                    
+                    # Validate file metadata structure
+                    valid_files = 0
+                    size_violations = 0
+                    
+                    for file_info in files_found:
+                        required_fields = ['path', 'size_bytes']
+                        if all(field in file_info for field in required_fields):
+                            valid_files += 1
+                            
+                            # Check size constraints are respected
+                            file_size = file_info.get('size_bytes', 0)
+                            if file_size < 100 or file_size > 50000:
+                                size_violations += 1
+                            
+                            # Bonus for additional metadata
+                            if 'last_modified' in file_info:
+                                valid_files += 0.1
+                    
+                    metadata_quality = valid_files / len(files_found) if files_found else 0.8
+                    constraint_adherence = 1.0 - (size_violations / len(files_found)) if files_found else 1.0
+                    
+                    overall_score = (metadata_quality * 0.6) + (constraint_adherence * 0.4)
+                    
+                    return True, overall_score, f"File filtering: {len(files_found)} files, {size_violations} size violations"
+
+      # Multi-language project search
+      - id: "multi_language_project_search"
+        tool_name: "find_files"
+        description: "Search across multi-language projects with language-specific patterns"
+        enabled: true
+        project_path: "test-projects"
+        input_params:
+          language_patterns:
+            python: ["*.py", "requirements.txt", "pyproject.toml"]
+            javascript: ["*.js", "*.jsx", "package.json", "*.ts", "*.tsx"]
+            rust: ["*.rs", "Cargo.toml", "Cargo.lock"]
+            java: ["*.java", "pom.xml", "build.gradle"]
+          organize_by_language: true
+          include_config_files: true
+          detect_project_structure: true
+        expected:
+          patterns:
+            - key: "result.language_breakdown"
+              validation:
+                type: "exists"
+              required: true
+            - key: "result.project_structures"
+              validation:
+                type: "exists"
+              required: false
+          custom_scripts:
+            - name: "validate_language_organization"
+              language: "python"
+              script: |
+                def validate(response):
+                    result = response.get('result', {})
+                    language_breakdown = result.get('language_breakdown', {})
+                    project_structures = result.get('project_structures', {})
+                    
+                    # Validate language detection
+                    expected_languages = ['python', 'javascript', 'rust', 'java']
+                    detected_languages = list(language_breakdown.keys())
+                    
+                    language_coverage = 0.0
+                    for lang in expected_languages:
+                        if lang in detected_languages:
+                            lang_data = language_breakdown[lang]
+                            if isinstance(lang_data, dict) and 'file_count' in lang_data:
+                                language_coverage += 1.0 / len(expected_languages)
+                    
+                    # Validate project structure detection
+                    structure_score = 0.8  # Default good score
+                    if project_structures:
+                        valid_structures = 0
+                        for proj_name, structure in project_structures.items():
+                            if 'primary_language' in structure and 'config_files' in structure:
+                                valid_structures += 1
+                        
+                        if project_structures:
+                            structure_score = valid_structures / len(project_structures)
+                    
+                    overall_score = (language_coverage * 0.7) + (structure_score * 0.3)
+                    
+                    return True, overall_score, f"Language breakdown: {len(detected_languages)} languages, {len(project_structures)} projects"
+
+  - name: "Find Files - Performance & Edge Cases"
+    description: "Test performance and edge case handling for file search"
+    test_cases:
+      # Large directory tree performance
+      - id: "large_directory_performance"
+        tool_name: "find_files"
+        description: "Performance test on large directory structure"
+        enabled: true
+        project_path: "test-projects"
+        input_params:
+          patterns: ["*"]
+          max_results: 1000
+          parallel_search: true
+          enable_caching: true
+          progress_reporting: true
+        expected:
+          patterns:
+            - key: "result.performance_metrics"
+              validation:
+                type: "exists"
+              required: true
+            - key: "result.files_found"
+              validation:
+                type: "array_max_length"
+                max_length: 1000
+              required: true
+          performance_requirements:
+            max_execution_time_ms: 8000
+            max_memory_usage_mb: 128
+
+      # Regex pattern search
+      - id: "regex_pattern_search"
+        tool_name: "find_files"
+        description: "Advanced regex pattern matching for file names"
+        enabled: true
+        project_path: "test-projects"
+        input_params:
+          regex_patterns: [
+            ".*test.*\\.py$",
+            ".*\\.config\\.(js|json|yaml)$",
+            "^[A-Z][a-zA-Z]*\\.java$"
+          ]
+          case_sensitive: true
+          validate_regex: true
+        expected:
+          patterns:
+            - key: "result.pattern_matches"
+              validation:
+                type: "exists"
+              required: true
+            - key: "result.regex_validation_results"
+              validation:
+                type: "exists"
+              required: false
+
+      # Empty directory handling
+      - id: "empty_directory_handling"
+        tool_name: "find_files"
+        description: "Handle empty directories gracefully"
+        enabled: true
+        project_path: "test-projects/nonexistent"
+        input_params:
+          patterns: ["*"]
+        expected:
+          patterns:
+            - key: "error"
+              validation:
+                type: "exists"
+              required: false
+          allow_failure: true
+
+# Performance baselines for file search
+baselines:
+  basic_pattern_search:
+    average_execution_time_ms: 1500.0
+    peak_memory_mb: 48.0
+    throughput_ops_per_sec: 0.667
+  advanced_filtering_search:
+    average_execution_time_ms: 2500.0
+    peak_memory_mb: 56.0
+    throughput_ops_per_sec: 0.4
+  multi_language_project_search:
+    average_execution_time_ms: 3000.0
+    peak_memory_mb: 64.0
+    throughput_ops_per_sec: 0.333
+  large_directory_performance:
+    average_execution_time_ms: 6000.0
+    peak_memory_mb: 96.0
+    throughput_ops_per_sec: 0.167

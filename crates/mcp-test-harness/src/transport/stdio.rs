@@ -51,7 +51,9 @@ impl Transport for StdioTransport {
     /// Send a message to the server
     async fn send(&mut self, _message: serde_json::Value) -> Result<(), TransportError> {
         if !self.connected {
-            return Err(TransportError::ConnectionFailed("Not connected".to_string()));
+            return Err(TransportError::ConnectionFailed(
+                "Not connected".to_string(),
+            ));
         }
         // FUTURE: Send message via stdout to server process
         //         Will implement JSON-RPC message serialization and transmission
@@ -62,7 +64,9 @@ impl Transport for StdioTransport {
     /// Receive a message from the server
     async fn receive(&mut self) -> Result<serde_json::Value, TransportError> {
         if !self.connected {
-            return Err(TransportError::ConnectionFailed("Not connected".to_string()));
+            return Err(TransportError::ConnectionFailed(
+                "Not connected".to_string(),
+            ));
         }
         // FUTURE: Receive message from stdin from server process
         //         Will implement JSON-RPC message parsing and validation

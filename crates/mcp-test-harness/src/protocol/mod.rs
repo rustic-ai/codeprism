@@ -96,12 +96,12 @@ impl McpServerProcess {
     pub async fn stop(&mut self) -> Result<(), McpError> {
         if let Some(mut process) = self.process.take() {
             info!("Stopping MCP server process");
-            
+
             // Try graceful shutdown first
             if let Err(e) = process.kill().await {
                 warn!("Failed to kill server process: {}", e);
             }
-            
+
             match process.wait().await {
                 Ok(status) => {
                     info!("Server process exited with status: {}", status);
@@ -164,7 +164,11 @@ impl McpClient {
     }
 
     /// Send MCP tool request
-    pub async fn call_tool(&mut self, tool_name: &str, parameters: Value) -> Result<Value, McpError> {
+    pub async fn call_tool(
+        &mut self,
+        tool_name: &str,
+        parameters: Value,
+    ) -> Result<Value, McpError> {
         // Generate unique request ID
         self.request_id_counter += 1;
         let request_id = self.request_id_counter;
@@ -191,13 +195,16 @@ impl McpClient {
             });
         }
 
-        response.result.ok_or_else(|| {
-            McpError::Protocol("Response missing result field".to_string())
-        })
+        response
+            .result
+            .ok_or_else(|| McpError::Protocol("Response missing result field".to_string()))
     }
 
     /// Send JSON-RPC request to server
-    pub async fn send_request(&mut self, request: JsonRpcRequest) -> Result<JsonRpcResponse, McpError> {
+    pub async fn send_request(
+        &mut self,
+        request: JsonRpcRequest,
+    ) -> Result<JsonRpcResponse, McpError> {
         debug!("Sending request: {}", request.method);
 
         // Serialize request for future use
@@ -212,7 +219,10 @@ impl McpClient {
     }
 
     /// Initialize MCP session
-    pub async fn initialize(&mut self, client_info: ClientInfo) -> Result<InitializeResult, McpError> {
+    pub async fn initialize(
+        &mut self,
+        client_info: ClientInfo,
+    ) -> Result<InitializeResult, McpError> {
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
             id: Some(json!(self.next_request_id())),
@@ -221,7 +231,7 @@ impl McpClient {
         };
 
         let response = self.send_request(request).await?;
-        
+
         if let Some(error) = response.error {
             return Err(McpError::JsonRpc {
                 code: error.code,
@@ -229,19 +239,23 @@ impl McpClient {
             });
         }
 
-        let result = response.result.ok_or_else(|| {
-            McpError::Protocol("Initialize response missing result".to_string())
-        })?;
+        let result = response
+            .result
+            .ok_or_else(|| McpError::Protocol("Initialize response missing result".to_string()))?;
 
-        serde_json::from_value(result)
-            .map_err(|e| McpError::Serialization(format!("Failed to parse initialize result: {}", e)))
+        serde_json::from_value(result).map_err(|e| {
+            McpError::Serialization(format!("Failed to parse initialize result: {}", e))
+        })
     }
 
     /// Validate that a server implements required MCP protocol methods
     pub async fn validate_protocol_compliance(&mut self) -> Result<bool, McpError> {
         // Test basic MCP capabilities
         let tests = vec![
-            ("initialize", json!({"clientInfo": {"name": "test", "version": "1.0"}})),
+            (
+                "initialize",
+                json!({"clientInfo": {"name": "test", "version": "1.0"}}),
+            ),
             ("tools/list", json!({})),
         ];
 
@@ -261,7 +275,10 @@ impl McpClient {
                     }
                 }
                 Err(e) => {
-                    error!("Protocol compliance test error for method {}: {}", method, e);
+                    error!(
+                        "Protocol compliance test error for method {}: {}",
+                        method, e
+                    );
                     return Ok(false);
                 }
             }
@@ -277,7 +294,10 @@ impl McpClient {
 
     /// Simulate server response for testing purposes
     /// TODO: Replace with actual stdio communication
-    async fn simulate_server_response(&self, request: &JsonRpcRequest) -> Result<JsonRpcResponse, McpError> {
+    async fn simulate_server_response(
+        &self,
+        request: &JsonRpcRequest,
+    ) -> Result<JsonRpcResponse, McpError> {
         // This is a temporary simulation - will be replaced with real stdio communication
         match request.method.as_str() {
             "initialize" => Ok(JsonRpcResponse {
@@ -296,7 +316,8 @@ impl McpClient {
                 error: None,
             }),
             "tools/call" => {
-                let tool_name = request.params
+                let tool_name = request
+                    .params
                     .as_ref()
                     .and_then(|p| p.get("name"))
                     .and_then(|n| n.as_str())
@@ -312,7 +333,7 @@ impl McpClient {
                     }),
                     "search_content" => json!({
                         "content": [{
-                            "type": "text", 
+                            "type": "text",
                             "text": "Search Results:\n- Found 5 matches in 3 files\n- Files: src/lib.rs, src/main.rs, tests/integration.rs"
                         }]
                     }),
@@ -349,7 +370,10 @@ impl McpClient {
                 })),
                 error: None,
             }),
-            _ => Err(McpError::Protocol(format!("Unknown method: {}", request.method))),
+            _ => Err(McpError::Protocol(format!(
+                "Unknown method: {}",
+                request.method
+            ))),
         }
     }
 }
@@ -418,7 +442,7 @@ mod tests {
 
         let serialized = serde_json::to_string(&request).unwrap();
         let deserialized: JsonRpcRequest = serde_json::from_str(&serialized).unwrap();
-        
+
         assert_eq!(request.method, deserialized.method);
         assert_eq!(request.jsonrpc, deserialized.jsonrpc);
     }
@@ -442,8 +466,11 @@ mod tests {
     #[tokio::test]
     async fn test_tool_call_simulation() {
         let mut client = McpClient::new();
-        let result = client.call_tool("repository_stats", json!({})).await.unwrap();
-        
+        let result = client
+            .call_tool("repository_stats", json!({}))
+            .await
+            .unwrap();
+
         assert!(result.get("content").is_some());
         let content = &result["content"][0]["text"];
         assert!(content.as_str().unwrap().contains("Repository Statistics"));

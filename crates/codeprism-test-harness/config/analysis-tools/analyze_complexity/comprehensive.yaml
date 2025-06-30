@@ -1,0 +1,85 @@
+# Analyze Complexity Tool - Comprehensive Test Configuration
+# Tests the analyze_complexity MCP tool for calculating various complexity metrics
+
+global:
+  max_global_concurrency: 3
+  timeout_seconds: 30
+  fail_fast: false
+  default_project_path: "test-projects/rust-test-project"
+
+# Performance monitoring for complexity analysis
+performance:
+  enable_monitoring: true
+  baseline_storage_path: "baselines/analysis-tools/"
+  regression_detection:
+    warning_threshold_percent: 25.0
+    error_threshold_percent: 60.0
+
+test_suites:
+  - name: "Complexity Analysis - Core Metrics"
+    description: "Test various complexity metrics calculation across different languages"
+    test_cases:
+      # Cyclomatic complexity
+      - id: "rust_cyclomatic_complexity"
+        tool_name: "analyze_complexity"
+        description: "Calculate cyclomatic complexity for Rust project"
+        enabled: true
+        project_path: "test-projects/rust-test-project"
+        input_params:
+          complexity_types: ["cyclomatic", "cognitive", "halstead"]
+          include_functions: true
+          include_methods: true
+          include_closures: true
+          threshold_warning: 10
+          threshold_error: 20
+          aggregate_by_file: true
+          aggregate_by_module: true
+        expected:
+          patterns:
+            - key: "result.complexity_metrics"
+              validation:
+                type: "exists"
+              required: true
+            - key: "result.cyclomatic_complexity"
+              validation:
+                type: "exists"
+              required: true
+            - key: "result.functions_analyzed"
+              validation:
+                type: "range"
+                min: 1
+                max: 500
+              required: true
+          performance_requirements:
+            max_execution_time_ms: 5000
+            max_memory_usage_mb: 96
+
+      # Multi-language complexity comparison
+      - id: "multi_language_complexity_comparison"
+        tool_name: "analyze_complexity"
+        description: "Compare complexity patterns across different programming languages"
+        enabled: true
+        project_path: "test-projects"
+        input_params:
+          languages: ["rust", "python", "javascript", "java"]
+          complexity_types: ["cyclomatic", "cognitive"]
+          generate_language_comparison: true
+          complexity_patterns_analysis: true
+          cross_language_metrics: true
+        expected:
+          patterns:
+            - key: "result.language_comparison"
+              validation:
+                type: "exists"
+              required: true
+
+# Performance baselines for complexity analysis
+baselines:
+  rust_cyclomatic_complexity:
+    average_execution_time_ms: 3000.0
+    peak_memory_mb: 80.0
+    throughput_ops_per_sec: 0.333
+  multi_language_complexity_comparison:
+    average_execution_time_ms: 8000.0
+    peak_memory_mb: 140.0
+    throughput_ops_per_sec: 0.125

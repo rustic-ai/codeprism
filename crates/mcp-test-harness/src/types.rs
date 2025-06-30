@@ -128,6 +128,7 @@ pub struct PerformanceMetrics {
 
 /// Test execution context
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct TestContext {
     /// Unique test execution ID
     pub execution_id: Uuid,

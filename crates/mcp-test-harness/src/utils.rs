@@ -3,6 +3,7 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Get current timestamp in milliseconds
+#[allow(dead_code)]
 pub fn current_timestamp_ms() -> u128 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -11,6 +12,7 @@ pub fn current_timestamp_ms() -> u128 {
 }
 
 /// Format duration in a human-readable way
+#[allow(dead_code)]
 pub fn format_duration(duration_ms: u128) -> String {
     let seconds = duration_ms as f64 / 1000.0;
     if seconds < 1.0 {
@@ -24,6 +26,7 @@ pub fn format_duration(duration_ms: u128) -> String {
 }
 
 /// Sanitize a string for use as a filename
+#[allow(dead_code)]
 pub fn sanitize_filename(input: &str) -> String {
     input
         .chars()

@@ -19,7 +19,7 @@ use tracing::{debug, info, warn};
 /// use mcp_test_harness_lib::spec::SpecLoader;
 ///
 /// # tokio_test::block_on(async {
-/// let loader = SpecLoader::new();
+/// let loader = SpecLoader::new()?;
 /// let spec = loader.load_spec("server.yaml").await?;
 /// assert!(!spec.name.is_empty());
 /// # Ok::<(), Box<dyn std::error::Error>>(())

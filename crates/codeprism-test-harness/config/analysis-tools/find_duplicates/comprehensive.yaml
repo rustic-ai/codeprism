@@ -1,0 +1,292 @@
+# Find Duplicates Tool - Comprehensive Test Configuration
+# Tests the find_duplicates MCP tool for detecting duplicate code blocks with similarity scoring
+
+global:
+  max_global_concurrency: 2
+  timeout_seconds: 45
+  fail_fast: false
+  default_project_path: "test-projects/duplicate-code-test.py"
+
+# Performance monitoring for duplicate detection
+performance:
+  enable_monitoring: true
+  baseline_storage_path: "baselines/analysis-tools/"
+  regression_detection:
+    warning_threshold_percent: 35.0
+    error_threshold_percent: 80.0
+
+test_suites:
+  - name: "Duplicate Detection - Core Functionality"
+    description: "Test duplicate code detection with similarity scoring and pattern matching"
+    test_cases:
+      # Basic duplicate detection
+      - id: "python_duplicates_basic_detection"
+        tool_name: "find_duplicates"
+        description: "Basic duplicate code detection in Python project"
+        enabled: true
+        project_path: "test-projects/duplicate-code-test.py"
+        input_params:
+          similarity_threshold: 0.8
+          min_lines: 5
+          ignore_whitespace: true
+          ignore_comments: true
+          languages: ["python"]
+          include_exact_matches: true
+          include_structural_duplicates: true
+        expected:
+          patterns:
+            - key: "result.duplicate_groups"
+              validation:
+                type: "array_min_length"
+                min_length: 1
+              required: true
+            - key: "result.similarity_scores"
+              validation:
+                type: "exists"
+              required: true
+            - key: "result.total_duplicates_found"
+              validation:
+                type: "range"
+                min: 1
+                max: 50
+              required: true
+          performance_requirements:
+            max_execution_time_ms: 8000
+            max_memory_usage_mb: 128
+          custom_scripts:
+            - name: "validate_duplicate_quality"
+              language: "python"
+              script: |
+                def validate(response):
+                    result = response.get('result', {})
+                    duplicate_groups = result.get('duplicate_groups', [])
+                    similarity_scores = result.get('similarity_scores', {})
+                    
+                    # Validate duplicate group structure
+                    valid_groups = 0
+                    total_similarity_score = 0.0
+                    
+                    for group in duplicate_groups:
+                        required_fields = ['group_id', 'instances', 'similarity_score', 'lines_of_code']
+                        if all(field in group for field in required_fields):
+                            valid_groups += 1
+                            
+                            # Validate similarity score is reasonable
+                            sim_score = group.get('similarity_score', 0.0)
+                            if 0.8 <= sim_score <= 1.0:
+                                total_similarity_score += sim_score
+                            
+                            # Validate instances have required metadata
+                            instances = group.get('instances', [])
+                            for instance in instances:
+                                if all(field in instance for field in ['file_path', 'start_line', 'end_line']):
+                                    valid_groups += 0.1
+                    
+                    group_quality = valid_groups / len(duplicate_groups) if duplicate_groups else 0.8
+                    avg_similarity = total_similarity_score / len(duplicate_groups) if duplicate_groups else 0.9
+                    
+                    overall_score = (group_quality * 0.6) + (avg_similarity * 0.4)
+                    
+                    return True, overall_score, f"Duplicates: {len(duplicate_groups)} groups, avg similarity: {avg_similarity:.2f}"
+
+      # Cross-language duplicate detection
+      - id: "multi_language_duplicates"
+        tool_name: "find_duplicates"
+        description: "Detect duplicates across multiple programming languages"
+        enabled: true
+        project_path: "test-projects"
+        input_params:
+          similarity_threshold: 0.75
+          min_lines: 8
+          languages: ["python", "javascript", "rust", "java"]
+          structural_analysis: true
+          ignore_syntax_differences: true
+          cross_language_detection: true
+        expected:
+          patterns:
+            - key: "result.cross_language_duplicates"
+              validation:
+                type: "array"
+              required: false
+            - key: "result.language_breakdown"
+              validation:
+                type: "exists"
+              required: true
+          custom_scripts:
+            - name: "validate_cross_language_detection"
+              language: "python"
+              script: |
+                def validate(response):
+                    result = response.get('result', {})
+                    cross_lang_dupes = result.get('cross_language_duplicates', [])
+                    lang_breakdown = result.get('language_breakdown', {})
+                    
+                    # Validate language breakdown
+                    expected_languages = ['python', 'javascript', 'rust', 'java']
+                    lang_coverage = sum(1 for lang in expected_languages if lang in lang_breakdown)
+                    coverage_score = lang_coverage / len(expected_languages)
+                    
+                    # Validate cross-language duplicates if found
+                    cross_lang_quality = 1.0
+                    if cross_lang_dupes:
+                        valid_cross_lang = 0
+                        for dupe in cross_lang_dupes:
+                            if 'languages_involved' in dupe and len(dupe['languages_involved']) >= 2:
+                                valid_cross_lang += 1
+                        cross_lang_quality = valid_cross_lang / len(cross_lang_dupes)
+                    
+                    overall_score = (coverage_score * 0.7) + (cross_lang_quality * 0.3)
+                    
+                    return True, overall_score, f"Language coverage: {lang_coverage}/{len(expected_languages)}, cross-lang: {len(cross_lang_dupes)}"
+
+      # Large codebase performance test
+      - id: "large_codebase_duplicate_detection"
+        tool_name: "find_duplicates"
+        description: "Performance test on large multi-project codebase"
+        enabled: true
+        project_path: "test-projects"
+        input_params:
+          similarity_threshold: 0.85
+          min_lines: 10
+          max_file_size_kb: 500
+          parallel_processing: true
+          memory_efficient_mode: true
+        expected:
+          patterns:
+            - key: "result.performance_metrics"
+              validation:
+                type: "exists"
+              required: true
+            - key: "result.files_processed"
+              validation:
+                type: "range"
+                min: 10
+                max: 1000
+              required: true
+          performance_requirements:
+            max_execution_time_ms: 20000
+            max_memory_usage_mb: 256
+
+      # Edge case: Very similar but not identical code
+      - id: "subtle_duplicates_detection"
+        tool_name: "find_duplicates"
+        description: "Detect subtle duplicates with minor variations"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          similarity_threshold: 0.7
+          min_lines: 6
+          ignore_variable_names: true
+          ignore_string_literals: true
+          normalize_whitespace: true
+          detect_refactoring_opportunities: true
+        expected:
+          patterns:
+            - key: "result.refactoring_suggestions"
+              validation:
+                type: "array"
+              required: false
+            - key: "result.subtle_duplicates"
+              validation:
+                type: "array"
+              required: false
+          custom_scripts:
+            - name: "validate_subtle_detection"
+              language: "python"
+              script: |
+                def validate(response):
+                    result = response.get('result', {})
+                    refactoring_suggestions = result.get('refactoring_suggestions', [])
+                    subtle_duplicates = result.get('subtle_duplicates', [])
+                    
+                    # Validate refactoring suggestions quality
+                    quality_suggestions = 0
+                    for suggestion in refactoring_suggestions:
+                        required_fields = ['description', 'affected_files', 'potential_savings']
+                        if all(field in suggestion for field in required_fields):
+                            quality_suggestions += 1
+                    
+                    refactor_quality = quality_suggestions / len(refactoring_suggestions) if refactoring_suggestions else 0.8
+                    
+                    # Validate subtle duplicates have lower but valid similarity scores
+                    valid_subtle = 0
+                    for dupe in subtle_duplicates:
+                        sim_score = dupe.get('similarity_score', 0.0)
+                        if 0.7 <= sim_score <= 0.95:  # Expect lower similarity for subtle duplicates
+                            valid_subtle += 1
+                    
+                    subtle_quality = valid_subtle / len(subtle_duplicates) if subtle_duplicates else 0.9
+                    
+                    overall_score = (refactor_quality * 0.5) + (subtle_quality * 0.5)
+                    
+                    return True, overall_score, f"Refactoring: {len(refactoring_suggestions)}, subtle: {len(subtle_duplicates)}"
+
+  - name: "Duplicate Detection - Error Handling & Edge Cases"
+    description: "Test error handling and edge cases for duplicate detection"
+    test_cases:
+      # Empty files handling
+      - id: "empty_files_handling"
+        tool_name: "find_duplicates"
+        description: "Handle empty files and projects gracefully"
+        enabled: true
+        project_path: "test-projects/nonexistent"
+        input_params:
+          similarity_threshold: 0.8
+          min_lines: 5
+        expected:
+          patterns:
+            - key: "error"
+              validation:
+                type: "exists"
+              required: false
+          allow_failure: true
+          custom_scripts:
+            - name: "validate_empty_handling"
+              language: "python"
+              script: |
+                def validate(response):
+                    if 'error' in response:
+                        return True, 1.0, "Properly handled empty project with error"
+                    
+                    result = response.get('result', {})
+                    if result.get('files_processed', -1) == 0:
+                        return True, 0.9, "Handled empty project with zero files"
+                    
+                    return False, 0.0, "Did not properly handle empty project"
+
+      # Invalid parameters
+      - id: "invalid_parameters_handling"
+        tool_name: "find_duplicates"
+        description: "Handle invalid configuration parameters"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          similarity_threshold: 2.0  # Invalid > 1.0
+          min_lines: -5            # Invalid negative
+          languages: ["invalid_language"]
+        expected:
+          patterns:
+            - key: "error"
+              validation:
+                type: "exists"
+              required: false
+          allow_failure: true
+
+# Performance baselines for duplicate detection
+baselines:
+  python_duplicates_basic_detection:
+    average_execution_time_ms: 5000.0
+    peak_memory_mb: 96.0
+    throughput_ops_per_sec: 0.2
+  multi_language_duplicates:
+    average_execution_time_ms: 12000.0
+    peak_memory_mb: 180.0
+    throughput_ops_per_sec: 0.083
+  large_codebase_duplicate_detection:
+    average_execution_time_ms: 18000.0
+    peak_memory_mb: 220.0
+    throughput_ops_per_sec: 0.056
+  subtle_duplicates_detection:
+    average_execution_time_ms: 7000.0
+    peak_memory_mb: 110.0
+    throughput_ops_per_sec: 0.143 

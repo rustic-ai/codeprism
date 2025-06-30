@@ -1,0 +1,237 @@
+# Example performance monitoring configuration for CodePrism Test Harness
+
+global:
+  max_global_concurrency: 4
+  timeout_seconds: 30
+  fail_fast: false
+  performance_monitoring:
+    enabled: true
+    baseline_dir: "performance-baselines"
+    regression_thresholds:
+      execution_time_warning_percent: 20.0
+      execution_time_error_percent: 50.0
+      memory_warning_percent: 30.0
+      memory_error_percent: 100.0
+      throughput_degradation_percent: 25.0
+    history_retention_count: 100
+
+test_suites:
+  - name: "performance_validation_suite"
+    description: "Comprehensive performance monitoring and baseline validation"
+    parallel_execution: false  # Sequential for accurate performance tracking
+    test_cases:
+      - id: "test_repository_stats_performance"
+        description: "Validate repository statistics with performance monitoring"
+        tool_name: "repository_stats"
+        enabled: true
+        input_params:
+          repository_path: "test-projects/python-sample"
+        expected:
+          patterns:
+            - key: "result.total_files"
+              validation:
+                type: "Range"
+                min: 20.0
+                max: 30.0
+              required: true
+            - key: "result.total_lines"
+              validation:
+                type: "Range"
+                min: 4000.0
+                max: 6000.0
+              required: true
+        performance_baseline:
+          baseline_execution_time_ms: 1500
+          baseline_memory_mb: 128.0
+          baseline_cpu_percent: 45.0
+          expected_throughput_range: [100.0, 200.0]
+          
+      - id: "test_symbol_search_performance"
+        description: "Validate symbol search with memory usage monitoring"
+        tool_name: "search_symbols"
+        enabled: true
+        input_params:
+          pattern: "class.*User"
+          repository_path: "test-projects/python-sample"
+        expected:
+          patterns:
+            - key: "result.total_matches"
+              validation:
+                type: "Range"
+                min: 5.0
+                max: 20.0
+              required: true
+            - key: "result.symbols"
+              validation:
+                type: "ArrayLength"
+                min: 5
+                max: 20
+              required: true
+        performance_baseline:
+          baseline_execution_time_ms: 800
+          baseline_memory_mb: 96.0
+          baseline_cpu_percent: 35.0
+          expected_throughput_range: [200.0, 400.0]
+
+      - id: "test_complexity_analysis_performance"
+        description: "Validate complexity analysis with throughput monitoring"
+        tool_name: "analyze_complexity"
+        enabled: true
+        input_params:
+          repository_path: "test-projects/python-sample"
+          include_patterns: ["*.py"]
+        expected:
+          patterns:
+            - key: "result.cyclomatic_complexity"
+              validation:
+                type: "Range"
+                min: 5.0
+                max: 15.0
+              required: true
+            - key: "result.cognitive_complexity"
+              validation:
+                type: "Range"
+                min: 5.0
+                max: 20.0
+              required: true
+        performance_baseline:
+          baseline_execution_time_ms: 2000
+          baseline_memory_mb: 256.0
+          baseline_cpu_percent: 60.0
+          expected_throughput_range: [50.0, 100.0]
+
+  - name: "performance_regression_detection"
+    description: "Test performance regression detection capabilities"
+    parallel_execution: false
+    test_cases:
+      - id: "test_regression_detection_time"
+        description: "Test that detects execution time regression"
+        tool_name: "repository_stats"
+        enabled: true
+        input_params:
+          repository_path: "test-projects/large-project"
+        expected:
+          patterns:
+            - key: "result.total_files"
+              validation:
+                type: "Range"
+                min: 100.0
+                max: 1000.0
+              required: true
+        performance_baseline:
+          baseline_execution_time_ms: 1000  # Baseline is 1 second
+          baseline_memory_mb: 64.0
+          baseline_cpu_percent: 30.0
+        # Expected to trigger warning if execution takes > 1200ms (20% increase)
+        # Expected to trigger error if execution takes > 1500ms (50% increase)
+
+      - id: "test_regression_detection_memory"
+        description: "Test that detects memory usage regression"
+        tool_name: "analyze_complexity"
+        enabled: true
+        input_params:
+          repository_path: "test-projects/python-sample"
+        expected:
+          patterns:
+            - key: "result.cyclomatic_complexity"
+              validation:
+                type: "Range"
+                min: 1.0
+                max: 50.0
+              required: true
+        performance_baseline:
+          baseline_execution_time_ms: 1500
+          baseline_memory_mb: 128.0  # Baseline is 128MB
+          baseline_cpu_percent: 40.0
+        # Expected to trigger warning if memory usage > 166MB (30% increase)
+        # Expected to trigger error if memory usage > 256MB (100% increase)
+
+  - name: "performance_baseline_establishment"
+    description: "Establish performance baselines for new tools"
+    parallel_execution: false
+    test_cases:
+      - id: "establish_baseline_content_search"
+        description: "Establish baseline for content search tool"
+        tool_name: "search_content"
+        enabled: true
+        input_params:
+          query: "def test_"
+          repository_path: "test-projects/python-sample"
+        expected:
+          patterns:
+            - key: "result.total_matches"
+              validation:
+                type: "Range"
+                min: 1.0
+                max: 100.0
+              required: true
+        # No existing baseline - will establish new baseline from this run
+
+      - id: "establish_baseline_file_analysis"
+        description: "Establish baseline for file analysis tool"
+        tool_name: "analyze_file"
+        enabled: true
+        input_params:
+          file_path: "test-projects/python-sample/main.py"
+        expected:
+          patterns:
+            - key: "result.lines_of_code"
+              validation:
+                type: "Range"
+                min: 10.0
+                max: 500.0
+              required: true
+        # No existing baseline - will establish new baseline from this run
+
+# Performance monitoring configuration
+performance_monitoring:
+  # Enable detailed performance tracking
+  enabled: true
+  
+  # Directory to store baseline files (JSON format)
+  baseline_dir: "performance-baselines"
+  
+  # Regression detection thresholds
+  regression_thresholds:
+    execution_time_warning_percent: 20.0   # Warn if 20% slower
+    execution_time_error_percent: 50.0     # Error if 50% slower
+    memory_warning_percent: 30.0           # Warn if 30% more memory
+    memory_error_percent: 100.0            # Error if 100% more memory
+    throughput_degradation_percent: 25.0   # Warn if 25% slower throughput
+  
+  # Number of historical performance records to keep
+  history_retention_count: 100
+  
+  # Automatic baseline update configuration
+  auto_baseline_update:
+    enabled: true
+    improvement_threshold_percent: 10.0     # Update if 10% improvement
+    consecutive_improvements_required: 3    # Need 3 consecutive improvements
+
+# Example baseline files that would be generated:
+#
+# performance-baselines/repository_stats.json:
+# {
+#   "tool_name": "repository_stats",
+#   "baseline_execution_time_ms": 1500,
+#   "baseline_memory_mb": 128.0,
+#   "baseline_cpu_percent": 45.0,
+#   "expected_throughput_range": [100.0, 200.0],
+#   "established_at": "2025-01-27T10:30:00Z",
+#   "version": "v1.0.0",
+#   "sample_count": 5,
+#   "std_deviation": 125.5
+# }
+#
+# performance-baselines/search_symbols.json:
+# {
+#   "tool_name": "search_symbols", 
+#   "baseline_execution_time_ms": 800,
+#   "baseline_memory_mb": 96.0,
+#   "baseline_cpu_percent": 35.0,
+#   "expected_throughput_range": [200.0, 400.0],
+#   "established_at": "2025-01-27T10:30:00Z",
+#   "version": "v1.0.0",
+#   "sample_count": 3,
+#   "std_deviation": 85.2
+# } 

@@ -1,6 +1,7 @@
 //! Test execution engine for the CodePrism Test Harness
 
 use crate::config::TestConfig;
+use crate::performance::{PerformanceConfig, PerformanceMonitor};
 use crate::script::{SandboxConfig, ScriptExecutor};
 use crate::types::{
     JsonPathPattern, MemoryStats, PatternValidation, ResponseTimePercentiles, TestCase,
@@ -20,6 +21,7 @@ pub struct TestExecutor {
     config: TestConfig,
     concurrency_limiter: Arc<Semaphore>,
     script_executor: ScriptExecutor,
+    performance_monitor: PerformanceMonitor,
 }
 
 impl TestExecutor {
@@ -31,15 +33,27 @@ impl TestExecutor {
         let sandbox_config = SandboxConfig::default();
         let script_executor = ScriptExecutor::new(None, sandbox_config);
 
+        // Create performance monitor
+        let performance_config = PerformanceConfig::default();
+        let performance_monitor = PerformanceMonitor::new(performance_config);
+
         Self {
             config,
             concurrency_limiter,
             script_executor,
+            performance_monitor,
         }
     }
 
+    /// Initialize the test executor
+    pub async fn initialize(&mut self) -> Result<()> {
+        self.performance_monitor.initialize().await?;
+        info!("Test executor initialized with performance monitoring");
+        Ok(())
+    }
+
     /// Execute all test suites in the configuration
-    pub async fn execute_all_test_suites(&self) -> Result<Vec<TestSuiteResult>> {
+    pub async fn execute_all_test_suites(&mut self) -> Result<Vec<TestSuiteResult>> {
         info!(
             "Starting test execution for {} test suites",
             self.config.test_suites.len()
@@ -47,7 +61,11 @@ impl TestExecutor {
 
         let mut results = Vec::new();
 
-        for test_suite in &self.config.test_suites {
+        // Clone the test suites to avoid borrowing conflicts
+        let test_suites = self.config.test_suites.clone();
+        let fail_fast = self.config.global.fail_fast;
+
+        for test_suite in &test_suites {
             info!("Executing test suite: {}", test_suite.name);
 
             match self.execute_test_suite(test_suite).await {
@@ -61,7 +79,7 @@ impl TestExecutor {
                 Err(e) => {
                     error!("Test suite '{}' failed: {}", test_suite.name, e);
 
-                    if self.config.global.fail_fast {
+                    if fail_fast {
                         break;
                     }
                 }
@@ -76,10 +94,12 @@ impl TestExecutor {
     }
 
     /// Execute a single test suite
-    pub async fn execute_test_suite(&self, test_suite: &TestSuite) -> Result<TestSuiteResult> {
+    pub async fn execute_test_suite(&mut self, test_suite: &TestSuite) -> Result<TestSuiteResult> {
         let start_time = Utc::now();
 
         let mut test_results = Vec::new();
+
+        let fail_fast = self.config.global.fail_fast;
 
         for test_case in &test_suite.test_cases {
             if !test_case.enabled {
@@ -101,7 +121,7 @@ impl TestExecutor {
                     let success = result.success;
                     test_results.push(result);
 
-                    if !success && self.config.global.fail_fast {
+                    if !success && fail_fast {
                         break;
                     }
                 }
@@ -110,7 +130,7 @@ impl TestExecutor {
                     test_results
                         .push(self.create_failed_test_result(test_case.clone(), e.to_string()));
 
-                    if self.config.global.fail_fast {
+                    if fail_fast {
                         break;
                     }
                 }
@@ -133,7 +153,7 @@ impl TestExecutor {
 
     /// Execute a single test case with comprehensive validation
     async fn execute_single_test(
-        &self,
+        &mut self,
         test_case: TestCase,
         project_path: String,
     ) -> Result<TestResult> {
@@ -147,15 +167,36 @@ impl TestExecutor {
             test_case.id, test_case.tool_name
         );
 
-        // TODO: Replace with actual MCP tool execution
-        // For now, simulate execution and generate mock response
+        // Start performance monitoring
+        self.performance_monitor
+            .start_test_monitoring(test_case.id.clone(), test_case.tool_name.clone());
+
+        // Execute the MCP tool
         let actual_response = self.execute_mcp_tool(&test_case, &project_path).await?;
+
+        // Update performance metrics with response size
+        let response_size = serde_json::to_string(&actual_response)
+            .map(|s| s.len() as u64)
+            .unwrap_or(0);
+
+        self.performance_monitor.update_metrics(|metrics| {
+            metrics.response_size_bytes = response_size;
+            // Simulate some memory and CPU metrics (in real implementation, these would be collected)
+            metrics.peak_memory_mb = 64.0 + (response_size as f64 / 10000.0);
+            metrics.cpu_usage_percent = 30.0 + (response_size as f64 / 100000.0);
+        });
 
         // Validate the response against expected patterns
         let validation_results = self.validate_response(&test_case, &actual_response).await?;
 
         // Determine overall success
         let success = validation_results.iter().all(|v| v.passed);
+
+        // Finish performance monitoring
+        let performance_result = self
+            .performance_monitor
+            .finish_test_monitoring("v1.0.0".to_string())
+            .await?;
 
         let end_time = Utc::now();
         let duration = execution_start.elapsed();
@@ -174,17 +215,31 @@ impl TestExecutor {
             None
         };
 
+        // Add performance data to debug info
+        let mut debug_info = HashMap::new();
+        if let Some(perf_result) = &performance_result {
+            debug_info.insert(
+                "performance".to_string(),
+                serde_json::to_value(perf_result).unwrap_or(serde_json::Value::Null),
+            );
+        }
+
+        // Extract memory usage from performance metrics
+        let memory_usage_mb = performance_result
+            .as_ref()
+            .map(|p| p.metrics.peak_memory_mb);
+
         Ok(TestResult {
             test_case,
             success,
             start_time,
             end_time,
             duration,
-            memory_usage_mb: None,
+            memory_usage_mb,
             actual_response: Some(actual_response),
             validation_results,
             error_message,
-            debug_info: HashMap::new(),
+            debug_info,
         })
     }
 

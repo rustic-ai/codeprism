@@ -70,7 +70,7 @@ async fn main() -> Result<()> {
     }
 
     // Load configuration
-    let harness = match TestHarness::from_config_file(&config_path) {
+    let mut harness = match TestHarness::from_config_file(&config_path) {
         Ok(harness) => harness,
         Err(e) => {
             error!(

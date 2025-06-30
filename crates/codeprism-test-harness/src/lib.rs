@@ -9,6 +9,7 @@
 
 pub mod config;
 pub mod executor;
+pub mod performance;
 pub mod prompts;
 pub mod protocol;
 pub mod resources;
@@ -21,6 +22,7 @@ pub mod types;
 // Re-export main types for convenience
 pub use config::TestConfig;
 pub use executor::TestExecutor;
+pub use performance::{BaselineManager, PerformanceMetrics, PerformanceMonitor, RegressionAlert};
 pub use prompts::{PromptTester, PromptValidator};
 pub use protocol::{JsonRpcMessage, McpCapabilities, McpClient, ProtocolValidator};
 pub use resources::{ResourceTester, ResourceValidator};
@@ -52,12 +54,12 @@ impl TestHarness {
     }
 
     /// Execute all test suites
-    pub async fn run_all_tests(&self) -> Result<Vec<TestSuiteResult>> {
+    pub async fn run_all_tests(&mut self) -> Result<Vec<TestSuiteResult>> {
         self.executor.execute_all_test_suites().await
     }
 
     /// Execute a specific test suite by name
-    pub async fn run_test_suite(&self, suite_name: &str) -> Result<Option<TestSuiteResult>> {
+    pub async fn run_test_suite(&mut self, suite_name: &str) -> Result<Option<TestSuiteResult>> {
         // Find the test suite by name
         let test_suites = self.executor.execute_all_test_suites().await?;
         Ok(test_suites

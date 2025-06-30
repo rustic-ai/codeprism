@@ -13,6 +13,7 @@ use std::collections::HashMap;
 use std::time::{Duration, Instant};
 use tokio::process::Command;
 use std::path::Path;
+use codeprism_test_harness::{TestHarness, TestConfig, TestSuiteResult, TestResult};
 
 /// Enhanced MCP tool test result with comprehensive metrics
 #[derive(Debug, Clone)]
@@ -515,55 +516,787 @@ impl ComprehensiveMcpTests {
         validation
     }
 
-    /// Placeholder implementations for remaining comprehensive tests
+    /// Real implementations for core tools comprehensive tests (replacing placeholders)
     async fn test_find_references_comprehensive(&mut self) -> Vec<McpToolTestResult> {
-        vec![self.execute_test_case("find_references", "placeholder", TestCategory::ParameterValidation, 
-            json!({"symbol_id": "test"})).await]
+        let mut results = Vec::new();
+        
+        // Valid symbol reference test
+        results.push(self.execute_test_case(
+            "find_references",
+            "valid_symbol_reference",
+            TestCategory::ParameterValidation,
+            json!({"symbol_id": "UserService", "context_lines": 4, "include_definitions": true})
+        ).await);
+        
+        // Test with different context lines
+        results.push(self.execute_test_case(
+            "find_references", 
+            "minimal_context",
+            TestCategory::ParameterValidation,
+            json!({"symbol_id": "validate_user", "context_lines": 2})
+        ).await);
+        
+        // Error condition: missing symbol_id
+        results.push(self.execute_test_case(
+            "find_references",
+            "missing_symbol_id",
+            TestCategory::ErrorHandling,
+            json!({"context_lines": 4})
+        ).await);
+        
+        // Error condition: empty symbol_id
+        results.push(self.execute_test_case(
+            "find_references",
+            "empty_symbol_id", 
+            TestCategory::ErrorHandling,
+            json!({"symbol_id": "", "context_lines": 4})
+        ).await);
+        
+        results
     }
 
     async fn test_explain_symbol_comprehensive(&mut self) -> Vec<McpToolTestResult> {
-        vec![self.execute_test_case("explain_symbol", "placeholder", TestCategory::ParameterValidation,
-            json!({"symbol_id": "test"})).await]
+        let mut results = Vec::new();
+        
+        // Valid symbol explanation test
+        results.push(self.execute_test_case(
+            "explain_symbol",
+            "valid_symbol_explanation",
+            TestCategory::ParameterValidation,
+            json!({"symbol_id": "UserService", "include_dependencies": true, "include_usages": true})
+        ).await);
+        
+        // Test with minimal options
+        results.push(self.execute_test_case(
+            "explain_symbol",
+            "minimal_explanation",
+            TestCategory::ParameterValidation,
+            json!({"symbol_id": "config_parser", "include_dependencies": false, "include_usages": false})
+        ).await);
+        
+        // Error condition: nonexistent symbol
+        results.push(self.execute_test_case(
+            "explain_symbol",
+            "nonexistent_symbol",
+            TestCategory::ErrorHandling,
+            json!({"symbol_id": "NonexistentClass123"})
+        ).await);
+        
+        // Performance test: complex symbol
+        results.push(self.execute_test_case(
+            "explain_symbol",
+            "complex_symbol_performance",
+            TestCategory::Performance,
+            json!({"symbol_id": "DatabaseManager", "include_dependencies": true, "include_usages": true})
+        ).await);
+        
+        results
     }
 
     async fn test_find_dependencies_comprehensive(&mut self) -> Vec<McpToolTestResult> {
-        vec![self.execute_test_case("find_dependencies", "placeholder", TestCategory::ParameterValidation,
-            json!({"target": "test"})).await]
+        let mut results = Vec::new();
+        
+        // Valid dependency analysis
+        results.push(self.execute_test_case(
+            "find_dependencies",
+            "valid_dependency_analysis", 
+            TestCategory::ParameterValidation,
+            json!({"target": "core.user", "dependency_type": "direct", "max_depth": 3})
+        ).await);
+        
+        // Transitive dependencies
+        results.push(self.execute_test_case(
+            "find_dependencies",
+            "transitive_dependencies",
+            TestCategory::ParameterValidation,
+            json!({"target": "utils.validation", "dependency_type": "transitive", "max_depth": 5})
+        ).await);
+        
+        // All dependencies type
+        results.push(self.execute_test_case(
+            "find_dependencies",
+            "all_dependencies",
+            TestCategory::ParameterValidation,
+            json!({"target": "services.auth", "dependency_type": "all"})
+        ).await);
+        
+        // Error condition: invalid target
+        results.push(self.execute_test_case(
+            "find_dependencies",
+            "invalid_target",
+            TestCategory::ErrorHandling,
+            json!({"target": "", "dependency_type": "direct"})
+        ).await);
+        
+        // Performance test: large module
+        results.push(self.execute_test_case(
+            "find_dependencies",
+            "large_module_performance",
+            TestCategory::Performance,
+            json!({"target": "main_application", "dependency_type": "all", "max_depth": 10})
+        ).await);
+        
+        results
     }
 
     async fn test_repository_stats_comprehensive(&mut self) -> Vec<McpToolTestResult> {
-        vec![self.execute_test_case("repository_stats", "basic", TestCategory::ParameterValidation,
-            json!({})).await]
+        let mut results = Vec::new();
+        
+        // Basic repository statistics
+        results.push(self.execute_test_case(
+            "repository_stats",
+            "basic_repository_analysis",
+            TestCategory::ParameterValidation,
+            json!({})
+        ).await);
+        
+        // Detailed statistics with complexity
+        results.push(self.execute_test_case(
+            "repository_stats",
+            "detailed_with_complexity",
+            TestCategory::ParameterValidation,
+            json!({"include_complexity": true, "include_dependencies": true})
+        ).await);
+        
+        // File type filtering
+        results.push(self.execute_test_case(
+            "repository_stats",
+            "filtered_file_types", 
+            TestCategory::ParameterValidation,
+            json!({"file_patterns": ["*.py", "*.rs"], "exclude_patterns": ["*test*", "*__pycache__*"]})
+        ).await);
+        
+        // Performance test: comprehensive analysis
+        results.push(self.execute_test_case(
+            "repository_stats",
+            "comprehensive_performance",
+            TestCategory::Performance,
+            json!({"include_complexity": true, "include_dependencies": true, "include_test_coverage": true})
+        ).await);
+        
+        results
     }
 
     async fn test_find_files_comprehensive(&mut self) -> Vec<McpToolTestResult> {
-        vec![self.execute_test_case("find_files", "placeholder", TestCategory::ParameterValidation,
-            json!({"pattern": "*.rs"})).await]
+        let mut results = Vec::new();
+        
+        // Valid file pattern tests
+        results.push(self.execute_test_case(
+            "find_files",
+            "rust_files_pattern",
+            TestCategory::ParameterValidation,
+            json!({"pattern": "*.rs", "max_results": 100})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "find_files",
+            "python_files_pattern",
+            TestCategory::ParameterValidation,
+            json!({"pattern": "*.py", "include_hidden": false})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "find_files",
+            "javascript_files_pattern",
+            TestCategory::ParameterValidation,
+            json!({"pattern": "*.js", "exclude_patterns": ["node_modules/*", "dist/*"]})
+        ).await);
+        
+        // Multiple pattern tests
+        results.push(self.execute_test_case(
+            "find_files",
+            "multiple_patterns",
+            TestCategory::ParameterValidation,
+            json!({"pattern": "*.{rs,py,js}", "case_sensitive": false})
+        ).await);
+        
+        // Directory filtering tests
+        results.push(self.execute_test_case(
+            "find_files",
+            "directory_filtering",
+            TestCategory::ParameterValidation,
+            json!({"pattern": "*", "include_dirs": ["src/", "tests/"], "exclude_dirs": ["target/", "__pycache__/"]})
+        ).await);
+        
+        // Size and modification filtering
+        results.push(self.execute_test_case(
+            "find_files",
+            "size_filtering",
+            TestCategory::ParameterValidation,
+            json!({"pattern": "*.rs", "min_size_bytes": 1000, "max_size_bytes": 50000})
+        ).await);
+        
+        // Error condition tests
+        results.push(self.execute_test_case(
+            "find_files",
+            "empty_pattern_error",
+            TestCategory::ErrorHandling,
+            json!({"pattern": ""})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "find_files",
+            "invalid_regex_pattern",
+            TestCategory::ErrorHandling,
+            json!({"pattern": "[unclosed_bracket", "use_regex": true})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "find_files",
+            "negative_max_results",
+            TestCategory::ErrorHandling,
+            json!({"pattern": "*.txt", "max_results": -1})
+        ).await);
+        
+        // Performance test
+        results.push(self.execute_test_case(
+            "find_files",
+            "large_directory_performance",
+            TestCategory::Performance,
+            json!({"pattern": "*", "max_results": 1000})
+        ).await);
+        
+        results
     }
 
     async fn test_content_stats_comprehensive(&mut self) -> Vec<McpToolTestResult> {
-        vec![self.execute_test_case("content_stats", "basic", TestCategory::ParameterValidation,
-            json!({})).await]
+        let mut results = Vec::new();
+        
+        // Basic repository statistics
+        results.push(self.execute_test_case(
+            "content_stats",
+            "basic_repository_stats",
+            TestCategory::ParameterValidation,
+            json!({})
+        ).await);
+        
+        // Detailed statistics with language breakdown
+        results.push(self.execute_test_case(
+            "content_stats",
+            "detailed_language_stats",
+            TestCategory::ParameterValidation,
+            json!({"include_language_breakdown": true, "include_file_size_distribution": true})
+        ).await);
+        
+        // File type filtering
+        results.push(self.execute_test_case(
+            "content_stats",
+            "filtered_file_types",
+            TestCategory::ParameterValidation,
+            json!({"file_patterns": ["*.rs", "*.py", "*.js"], "exclude_patterns": ["*.test.*", "*.spec.*"]})
+        ).await);
+        
+        // Directory-specific statistics
+        results.push(self.execute_test_case(
+            "content_stats",
+            "directory_specific_stats",
+            TestCategory::ParameterValidation,
+            json!({"target_directories": ["src/", "tests/"], "exclude_directories": ["target/", "node_modules/"]})
+        ).await);
+        
+        // Code quality metrics
+        results.push(self.execute_test_case(
+            "content_stats",
+            "code_quality_metrics",
+            TestCategory::ParameterValidation,
+            json!({"include_complexity_metrics": true, "include_comment_ratio": true, "include_test_coverage_estimate": true})
+        ).await);
+        
+        // Historical analysis
+        results.push(self.execute_test_case(
+            "content_stats",
+            "historical_analysis",
+            TestCategory::ParameterValidation,
+            json!({"include_git_history": true, "analyze_commit_patterns": true, "max_commits": 100})
+        ).await);
+        
+        // Error condition tests
+        results.push(self.execute_test_case(
+            "content_stats",
+            "invalid_directory_error",
+            TestCategory::ErrorHandling,
+            json!({"target_directories": ["/nonexistent/path"]})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "content_stats",
+            "invalid_file_pattern",
+            TestCategory::ErrorHandling,
+            json!({"file_patterns": ["[invalid_regex"]})
+        ).await);
+        
+        // Performance test
+        results.push(self.execute_test_case(
+            "content_stats",
+            "comprehensive_analysis_performance",
+            TestCategory::Performance,
+            json!({"include_language_breakdown": true, "include_complexity_metrics": true, "include_git_history": true})
+        ).await);
+        
+        results
     }
 
     async fn test_analyze_complexity_comprehensive(&mut self) -> Vec<McpToolTestResult> {
-        vec![self.execute_test_case("analyze_complexity", "placeholder", TestCategory::ParameterValidation,
-            json!({"target": "test_file.rs"})).await]
+        let mut results = Vec::new();
+        
+        // Basic complexity analysis
+        results.push(self.execute_test_case(
+            "analyze_complexity",
+            "basic_complexity_analysis",
+            TestCategory::ParameterValidation,
+            json!({"target": "src/", "complexity_type": "cyclomatic", "threshold": 10})
+        ).await);
+        
+        // Different complexity metrics
+        results.push(self.execute_test_case(
+            "analyze_complexity",
+            "cyclomatic_complexity",
+            TestCategory::ParameterValidation,
+            json!({"target": "src/lib.rs", "complexity_type": "cyclomatic", "include_function_details": true})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "analyze_complexity",
+            "cognitive_complexity",
+            TestCategory::ParameterValidation,
+            json!({"target": "src/", "complexity_type": "cognitive", "threshold": 15, "include_suggestions": true})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "analyze_complexity",
+            "halstead_complexity",
+            TestCategory::ParameterValidation,
+            json!({"target": "src/", "complexity_type": "halstead", "include_metrics": ["volume", "difficulty", "effort"]})
+        ).await);
+        
+        // File-specific analysis
+        results.push(self.execute_test_case(
+            "analyze_complexity",
+            "single_file_analysis",
+            TestCategory::ParameterValidation,
+            json!({"target": "src/main.rs", "complexity_type": "all", "include_line_numbers": true})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "analyze_complexity",
+            "directory_analysis",
+            TestCategory::ParameterValidation,
+            json!({"target": "src/", "complexity_type": "cyclomatic", "recursive": true, "file_patterns": ["*.rs", "*.py"]})
+        ).await);
+        
+        // Threshold-based filtering
+        results.push(self.execute_test_case(
+            "analyze_complexity",
+            "high_complexity_functions",
+            TestCategory::ParameterValidation,
+            json!({"target": "src/", "complexity_type": "cyclomatic", "threshold": 20, "only_above_threshold": true})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "analyze_complexity",
+            "complexity_distribution",
+            TestCategory::ParameterValidation,
+            json!({"target": "src/", "complexity_type": "cyclomatic", "include_distribution": true, "bucket_ranges": [1, 5, 10, 20, 50]})
+        ).await);
+        
+        // Language-specific analysis
+        results.push(self.execute_test_case(
+            "analyze_complexity",
+            "rust_complexity_analysis",
+            TestCategory::ParameterValidation,
+            json!({"target": "src/", "language": "rust", "complexity_type": "cyclomatic", "rust_specific_patterns": ["match_arms", "trait_complexity", "generic_complexity"]})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "analyze_complexity",
+            "python_complexity_analysis",
+            TestCategory::ParameterValidation,
+            json!({"target": "test-projects/python-sample/", "language": "python", "complexity_type": "cyclomatic", "python_specific_patterns": ["comprehensions", "decorators", "nested_functions"]})
+        ).await);
+        
+        // Output format options
+        results.push(self.execute_test_case(
+            "analyze_complexity",
+            "detailed_report_format",
+            TestCategory::ParameterValidation,
+            json!({"target": "src/", "complexity_type": "all", "output_format": "detailed", "include_code_snippets": true, "max_snippet_lines": 10})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "analyze_complexity",
+            "summary_report_format",
+            TestCategory::ParameterValidation,
+            json!({"target": "src/", "complexity_type": "cyclomatic", "output_format": "summary", "sort_by": "complexity_desc"})
+        ).await);
+        
+        // Error condition tests
+        results.push(self.execute_test_case(
+            "analyze_complexity",
+            "nonexistent_target",
+            TestCategory::ErrorHandling,
+            json!({"target": "/nonexistent/path", "complexity_type": "cyclomatic"})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "analyze_complexity",
+            "invalid_complexity_type",
+            TestCategory::ErrorHandling,
+            json!({"target": "src/", "complexity_type": "invalid_type"})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "analyze_complexity",
+            "negative_threshold",
+            TestCategory::ErrorHandling,
+            json!({"target": "src/", "complexity_type": "cyclomatic", "threshold": -1})
+        ).await);
+        
+        // Performance test
+        results.push(self.execute_test_case(
+            "analyze_complexity",
+            "large_codebase_performance",
+            TestCategory::Performance,
+            json!({"target": "src/", "complexity_type": "all", "recursive": true, "include_distribution": true})
+        ).await);
+        
+        results
     }
 
     async fn test_analyze_security_comprehensive(&mut self) -> Vec<McpToolTestResult> {
-        vec![self.execute_test_case("analyze_security", "placeholder", TestCategory::ParameterValidation,
-            json!({})).await]
+        let mut results = Vec::new();
+        
+        // Basic security analysis
+        results.push(self.execute_test_case(
+            "analyze_security",
+            "basic_security_scan",
+            TestCategory::ParameterValidation,
+            json!({"analysis_type": "comprehensive", "severity_threshold": "medium"})
+        ).await);
+        
+        // OWASP Top 10 analysis
+        results.push(self.execute_test_case(
+            "analyze_security",
+            "owasp_top10_analysis",
+            TestCategory::ParameterValidation,
+            json!({"analysis_type": "owasp_top10", "include_cwe_mapping": true, "max_findings": 50})
+        ).await);
+        
+        // Language-specific security patterns
+        results.push(self.execute_test_case(
+            "analyze_security",
+            "rust_security_analysis",
+            TestCategory::ParameterValidation,
+            json!({"analysis_type": "language_specific", "language": "rust", "check_patterns": ["unsafe_code", "buffer_overflow", "integer_overflow", "memory_safety"]})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "analyze_security",
+            "python_security_analysis",
+            TestCategory::ParameterValidation,
+            json!({"analysis_type": "language_specific", "language": "python", "check_patterns": ["sql_injection", "command_injection", "pickle_usage", "eval_usage", "weak_crypto"]})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "analyze_security",
+            "javascript_security_analysis",
+            TestCategory::ParameterValidation,
+            json!({"analysis_type": "language_specific", "language": "javascript", "check_patterns": ["xss", "prototype_pollution", "insecure_randomness", "hardcoded_secrets"]})
+        ).await);
+        
+        // Severity-based filtering
+        results.push(self.execute_test_case(
+            "analyze_security",
+            "high_severity_only",
+            TestCategory::ParameterValidation,
+            json!({"analysis_type": "comprehensive", "severity_threshold": "high", "include_remediation": true})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "analyze_security",
+            "critical_vulnerabilities",
+            TestCategory::ParameterValidation,
+            json!({"analysis_type": "comprehensive", "severity_threshold": "critical", "include_context": true, "context_lines": 5})
+        ).await);
+        
+        // File filtering and scope
+        results.push(self.execute_test_case(
+            "analyze_security",
+            "filtered_security_scan",
+            TestCategory::ParameterValidation,
+            json!({"analysis_type": "comprehensive", "file_patterns": ["*.py", "*.js", "*.rs"], "exclude_patterns": ["*test*", "*mock*", "*fixture*"]})
+        ).await);
+        
+        // Configuration and dependency analysis
+        results.push(self.execute_test_case(
+            "analyze_security",
+            "config_security_analysis",
+            TestCategory::ParameterValidation,
+            json!({"analysis_type": "configuration", "check_patterns": ["hardcoded_secrets", "insecure_defaults", "exposed_endpoints", "weak_permissions"]})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "analyze_security",
+            "dependency_vulnerability_scan",
+            TestCategory::ParameterValidation,
+            json!({"analysis_type": "dependencies", "check_known_vulnerabilities": true, "include_cve_details": true})
+        ).await);
+        
+        // Error condition tests
+        results.push(self.execute_test_case(
+            "analyze_security",
+            "invalid_severity_threshold",
+            TestCategory::ErrorHandling,
+            json!({"analysis_type": "comprehensive", "severity_threshold": "invalid_level"})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "analyze_security",
+            "unsupported_language",
+            TestCategory::ErrorHandling,
+            json!({"analysis_type": "language_specific", "language": "unsupported_lang"})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "analyze_security",
+            "invalid_analysis_type",
+            TestCategory::ErrorHandling,
+            json!({"analysis_type": "invalid_type"})
+        ).await);
+        
+        // Performance test
+        results.push(self.execute_test_case(
+            "analyze_security",
+            "comprehensive_security_performance",
+            TestCategory::Performance,
+            json!({"analysis_type": "comprehensive", "severity_threshold": "low", "include_cwe_mapping": true, "include_remediation": true})
+        ).await);
+        
+        results
     }
 
     async fn test_analyze_performance_comprehensive(&mut self) -> Vec<McpToolTestResult> {
-        vec![self.execute_test_case("analyze_performance", "placeholder", TestCategory::ParameterValidation,
-            json!({})).await]
+        let mut results = Vec::new();
+        
+        // Basic performance analysis
+        results.push(self.execute_test_case(
+            "analyze_performance",
+            "basic_performance_analysis",
+            TestCategory::ParameterValidation,
+            json!({"analysis_type": "comprehensive", "performance_threshold": "medium"})
+        ).await);
+        
+        // Algorithm complexity analysis
+        results.push(self.execute_test_case(
+            "analyze_performance",
+            "algorithm_complexity_analysis",
+            TestCategory::ParameterValidation,
+            json!({"analysis_type": "algorithmic", "detect_patterns": ["nested_loops", "recursive_calls", "inefficient_sorts", "n_squared_algorithms"]})
+        ).await);
+        
+        // Memory usage analysis
+        results.push(self.execute_test_case(
+            "analyze_performance",
+            "memory_usage_analysis",
+            TestCategory::ParameterValidation,
+            json!({"analysis_type": "memory", "check_patterns": ["memory_leaks", "excessive_allocations", "large_objects", "unnecessary_copies"]})
+        ).await);
+        
+        // Language-specific performance patterns
+        results.push(self.execute_test_case(
+            "analyze_performance",
+            "rust_performance_analysis",
+            TestCategory::ParameterValidation,
+            json!({"analysis_type": "language_specific", "language": "rust", "check_patterns": ["unnecessary_clones", "string_allocations", "iterator_inefficiency", "async_overhead"]})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "analyze_performance",
+            "python_performance_analysis",
+            TestCategory::ParameterValidation,
+            json!({"analysis_type": "language_specific", "language": "python", "check_patterns": ["list_comprehension_opportunities", "generator_opportunities", "dictionary_lookups", "string_concatenation"]})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "analyze_performance",
+            "javascript_performance_analysis",
+            TestCategory::ParameterValidation,
+            json!({"analysis_type": "language_specific", "language": "javascript", "check_patterns": ["dom_manipulation", "closure_overhead", "prototype_chain", "async_performance"]})
+        ).await);
+        
+        // I/O and database performance
+        results.push(self.execute_test_case(
+            "analyze_performance",
+            "io_performance_analysis",
+            TestCategory::ParameterValidation,
+            json!({"analysis_type": "io_operations", "check_patterns": ["blocking_io", "file_operations", "network_calls", "synchronous_operations"]})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "analyze_performance",
+            "database_performance_analysis",
+            TestCategory::ParameterValidation,
+            json!({"analysis_type": "database", "check_patterns": ["n_plus_one_queries", "missing_indexes", "inefficient_joins", "large_result_sets"]})
+        ).await);
+        
+        // Code hotspot detection
+        results.push(self.execute_test_case(
+            "analyze_performance",
+            "hotspot_detection",
+            TestCategory::ParameterValidation,
+            json!({"analysis_type": "hotspots", "include_call_graphs": true, "min_complexity_score": 5, "include_optimization_suggestions": true})
+        ).await);
+        
+        // Concurrency and parallelism analysis
+        results.push(self.execute_test_case(
+            "analyze_performance",
+            "concurrency_analysis",
+            TestCategory::ParameterValidation,
+            json!({"analysis_type": "concurrency", "check_patterns": ["race_conditions", "deadlocks", "lock_contention", "parallel_opportunities"]})
+        ).await);
+        
+        // File filtering and scope
+        results.push(self.execute_test_case(
+            "analyze_performance",
+            "filtered_performance_scan",
+            TestCategory::ParameterValidation,
+            json!({"analysis_type": "comprehensive", "file_patterns": ["*.rs", "*.py", "*.js"], "exclude_patterns": ["*test*", "*benchmark*"]})
+        ).await);
+        
+        // Error condition tests
+        results.push(self.execute_test_case(
+            "analyze_performance",
+            "invalid_analysis_type",
+            TestCategory::ErrorHandling,
+            json!({"analysis_type": "invalid_type"})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "analyze_performance",
+            "invalid_threshold",
+            TestCategory::ErrorHandling,
+            json!({"analysis_type": "comprehensive", "performance_threshold": "invalid_level"})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "analyze_performance",
+            "unsupported_language",
+            TestCategory::ErrorHandling,
+            json!({"analysis_type": "language_specific", "language": "unsupported_lang"})
+        ).await);
+        
+        // Performance test (meta-performance testing)
+        results.push(self.execute_test_case(
+            "analyze_performance",
+            "comprehensive_performance_analysis_performance",
+            TestCategory::Performance,
+            json!({"analysis_type": "comprehensive", "performance_threshold": "low", "include_optimization_suggestions": true})
+        ).await);
+        
+        results
     }
 
     async fn test_detect_patterns_comprehensive(&mut self) -> Vec<McpToolTestResult> {
-        vec![self.execute_test_case("detect_patterns", "placeholder", TestCategory::ParameterValidation,
-            json!({})).await]
+        let mut results = Vec::new();
+        
+        // Basic pattern detection
+        results.push(self.execute_test_case(
+            "detect_patterns",
+            "basic_pattern_detection",
+            TestCategory::ParameterValidation,
+            json!({"analysis_type": "all", "confidence_threshold": 0.7})
+        ).await);
+        
+        // Specific pattern categories
+        results.push(self.execute_test_case(
+            "detect_patterns",
+            "design_patterns",
+            TestCategory::ParameterValidation,
+            json!({"analysis_type": "design_patterns", "patterns": ["singleton", "factory", "observer", "strategy"]})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "detect_patterns",
+            "anti_patterns",
+            TestCategory::ParameterValidation,
+            json!({"analysis_type": "anti_patterns", "patterns": ["god_object", "long_method", "feature_envy", "data_clumps"]})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "detect_patterns",
+            "architectural_patterns",
+            TestCategory::ParameterValidation,
+            json!({"analysis_type": "architectural", "patterns": ["mvc", "mvp", "repository", "dependency_injection"]})
+        ).await);
+        
+        // Language-specific patterns
+        results.push(self.execute_test_case(
+            "detect_patterns",
+            "rust_patterns",
+            TestCategory::ParameterValidation,
+            json!({"analysis_type": "language_specific", "language": "rust", "patterns": ["ownership", "borrowing", "error_handling", "async_patterns"]})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "detect_patterns",
+            "python_patterns",
+            TestCategory::ParameterValidation,
+            json!({"analysis_type": "language_specific", "language": "python", "patterns": ["decorators", "context_managers", "generators", "metaclasses"]})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "detect_patterns",
+            "javascript_patterns",
+            TestCategory::ParameterValidation,
+            json!({"analysis_type": "language_specific", "language": "javascript", "patterns": ["closures", "promises", "prototypes", "modules"]})
+        ).await);
+        
+        // File filtering and scope
+        results.push(self.execute_test_case(
+            "detect_patterns",
+            "filtered_analysis",
+            TestCategory::ParameterValidation,
+            json!({"analysis_type": "all", "file_patterns": ["*.rs", "*.py"], "exclude_patterns": ["*test*", "*mock*"]})
+        ).await);
+        
+        // Confidence and reporting options
+        results.push(self.execute_test_case(
+            "detect_patterns",
+            "high_confidence_patterns",
+            TestCategory::ParameterValidation,
+            json!({"analysis_type": "all", "confidence_threshold": 0.9, "include_code_examples": true, "max_examples_per_pattern": 5})
+        ).await);
+        
+        // Error condition tests
+        results.push(self.execute_test_case(
+            "detect_patterns",
+            "invalid_analysis_type",
+            TestCategory::ErrorHandling,
+            json!({"analysis_type": "invalid_type"})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "detect_patterns",
+            "invalid_confidence_threshold",
+            TestCategory::ErrorHandling,
+            json!({"analysis_type": "all", "confidence_threshold": 1.5})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "detect_patterns",
+            "unsupported_language",
+            TestCategory::ErrorHandling,
+            json!({"analysis_type": "language_specific", "language": "unsupported_lang"})
+        ).await);
+        
+        // Performance test
+        results.push(self.execute_test_case(
+            "detect_patterns",
+            "comprehensive_pattern_analysis",
+            TestCategory::Performance,
+            json!({"analysis_type": "all", "confidence_threshold": 0.5, "include_code_examples": true})
+        ).await);
+        
+        results
     }
 
     async fn test_trace_data_flow_comprehensive(&mut self) -> Vec<McpToolTestResult> {
@@ -582,8 +1315,284 @@ impl ComprehensiveMcpTests {
     }
 
     async fn test_find_duplicates_comprehensive(&mut self) -> Vec<McpToolTestResult> {
-        vec![self.execute_test_case("find_duplicates", "placeholder", TestCategory::ParameterValidation,
-            json!({})).await]
+        let mut results = Vec::new();
+        
+        // Basic duplicate detection
+        results.push(self.execute_test_case(
+            "find_duplicates",
+            "basic_duplicate_detection",
+            TestCategory::ParameterValidation,
+            json!({"similarity_threshold": 0.8, "min_lines": 5})
+        ).await);
+        
+        // Different similarity algorithms
+        results.push(self.execute_test_case(
+            "find_duplicates",
+            "token_based_similarity",
+            TestCategory::ParameterValidation,
+            json!({"algorithm": "token_based", "similarity_threshold": 0.9, "ignore_whitespace": true, "ignore_comments": true})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "find_duplicates",
+            "ast_based_similarity",
+            TestCategory::ParameterValidation,
+            json!({"algorithm": "ast_based", "similarity_threshold": 0.85, "ignore_variable_names": true, "ignore_literals": false})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "find_duplicates",
+            "semantic_similarity",
+            TestCategory::ParameterValidation,
+            json!({"algorithm": "semantic", "similarity_threshold": 0.75, "context_aware": true})
+        ).await);
+        
+        // Size-based filtering
+        results.push(self.execute_test_case(
+            "find_duplicates",
+            "large_duplicates_only",
+            TestCategory::ParameterValidation,
+            json!({"min_lines": 20, "min_tokens": 100, "similarity_threshold": 0.7})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "find_duplicates",
+            "small_duplicates_detection",
+            TestCategory::ParameterValidation,
+            json!({"min_lines": 3, "min_tokens": 10, "similarity_threshold": 0.95})
+        ).await);
+        
+        // File and language filtering
+        results.push(self.execute_test_case(
+            "find_duplicates",
+            "rust_files_only",
+            TestCategory::ParameterValidation,
+            json!({"file_patterns": ["*.rs"], "exclude_patterns": ["*test*", "*example*"], "similarity_threshold": 0.8})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "find_duplicates",
+            "cross_language_duplicates",
+            TestCategory::ParameterValidation,
+            json!({"file_patterns": ["*.rs", "*.py", "*.js"], "cross_language": true, "algorithm": "semantic", "similarity_threshold": 0.7})
+        ).await);
+        
+        // Function and class level duplicates
+        results.push(self.execute_test_case(
+            "find_duplicates",
+            "function_level_duplicates",
+            TestCategory::ParameterValidation,
+            json!({"scope": "functions", "similarity_threshold": 0.85, "include_function_signatures": false})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "find_duplicates",
+            "class_level_duplicates",
+            TestCategory::ParameterValidation,
+            json!({"scope": "classes", "similarity_threshold": 0.8, "include_inheritance": true})
+        ).await);
+        
+        // Reporting and output options
+        results.push(self.execute_test_case(
+            "find_duplicates",
+            "detailed_duplicate_report",
+            TestCategory::ParameterValidation,
+            json!({"similarity_threshold": 0.8, "include_code_snippets": true, "max_snippet_lines": 15, "include_suggestions": true})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "find_duplicates",
+            "duplicate_statistics",
+            TestCategory::ParameterValidation,
+            json!({"similarity_threshold": 0.7, "include_statistics": true, "group_by_similarity": true})
+        ).await);
+        
+        // Performance and scalability options
+        results.push(self.execute_test_case(
+            "find_duplicates",
+            "fast_duplicate_scan",
+            TestCategory::ParameterValidation,
+            json!({"algorithm": "hash_based", "similarity_threshold": 1.0, "exact_matches_only": true})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "find_duplicates",
+            "incremental_duplicate_scan",
+            TestCategory::ParameterValidation,
+            json!({"incremental": true, "similarity_threshold": 0.8, "cache_results": true})
+        ).await);
+        
+        // Error condition tests
+        results.push(self.execute_test_case(
+            "find_duplicates",
+            "invalid_similarity_threshold",
+            TestCategory::ErrorHandling,
+            json!({"similarity_threshold": 1.5})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "find_duplicates",
+            "negative_min_lines",
+            TestCategory::ErrorHandling,
+            json!({"similarity_threshold": 0.8, "min_lines": -5})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "find_duplicates",
+            "invalid_algorithm",
+            TestCategory::ErrorHandling,
+            json!({"algorithm": "invalid_algorithm", "similarity_threshold": 0.8})
+        ).await);
+        
+        // Performance test
+        results.push(self.execute_test_case(
+            "find_duplicates",
+            "large_codebase_performance",
+            TestCategory::Performance,
+            json!({"similarity_threshold": 0.8, "algorithm": "token_based", "parallel_processing": true})
+        ).await);
+        
+        results
+    }
+
+    async fn test_find_unused_code_comprehensive(&mut self) -> Vec<McpToolTestResult> {
+        let mut results = Vec::new();
+        
+        // Basic unused code detection
+        results.push(self.execute_test_case(
+            "find_unused_code",
+            "basic_unused_code_detection",
+            TestCategory::ParameterValidation,
+            json!({"analysis_type": "all", "confidence_threshold": 0.8})
+        ).await);
+        
+        // Specific unused code categories
+        results.push(self.execute_test_case(
+            "find_unused_code",
+            "unused_imports_detection",
+            TestCategory::ParameterValidation,
+            json!({"analysis_type": "imports", "check_transitive": true, "ignore_test_files": false})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "find_unused_code",
+            "unused_functions_detection",
+            TestCategory::ParameterValidation,
+            json!({"analysis_type": "functions", "include_private": true, "exclude_main_functions": true})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "find_unused_code",
+            "unused_variables_detection",
+            TestCategory::ParameterValidation,
+            json!({"analysis_type": "variables", "include_parameters": true, "ignore_underscore_prefix": true})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "find_unused_code",
+            "unused_classes_detection",
+            TestCategory::ParameterValidation,
+            json!({"analysis_type": "classes", "include_abstract": false, "check_inheritance": true})
+        ).await);
+        
+        // Language-specific unused code detection
+        results.push(self.execute_test_case(
+            "find_unused_code",
+            "rust_unused_code_detection",
+            TestCategory::ParameterValidation,
+            json!({"language": "rust", "analysis_type": "all", "rust_specific": ["unused_lifetimes", "unused_generics", "dead_code_attribute"]})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "find_unused_code",
+            "python_unused_code_detection",
+            TestCategory::ParameterValidation,
+            json!({"language": "python", "analysis_type": "all", "python_specific": ["unused_decorators", "unused_comprehensions", "unreachable_code"]})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "find_unused_code",
+            "javascript_unused_code_detection",
+            TestCategory::ParameterValidation,
+            json!({"language": "javascript", "analysis_type": "all", "javascript_specific": ["unused_closures", "unused_promises", "unreachable_code"]})
+        ).await);
+        
+        // File and scope filtering
+        results.push(self.execute_test_case(
+            "find_unused_code",
+            "filtered_unused_code_scan",
+            TestCategory::ParameterValidation,
+            json!({"analysis_type": "all", "file_patterns": ["*.rs", "*.py"], "exclude_patterns": ["*test*", "*example*", "*demo*"]})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "find_unused_code",
+            "directory_scoped_analysis",
+            TestCategory::ParameterValidation,
+            json!({"analysis_type": "all", "target_directories": ["src/", "lib/"], "exclude_directories": ["tests/", "examples/"]})
+        ).await);
+        
+        // Advanced analysis options
+        results.push(self.execute_test_case(
+            "find_unused_code",
+            "cross_module_analysis",
+            TestCategory::ParameterValidation,
+            json!({"analysis_type": "all", "cross_module": true, "include_dynamic_usage": true, "confidence_threshold": 0.9})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "find_unused_code",
+            "conditional_usage_analysis",
+            TestCategory::ParameterValidation,
+            json!({"analysis_type": "all", "analyze_conditionals": true, "feature_flags": ["debug", "test"], "cfg_analysis": true})
+        ).await);
+        
+        // Reporting and suggestions
+        results.push(self.execute_test_case(
+            "find_unused_code",
+            "detailed_unused_code_report",
+            TestCategory::ParameterValidation,
+            json!({"analysis_type": "all", "include_suggestions": true, "include_code_context": true, "context_lines": 3})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "find_unused_code",
+            "unused_code_statistics",
+            TestCategory::ParameterValidation,
+            json!({"analysis_type": "all", "include_statistics": true, "group_by_type": true, "calculate_saved_lines": true})
+        ).await);
+        
+        // Error condition tests
+        results.push(self.execute_test_case(
+            "find_unused_code",
+            "invalid_analysis_type",
+            TestCategory::ErrorHandling,
+            json!({"analysis_type": "invalid_type"})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "find_unused_code",
+            "invalid_confidence_threshold",
+            TestCategory::ErrorHandling,
+            json!({"analysis_type": "all", "confidence_threshold": 1.5})
+        ).await);
+        
+        results.push(self.execute_test_case(
+            "find_unused_code",
+            "unsupported_language",
+            TestCategory::ErrorHandling,
+            json!({"language": "unsupported_lang", "analysis_type": "all"})
+        ).await);
+        
+        // Performance test
+        results.push(self.execute_test_case(
+            "find_unused_code",
+            "large_codebase_performance",
+            TestCategory::Performance,
+            json!({"analysis_type": "all", "cross_module": true, "parallel_analysis": true})
+        ).await);
+        
+        results
     }
 
     async fn test_trace_inheritance_comprehensive(&mut self) -> Vec<McpToolTestResult> {
@@ -627,8 +1636,57 @@ impl ComprehensiveMcpTests {
     }
 
     async fn test_search_symbols_comprehensive(&mut self) -> Vec<McpToolTestResult> {
-        vec![self.execute_test_case("search_symbols", "placeholder", TestCategory::ParameterValidation,
-            json!({"pattern": "test.*"})).await]
+        let mut results = Vec::new();
+        
+        // Valid pattern search test
+        results.push(self.execute_test_case(
+            "search_symbols",
+            "valid_pattern_search",
+            TestCategory::ParameterValidation,
+            json!({"pattern": ".*Service.*", "symbol_types": ["class", "interface"], "limit": 50})
+        ).await);
+        
+        // Regex pattern search
+        results.push(self.execute_test_case(
+            "search_symbols",
+            "regex_pattern_search",
+            TestCategory::ParameterValidation, 
+            json!({"pattern": "test.*[Ff]unction", "symbol_types": ["function", "method"], "case_sensitive": false})
+        ).await);
+        
+        // Search with file filtering
+        results.push(self.execute_test_case(
+            "search_symbols",
+            "filtered_file_search",
+            TestCategory::ParameterValidation,
+            json!({"pattern": "User.*", "file_patterns": ["*.py"], "exclude_test_files": true})
+        ).await);
+        
+        // Error condition: empty pattern
+        results.push(self.execute_test_case(
+            "search_symbols",
+            "empty_pattern_error",
+            TestCategory::ErrorHandling,
+            json!({"pattern": "", "limit": 10})
+        ).await);
+        
+        // Error condition: invalid regex
+        results.push(self.execute_test_case(
+            "search_symbols",
+            "invalid_regex_error", 
+            TestCategory::ErrorHandling,
+            json!({"pattern": "[unclosed_bracket", "symbol_types": ["function"]})
+        ).await);
+        
+        // Performance test: complex pattern
+        results.push(self.execute_test_case(
+            "search_symbols",
+            "complex_pattern_performance",
+            TestCategory::Performance,
+            json!({"pattern": ".*[Tt]est.*[Cc]ase.*", "limit": 1000})
+        ).await);
+        
+        results
     }
 
     // Additional test phases (stubs for now due to space constraints)

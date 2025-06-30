@@ -287,7 +287,7 @@ impl ErrorPatternAnalyzer {
         failures: &[super::FailureDetail],
     ) -> Vec<super::FailurePattern> {
         let mut pattern_analysis = HashMap::new();
-        let mut tool_mapping: HashMap<String, Vec<String>> = HashMap::new();
+        let _tool_mapping: HashMap<String, Vec<String>> = HashMap::new();
 
         // Advanced pattern detection
         for failure in failures {

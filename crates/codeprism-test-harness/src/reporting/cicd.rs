@@ -188,6 +188,7 @@ impl ExitCodeManager {
 }
 
 /// Generate artifacts for CI/CD systems
+#[allow(dead_code)]
 pub struct ArtifactGenerator;
 
 impl ArtifactGenerator {
@@ -196,6 +197,7 @@ impl ArtifactGenerator {
     }
 
     /// Generate test artifacts for CI/CD
+    #[allow(dead_code)]
     pub async fn generate_artifacts(
         &self,
         report: &Report,
@@ -242,6 +244,7 @@ impl ArtifactGenerator {
 
 /// Information about generated artifacts
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct ArtifactInfo {
     pub name: String,
     pub path: std::path::PathBuf,
@@ -250,6 +253,7 @@ pub struct ArtifactInfo {
 
 /// Types of artifacts that can be generated
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub enum ArtifactType {
     Report,
     Data,
@@ -287,7 +291,7 @@ mod tests {
 
     #[test]
     fn test_exit_code_success() {
-        let manager = ExitCodeManager::new();
+        let _manager = ExitCodeManager::new();
         // Would need to create a mock report with no failures
         // assert_eq!(manager.determine_exit_code(&mock_report), 0);
     }

@@ -11,6 +11,9 @@ alwaysApply: true
 
 ## Work Organization and Planning
 
+**Rule: Create temporary files in the cursor_workspace folder**
+Why: Creaitng files under /tmp requires user aproaval and breaks the flow, so create them in a folder in workspace that is not commited to git.
+
 **Rule: Organize work as milestones, phases, and priorities - never add timelines, schedules, or estimates.**
 Why: Agile development focuses on value delivery over time predictions. Estimates are often inaccurate and create false expectations. Priorities and milestones provide clear direction without artificial time constraints.
 

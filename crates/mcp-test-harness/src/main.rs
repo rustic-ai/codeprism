@@ -7,13 +7,19 @@
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use mcp_test_harness_lib::{
-    init, version, ReportFormat, SpecLoader, TestHarness, TestReport, TransportType,
+    init,
+    protocol::{ClientInfo, JsonRpcRequest, McpClient},
+    version, ReportFormat, SpecLoader, TestHarness, TestReport, TransportType,
 };
+use serde_json::json;
 use std::path::PathBuf;
 use tracing::{error, info, warn};
 
-// Use the specific ServerSpec type from schema module
-use mcp_test_harness_lib::spec::schema::ServerSpec;
+// Use the specific types from schema module
+use mcp_test_harness_lib::spec::schema::{
+    ExpectedOutput, PromptSpec, ResourceSpec, RetryConfig, ServerCapabilities, ServerConfig,
+    ServerSpec, TestCase, TestConfig, ToolSpec,
+};
 
 /// Generic MCP Server Test Harness
 #[derive(Parser)]
@@ -252,10 +258,336 @@ async fn run_spec_test(
 async fn discover_server(server_cmd: String, args: Vec<String>) -> Result<()> {
     info!("Discovering server capabilities: {} {:?}", server_cmd, args);
 
-    // FUTURE: Implement server discovery by connecting to server and querying capabilities
-    //         Will include JSON-RPC initialization, capability enumeration, and report generation
-    //         Essential for generating initial server specifications automatically
-    info!("Discovery functionality will query server capabilities and generate spec template");
+    // Create a minimal spec for discovery
+    let _discovery_spec = ServerSpec::minimal_protocol_spec(server_cmd.clone(), args.clone());
+
+    // Create MCP client for discovery
+    let mut client = McpClient::new();
+
+    // Connect to the server
+    info!("Connecting to server for discovery...");
+    client
+        .connect_stdio(server_cmd.clone(), args.clone(), None)
+        .await
+        .context("Failed to connect to server for discovery")?;
+
+    // Initialize MCP session to get server capabilities
+    info!("Initializing MCP session...");
+    let client_info = ClientInfo {
+        name: "MCP Test Harness Discovery".to_string(),
+        version: "1.0.0".to_string(),
+    };
+
+    let init_result = client
+        .initialize(client_info)
+        .await
+        .context("Failed to initialize MCP session")?;
+
+    info!("Server initialized successfully!");
+    info!("Protocol version: {}", init_result.protocol_version);
+    info!(
+        "Server info: {} v{}",
+        init_result.server_info.name, init_result.server_info.version
+    );
+
+    // Discover tools if supported
+    let mut discovered_tools = Vec::new();
+    if init_result.capabilities.tools.is_some() {
+        info!("Discovering available tools...");
+        match client
+            .send_request(JsonRpcRequest {
+                jsonrpc: "2.0".to_string(),
+                id: Some(json!(1)),
+                method: "tools/list".to_string(),
+                params: Some(json!({})),
+            })
+            .await
+        {
+            Ok(response) => {
+                if let Some(result) = response.result {
+                    if let Some(tools) = result.get("tools") {
+                        if let Some(tools_array) = tools.as_array() {
+                            for tool in tools_array {
+                                if let Some(name) = tool.get("name").and_then(|n| n.as_str()) {
+                                    let description = tool
+                                        .get("description")
+                                        .and_then(|d| d.as_str())
+                                        .unwrap_or("No description");
+
+                                    discovered_tools.push(ToolSpec {
+                                        name: name.to_string(),
+                                        description: Some(description.to_string()),
+                                        input_schema: None,
+                                        output_schema: None,
+                                        tests: vec![TestCase {
+                                            name: format!("{}_basic_test", name),
+                                            description: Some(format!(
+                                                "Basic test for {} tool",
+                                                name
+                                            )),
+                                            input: json!({}),
+                                            expected: ExpectedOutput {
+                                                error: false,
+                                                error_code: None,
+                                                error_message_contains: None,
+                                                schema_file: None,
+                                                schema: None,
+                                                fields: vec![],
+                                                allow_extra_fields: true,
+                                            },
+                                            performance: None,
+                                            skip: false,
+                                            tags: vec![
+                                                "basic".to_string(),
+                                                "auto-generated".to_string(),
+                                            ],
+                                        }],
+                                    });
+                                    info!("  - Tool: {} ({})", name, description);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            Err(e) => warn!("Failed to list tools: {}", e),
+        }
+    }
+
+    // Discover resources if supported
+    let mut discovered_resources = Vec::new();
+    if init_result.capabilities.resources.is_some() {
+        info!("Discovering available resources...");
+        match client
+            .send_request(JsonRpcRequest {
+                jsonrpc: "2.0".to_string(),
+                id: Some(json!(2)),
+                method: "resources/list".to_string(),
+                params: Some(json!({})),
+            })
+            .await
+        {
+            Ok(response) => {
+                if let Some(result) = response.result {
+                    if let Some(resources) = result.get("resources") {
+                        if let Some(resources_array) = resources.as_array() {
+                            for resource in resources_array {
+                                if let Some(uri) = resource.get("uri").and_then(|u| u.as_str()) {
+                                    let name = resource
+                                        .get("name")
+                                        .and_then(|n| n.as_str())
+                                        .unwrap_or("Unknown Resource");
+                                    let mime_type =
+                                        resource.get("mimeType").and_then(|m| m.as_str());
+
+                                    discovered_resources.push(ResourceSpec {
+                                        uri_template: uri.to_string(),
+                                        name: name.to_string(),
+                                        mime_type: mime_type.map(|s| s.to_string()),
+                                        tests: vec![TestCase {
+                                            name: format!(
+                                                "{}_basic_test",
+                                                name.replace(' ', "_").to_lowercase()
+                                            ),
+                                            description: Some(format!(
+                                                "Basic test for {} resource",
+                                                name
+                                            )),
+                                            input: json!({"uri": uri}),
+                                            expected: ExpectedOutput {
+                                                error: false,
+                                                error_code: None,
+                                                error_message_contains: None,
+                                                schema_file: None,
+                                                schema: None,
+                                                fields: vec![],
+                                                allow_extra_fields: true,
+                                            },
+                                            performance: None,
+                                            skip: false,
+                                            tags: vec![
+                                                "basic".to_string(),
+                                                "auto-generated".to_string(),
+                                            ],
+                                        }],
+                                    });
+                                    info!("  - Resource: {} ({})", name, uri);
+                                    if let Some(mime) = mime_type {
+                                        info!("    MIME type: {}", mime);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            Err(e) => warn!("Failed to list resources: {}", e),
+        }
+    }
+
+    // Discover prompts if supported
+    let mut discovered_prompts = Vec::new();
+    if init_result.capabilities.prompts.is_some() {
+        info!("Discovering available prompts...");
+        match client
+            .send_request(JsonRpcRequest {
+                jsonrpc: "2.0".to_string(),
+                id: Some(json!(3)),
+                method: "prompts/list".to_string(),
+                params: Some(json!({})),
+            })
+            .await
+        {
+            Ok(response) => {
+                if let Some(result) = response.result {
+                    if let Some(prompts) = result.get("prompts") {
+                        if let Some(prompts_array) = prompts.as_array() {
+                            for prompt in prompts_array {
+                                if let Some(name) = prompt.get("name").and_then(|n| n.as_str()) {
+                                    let description = prompt
+                                        .get("description")
+                                        .and_then(|d| d.as_str())
+                                        .unwrap_or("No description");
+
+                                    discovered_prompts.push(PromptSpec {
+                                        name: name.to_string(),
+                                        description: Some(description.to_string()),
+                                        arguments: vec![], // FUTURE: Parse arguments from prompt definition (tracked in #124)
+                                        tests: vec![TestCase {
+                                            name: format!("{}_basic_test", name),
+                                            description: Some(format!(
+                                                "Basic test for {} prompt",
+                                                name
+                                            )),
+                                            input: json!({"name": name}),
+                                            expected: ExpectedOutput {
+                                                error: false,
+                                                error_code: None,
+                                                error_message_contains: None,
+                                                schema_file: None,
+                                                schema: None,
+                                                fields: vec![],
+                                                allow_extra_fields: true,
+                                            },
+                                            performance: None,
+                                            skip: false,
+                                            tags: vec![
+                                                "basic".to_string(),
+                                                "auto-generated".to_string(),
+                                            ],
+                                        }],
+                                    });
+                                    info!("  - Prompt: {} ({})", name, description);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            Err(e) => warn!("Failed to list prompts: {}", e),
+        }
+    }
+
+    // Disconnect from server
+    client
+        .disconnect()
+        .await
+        .context("Failed to disconnect from server")?;
+
+    // Generate complete server specification
+    let discovered_spec = ServerSpec {
+        name: init_result.server_info.name,
+        version: init_result.server_info.version,
+        description: Some("Auto-discovered server specification".to_string()),
+        capabilities: ServerCapabilities {
+            tools: !discovered_tools.is_empty(),
+            resources: !discovered_resources.is_empty(),
+            prompts: !discovered_prompts.is_empty(),
+            sampling: init_result.capabilities.resources.is_some(), // Basic detection
+            logging: false, // Cannot auto-detect this easily
+            experimental: None,
+        },
+        server: ServerConfig {
+            command: server_cmd,
+            args,
+            env: std::collections::HashMap::new(),
+            working_dir: None,
+            transport: "stdio".to_string(),
+            startup_timeout_seconds: 30,
+            shutdown_timeout_seconds: 10,
+        },
+        tools: if discovered_tools.is_empty() {
+            None
+        } else {
+            Some(discovered_tools)
+        },
+        resources: if discovered_resources.is_empty() {
+            None
+        } else {
+            Some(discovered_resources)
+        },
+        prompts: if discovered_prompts.is_empty() {
+            None
+        } else {
+            Some(discovered_prompts)
+        },
+        test_config: Some(TestConfig {
+            timeout_seconds: 30,
+            max_concurrency: 4,
+            fail_fast: false,
+            retry: Some(RetryConfig {
+                max_retries: 2,
+                retry_delay_ms: 1000,
+                exponential_backoff: true,
+            }),
+        }),
+        metadata: Some({
+            let mut metadata = std::collections::HashMap::new();
+            metadata.insert(
+                "discovered_at".to_string(),
+                json!(chrono::Utc::now().to_rfc3339()),
+            );
+            metadata.insert(
+                "protocol_version".to_string(),
+                json!(init_result.protocol_version),
+            );
+            metadata.insert("discovery_tool".to_string(), json!("mcp-test-harness"));
+            metadata
+        }),
+    };
+
+    // Generate YAML output
+    let output_file = "discovered-server.yaml";
+    let yaml_content = serde_yaml::to_string(&discovered_spec)
+        .context("Failed to serialize discovered spec to YAML")?;
+
+    tokio::fs::write(output_file, yaml_content)
+        .await
+        .context("Failed to write discovered spec to file")?;
+
+    info!("✅ Server discovery completed!");
+    info!("Generated specification: {}", output_file);
+    info!("Summary:");
+    info!(
+        "  - Tools: {}",
+        discovered_spec.tools.as_ref().map(|t| t.len()).unwrap_or(0)
+    );
+    info!(
+        "  - Resources: {}",
+        discovered_spec
+            .resources
+            .as_ref()
+            .map(|r| r.len())
+            .unwrap_or(0)
+    );
+    info!(
+        "  - Prompts: {}",
+        discovered_spec
+            .prompts
+            .as_ref()
+            .map(|p| p.len())
+            .unwrap_or(0)
+    );
 
     Ok(())
 }
@@ -326,10 +658,467 @@ async fn generate_examples(output_dir: PathBuf) -> Result<()> {
         output_dir.display()
     );
 
-    // FUTURE: Generate example specs for common server types (CodePrism, custom tools, etc.)
-    //         Will include templates for different MCP server architectures
-    //         Helps users get started quickly with their own specifications
-    info!("Example generation will create template specifications for common use cases");
+    // Create output directory
+    tokio::fs::create_dir_all(&output_dir)
+        .await
+        .context("Failed to create output directory")?;
+
+    // Generate different types of example specifications
+
+    // 1. Simple Tool Server Example
+    let simple_tool_spec = ServerSpec {
+        name: "Simple Tool Server".to_string(),
+        version: "1.0.0".to_string(),
+        description: Some("Example server with basic tools".to_string()),
+        capabilities: ServerCapabilities {
+            tools: true,
+            resources: false,
+            prompts: false,
+            sampling: false,
+            logging: false,
+            experimental: None,
+        },
+        server: ServerConfig {
+            command: "node".to_string(),
+            args: vec!["server.js".to_string()],
+            env: std::collections::HashMap::new(),
+            working_dir: None,
+            transport: "stdio".to_string(),
+            startup_timeout_seconds: 30,
+            shutdown_timeout_seconds: 10,
+        },
+        tools: Some(vec![ToolSpec {
+            name: "echo".to_string(),
+            description: Some("Echo the input message back".to_string()),
+            input_schema: None,
+            output_schema: None,
+            tests: vec![TestCase {
+                name: "echo_basic_test".to_string(),
+                description: Some("Test basic echo functionality".to_string()),
+                input: json!({"message": "Hello, World!"}),
+                expected: ExpectedOutput {
+                    error: false,
+                    error_code: None,
+                    error_message_contains: None,
+                    schema_file: None,
+                    schema: None,
+                    fields: vec![],
+                    allow_extra_fields: true,
+                },
+                performance: None,
+                skip: false,
+                tags: vec!["basic".to_string(), "example".to_string()],
+            }],
+        }]),
+        resources: None,
+        prompts: None,
+        test_config: Some(TestConfig {
+            timeout_seconds: 30,
+            max_concurrency: 4,
+            fail_fast: false,
+            retry: Some(RetryConfig {
+                max_retries: 2,
+                retry_delay_ms: 1000,
+                exponential_backoff: true,
+            }),
+        }),
+        metadata: None,
+    };
+
+    // 2. Database Server Example
+    let database_spec = ServerSpec {
+        name: "Database MCP Server".to_string(),
+        version: "1.2.0".to_string(),
+        description: Some("MCP server for database operations".to_string()),
+        capabilities: ServerCapabilities {
+            tools: true,
+            resources: true,
+            prompts: false,
+            sampling: false,
+            logging: true,
+            experimental: None,
+        },
+        server: ServerConfig {
+            command: "python".to_string(),
+            args: vec!["-m".to_string(), "database_mcp_server".to_string()],
+            env: {
+                let mut env = std::collections::HashMap::new();
+                env.insert("DATABASE_URL".to_string(), "sqlite:///app.db".to_string());
+                env
+            },
+            working_dir: Some("./database-server".to_string()),
+            transport: "stdio".to_string(),
+            startup_timeout_seconds: 45,
+            shutdown_timeout_seconds: 15,
+        },
+        tools: Some(vec![
+            ToolSpec {
+                name: "execute_query".to_string(),
+                description: Some("Execute SQL query on the database".to_string()),
+                input_schema: None,
+                output_schema: None,
+                tests: vec![TestCase {
+                    name: "select_query_test".to_string(),
+                    description: Some("Test SELECT query execution".to_string()),
+                    input: json!({"query": "SELECT COUNT(*) FROM users"}),
+                    expected: ExpectedOutput {
+                        error: false,
+                        error_code: None,
+                        error_message_contains: None,
+                        schema_file: None,
+                        schema: None,
+                        fields: vec![],
+                        allow_extra_fields: true,
+                    },
+                    performance: None,
+                    skip: false,
+                    tags: vec!["database".to_string(), "sql".to_string()],
+                }],
+            },
+            ToolSpec {
+                name: "get_schema".to_string(),
+                description: Some("Get database schema information".to_string()),
+                input_schema: None,
+                output_schema: None,
+                tests: vec![TestCase {
+                    name: "schema_info_test".to_string(),
+                    description: Some("Test schema information retrieval".to_string()),
+                    input: json!({}),
+                    expected: ExpectedOutput {
+                        error: false,
+                        error_code: None,
+                        error_message_contains: None,
+                        schema_file: None,
+                        schema: None,
+                        fields: vec![],
+                        allow_extra_fields: true,
+                    },
+                    performance: None,
+                    skip: false,
+                    tags: vec!["database".to_string(), "schema".to_string()],
+                }],
+            },
+        ]),
+        resources: Some(vec![ResourceSpec {
+            uri_template: "database://tables/{table_name}".to_string(),
+            name: "Database Table".to_string(),
+            mime_type: Some("application/json".to_string()),
+            tests: vec![TestCase {
+                name: "table_resource_test".to_string(),
+                description: Some("Test table resource access".to_string()),
+                input: json!({"uri": "database://tables/users"}),
+                expected: ExpectedOutput {
+                    error: false,
+                    error_code: None,
+                    error_message_contains: None,
+                    schema_file: None,
+                    schema: None,
+                    fields: vec![],
+                    allow_extra_fields: true,
+                },
+                performance: None,
+                skip: false,
+                tags: vec!["database".to_string(), "resource".to_string()],
+            }],
+        }]),
+        prompts: None,
+        test_config: Some(TestConfig {
+            timeout_seconds: 60,
+            max_concurrency: 2,
+            fail_fast: false,
+            retry: Some(RetryConfig {
+                max_retries: 3,
+                retry_delay_ms: 2000,
+                exponential_backoff: true,
+            }),
+        }),
+        metadata: Some({
+            let mut metadata = std::collections::HashMap::new();
+            metadata.insert(
+                "security_features".to_string(),
+                json!(["parameterized_queries", "connection_pooling"]),
+            );
+            metadata.insert(
+                "supported_databases".to_string(),
+                json!(["sqlite", "postgresql", "mysql"]),
+            );
+            metadata
+        }),
+    };
+
+    // 3. File System Server Example
+    let filesystem_spec = ServerSpec {
+        name: "File System MCP Server".to_string(),
+        version: "2.0.0".to_string(),
+        description: Some("MCP server for file system operations".to_string()),
+        capabilities: ServerCapabilities {
+            tools: true,
+            resources: true,
+            prompts: false,
+            sampling: false,
+            logging: true,
+            experimental: None,
+        },
+        server: ServerConfig {
+            command: "npx".to_string(),
+            args: vec![
+                "@modelcontextprotocol/server-filesystem".to_string(),
+                "/allowed/path".to_string(),
+            ],
+            env: std::collections::HashMap::new(),
+            working_dir: None,
+            transport: "stdio".to_string(),
+            startup_timeout_seconds: 30,
+            shutdown_timeout_seconds: 10,
+        },
+        tools: Some(vec![ToolSpec {
+            name: "read_file".to_string(),
+            description: Some("Read contents of a file".to_string()),
+            input_schema: None,
+            output_schema: None,
+            tests: vec![TestCase {
+                name: "read_text_file".to_string(),
+                description: Some("Test reading a text file".to_string()),
+                input: json!({"path": "/allowed/path/test.txt"}),
+                expected: ExpectedOutput {
+                    error: false,
+                    error_code: None,
+                    error_message_contains: None,
+                    schema_file: None,
+                    schema: None,
+                    fields: vec![],
+                    allow_extra_fields: true,
+                },
+                performance: None,
+                skip: false,
+                tags: vec!["filesystem".to_string(), "read".to_string()],
+            }],
+        }]),
+        resources: Some(vec![ResourceSpec {
+            uri_template: "file://{path}".to_string(),
+            name: "File Resource".to_string(),
+            mime_type: Some("text/plain".to_string()),
+            tests: vec![TestCase {
+                name: "file_resource_access".to_string(),
+                description: Some("Test file resource access".to_string()),
+                input: json!({"uri": "file:///allowed/path/example.txt"}),
+                expected: ExpectedOutput {
+                    error: false,
+                    error_code: None,
+                    error_message_contains: None,
+                    schema_file: None,
+                    schema: None,
+                    fields: vec![],
+                    allow_extra_fields: true,
+                },
+                performance: None,
+                skip: false,
+                tags: vec!["filesystem".to_string(), "resource".to_string()],
+            }],
+        }]),
+        prompts: None,
+        test_config: Some(TestConfig {
+            timeout_seconds: 30,
+            max_concurrency: 4,
+            fail_fast: false,
+            retry: Some(RetryConfig {
+                max_retries: 2,
+                retry_delay_ms: 1000,
+                exponential_backoff: true,
+            }),
+        }),
+        metadata: Some({
+            let mut metadata = std::collections::HashMap::new();
+            metadata.insert(
+                "security_features".to_string(),
+                json!(["path_restriction", "file_type_validation"]),
+            );
+            metadata.insert(
+                "supported_operations".to_string(),
+                json!(["read", "write", "list", "search"]),
+            );
+            metadata
+        }),
+    };
+
+    // 4. API Wrapper Server Example
+    let api_wrapper_spec = ServerSpec {
+        name: "API Wrapper Server".to_string(),
+        version: "1.5.0".to_string(),
+        description: Some("MCP server that wraps external APIs".to_string()),
+        capabilities: ServerCapabilities {
+            tools: true,
+            resources: false,
+            prompts: true,
+            sampling: false,
+            logging: true,
+            experimental: None,
+        },
+        server: ServerConfig {
+            command: "python".to_string(),
+            args: vec!["-m".to_string(), "api_wrapper_server".to_string()],
+            env: {
+                let mut env = std::collections::HashMap::new();
+                env.insert("API_KEY".to_string(), "${API_KEY}".to_string());
+                env.insert(
+                    "API_BASE_URL".to_string(),
+                    "https://api.example.com".to_string(),
+                );
+                env
+            },
+            working_dir: None,
+            transport: "stdio".to_string(),
+            startup_timeout_seconds: 30,
+            shutdown_timeout_seconds: 10,
+        },
+        tools: Some(vec![ToolSpec {
+            name: "get_weather".to_string(),
+            description: Some("Get weather information for a location".to_string()),
+            input_schema: None,
+            output_schema: None,
+            tests: vec![TestCase {
+                name: "weather_query_test".to_string(),
+                description: Some("Test weather information retrieval".to_string()),
+                input: json!({"location": "San Francisco, CA"}),
+                expected: ExpectedOutput {
+                    error: false,
+                    error_code: None,
+                    error_message_contains: None,
+                    schema_file: None,
+                    schema: None,
+                    fields: vec![],
+                    allow_extra_fields: true,
+                },
+                performance: None,
+                skip: false,
+                tags: vec!["api".to_string(), "weather".to_string()],
+            }],
+        }]),
+        resources: None,
+        prompts: Some(vec![PromptSpec {
+            name: "weather_report".to_string(),
+            description: Some("Generate a weather report for a location".to_string()),
+            arguments: vec![],
+            tests: vec![TestCase {
+                name: "weather_report_test".to_string(),
+                description: Some("Test weather report generation".to_string()),
+                input: json!({"name": "weather_report", "arguments": {"location": "New York"}}),
+                expected: ExpectedOutput {
+                    error: false,
+                    error_code: None,
+                    error_message_contains: None,
+                    schema_file: None,
+                    schema: None,
+                    fields: vec![],
+                    allow_extra_fields: true,
+                },
+                performance: None,
+                skip: false,
+                tags: vec!["api".to_string(), "prompt".to_string()],
+            }],
+        }]),
+        test_config: Some(TestConfig {
+            timeout_seconds: 45,
+            max_concurrency: 3,
+            fail_fast: false,
+            retry: Some(RetryConfig {
+                max_retries: 3,
+                retry_delay_ms: 1500,
+                exponential_backoff: true,
+            }),
+        }),
+        metadata: Some({
+            let mut metadata = std::collections::HashMap::new();
+            metadata.insert("api_version".to_string(), json!("v2"));
+            metadata.insert(
+                "rate_limits".to_string(),
+                json!({"requests_per_minute": 100}),
+            );
+            metadata
+        }),
+    };
+
+    // Write example specifications to files
+    let examples = vec![
+        ("simple-server.yaml", &simple_tool_spec),
+        ("database-server.yaml", &database_spec),
+        ("filesystem-server.yaml", &filesystem_spec),
+        ("api-wrapper-server.yaml", &api_wrapper_spec),
+    ];
+
+    let examples_count = examples.len();
+    for (filename, spec) in examples {
+        let file_path = output_dir.join(filename);
+        let yaml_content = serde_yaml::to_string(spec)
+            .with_context(|| format!("Failed to serialize {} to YAML", filename))?;
+
+        tokio::fs::write(&file_path, yaml_content)
+            .await
+            .with_context(|| format!("Failed to write {}", file_path.display()))?;
+
+        info!("✅ Generated: {}", file_path.display());
+    }
+
+    // Generate README file
+    let readme_content = r#"# MCP Server Test Specifications
+
+This directory contains example MCP server test specifications that demonstrate
+different types of MCP server implementations and testing approaches.
+
+## Example Files
+
+### simple-server.yaml
+Basic example showing a simple MCP server with tool capabilities.
+- **Use case**: Getting started with MCP testing
+- **Features**: Basic tool testing, simple configuration
+
+### database-server.yaml  
+Example for database-backed MCP servers.
+- **Use case**: Testing database integration servers
+- **Features**: SQL tools, database resources, environment configuration
+
+### filesystem-server.yaml
+Example for file system operation servers.
+- **Use case**: Testing file access and manipulation servers
+- **Features**: File tools, file resources, security constraints
+
+### api-wrapper-server.yaml
+Example for servers that wrap external APIs.
+- **Use case**: Testing API integration servers
+- **Features**: API tools, prompts, environment variables
+
+## Usage
+
+1. Copy an example that matches your server type
+2. Modify the `server` section with your actual command and arguments
+3. Update tool names and test cases to match your server's capabilities
+4. Run tests with: `mcp-test-harness test <spec-file>`
+
+## Customization
+
+- **Tools**: Add/modify tools in the `tools` section
+- **Resources**: Define resources your server provides
+- **Prompts**: Add prompt templates if supported
+- **Test Cases**: Create comprehensive test scenarios
+- **Performance**: Set performance requirements and thresholds
+
+For more information, see the MCP Test Harness documentation.
+"#;
+
+    let readme_path = output_dir.join("README.md");
+    tokio::fs::write(&readme_path, readme_content)
+        .await
+        .with_context(|| format!("Failed to write {}", readme_path.display()))?;
+
+    info!("✅ Generated: {}", readme_path.display());
+
+    info!("🎉 Example generation completed!");
+    info!(
+        "Generated {} example specifications in {}",
+        examples_count,
+        output_dir.display()
+    );
+    info!("Use these examples as starting points for your own MCP server tests.");
 
     Ok(())
 }

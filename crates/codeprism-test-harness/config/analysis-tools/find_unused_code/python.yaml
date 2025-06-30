@@ -1,0 +1,171 @@
+# Find Unused Code Tool - Python Test Configuration
+# Tests the find_unused_code MCP tool for detecting unused imports, functions, and variables
+
+global:
+  max_global_concurrency: 2
+  timeout_seconds: 30
+  fail_fast: false
+  default_project_path: "test-projects/python-sample"
+
+# Performance monitoring for unused code detection
+performance:
+  enable_monitoring: true
+  baseline_storage_path: "baselines/analysis-tools/"
+  regression_detection:
+    warning_threshold_percent: 25.0
+    error_threshold_percent: 60.0
+
+test_suites:
+  - name: "Find Unused Code - Python Core Functionality"
+    description: "Test detection of unused imports, functions, and variables"
+    test_cases:
+      # Unused imports detection
+      - id: "python_unused_imports"
+        tool_name: "find_unused_code"
+        description: "Detect unused imports in Python files"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          analysis_type: "imports"
+          include_standard_library: true
+          include_third_party: true
+          include_local: true
+          aggressive_analysis: false
+        expected:
+          patterns:
+            - key: "result.unused_imports"
+              validation:
+                type: "array"
+              required: true
+            - key: "result.import_categories"
+              validation:
+                type: "exists"
+              required: false
+          performance_requirements:
+            max_execution_time_ms: 2000
+            max_memory_usage_mb: 32
+
+      # Unused functions detection
+      - id: "python_unused_functions"
+        tool_name: "find_unused_code"
+        description: "Detect unused functions and methods"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          analysis_type: "functions"
+          include_private: true
+          include_methods: true
+          exclude_test_files: false
+          cross_file_analysis: true
+        expected:
+          patterns:
+            - key: "result.unused_functions"
+              validation:
+                type: "array"
+              required: true
+            - key: "result.function_usage_map"
+              validation:
+                type: "exists"
+              required: false
+
+      # Unused variables detection
+      - id: "python_unused_variables"
+        tool_name: "find_unused_code"
+        description: "Detect unused variables and constants"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          analysis_type: "variables"
+          include_constants: true
+          include_global_vars: true
+          ignore_underscore_prefix: true
+          scope_analysis: "function"
+        expected:
+          patterns:
+            - key: "result.unused_variables"
+              validation:
+                type: "array"
+              required: true
+
+      # Comprehensive unused code analysis
+      - id: "python_unused_comprehensive"
+        tool_name: "find_unused_code"
+        description: "Comprehensive unused code analysis"
+        enabled: true
+        project_path: "test-projects/dependency-test-project"
+        input_params:
+          analysis_type: "comprehensive"
+          generate_cleanup_suggestions: true
+          safety_analysis: true
+          confidence_threshold: 0.8
+        expected:
+          patterns:
+            - key: "result.unused_code_summary"
+              validation:
+                type: "exists"
+              required: true
+            - key: "result.cleanup_suggestions"
+              validation:
+                type: "array"
+              required: false
+            - key: "result.safety_warnings"
+              validation:
+                type: "array"
+              required: false
+
+  - name: "Find Unused Code - Python Edge Cases"
+    description: "Test edge cases and complex scenarios"
+    test_cases:
+      # Dynamic imports handling
+      - id: "python_unused_dynamic_imports"
+        tool_name: "find_unused_code"
+        description: "Handle dynamic imports and runtime usage"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          analysis_type: "imports"
+          handle_dynamic_imports: true
+          include_runtime_analysis: true
+        expected:
+          patterns:
+            - key: "result.dynamic_usage_detected"
+              validation:
+                type: "exists"
+              required: false
+
+      # False positive prevention
+      - id: "python_unused_false_positives"
+        tool_name: "find_unused_code"
+        description: "Prevent false positives in unused code detection"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          analysis_type: "comprehensive"
+          conservative_analysis: true
+          exclude_magic_methods: true
+          exclude_interface_methods: true
+        expected:
+          patterns:
+            - key: "result.conservative_results"
+              validation:
+                type: "exists"
+              required: false
+
+# Performance baselines
+baselines:
+  python_unused_imports:
+    average_execution_time_ms: 1000.0
+    peak_memory_mb: 24.0
+    throughput_ops_per_sec: 1.0
+  python_unused_functions:
+    average_execution_time_ms: 1500.0
+    peak_memory_mb: 32.0
+    throughput_ops_per_sec: 0.67
+  python_unused_variables:
+    average_execution_time_ms: 800.0
+    peak_memory_mb: 20.0
+    throughput_ops_per_sec: 1.25
+  python_unused_comprehensive:
+    average_execution_time_ms: 3000.0
+    peak_memory_mb: 48.0
+    throughput_ops_per_sec: 0.33

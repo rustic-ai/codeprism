@@ -1,0 +1,109 @@
+# Complexity Analysis Tool - Python Test Configuration
+# Tests the analyze_complexity MCP tool for calculating cyclomatic complexity
+
+global:
+  max_global_concurrency: 2
+  timeout_seconds: 30
+  fail_fast: false
+  default_project_path: "test-projects/python-sample"
+
+# Performance monitoring for complexity analysis
+performance:
+  enable_monitoring: true
+  baseline_storage_path: "baselines/analysis-tools/"
+  regression_detection:
+    warning_threshold_percent: 25.0
+    error_threshold_percent: 60.0
+
+test_suites:
+  - name: "Complexity Analysis - Python Core Functionality"
+    description: "Test cyclomatic complexity calculation and analysis"
+    test_cases:
+      # Basic complexity analysis
+      - id: "python_complexity_basic"
+        tool_name: "analyze_complexity"
+        description: "Basic complexity analysis for Python functions"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          analysis_scope: "functions"
+          complexity_threshold: 10
+          include_cognitive_complexity: true
+          include_recommendations: true
+        expected:
+          patterns:
+            - key: "result.complexity_scores"
+              validation:
+                type: "array"
+              required: true
+            - key: "result.high_complexity_functions"
+              validation:
+                type: "array"
+              required: false
+            - key: "result.average_complexity"
+              validation:
+                type: "range"
+                min: 1.0
+                max: 50.0
+              required: true
+          performance_requirements:
+            max_execution_time_ms: 3000
+            max_memory_usage_mb: 48
+
+      # Class complexity analysis
+      - id: "python_complexity_classes"
+        tool_name: "analyze_complexity"
+        description: "Analyze complexity at class level"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          analysis_scope: "classes"
+          include_method_complexity: true
+          include_inheritance_complexity: true
+        expected:
+          patterns:
+            - key: "result.class_complexity"
+              validation:
+                type: "array"
+              required: true
+            - key: "result.method_complexity"
+              validation:
+                type: "exists"
+              required: false
+
+      # Project-wide complexity analysis
+      - id: "python_complexity_project"
+        tool_name: "analyze_complexity"
+        description: "Project-wide complexity analysis and trends"
+        enabled: true
+        project_path: "test-projects/dependency-test-project"
+        input_params:
+          analysis_scope: "project"
+          generate_report: true
+          include_trends: true
+          complexity_distribution: true
+        expected:
+          patterns:
+            - key: "result.project_complexity"
+              validation:
+                type: "exists"
+              required: true
+            - key: "result.complexity_distribution"
+              validation:
+                type: "exists"
+              required: false
+
+# Performance baselines
+baselines:
+  python_complexity_basic:
+    average_execution_time_ms: 1500.0
+    peak_memory_mb: 32.0
+    throughput_ops_per_sec: 0.67
+  python_complexity_classes:
+    average_execution_time_ms: 2000.0
+    peak_memory_mb: 40.0
+    throughput_ops_per_sec: 0.5
+  python_complexity_project:
+    average_execution_time_ms: 4000.0
+    peak_memory_mb: 64.0
+    throughput_ops_per_sec: 0.25

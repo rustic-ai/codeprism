@@ -1,0 +1,236 @@
+# Find Files Tool - Python Test Configuration
+# Tests the find_files MCP tool for finding files by name patterns and filters
+
+global:
+  max_global_concurrency: 2
+  timeout_seconds: 20
+  fail_fast: false
+  default_project_path: "test-projects/python-sample"
+
+# Performance monitoring for file finding
+performance:
+  enable_monitoring: true
+  baseline_storage_path: "baselines/search-tools/"
+  regression_detection:
+    warning_threshold_percent: 20.0
+    error_threshold_percent: 50.0
+
+test_suites:
+  - name: "Find Files - Python Core Functionality"
+    description: "Test file finding with various patterns and filters"
+    test_cases:
+      # Basic file pattern search
+      - id: "python_find_files_basic"
+        tool_name: "find_files"
+        description: "Basic file finding by extension patterns"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          patterns: ["*.py", "*.md"]
+          include_hidden: false
+          recursive: true
+          max_depth: 10
+        expected:
+          patterns:
+            - key: "result.files"
+              validation:
+                type: "array_min_length"
+                min_length: 1
+              required: true
+            - key: "result.total_files"
+              validation:
+                type: "range"
+                min: 1
+                max: 100
+              required: true
+            - key: "result.pattern_matches"
+              validation:
+                type: "exists"
+              required: false
+          performance_requirements:
+            max_execution_time_ms: 2000
+            max_memory_usage_mb: 32
+
+      # Name-based file search
+      - id: "python_find_files_by_name"
+        tool_name: "find_files"
+        description: "Find files by specific name patterns"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          name_patterns: ["*test*", "*config*", "*setup*"]
+          case_sensitive: false
+          include_directories: false
+          match_whole_name: false
+        expected:
+          patterns:
+            - key: "result.files"
+              validation:
+                type: "array"
+              required: true
+            - key: "result.name_matches"
+              validation:
+                type: "exists"
+              required: false
+
+      # Size-based file filtering
+      - id: "python_find_files_by_size"
+        tool_name: "find_files"
+        description: "Find files with size constraints"
+        enabled: true
+        project_path: "test-projects/dependency-test-project"
+        input_params:
+          patterns: ["*.*"]
+          min_size_bytes: 100
+          max_size_bytes: 50000
+          include_size_info: true
+        expected:
+          patterns:
+            - key: "result.files"
+              validation:
+                type: "array"
+              required: true
+            - key: "result.size_statistics"
+              validation:
+                type: "exists"
+              required: false
+
+      # Date-based file filtering
+      - id: "python_find_files_by_date"
+        tool_name: "find_files"
+        description: "Find files by modification date"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          patterns: ["*.py"]
+          modified_within_days: 365
+          include_date_info: true
+          sort_by: "modified_date"
+        expected:
+          patterns:
+            - key: "result.files"
+              validation:
+                type: "array"
+              required: true
+            - key: "result.date_range"
+              validation:
+                type: "exists"
+              required: false
+
+      # Complex multi-criteria search
+      - id: "python_find_files_complex"
+        tool_name: "find_files"
+        description: "Complex file search with multiple criteria"
+        enabled: true
+        project_path: "test-projects/dependency-test-project"
+        input_params:
+          patterns: ["*.py", "*.js", "*.json"]
+          exclude_patterns: ["*test*", "*__pycache__*", "*node_modules*"]
+          min_size_bytes: 50
+          max_depth: 5
+          include_metadata: true
+          group_by_extension: true
+        expected:
+          patterns:
+            - key: "result.files"
+              validation:
+                type: "array"
+              required: true
+            - key: "result.grouped_results"
+              validation:
+                type: "exists"
+              required: false
+            - key: "result.excluded_count"
+              validation:
+                type: "exists"
+              required: false
+
+  - name: "Find Files - Python Edge Cases"
+    description: "Test edge cases and error handling"
+    test_cases:
+      # No matches scenario
+      - id: "python_find_files_no_matches"
+        tool_name: "find_files"
+        description: "Handle searches with no matching files"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          patterns: ["*.nonexistent"]
+          recursive: true
+        expected:
+          patterns:
+            - key: "result.files"
+              validation:
+                type: "array"
+              required: true
+            - key: "result.total_files"
+              validation:
+                type: "equals"
+                value: 0
+              required: true
+
+      # Invalid pattern handling
+      - id: "python_find_files_invalid_pattern"
+        tool_name: "find_files"
+        description: "Handle invalid glob patterns"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          patterns: ["[invalid-pattern"]
+          recursive: true
+        expected:
+          patterns:
+            - key: "error"
+              validation:
+                type: "exists"
+              required: false
+          allow_failure: true
+
+      # Large directory handling
+      - id: "python_find_files_large_directory"
+        tool_name: "find_files"
+        description: "Handle large directory structures efficiently"
+        enabled: true
+        project_path: "test-projects"
+        input_params:
+          patterns: ["*"]
+          max_results: 100
+          recursive: true
+          max_depth: 3
+        expected:
+          patterns:
+            - key: "result.files"
+              validation:
+                type: "array_max_length"
+                max_length: 100
+              required: true
+            - key: "result.truncated"
+              validation:
+                type: "exists"
+              required: false
+          performance_requirements:
+            max_execution_time_ms: 3000
+            max_memory_usage_mb: 48
+
+# Performance baselines
+baselines:
+  python_find_files_basic:
+    average_execution_time_ms: 500.0
+    peak_memory_mb: 16.0
+    throughput_ops_per_sec: 2.0
+  python_find_files_by_name:
+    average_execution_time_ms: 400.0
+    peak_memory_mb: 12.0
+    throughput_ops_per_sec: 2.5
+  python_find_files_by_size:
+    average_execution_time_ms: 800.0
+    peak_memory_mb: 24.0
+    throughput_ops_per_sec: 1.25
+  python_find_files_by_date:
+    average_execution_time_ms: 600.0
+    peak_memory_mb: 20.0
+    throughput_ops_per_sec: 1.67
+  python_find_files_complex:
+    average_execution_time_ms: 1200.0
+    peak_memory_mb: 32.0
+    throughput_ops_per_sec: 0.83

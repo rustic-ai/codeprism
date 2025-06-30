@@ -1,0 +1,74 @@
+# Search Content Tool - Python Test Configuration
+# Tests the search_content MCP tool for searching across documentation, comments, and configurations
+
+global:
+  max_global_concurrency: 2
+  timeout_seconds: 30
+  fail_fast: false
+  default_project_path: "test-projects/python-sample"
+
+# Performance monitoring for content search
+performance:
+  enable_monitoring: true
+  baseline_storage_path: "baselines/search-tools/"
+  regression_detection:
+    warning_threshold_percent: 25.0
+    error_threshold_percent: 60.0
+
+test_suites:
+  - name: "Search Content - Python Core Functionality"
+    description: "Test content search across different file types and contexts"
+    test_cases:
+      # Basic text search
+      - id: "python_search_basic_text"
+        tool_name: "search_content"
+        description: "Basic text search across Python project files"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          query: "user"
+          case_sensitive: false
+          include_code: true
+          include_comments: true
+          include_docs: true
+          file_patterns: ["*.py", "*.md", "*.txt"]
+        expected:
+          patterns:
+            - key: "result.matches"
+              validation:
+                type: "array_min_length"
+                min_length: 1
+              required: true
+            - key: "result.total_matches"
+              validation:
+                type: "range"
+                min: 1
+                max: 100
+              required: true
+          performance_requirements:
+            max_execution_time_ms: 3000
+            max_memory_usage_mb: 64
+
+      # Documentation search
+      - id: "python_search_documentation"
+        tool_name: "search_content"
+        description: "Search in documentation files"
+        enabled: true
+        project_path: "test-projects/python-sample"
+        input_params:
+          query: "API"
+          include_docs: true
+          file_patterns: ["*.md", "*.rst", "*.txt"]
+        expected:
+          patterns:
+            - key: "result.matches"
+              validation:
+                type: "array"
+              required: true
+
+# Performance baselines
+baselines:
+  python_search_basic_text:
+    average_execution_time_ms: 800.0
+    peak_memory_mb: 32.0
+    throughput_ops_per_sec: 1.25

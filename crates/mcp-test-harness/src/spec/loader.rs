@@ -616,7 +616,7 @@ version: "1.0.0"
             );
             if let Some(tools) = &spec.tools {
                 assert!(
-                    tools.len() > 0,
+                    !tools.is_empty(),
                     "Database server should have at least one tool"
                 );
 
@@ -656,7 +656,7 @@ version: "1.0.0"
             if let Some(metadata) = &spec.metadata {
                 if let Some(security_features) = metadata.get("security_features") {
                     let features = security_features.as_array().unwrap();
-                    assert!(features.len() > 0, "Should have security features listed");
+                    assert!(!features.is_empty(), "Should have security features listed");
                 }
             }
 
@@ -682,7 +682,7 @@ version: "1.0.0"
                 if let Some(deps) = metadata.get("external_dependencies") {
                     let dependencies = deps.as_array().unwrap();
                     assert!(
-                        dependencies.len() > 0,
+                        !dependencies.is_empty(),
                         "Should have external dependencies listed"
                     );
                 }

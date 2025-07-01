@@ -11,12 +11,12 @@ use crate::config::{TestCase, ValidationPattern, ValidationConfig, ExpectedRespo
 use crate::runner::ValidationResult;
 
 /// Test response validator
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TestValidator {
     custom_validators: HashMap<String, CustomValidator>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CustomValidator {
     pub name: String,
     pub validator_fn: fn(&Value) -> Result<ValidationResult>,

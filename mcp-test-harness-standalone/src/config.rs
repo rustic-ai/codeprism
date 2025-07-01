@@ -43,7 +43,7 @@ pub struct GlobalConfig {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ServerConfig {
-    /// Server type (stdio, http, websocket)
+    /// Server type (stdio, http)
     pub transport: String,
     
     /// Command to start the server (for stdio)

@@ -13,6 +13,9 @@ mod runner;
 mod server;
 mod validation;
 
+#[cfg(test)]
+mod integration_test;
+
 use crate::config::TestConfig;
 use crate::runner::TestRunner;
 
@@ -55,10 +58,6 @@ enum Commands {
         /// Run only validation checks (no actual server execution)
         #[arg(long)]
         validation_only: bool,
-        
-        /// Generate performance baseline
-        #[arg(long)]
-        generate_baseline: bool,
         
         /// Run comprehensive test suite
         #[arg(long)]
@@ -105,20 +104,7 @@ enum Commands {
         timeout: u64,
     },
     
-    /// Performance benchmarking against reference implementations
-    Benchmark {
-        /// Path to test configuration file
-        #[arg(short, long)]
-        config: PathBuf,
-        
-        /// Number of benchmark iterations
-        #[arg(short, long, default_value = "100")]
-        iterations: usize,
-        
-        /// Benchmark duration in seconds
-        #[arg(short, long, default_value = "60")]
-        duration: u64,
-    },
+
 }
 
 #[tokio::main]
@@ -139,7 +125,6 @@ async fn main() -> Result<()> {
             server_cmd,
             working_dir,
             validation_only,
-            generate_baseline,
             comprehensive,
             parallel,
         } => {
@@ -148,7 +133,6 @@ async fn main() -> Result<()> {
                 server_cmd,
                 working_dir,
                 validation_only,
-                generate_baseline,
                 comprehensive,
                 parallel,
                 &cli.output,
@@ -158,11 +142,6 @@ async fn main() -> Result<()> {
         Commands::Template { server_type, output } => generate_template(server_type, output).await,
         Commands::List { server_type } => list_templates(server_type).await,
         Commands::Discover { port_range, timeout } => discover_servers(port_range, timeout).await,
-        Commands::Benchmark {
-            config,
-            iterations,
-            duration,
-        } => run_benchmark(config, iterations, duration, &cli.output).await,
     }
 }
 
@@ -171,7 +150,6 @@ async fn run_tests(
     server_cmd: Option<String>,
     working_dir: Option<PathBuf>,
     validation_only: bool,
-    generate_baseline: bool,
     comprehensive: bool,
     parallel: usize,
     output_format: &str,
@@ -188,7 +166,6 @@ async fn run_tests(
     }
     
     runner.set_validation_only(validation_only);
-    runner.set_generate_baseline(generate_baseline);
     runner.set_comprehensive(comprehensive);
     runner.set_parallel_execution(parallel);
     
@@ -268,28 +245,7 @@ async fn discover_servers(port_range: String, timeout: u64) -> Result<()> {
     Ok(())
 }
 
-async fn run_benchmark(
-    config_path: PathBuf,
-    iterations: usize,
-    duration: u64,
-    output_format: &str,
-) -> Result<()> {
-    info!("Running benchmark with {} iterations over {}s", iterations, duration);
-    
-    let config = TestConfig::load(&config_path)?;
-    let mut runner = TestRunner::new(config, output_format.to_string())?;
-    
-    let benchmark_results = runner.run_benchmark(iterations, duration).await?;
-    
-    match output_format {
-        "json" => println!("{}", serde_json::to_string_pretty(&benchmark_results)?),
-        "yaml" => println!("{}", serde_yaml::to_string(&benchmark_results)?),
-        "table" => benchmark_results.display_table(),
-        _ => benchmark_results.display_table(),
-    }
-    
-    Ok(())
-}
+
 
 #[cfg(test)]
 mod tests {

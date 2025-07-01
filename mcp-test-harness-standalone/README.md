@@ -9,8 +9,7 @@ A universal testing tool for Model Context Protocol (MCP) servers. Test any MCP 
 ## Features
 
 - 🔧 **Universal MCP Server Testing** - Works with any MCP server implementation
-- 🚀 **Multiple Transport Support** - stdio, HTTP, WebSocket
-- 📊 **Performance Monitoring** - Built-in benchmarking and regression detection
+- 🚀 **Multiple Transport Support** - stdio, HTTP
 - 🛡️ **Protocol Compliance** - Comprehensive MCP protocol validation
 - 🐳 **Docker Ready** - Containerized testing for CI/CD pipelines
 - 📋 **Flexible Configuration** - YAML/JSON configuration with templates
@@ -49,11 +48,7 @@ mcp-test-harness template --server-type filesystem --output my-config.yaml
 # Discover running MCP servers
 mcp-test-harness discover --port-range "3000-3010"
 
-# Run performance benchmarks
-mcp-test-harness benchmark \
-  --config my-config.yaml \
-  --iterations 1000 \
-  --duration 60
+
 ```
 
 ### Docker Usage
@@ -82,19 +77,14 @@ global:
   fail_fast: false
 
 server:
-  transport: "stdio"  # or "http", "websocket"
+  transport: "stdio"  # or "http"
   command: "node server.js"
   args: ["--port", "3000"]
   working_dir: "/path/to/server"
   env:
     NODE_ENV: "test"
 
-performance:
-  enable_monitoring: true
-  baseline_storage_path: "baselines/"
-  regression_detection:
-    warning_threshold_percent: 25.0
-    error_threshold_percent: 50.0
+
 
 test_suites:
   - name: "MCP Protocol Compliance"
@@ -129,12 +119,7 @@ server:
   connection_timeout: 10
 ```
 
-#### WebSocket Server
-```yaml
-server:
-  transport: "websocket"
-  url: "ws://localhost:3000"
-```
+
 
 ## Validation Patterns
 
@@ -174,26 +159,7 @@ expected:
       required: true
 ```
 
-## Performance Testing
 
-### Basic Performance Requirements
-
-```yaml
-performance_requirements:
-  max_execution_time_ms: 5000
-  max_memory_usage_mb: 64
-```
-
-### Benchmarking
-
-```bash
-# Run benchmarks
-mcp-test-harness benchmark \
-  --config server-config.yaml \
-  --iterations 1000 \
-  --duration 60 \
-  --output json > benchmark-results.json
-```
 
 ## Templates
 

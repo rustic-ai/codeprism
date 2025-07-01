@@ -10,7 +10,7 @@ use std::time::{Duration, Instant};
 use tracing::{debug, error, info, warn};
 use std::sync::Arc;
 
-use crate::config::{TestConfig, TestCase, TestSuite};
+use crate::config::{TestConfig, TestCase, TestSuite, ServerConfig};
 use crate::server::McpServer;
 use crate::validation::TestValidator;
 
@@ -24,7 +24,6 @@ pub struct TestRunner {
     
     // Execution options
     validation_only: bool,
-    generate_baseline: bool,
     comprehensive: bool,
     parallel_execution: usize,
 }
@@ -162,40 +161,7 @@ pub struct ServerInfo {
     pub transport: String,
 }
 
-/// Benchmark execution results
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BenchmarkResults {
-    pub benchmark_summary: BenchmarkSummary,
-    pub detailed_results: Vec<BenchmarkTestResult>,
-    pub performance_analysis: PerformanceAnalysis,
-}
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BenchmarkSummary {
-    pub total_iterations: usize,
-    pub duration_seconds: u64,
-    pub average_ops_per_second: f64,
-    pub average_response_time_ms: f64,
-    pub success_rate: f64,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BenchmarkTestResult {
-    pub test_name: String,
-    pub iterations_completed: usize,
-    pub average_time_ms: f64,
-    pub min_time_ms: f64,
-    pub max_time_ms: f64,
-    pub std_deviation_ms: f64,
-    pub ops_per_second: f64,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PerformanceAnalysis {
-    pub bottlenecks: Vec<String>,
-    pub recommendations: Vec<String>,
-    pub resource_utilization: HashMap<String, f64>,
-}
 
 impl TestRunner {
     /// Create new test runner
@@ -208,7 +174,6 @@ impl TestRunner {
             validator,
             output_format,
             validation_only: false,
-            generate_baseline: false,
             comprehensive: false,
             parallel_execution: 1,
         })
@@ -227,9 +192,7 @@ impl TestRunner {
         self.validation_only = validation_only;
     }
     
-    pub fn set_generate_baseline(&mut self, generate_baseline: bool) {
-        self.generate_baseline = generate_baseline;
-    }
+
     
     pub fn set_comprehensive(&mut self, comprehensive: bool) {
         self.comprehensive = comprehensive;
@@ -312,74 +275,7 @@ impl TestRunner {
         Ok(results)
     }
     
-    /// Run benchmark tests
-    pub async fn run_benchmark(&mut self, iterations: usize, duration: u64) -> Result<BenchmarkResults> {
-        info!("Starting benchmark with {} iterations over {}s", iterations, duration);
-        
-        if !self.validation_only {
-            self.initialize_server().await?;
-        }
-        
-        let start_time = Instant::now();
-        let duration_limit = Duration::from_secs(duration);
-        let mut benchmark_results = Vec::new();
-        let mut total_iterations = 0;
-        let mut total_successes = 0;
-        
-        // Clone test suites to avoid borrow checker issues
-        let test_suites = self.config.test_suites.clone();
-        
-        // Run benchmarks for each test case
-        for suite in &test_suites {
-            for test_case in &suite.test_cases {
-                if !test_case.enabled {
-                    continue;
-                }
-                
-                let test_benchmark = self.benchmark_test_case(test_case, iterations, duration_limit).await?;
-                total_iterations += test_benchmark.iterations_completed;
-                if test_benchmark.ops_per_second > 0.0 {
-                    total_successes += test_benchmark.iterations_completed;
-                }
-                benchmark_results.push(test_benchmark);
-            }
-        }
-        
-        let total_duration = start_time.elapsed();
-        let average_ops_per_second = if total_duration.as_secs_f64() > 0.0 {
-            total_iterations as f64 / total_duration.as_secs_f64()
-        } else {
-            0.0
-        };
-        
-        let average_response_time = if !benchmark_results.is_empty() {
-            benchmark_results.iter().map(|r| r.average_time_ms).sum::<f64>() / benchmark_results.len() as f64
-        } else {
-            0.0
-        };
-        
-        let success_rate = if total_iterations > 0 {
-            total_successes as f64 / total_iterations as f64
-        } else {
-            0.0
-        };
-        
-        Ok(BenchmarkResults {
-            benchmark_summary: BenchmarkSummary {
-                total_iterations,
-                duration_seconds: duration,
-                average_ops_per_second,
-                average_response_time_ms: average_response_time,
-                success_rate,
-            },
-            detailed_results: benchmark_results,
-            performance_analysis: PerformanceAnalysis {
-                bottlenecks: vec![], // Would be populated with actual analysis
-                recommendations: vec![], // Would be populated with recommendations
-                resource_utilization: HashMap::new(),
-            },
-        })
-    }
+
     
     async fn initialize_server(&mut self) -> Result<()> {
         info!("Initializing MCP server");
@@ -603,25 +499,17 @@ impl TestRunner {
         test_case: &TestCase,
         server_config: &ServerConfig,
     ) -> Result<serde_json::Value> {
-        // Create MCP client for this test
-        use mcp_test_harness_lib::protocol::McpClient;
-        let mut client = McpClient::new();
+        // Create and start MCP server
+        let mut server = McpServer::new(server_config.clone());
+        server.start().await
+            .map_err(|e| anyhow::anyhow!("Failed to start MCP server: {}", e))?;
 
-        // Start server if command is provided
-        if let Some(ref command) = server_config.command {
-            let args = server_config.args.clone().unwrap_or_default();
-            let working_dir = server_config.working_dir.clone();
-            
-            client.start_server(command.clone(), args, working_dir).await
-                .map_err(|e| anyhow::anyhow!("Failed to start MCP server: {}", e))?;
-        }
-
-        // Execute tool call
-        let result = client.call_tool(&test_case.tool_name, test_case.input_params.clone()).await
+        // Execute tool call via the server using the proper MCP method
+        let result = server.call_tool(&test_case.tool_name, test_case.input_params.clone()).await
             .map_err(|e| anyhow::anyhow!("Tool call failed: {}", e))?;
 
         // Stop server
-        client.stop_server().await
+        server.stop().await
             .map_err(|e| anyhow::anyhow!("Failed to stop MCP server: {}", e))?;
 
         Ok(result)
@@ -709,69 +597,10 @@ impl TestRunner {
         let server = self.server.as_mut()
             .ok_or_else(|| anyhow!("Server not initialized"))?;
         
-        server.send_request(&test_case.tool_name, test_case.input_params.clone()).await
+        server.call_tool(&test_case.tool_name, test_case.input_params.clone()).await
     }
     
-    async fn benchmark_test_case(
-        &mut self,
-        test_case: &TestCase,
-        max_iterations: usize,
-        duration_limit: Duration,
-    ) -> Result<BenchmarkTestResult> {
-        debug!("Benchmarking test case: {}", test_case.id);
-        
-        let mut times = Vec::new();
-        let mut iterations = 0;
-        let start_time = Instant::now();
-        
-        while iterations < max_iterations && start_time.elapsed() < duration_limit {
-            let iteration_start = Instant::now();
-            
-            match self.execute_test_case(test_case).await {
-                Ok(_) => {
-                    times.push(iteration_start.elapsed().as_millis() as f64);
-                }
-                Err(_) => {
-                    // Count failed iterations but don't include in timing
-                }
-            }
-            
-            iterations += 1;
-        }
-        
-        let average_time = if !times.is_empty() {
-            times.iter().sum::<f64>() / times.len() as f64
-        } else {
-            0.0
-        };
-        
-        let min_time = times.iter().cloned().fold(f64::INFINITY, f64::min);
-        let max_time = times.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
-        
-        let variance = if times.len() > 1 {
-            let mean = average_time;
-            times.iter().map(|t| (t - mean).powi(2)).sum::<f64>() / (times.len() - 1) as f64
-        } else {
-            0.0
-        };
-        let std_deviation = variance.sqrt();
-        
-        let ops_per_second = if average_time > 0.0 {
-            1000.0 / average_time
-        } else {
-            0.0
-        };
-        
-        Ok(BenchmarkTestResult {
-            test_name: test_case.id.clone(),
-            iterations_completed: iterations,
-            average_time_ms: average_time,
-            min_time_ms: if min_time.is_finite() { min_time } else { 0.0 },
-            max_time_ms: if max_time.is_finite() { max_time } else { 0.0 },
-            std_deviation_ms: std_deviation,
-            ops_per_second,
-        })
-    }
+
 }
 
 impl TestResults {
@@ -818,30 +647,7 @@ impl TestResults {
     }
 }
 
-impl BenchmarkResults {
-    /// Display benchmark results in table format
-    pub fn display_table(&self) {
-        println!("\n🏃 Benchmark Results");
-        println!("═══════════════════════════════════════");
-        println!("Total Iterations: {}", self.benchmark_summary.total_iterations);
-        println!("Duration:         {}s", self.benchmark_summary.duration_seconds);
-        println!("Avg Ops/sec:      {:.2}", self.benchmark_summary.average_ops_per_second);
-        println!("Avg Response:     {:.2}ms", self.benchmark_summary.average_response_time_ms);
-        println!("Success Rate:     {:.1}%", self.benchmark_summary.success_rate * 100.0);
-        
-        println!("\n📋 Detailed Results");
-        println!("───────────────────────────────────────");
-        
-        for result in &self.detailed_results {
-            println!(
-                "  📊 {} - {:.2}ms avg ({:.2} ops/sec)",
-                result.test_name,
-                result.average_time_ms,
-                result.ops_per_second
-            );
-        }
-    }
-}
+
 
 #[cfg(test)]
 mod tests {

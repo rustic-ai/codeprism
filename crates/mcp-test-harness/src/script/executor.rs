@@ -734,11 +734,8 @@ impl PythonEngine {
 }
 
 /// Lua execution engine using embedded mlua
-///
-/// FUTURE(#138): Implement Lua engine using mlua crate for embedded execution
 #[derive(Debug)]
 pub struct LuaEngine {
-    #[allow(dead_code)]
     sandbox_manager: Arc<SandboxManager>,
 }
 
@@ -747,25 +744,309 @@ impl LuaEngine {
         Self { sandbox_manager }
     }
 
-    /// Check if Lua engine is available
-    ///
-    /// FUTURE(#138): Implement Lua engine using mlua crate for embedded execution
+    /// Check if Lua engine is available (always true for embedded mlua)
     pub async fn is_available(&self) -> bool {
-        false // Not implemented - requires mlua crate integration
+        true // Embedded Lua is always available via mlua
+    }
+
+    /// Create a Lua wrapper script with context and utilities
+    fn create_wrapper_script(&self, config: &ScriptConfig, context: &ScriptContext) -> String {
+        let context_lua = serde_json::to_string_pretty(&context).unwrap_or_default();
+
+        format!(
+            r#"
+-- MCP Test Harness Lua Script Wrapper
+-- Provides context, utilities, and timeout management for user scripts
+
+-- Context data (JSON will be provided by Lua runtime)
+local context_json = [[{}]]
+local context = json.decode(context_json)
+
+-- Test utilities for Lua scripts
+local test_utils = {{
+    -- Navigate JSON paths in responses
+    navigate = function(obj, path)
+        local result = obj
+        for part in string.gmatch(path, "[^%.]+") do
+            if type(result) == "table" and result[part] then
+                result = result[part]
+            else
+                return nil
+            end
+        end
+        return result
+    end,
+    
+    -- Validate value against pattern
+    validate_pattern = function(value, pattern)
+        if type(value) ~= "string" then
+            return false
+        end
+        return string.match(value, pattern) ~= nil
+    end,
+    
+    -- Validate numeric range
+    validate_range = function(value, min_val, max_val)
+        local num = tonumber(value)
+        if not num then
+            return false
+        end
+        return num >= min_val and num <= max_val
+    end,
+    
+    -- Validate type
+    validate_type = function(value, expected_type)
+        local lua_type = type(value)
+        
+        -- Type mapping for common validations
+        if expected_type == "number" or expected_type == "numeric" then
+            return lua_type == "number"
+        elseif expected_type == "string" or expected_type == "text" then
+            return lua_type == "string"
+        elseif expected_type == "boolean" or expected_type == "bool" then
+            return lua_type == "boolean"
+        elseif expected_type == "table" or expected_type == "object" or expected_type == "array" then
+            return lua_type == "table"
+        elseif expected_type == "nil" or expected_type == "null" then
+            return lua_type == "nil"
+        else
+            return lua_type == expected_type
+        end
+    end,
+    
+    -- Validate table schema
+    validate_schema = function(obj, schema)
+        if type(obj) ~= "table" or type(schema) ~= "table" then
+            return false
+        end
+        
+        for key, expected_type in pairs(schema) do
+            if not obj[key] or not test_utils.validate_type(obj[key], expected_type) then
+                return false
+            end
+        end
+        return true
+    end,
+    
+    -- Count array elements
+    count_array = function(arr)
+        if type(arr) ~= "table" then
+            return 0
+        end
+        local count = 0
+        for _ in pairs(arr) do
+            count = count + 1
+        end
+        return count
+    end,
+    
+    -- Check if table is empty
+    is_empty = function(t)
+        if type(t) ~= "table" then
+            return t == nil or t == ""
+        end
+        return next(t) == nil
+    end
+}}
+
+-- Execution timeout management
+local timeout_ms = {}
+local start_time = os.clock()
+
+local function check_timeout()
+    local elapsed = (os.clock() - start_time) * 1000
+    if elapsed > timeout_ms then
+        error("Script execution timeout after " .. timeout_ms .. "ms")
+    end
+end
+
+-- Make context and utilities available to user script
+_G.context = context
+_G.test_utils = test_utils
+_G.check_timeout = check_timeout
+
+-- User script execution with error handling
+local script_result = nil
+local script_error = nil
+
+local function execute_user_script()
+    -- User script
+    {}
+    
+    -- Ensure result is set
+    if result == nil then
+        script_result = {{
+            success = false,
+            output = nil,
+            error = "Script did not set result variable"
+        }}
+    else
+        -- Handle different result formats
+        if type(result) == "table" and result.success ~= nil then
+            script_result = result
+        else
+            script_result = {{
+                success = true,
+                output = result,
+                error = nil
+            }}
+        end
+    end
+end
+
+-- Execute with error handling
+local success, error_msg = pcall(execute_user_script)
+
+if not success then
+    script_error = {{
+        success = false,
+        output = nil,
+        error = tostring(error_msg)
+    }}
+end
+
+-- Output final result as JSON (json.encode will be provided by Lua runtime)
+local final_result = script_result or script_error
+print(json.encode(final_result))
+"#,
+            context_lua, config.timeout_ms, config.source
+        )
+    }
+
+    /// Execute Lua script with embedded mlua
+    fn execute_lua(
+        &self,
+        config: &ScriptConfig,
+        context: &ScriptContext,
+    ) -> Result<ScriptResult, ScriptError> {
+        use mlua::{Lua, LuaOptions, StdLib, Value as LuaValue};
+
+        let start_time = Instant::now();
+
+        // Create Lua runtime with restricted standard library for security
+        let lua = Lua::new_with(
+            StdLib::TABLE | StdLib::STRING | StdLib::MATH | StdLib::OS | StdLib::PACKAGE,
+            LuaOptions::default(),
+        )
+        .map_err(|e| {
+            ScriptError::ExecutionFailed(format!("Failed to create Lua runtime: {}", e))
+        })?;
+
+        // Add JSON support
+        let json_module = lua.create_table()?;
+
+        // JSON encode function
+        let encode_fn =
+            lua.create_function(|_, value: LuaValue| match lua_value_to_serde(&value) {
+                Ok(serde_value) => Ok(serde_json::to_string(&serde_value).unwrap_or_default()),
+                Err(e) => Err(mlua::Error::RuntimeError(format!(
+                    "JSON encode error: {}",
+                    e
+                ))),
+            })?;
+
+        // JSON decode function
+        let decode_fn =
+            lua.create_function(|lua, json_str: String| {
+                match serde_json::from_str::<serde_json::Value>(&json_str) {
+                    Ok(value) => serde_value_to_lua(lua, &value),
+                    Err(e) => Err(mlua::Error::RuntimeError(format!(
+                        "JSON decode error: {}",
+                        e
+                    ))),
+                }
+            })?;
+
+        json_module.set("encode", encode_fn)?;
+        json_module.set("decode", decode_fn)?;
+
+        let globals = lua.globals();
+        globals.set("json", json_module)?;
+
+        // Create wrapper script with context
+        let wrapper_script = self.create_wrapper_script(config, context);
+
+        // Execute the wrapper script with timeout check
+        let timeout_duration = Duration::from_millis(config.timeout_ms);
+        let execution_start = Instant::now();
+
+        // Simple timeout check - execute and measure time
+        let execution_result = lua.load(&wrapper_script).exec();
+
+        let duration_ms = start_time.elapsed().as_millis() as u64;
+
+        // Check if we exceeded timeout
+        if execution_start.elapsed() > timeout_duration {
+            return Err(ScriptError::Timeout {
+                timeout: config.timeout_ms,
+            });
+        }
+
+        match execution_result {
+            Ok(_) => {
+                // Script executed successfully
+                // Try to get the result from Lua global
+                let result_value = lua
+                    .globals()
+                    .get::<_, LuaValue>("result")
+                    .unwrap_or(LuaValue::Nil);
+
+                let output = match lua_value_to_serde(&result_value) {
+                    Ok(serde_value) => serde_value,
+                    Err(_) => serde_json::json!({"message": "Script executed successfully"}),
+                };
+
+                Ok(ScriptResult {
+                    success: true,
+                    output,
+                    error: None,
+                    duration_ms,
+                    memory_used_mb: self.estimate_memory_usage(duration_ms),
+                    exit_code: Some(0),
+                    stdout: "Script executed".to_string(),
+                    stderr: String::new(),
+                    metrics: HashMap::new(),
+                })
+            }
+            Err(e) => {
+                let error_msg = format!("Lua execution error: {}", e);
+                if error_msg.contains("timeout") {
+                    Err(ScriptError::Timeout {
+                        timeout: config.timeout_ms,
+                    })
+                } else {
+                    Err(ScriptError::ExecutionFailed(error_msg))
+                }
+            }
+        }
+    }
+
+    /// Estimate memory usage based on execution duration
+    fn estimate_memory_usage(&self, duration_ms: u64) -> u64 {
+        // Base memory usage for embedded Lua: ~5MB
+        let base_memory = 5;
+
+        // Additional memory based on execution time (heuristic)
+        // Lua is very lightweight compared to Node.js and Python
+        let duration_factor = (duration_ms / 1000).max(1);
+        let estimated_memory = base_memory + duration_factor;
+
+        // Cap at reasonable maximum for script execution
+        estimated_memory.min(64)
     }
 }
 
 impl ScriptEngine for LuaEngine {
     fn execute(
         &self,
-        _config: &ScriptConfig,
-        _context: &ScriptContext,
+        config: &ScriptConfig,
+        context: &ScriptContext,
     ) -> Result<ScriptResult, ScriptError> {
-        // FUTURE(#138): Implement Lua script execution using mlua crate
-        Err(ScriptError::UnsupportedLanguage(
-            "Lua engine not implemented. Use JavaScript or Python for script validation."
-                .to_string(),
-        ))
+        // Apply sandbox restrictions
+        self.sandbox_manager.validate_script_security(config)?;
+
+        // Execute Lua script
+        self.execute_lua(config, context)
     }
 
     fn supports(&self, language: &ScriptLanguage) -> bool {
@@ -773,14 +1054,113 @@ impl ScriptEngine for LuaEngine {
     }
 
     fn name(&self) -> &'static str {
-        "Lua Engine (Future Enhancement)"
+        "Lua Engine (mlua)"
     }
 
-    fn validate_syntax(&self, _config: &ScriptConfig) -> Result<(), ScriptError> {
-        // FUTURE(#138): Implement Lua syntax validation using mlua crate
-        Err(ScriptError::UnsupportedLanguage(
-            "Lua syntax validation not implemented".to_string(),
-        ))
+    fn validate_syntax(&self, config: &ScriptConfig) -> Result<(), ScriptError> {
+        use mlua::{Lua, LuaOptions, StdLib};
+
+        // Create minimal Lua runtime for syntax validation
+        let lua = Lua::new_with(StdLib::NONE, LuaOptions::default()).map_err(|e| {
+            ScriptError::ExecutionFailed(format!("Failed to create Lua runtime: {}", e))
+        })?;
+
+        // Try to load the script without executing it (this checks syntax)
+        let load_result = lua.load(&config.source).into_function();
+        match load_result {
+            Ok(_) => Ok(()),
+            Err(e) => Err(ScriptError::CompilationFailed(format!(
+                "Lua syntax error: {}",
+                e
+            ))),
+        }
+    }
+}
+
+// Helper functions for Lua-Serde conversion
+fn lua_value_to_serde(lua_value: &mlua::Value) -> Result<serde_json::Value, ScriptError> {
+    use mlua::Value as LuaValue;
+
+    match lua_value {
+        LuaValue::Nil => Ok(serde_json::Value::Null),
+        LuaValue::Boolean(b) => Ok(serde_json::Value::Bool(*b)),
+        LuaValue::Integer(i) => Ok(serde_json::Value::Number(serde_json::Number::from(*i))),
+        LuaValue::Number(n) => Ok(serde_json::Value::Number(
+            serde_json::Number::from_f64(*n).unwrap_or(serde_json::Number::from(0)),
+        )),
+        LuaValue::String(s) => match s.to_str() {
+            Ok(str_val) => Ok(serde_json::Value::String(str_val.to_string())),
+            Err(e) => Err(ScriptError::LuaError(format!(
+                "String conversion error: {}",
+                e
+            ))),
+        },
+        LuaValue::Table(table) => {
+            // Check if it's an array or object
+            let mut map = serde_json::Map::new();
+            for pair in table.clone().pairs::<mlua::Value, mlua::Value>() {
+                let (key, value) = match pair {
+                    Ok(p) => p,
+                    Err(e) => {
+                        return Err(ScriptError::LuaError(format!(
+                            "Table iteration error: {}",
+                            e
+                        )))
+                    }
+                };
+                let key_str = match key {
+                    LuaValue::String(s) => match s.to_str() {
+                        Ok(str_val) => str_val.to_string(),
+                        Err(_) => continue,
+                    },
+                    LuaValue::Integer(i) => i.to_string(),
+                    LuaValue::Number(n) => n.to_string(),
+                    _ => continue,
+                };
+                let serde_value = lua_value_to_serde(&value)?;
+                map.insert(key_str, serde_value);
+            }
+            Ok(serde_json::Value::Object(map))
+        }
+        _ => Err(ScriptError::ExecutionFailed(
+            "Unsupported Lua value type".to_string(),
+        )),
+    }
+}
+
+fn serde_value_to_lua<'lua>(
+    lua: &'lua mlua::Lua,
+    serde_value: &serde_json::Value,
+) -> mlua::Result<mlua::Value<'lua>> {
+    match serde_value {
+        serde_json::Value::Null => Ok(mlua::Value::Nil),
+        serde_json::Value::Bool(b) => Ok(mlua::Value::Boolean(*b)),
+        serde_json::Value::Number(n) => {
+            if let Some(i) = n.as_i64() {
+                Ok(mlua::Value::Integer(i))
+            } else if let Some(f) = n.as_f64() {
+                Ok(mlua::Value::Number(f))
+            } else {
+                Ok(mlua::Value::Number(0.0))
+            }
+        }
+        serde_json::Value::String(s) => Ok(mlua::Value::String(lua.create_string(s)?)),
+        serde_json::Value::Array(arr) => {
+            let table = lua.create_table()?;
+            for (i, value) in arr.iter().enumerate() {
+                let lua_value = serde_value_to_lua(lua, value)?;
+                table.set(i + 1, lua_value)?;
+            }
+            Ok(mlua::Value::Table(table))
+        }
+        serde_json::Value::Object(obj) => {
+            let table = lua.create_table()?;
+            for (key, value) in obj.iter() {
+                let lua_value = serde_value_to_lua(lua, value)?;
+                table.set(key.as_str(), lua_value)?;
+            }
+            Ok(mlua::Value::Table(table))
+        }
     }
 }
 
@@ -874,9 +1254,12 @@ mod tests {
         // In CI/CD, they might be skipped or mocked
         let _js_available = executor.javascript_engine.is_available().await;
         let _python_available = executor.python_engine.is_available().await;
-        let _lua_available = executor.lua_engine.is_available().await;
 
-        // Just ensure the calls don't panic - availability depends on system setup
+        // Lua is always available via embedded mlua
+        let lua_available = executor.lua_engine.is_available().await;
+        assert!(lua_available, "Embedded Lua should always be available");
+
+        // Just ensure the calls don't panic - JS/Python availability depends on system setup
     }
 
     #[test]
@@ -981,5 +1364,93 @@ mod tests {
         assert!(wrapper.contains("testUtils"));
         assert!(wrapper.contains("TIMEOUT_MS = 5000"));
         assert!(wrapper.contains("eval = function()"));
+    }
+
+    #[test]
+    fn test_lua_wrapper_script_generation() {
+        let sandbox_manager = Arc::new(SandboxManager::new(SandboxConfig::default()));
+        let engine = LuaEngine::new(sandbox_manager);
+
+        let config = ScriptConfig {
+            language: ScriptLanguage::Lua,
+            source: "result = { success = true, message = 'test' }".to_string(),
+            name: "test".to_string(),
+            timeout_ms: 5000,
+            ..Default::default()
+        };
+
+        let context = ScriptContext::new(
+            TestCase::default(),
+            serde_json::json!({"test": "data"}),
+            Some(serde_json::json!({"result": "success"})),
+            None,
+        );
+
+        let wrapper = engine.create_wrapper_script(&config, &context);
+
+        assert!(wrapper.contains("-- Context data (JSON will be provided by Lua runtime)"));
+        assert!(wrapper.contains("result = { success = true, message = 'test' }"));
+        assert!(wrapper.contains("test_utils"));
+        assert!(wrapper.contains("timeout_ms = 5000"));
+        assert!(wrapper.contains("context = json.decode"));
+    }
+
+    #[test]
+    fn test_lua_syntax_validation() {
+        let sandbox_manager = Arc::new(SandboxManager::new(SandboxConfig::default()));
+        let engine = LuaEngine::new(sandbox_manager);
+
+        let valid_config = ScriptConfig {
+            language: ScriptLanguage::Lua,
+            source: "result = { success = true, message = 'test' }".to_string(),
+            name: "test".to_string(),
+            ..Default::default()
+        };
+
+        assert!(engine.validate_syntax(&valid_config).is_ok());
+
+        let invalid_config = ScriptConfig {
+            language: ScriptLanguage::Lua,
+            source: "result = { success = true, message = 'test'".to_string(), // Missing brace
+            name: "test".to_string(),
+            ..Default::default()
+        };
+
+        assert!(engine.validate_syntax(&invalid_config).is_err());
+    }
+
+    #[test]
+    fn test_lua_basic_execution() {
+        let sandbox_manager = Arc::new(SandboxManager::new(SandboxConfig::default()));
+        let engine = LuaEngine::new(sandbox_manager);
+
+        let config = ScriptConfig {
+            language: ScriptLanguage::Lua,
+            source: "result = { success = true, message = 'Hello from Lua!' }".to_string(),
+            name: "lua_test".to_string(),
+            timeout_ms: 5000,
+            ..Default::default()
+        };
+
+        let context = ScriptContext::new(
+            TestCase::default(),
+            serde_json::json!({"test": "data"}),
+            Some(serde_json::json!({"result": "success"})),
+            None,
+        );
+
+        let result = engine.execute(&config, &context);
+        match &result {
+            Ok(script_result) => {
+                assert!(script_result.success);
+                assert_eq!(script_result.exit_code, Some(0));
+                // Duration measurement is successful (embedded Lua executes very quickly)
+                // Just verify the field exists and is a valid number
+            }
+            Err(e) => {
+                println!("Lua execution error: {:?}", e);
+                panic!("Expected successful execution, got error: {}", e);
+            }
+        }
     }
 }

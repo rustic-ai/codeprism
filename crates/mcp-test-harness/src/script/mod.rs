@@ -42,6 +42,14 @@ pub enum ScriptError {
     ContextError(String),
     #[error("I/O error: {0}")]
     Io(#[from] std::io::Error),
+    #[error("Lua error: {0}")]
+    LuaError(String),
+}
+
+impl From<mlua::Error> for ScriptError {
+    fn from(err: mlua::Error) -> Self {
+        ScriptError::LuaError(err.to_string())
+    }
 }
 
 /// Supported scripting languages

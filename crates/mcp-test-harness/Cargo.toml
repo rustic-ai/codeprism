@@ -69,6 +69,9 @@ url = "2.0"
 # Temporary files for test servers
 tempfile = "3.0"
 
+# Lua scripting engine (with vendored Lua for portability)
+mlua = { version = "0.9", features = ["lua54", "async", "send", "vendored"] }
+
 # Enhanced reporting dependencies
 handlebars = { version = "5.1", optional = true }  # Template engine for HTML reports
 base64 = "0.22"              # For embedding images in HTML

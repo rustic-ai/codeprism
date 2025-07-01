@@ -461,6 +461,20 @@ pub struct TestCase {
     pub tags: Vec<String>,
 }
 
+impl Default for TestCase {
+    fn default() -> Self {
+        Self {
+            name: String::new(),
+            description: None,
+            input: serde_json::Value::Null,
+            expected: ExpectedOutput::default(),
+            performance: None,
+            skip: false,
+            tags: Vec::new(),
+        }
+    }
+}
+
 /// Expected output specification
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ExpectedOutput {
@@ -491,6 +505,20 @@ pub struct ExpectedOutput {
     /// Whether extra fields are allowed in response
     #[serde(default = "default_allow_extra_fields")]
     pub allow_extra_fields: bool,
+}
+
+impl Default for ExpectedOutput {
+    fn default() -> Self {
+        Self {
+            error: false,
+            error_code: None,
+            error_message_contains: None,
+            schema_file: None,
+            schema: None,
+            fields: Vec::new(),
+            allow_extra_fields: default_allow_extra_fields(),
+        }
+    }
 }
 
 /// Field validation specification

@@ -42,6 +42,7 @@ pub mod cli;
 pub mod ecosystem;
 pub mod protocol;
 pub mod reporting;
+pub mod script;
 pub mod spec;
 pub mod testing;
 pub mod transport;
@@ -54,6 +55,10 @@ mod utils;
 pub use ecosystem::{BenchmarkSuite, CommunityConfig, PopularServers, TemplateManager};
 pub use protocol::{validate_protocol_compliance, McpClient, McpError};
 pub use reporting::{ReportFormat, ReportGenerator};
+pub use script::{
+    MultiLanguageExecutor, ScriptConfig, ScriptError, ScriptExecutorFactory, ScriptLanguage,
+    ScriptResult, ValidationScript,
+};
 pub use spec::schema::{ServerSpec, TestCase};
 pub use spec::{SpecLoader, ValidationError as SpecValidationError};
 pub use testing::{TestHarness, TestReport, TestResult};

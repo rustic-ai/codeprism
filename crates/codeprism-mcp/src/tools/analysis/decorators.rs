@@ -364,6 +364,7 @@ async fn detect_decorator_patterns(
     }))
 }
 
+#[allow(dead_code)]
 fn parse_node_id(hex_str: &str) -> Result<codeprism_core::NodeId> {
     codeprism_core::NodeId::from_hex(hex_str)
         .map_err(|_| anyhow::anyhow!("Invalid node ID format: {}", hex_str))

@@ -2,12 +2,13 @@
 
 #![allow(clippy::too_many_arguments)]
 
-use crate::tools_legacy::{CallToolParams, CallToolResult, Tool, ToolContent};
+use crate::tools_legacy::{CallToolResult, Tool, ToolContent};
 use crate::CodePrismMcpServer;
 use anyhow::Result;
 use serde_json::Value;
 
 /// Trace data flow for a specific symbol
+#[allow(dead_code)]
 async fn trace_symbol_data_flow(
     server: &CodePrismMcpServer,
     node: &codeprism_core::Node,
@@ -112,6 +113,7 @@ async fn trace_symbol_data_flow(
 }
 
 /// Analyze transitive dependencies for a specific symbol
+#[allow(dead_code)]
 async fn analyze_symbol_transitive_dependencies(
     server: &CodePrismMcpServer,
     node: &codeprism_core::Node,
@@ -182,6 +184,7 @@ async fn analyze_symbol_transitive_dependencies(
 }
 
 /// Recursively collect transitive dependencies
+#[allow(dead_code)]
 async fn collect_transitive_deps(
     server: &CodePrismMcpServer,
     current_id: &codeprism_core::NodeId,
@@ -675,7 +678,7 @@ async fn trace_data_flow_backward(
     Ok(())
 }
 
-fn determine_flow_type(node: &codeprism_core::Node, include_field_access: bool) -> &'static str {
+fn determine_flow_type(node: &codeprism_core::Node, _include_field_access: bool) -> &'static str {
     match node.kind {
         codeprism_core::NodeKind::Variable => "variable_reference",
         codeprism_core::NodeKind::Parameter => "parameter_passing",

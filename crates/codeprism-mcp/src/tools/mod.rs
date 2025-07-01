@@ -137,6 +137,7 @@ impl ToolManager {
         tools.extend(analysis::flow::list_tools());
         tools.extend(analysis::inheritance::list_tools());
         tools.extend(analysis::decorators::list_tools());
+        tools.extend(quality::list_tools());
 
         // Add remaining tools from legacy implementation
         let legacy_manager = crate::tools_legacy::ToolManager::new(self.server.clone());
@@ -228,6 +229,15 @@ impl ToolManager {
             }
             "analyze_decorators" => {
                 analysis::decorators::call_tool(&params.name, &server, params.arguments).await
+            }
+
+            // Quality tools
+            "find_duplicates"
+            | "find_unused_code"
+            | "analyze_security"
+            | "analyze_performance"
+            | "analyze_api_surface" => {
+                quality::call_tool(&params.name, &server, params.arguments).await
             }
 
             // All other tools still use legacy implementation

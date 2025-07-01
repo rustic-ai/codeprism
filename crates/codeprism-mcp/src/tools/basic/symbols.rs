@@ -370,10 +370,9 @@ async fn explain_symbol(
                     .iter()
                     .map(|ref_info| {
                         serde_json::json!({
-                            "source_id": ref_info.source.to_hex(),
-                            "kind": format!("{:?}", ref_info.kind),
-                            "source_info": server.graph_store().get_node(&ref_info.source)
-                                .map(|node| create_node_info_with_context(&node, 0))
+                            "source_id": ref_info.source_node.id.to_hex(),
+                            "kind": format!("{:?}", ref_info.edge_kind),
+                            "source_info": create_node_info_with_context(&ref_info.source_node, 0)
                         })
                     })
                     .collect();

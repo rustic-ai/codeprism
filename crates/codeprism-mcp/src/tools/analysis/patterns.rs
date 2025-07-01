@@ -96,7 +96,7 @@ async fn detect_patterns(
 
 async fn analyze_patterns(
     server: &CodePrismMcpServer,
-    confidence_threshold: f64,
+    _confidence_threshold: f64,
 ) -> Result<Vec<serde_json::Value>> {
     let mut patterns = Vec::new();
 
@@ -127,6 +127,7 @@ async fn analyze_patterns(
 }
 
 /// Comprehensive pattern analysis
+#[allow(dead_code)]
 async fn analyze_design_patterns(
     server: &CodePrismMcpServer,
     pattern_types: &[String],
@@ -184,8 +185,8 @@ async fn analyze_design_patterns(
 }
 
 /// Helper functions for pattern detection
-
 /// Detect singleton pattern implementation
+#[allow(dead_code)]
 async fn detect_singleton_pattern(
     server: &CodePrismMcpServer,
     confidence_threshold: f64,
@@ -265,6 +266,7 @@ async fn detect_singleton_pattern(
 }
 
 /// Detect factory pattern implementations
+#[allow(dead_code)]
 async fn detect_factory_pattern(
     server: &CodePrismMcpServer,
     confidence_threshold: f64,
@@ -339,6 +341,7 @@ async fn detect_factory_pattern(
 }
 
 /// Detect observer pattern implementations
+#[allow(dead_code)]
 async fn detect_observer_pattern(
     server: &CodePrismMcpServer,
     confidence_threshold: f64,
@@ -424,6 +427,7 @@ async fn detect_observer_pattern(
 }
 
 /// Detect anti-patterns in the code
+#[allow(dead_code)]
 async fn detect_anti_patterns(
     server: &CodePrismMcpServer,
     confidence_threshold: f64,
@@ -495,6 +499,7 @@ async fn detect_anti_patterns(
 }
 
 /// Detect architectural patterns
+#[allow(dead_code)]
 async fn detect_architectural_patterns(
     server: &CodePrismMcpServer,
     confidence_threshold: f64,
@@ -551,14 +556,15 @@ async fn detect_architectural_patterns(
 }
 
 /// Detect metaprogramming patterns
+#[allow(dead_code)]
 async fn detect_metaprogramming_patterns(
     server: &CodePrismMcpServer,
-    confidence_threshold: f64,
+    _confidence_threshold: f64,
 ) -> Result<Vec<serde_json::Value>> {
     let mut patterns = Vec::new();
 
     // Skip decorator pattern detection since NodeKind::Decorator doesn't exist yet
-    let decorators: Vec<codeprism_core::SymbolInfo> = Vec::new();
+    let _decorators: Vec<codeprism_core::SymbolInfo> = Vec::new();
 
     // Detect metaclass usage
     let metaclass_symbols = server
@@ -583,6 +589,7 @@ async fn detect_metaprogramming_patterns(
 }
 
 /// Get improvement suggestions for detected patterns
+#[allow(dead_code)]
 fn get_pattern_suggestions(pattern_type: &str) -> Vec<String> {
     match pattern_type.to_lowercase().as_str() {
         "singleton" => vec![

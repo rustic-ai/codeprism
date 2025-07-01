@@ -320,6 +320,7 @@ async fn build_inheritance_tree(
     Ok(serde_json::Value::Object(tree))
 }
 
+#[allow(clippy::too_many_arguments)]
 /// Recursive helper for building inheritance tree
 #[async_recursion::async_recursion]
 async fn build_tree_recursive(

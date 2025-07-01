@@ -129,6 +129,61 @@ enum Commands {
         #[arg(short, long, default_value = "examples")]
         output: PathBuf,
     },
+
+    /// Ecosystem integration features
+    Ecosystem {
+        #[command(subcommand)]
+        ecosystem_command: EcosystemCommands,
+    },
+}
+
+#[derive(Subcommand)]
+enum EcosystemCommands {
+    /// List popular MCP servers
+    ListServers {
+        /// Filter by tag
+        #[arg(long)]
+        tag: Option<String>,
+        /// Show top N servers by popularity
+        #[arg(long, default_value = "10")]
+        top: usize,
+    },
+
+    /// Generate template for popular server
+    Template {
+        /// Server name (e.g., codeprism, filesystem, sqlite)
+        server: String,
+        /// Output file for generated template
+        #[arg(short, long, default_value = "server-template.yaml")]
+        output: PathBuf,
+    },
+
+    /// List available test templates
+    Templates,
+
+    /// Generate test configuration from template
+    Generate {
+        /// Template type (basic, filesystem, database, api, development)
+        template: String,
+        /// Output file for generated spec
+        #[arg(short, long, default_value = "generated-spec.yaml")]
+        output: PathBuf,
+        /// Template variables in key=value format
+        #[arg(long)]
+        var: Vec<String>,
+    },
+
+    /// Benchmark performance against baseline
+    Benchmark {
+        /// Server specification file
+        spec_file: PathBuf,
+        /// Baseline file for comparison
+        #[arg(long)]
+        baseline: Option<PathBuf>,
+        /// Save results as new baseline
+        #[arg(long)]
+        save_baseline: bool,
+    },
 }
 
 #[tokio::main]
@@ -166,6 +221,9 @@ async fn main() -> Result<()> {
             server_args,
         }) => test_protocol_only(server_cmd.clone(), server_args.clone(), &cli).await,
         Some(Commands::Examples { output }) => generate_examples(output.clone()).await,
+        Some(Commands::Ecosystem { ecosystem_command }) => {
+            handle_ecosystem_command(ecosystem_command).await
+        }
         None => {
             // Default behavior - try to find spec or use provided server command
             if let Some(spec_file) = &cli.spec {
@@ -1119,6 +1177,166 @@ For more information, see the MCP Test Harness documentation.
         output_dir.display()
     );
     info!("Use these examples as starting points for your own MCP server tests.");
+
+    Ok(())
+}
+
+/// Handle ecosystem integration commands
+async fn handle_ecosystem_command(command: &EcosystemCommands) -> Result<()> {
+    use mcp_test_harness_lib::ecosystem::{PopularServers, TemplateManager};
+
+    match command {
+        EcosystemCommands::ListServers { tag, top } => {
+            let servers = PopularServers::new();
+
+            let server_list = if let Some(tag_filter) = tag {
+                servers.search_by_tag(tag_filter)
+            } else {
+                servers.top_servers(*top)
+            };
+
+            info!("🌟 Popular MCP Servers:");
+            for (i, server) in server_list.iter().enumerate() {
+                info!("{}. {} v{}", i + 1, server.name, server.version);
+                info!("   {}", server.description);
+                info!("   Author: {}", server.author);
+                info!("   Tags: {}", server.tags.join(", "));
+                info!("   Popularity: {:.1}/10", server.popularity_score);
+                if let Some(repo) = &server.repository_url {
+                    info!("   Repository: {}", repo);
+                }
+                info!("");
+            }
+
+            info!("Use 'mcp-test-harness ecosystem template <server>' to generate a template.");
+        }
+
+        EcosystemCommands::Template { server, output } => {
+            let servers = PopularServers::new();
+
+            match servers.generate_template(server) {
+                Ok(template) => {
+                    tokio::fs::write(output, &template.template_content)
+                        .await
+                        .context("Failed to write template file")?;
+
+                    info!("✅ Generated template for {} server", server);
+                    info!("Template saved to: {}", output.display());
+                    info!("Required variables: {:?}", template.required_variables);
+                }
+                Err(e) => {
+                    error!("❌ Failed to generate template for '{}': {}", server, e);
+                    std::process::exit(1);
+                }
+            }
+        }
+
+        EcosystemCommands::Templates => {
+            let manager = TemplateManager::new();
+            let templates = manager.available_templates();
+
+            info!("📋 Available Test Templates:");
+            for template_type in templates {
+                if let Some(template) = manager.get_template(template_type) {
+                    info!("• {}: {}", template.name, template.description);
+                }
+            }
+
+            info!("");
+            info!("Use 'mcp-test-harness ecosystem generate <template>' to create a spec from template.");
+        }
+
+        EcosystemCommands::Generate {
+            template,
+            output,
+            var,
+        } => {
+            let manager = TemplateManager::new();
+
+            // Parse variables
+            let mut variables = std::collections::HashMap::new();
+            for var_pair in var {
+                let parts: Vec<&str> = var_pair.splitn(2, '=').collect();
+                if parts.len() == 2 {
+                    variables.insert(parts[0].to_string(), parts[1].to_string());
+                } else {
+                    warn!("Invalid variable format: {}. Use key=value", var_pair);
+                }
+            }
+
+            // Determine template type
+            let template_type = match template.as_str() {
+                "basic" => mcp_test_harness_lib::ecosystem::TemplateType::BasicCompliance,
+                "filesystem" => mcp_test_harness_lib::ecosystem::TemplateType::FileSystem,
+                "database" => mcp_test_harness_lib::ecosystem::TemplateType::Database,
+                "api" => mcp_test_harness_lib::ecosystem::TemplateType::ApiWrapper,
+                "development" => mcp_test_harness_lib::ecosystem::TemplateType::DevelopmentTool,
+                _ => {
+                    error!("❌ Unknown template type: {}", template);
+                    error!("Available types: basic, filesystem, database, api, development");
+                    std::process::exit(1);
+                }
+            };
+
+            match manager.generate_spec(&template_type, &variables) {
+                Ok(spec) => {
+                    let yaml_content =
+                        serde_yaml::to_string(&spec).context("Failed to serialize spec to YAML")?;
+
+                    tokio::fs::write(output, yaml_content)
+                        .await
+                        .context("Failed to write generated spec")?;
+
+                    info!("✅ Generated {} template specification", template);
+                    info!("Specification saved to: {}", output.display());
+                }
+                Err(e) => {
+                    error!("❌ Failed to generate specification: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+
+        EcosystemCommands::Benchmark {
+            spec_file,
+            baseline,
+            save_baseline,
+        } => {
+            info!("🚀 Running performance benchmarks...");
+
+            // Load specification
+            let loader = SpecLoader::new().context("Failed to create spec loader")?;
+            let spec = loader
+                .load_spec(spec_file)
+                .await
+                .with_context(|| format!("Failed to load spec file: {}", spec_file.display()))?;
+
+            // Create and run test harness with performance focus
+            let mut harness = TestHarness::new(spec);
+            let results = harness
+                .run_all_tests()
+                .await
+                .context("Failed to execute benchmark tests")?;
+
+            // FUTURE: Implement detailed benchmark analysis and comparison
+            info!("📊 Benchmark Results:");
+            info!("Total tests: {}", results.stats.total_tests);
+            info!("Passed: {}", results.stats.passed_tests);
+            info!("Failed: {}", results.stats.failed_tests);
+
+            if *save_baseline {
+                // FUTURE: Save results as baseline
+                info!("💾 Saving baseline for future comparisons...");
+                info!("Baseline functionality will be implemented in a future update.");
+            }
+
+            if let Some(_baseline_file) = baseline {
+                // FUTURE: Compare against baseline
+                info!("📈 Comparing against baseline...");
+                info!("Baseline comparison functionality will be implemented in a future update.");
+            }
+        }
+    }
 
     Ok(())
 }

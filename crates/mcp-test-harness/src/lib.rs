@@ -39,6 +39,7 @@
 //! ```
 
 pub mod cli;
+pub mod ecosystem;
 pub mod protocol;
 pub mod reporting;
 pub mod spec;
@@ -50,6 +51,7 @@ mod types;
 mod utils;
 
 // Re-export main types for public API
+pub use ecosystem::{BenchmarkSuite, CommunityConfig, PopularServers, TemplateManager};
 pub use protocol::{validate_protocol_compliance, McpClient, McpError};
 pub use reporting::{ReportFormat, ReportGenerator};
 pub use spec::schema::{ServerSpec, TestCase};

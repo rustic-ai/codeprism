@@ -1,5 +1,5 @@
 //! Integration tests for MCP Test Harness
-//! 
+//!
 //! Tests the complete 5-step process: test suite input, server launch, schema validation,
 //! protocol testing, and test execution & reporting.
 
@@ -9,7 +9,7 @@ use std::time::Duration;
 use tempfile::NamedTempFile;
 use tokio::time::timeout;
 
-use crate::config::{TestConfig, TestSuite, TestCase, ServerConfig, GlobalConfig};
+use crate::config::{GlobalConfig, ServerConfig, TestCase, TestConfig, TestSuite};
 use crate::runner::TestRunner;
 use crate::server::McpServer;
 
@@ -21,22 +21,25 @@ async fn test_mcp_protocol_flow() -> Result<()> {
         println!("Skipping MCP protocol test - no MCP_TEST_SERVER environment variable set");
         return Ok(());
     }
-    
+
     let server_command = std::env::var("MCP_TEST_SERVER").unwrap();
-    
+
     // Step 1: Create test configuration
     let config = create_test_config(&server_command);
-    
+
     // Step 2: Initialize test runner
     let mut runner = TestRunner::new(config, "json".to_string())?;
-    
+
     // Step 3: Run tests with timeout
     let test_result = timeout(Duration::from_secs(30), runner.run()).await;
-    
+
     match test_result {
         Ok(Ok(results)) => {
             // Step 4: Verify results
-            assert!(results.summary.total_tests > 0, "Should have executed at least one test");
+            assert!(
+                results.summary.total_tests > 0,
+                "Should have executed at least one test"
+            );
             println!("✅ Integration test completed successfully");
             println!("Total tests: {}", results.summary.total_tests);
             println!("Passed: {}", results.summary.passed_tests);
@@ -63,7 +66,7 @@ async fn test_mcp_server_initialization() -> Result<()> {
         println!("Skipping echo server test - echo command not available");
         return Ok(());
     }
-    
+
     let config = ServerConfig {
         transport: "stdio".to_string(),
         command: Some("echo".to_string()),
@@ -74,25 +77,28 @@ async fn test_mcp_server_initialization() -> Result<()> {
         connection_timeout: Some(5),
         startup_delay: Some(1),
     };
-    
+
     let mut server = McpServer::new(config);
-    
+
     // Test server lifecycle
     let start_result = server.start().await;
     if start_result.is_ok() {
         println!("✅ Server started successfully");
-        
+
         // Test health check (this will likely fail with echo, but shouldn't crash)
         let health_result = server.health_check().await;
         println!("Health check result: {:?}", health_result);
-        
+
         // Clean shutdown
         server.stop().await?;
         println!("✅ Server stopped successfully");
     } else {
-        println!("ℹ️ Server start failed (expected with echo): {:?}", start_result);
+        println!(
+            "ℹ️ Server start failed (expected with echo): {:?}",
+            start_result
+        );
     }
-    
+
     Ok(())
 }
 
@@ -100,7 +106,7 @@ async fn test_mcp_server_initialization() -> Result<()> {
 #[test]
 fn test_json_rpc_serialization() -> Result<()> {
     use crate::server::{JsonRpcRequest, JsonRpcResponse};
-    
+
     // Test request serialization
     let request = JsonRpcRequest {
         jsonrpc: "2.0".to_string(),
@@ -115,12 +121,12 @@ fn test_json_rpc_serialization() -> Result<()> {
             }
         })),
     };
-    
+
     let request_json = serde_json::to_string(&request)?;
     assert!(request_json.contains("\"jsonrpc\":\"2.0\""));
     assert!(request_json.contains("\"method\":\"initialize\""));
     println!("✅ Request serialization works: {}", request_json);
-    
+
     // Test response deserialization
     let response_json = r#"{
         "jsonrpc": "2.0",
@@ -136,13 +142,13 @@ fn test_json_rpc_serialization() -> Result<()> {
             }
         }
     }"#;
-    
+
     let response: JsonRpcResponse = serde_json::from_str(response_json)?;
     assert_eq!(response.jsonrpc, "2.0");
     assert!(response.result.is_some());
     assert!(response.error.is_none());
     println!("✅ Response deserialization works");
-    
+
     Ok(())
 }
 
@@ -176,10 +182,10 @@ test_suites:
               validation: { type: "exists" }
               required: true
 "#;
-    
+
     let temp_file = NamedTempFile::new()?;
     std::fs::write(&temp_file, config_content)?;
-    
+
     // Test config loading
     match TestConfig::load(temp_file.path()) {
         Ok(config) => {
@@ -192,7 +198,7 @@ test_suites:
             println!("ℹ️ Config loading failed (may be expected): {}", e);
         }
     }
-    
+
     Ok(())
 }
 
@@ -200,35 +206,35 @@ test_suites:
 #[tokio::test]
 async fn test_five_step_process() -> Result<()> {
     println!("🧪 Testing the 5-step MCP Test Harness process:");
-    
+
     // Step 1: Test Suite Input ✅
     let config = create_test_config("echo");
     println!("✅ Step 1: Test suite configuration created");
-    
+
     // Step 2: Server Launch ✅ (will be tested during execution)
     println!("✅ Step 2: Server launch capability verified");
-    
+
     // Step 3: Schema Validation ✅ (framework exists)
     println!("✅ Step 3: Schema validation framework ready");
-    
+
     // Step 4: Protocol Testing ✅ (real implementation exists)
     println!("✅ Step 4: Protocol testing implementation ready");
-    
+
     // Step 5: Test Execution & Reporting ✅
     let mut runner = TestRunner::new(config, "json".to_string())?;
-    
+
     // Enable validation-only mode to avoid process execution issues
     runner.set_validation_only(true);
-    
+
     let results = runner.run().await?;
-    
+
     assert!(results.summary.total_tests > 0);
     println!("✅ Step 5: Test execution and reporting completed");
     println!("   Total tests: {}", results.summary.total_tests);
     println!("   Passed: {}", results.summary.passed_tests);
-    
+
     println!("🎉 All 5 steps of the MCP Test Harness process verified!");
-    
+
     Ok(())
 }
 
@@ -253,36 +259,34 @@ fn create_test_config(server_command: &str) -> TestConfig {
         },
         performance: None,
         baselines: None,
-        test_suites: vec![
-            TestSuite {
-                name: "Basic MCP Protocol Test".to_string(),
-                description: Some("Basic MCP protocol compliance test".to_string()),
-                test_cases: vec![
-                    TestCase {
-                        id: "test_initialize".to_string(),
-                        tool_name: "initialize".to_string(),
-                        description: Some("Test MCP initialization".to_string()),
-                        enabled: true,
-                        input_params: Some(json!({
-                            "protocolVersion": "2024-11-05"
-                        })),
-                        expected: None,
-                        performance_requirements: None,
-                        custom_scripts: None,
-                    },
-                    TestCase {
-                        id: "test_list_tools".to_string(),
-                        tool_name: "list_tools".to_string(),
-                        description: Some("Test listing available tools".to_string()),
-                        enabled: true,
-                        input_params: None,
-                        expected: None,
-                        performance_requirements: None,
-                        custom_scripts: None,
-                    },
-                ],
-            },
-        ],
+        test_suites: vec![TestSuite {
+            name: "Basic MCP Protocol Test".to_string(),
+            description: Some("Basic MCP protocol compliance test".to_string()),
+            test_cases: vec![
+                TestCase {
+                    id: "test_initialize".to_string(),
+                    tool_name: "initialize".to_string(),
+                    description: Some("Test MCP initialization".to_string()),
+                    enabled: true,
+                    input_params: Some(json!({
+                        "protocolVersion": "2024-11-05"
+                    })),
+                    expected: None,
+                    performance_requirements: None,
+                    custom_scripts: None,
+                },
+                TestCase {
+                    id: "test_list_tools".to_string(),
+                    tool_name: "list_tools".to_string(),
+                    description: Some("Test listing available tools".to_string()),
+                    enabled: true,
+                    input_params: None,
+                    expected: None,
+                    performance_requirements: None,
+                    custom_scripts: None,
+                },
+            ],
+        }],
     }
 }
 
@@ -290,9 +294,9 @@ fn create_test_config(server_command: &str) -> TestConfig {
 #[tokio::test]
 async fn test_mcp_communication_performance() -> Result<()> {
     use std::time::Instant;
-    
+
     let start = Instant::now();
-    
+
     // Test JSON serialization performance
     for i in 0..1000 {
         let request = crate::server::JsonRpcRequest {
@@ -304,16 +308,20 @@ async fn test_mcp_communication_performance() -> Result<()> {
                 "arguments": {"param": i}
             })),
         };
-        
+
         let _json = serde_json::to_string(&request)?;
     }
-    
+
     let duration = start.elapsed();
     println!("✅ Serialized 1000 JSON-RPC requests in {:?}", duration);
-    
+
     // Performance should be reasonable (less than 1 second for 1000 requests)
-    assert!(duration.as_secs() < 1, "JSON serialization too slow: {:?}", duration);
-    
+    assert!(
+        duration.as_secs() < 1,
+        "JSON serialization too slow: {:?}",
+        duration
+    );
+
     Ok(())
 }
 
@@ -324,4 +332,4 @@ mod tests {
         // Simple test to ensure this module compiles and loads correctly
         assert!(true);
     }
-} 
+}

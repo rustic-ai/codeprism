@@ -1,16 +1,15 @@
 //! Test execution engine for the standalone MCP test harness
-//! 
+//!
 //! Orchestrates test execution with performance monitoring and result reporting.
 
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::path::PathBuf;
-use std::time::{Duration, Instant};
-use tracing::{debug, error, info, warn};
 use std::sync::Arc;
+use std::time::Instant;
+use tracing::{debug, error, info, warn};
 
-use crate::config::{TestConfig, TestCase, TestSuite, ServerConfig};
+use crate::config::{ServerConfig, TestCase, TestConfig, TestSuite};
 use crate::server::McpServer;
 use crate::validation::TestValidator;
 
@@ -20,10 +19,12 @@ pub struct TestRunner {
     config: TestConfig,
     server: Option<McpServer>,
     validator: TestValidator,
+    #[allow(dead_code)]
     output_format: String,
-    
+
     // Execution options
     validation_only: bool,
+    #[allow(dead_code)]
     comprehensive: bool,
     parallel_execution: usize,
 }
@@ -161,13 +162,11 @@ pub struct ServerInfo {
     pub transport: String,
 }
 
-
-
 impl TestRunner {
     /// Create new test runner
     pub fn new(config: TestConfig, output_format: String) -> Result<Self> {
         let validator = TestValidator::new();
-        
+
         Ok(Self {
             config,
             server: None,
@@ -178,7 +177,7 @@ impl TestRunner {
             parallel_execution: 1,
         })
     }
-    
+
     /// Set server command for stdio servers
     pub fn set_server_command(&mut self, command: String, working_dir: Option<PathBuf>) {
         self.config.server.command = Some(command);
@@ -186,71 +185,72 @@ impl TestRunner {
             self.config.server.working_dir = Some(dir.to_string_lossy().to_string());
         }
     }
-    
+
     /// Set execution options
     pub fn set_validation_only(&mut self, validation_only: bool) {
         self.validation_only = validation_only;
     }
-    
 
-    
     pub fn set_comprehensive(&mut self, comprehensive: bool) {
         self.comprehensive = comprehensive;
     }
-    
+
     pub fn set_parallel_execution(&mut self, parallel: usize) {
         self.parallel_execution = parallel;
     }
-    
+
     /// Run all tests
     pub async fn run(&mut self) -> Result<TestResults> {
         let start_time = Instant::now();
-        info!("Starting test execution with {} test suites", self.config.test_suites.len());
-        
+        info!(
+            "Starting test execution with {} test suites",
+            self.config.test_suites.len()
+        );
+
         // Initialize server if not validation-only
         if !self.validation_only {
             self.initialize_server().await?;
         }
-        
+
         let mut suite_results = Vec::new();
         let mut total_tests = 0;
         let mut passed_tests = 0;
         let mut failed_tests = 0;
         let mut skipped_tests = 0;
-        
+
         // Clone test suites to avoid borrow checker issues
         let test_suites = self.config.test_suites.clone();
-        
+
         // Execute test suites
         for suite in &test_suites {
             info!("Executing test suite: {}", suite.name);
-            
+
             let suite_result = if self.parallel_execution > 1 {
                 self.run_suite_parallel(suite).await?
             } else {
                 self.run_suite_sequential(suite).await?
             };
-            
+
             total_tests += suite_result.suite_summary.total_cases;
             passed_tests += suite_result.suite_summary.passed_cases;
             failed_tests += suite_result.suite_summary.failed_cases;
             skipped_tests += suite_result.suite_summary.skipped_cases;
-            
+
             suite_results.push(suite_result);
         }
-        
+
         // Clean up server
         if let Some(ref mut server) = self.server {
             server.stop().await?;
         }
-        
+
         let execution_time = start_time.elapsed();
         let overall_success_rate = if total_tests > 0 {
             passed_tests as f64 / total_tests as f64
         } else {
             0.0
         };
-        
+
         let results = TestResults {
             summary: TestSummary {
                 total_tests,
@@ -265,58 +265,63 @@ impl TestRunner {
             execution_metadata: ExecutionMetadata {
                 start_time: chrono::Utc::now().to_rfc3339(),
                 end_time: chrono::Utc::now().to_rfc3339(),
-                execution_environment: format!("{}_{}", std::env::consts::OS, std::env::consts::ARCH),
+                execution_environment: format!(
+                    "{}_{}",
+                    std::env::consts::OS,
+                    std::env::consts::ARCH
+                ),
                 test_harness_version: env!("CARGO_PKG_VERSION").to_string(),
                 server_info: None, // Server introspection not implemented for this scope
             },
         };
-        
-        info!("Test execution completed: {}/{} passed", passed_tests, total_tests);
+
+        info!(
+            "Test execution completed: {}/{} passed",
+            passed_tests, total_tests
+        );
         Ok(results)
     }
-    
 
-    
     async fn initialize_server(&mut self) -> Result<()> {
         info!("Initializing MCP server");
-        
+
         let mut server = McpServer::new(self.config.server.clone());
         server.start().await?;
-        
+
         // Perform health check
         if !server.health_check().await? {
             return Err(anyhow!("Server failed health check"));
         }
-        
+
         self.server = Some(server);
         Ok(())
     }
-    
+
     async fn run_suite_sequential(&mut self, suite: &TestSuite) -> Result<SuiteResult> {
         let start_time = Instant::now();
         let mut test_case_results = Vec::new();
         let mut passed_cases = 0;
         let mut failed_cases = 0;
         let mut skipped_cases = 0;
-        
+
         for test_case in &suite.test_cases {
             let result = self.run_test_case(test_case).await?;
-            
+
             match result.status {
                 TestStatus::Passed => passed_cases += 1,
                 TestStatus::Failed | TestStatus::Error => failed_cases += 1,
                 TestStatus::Skipped => skipped_cases += 1,
             }
-            
+
             test_case_results.push(result);
-            
-            // Check fail_fast after cloning to avoid borrow issues
+
+            // Check fail_fast condition
             if self.config.global.fail_fast && failed_cases > 0 {
                 warn!("Fail-fast enabled, stopping suite execution");
                 break;
             }
         }
-        
+
         Ok(SuiteResult {
             suite_name: suite.name.clone(),
             test_case_results,
@@ -329,7 +334,7 @@ impl TestRunner {
             },
         })
     }
-    
+
     async fn run_suite_parallel(&mut self, suite: &TestSuite) -> Result<SuiteResult> {
         let start_time = Instant::now();
         let mut test_case_results = Vec::new();
@@ -337,7 +342,10 @@ impl TestRunner {
         let mut failed_cases = 0;
         let mut skipped_cases = 0;
 
-        info!("Running suite '{}' with parallel execution (max concurrent: {})", suite.name, self.parallel_execution);
+        info!(
+            "Running suite '{}' with parallel execution (max concurrent: {})",
+            suite.name, self.parallel_execution
+        );
 
         // Create semaphore to limit concurrent execution
         let semaphore = Arc::new(tokio::sync::Semaphore::new(self.parallel_execution));
@@ -347,17 +355,26 @@ impl TestRunner {
         for test_case in &suite.test_cases {
             let test_case = test_case.clone();
             let semaphore = semaphore.clone();
-            let fail_fast = self.config.global.fail_fast;
+            let _fail_fast = self.config.global.fail_fast;
             let validator = self.validator.clone();
             let validation_only = self.validation_only;
             let server_config = self.config.server.clone();
 
             let handle = tokio::spawn(async move {
                 // Acquire semaphore permit
-                let _permit = semaphore.acquire().await.expect("Semaphore should not be closed");
-                
+                let _permit = semaphore
+                    .acquire()
+                    .await
+                    .expect("Semaphore should not be closed");
+
                 // Execute test case
-                Self::execute_test_case_standalone(test_case, validator, validation_only, server_config).await
+                Self::execute_test_case_standalone(
+                    test_case,
+                    validator,
+                    validation_only,
+                    server_config,
+                )
+                .await
             });
 
             handles.push(handle);
@@ -372,9 +389,9 @@ impl TestRunner {
                         TestStatus::Failed | TestStatus::Error => failed_cases += 1,
                         TestStatus::Skipped => skipped_cases += 1,
                     }
-                    
+
                     test_case_results.push(result);
-                    
+
                     // Check fail_fast condition
                     if self.config.global.fail_fast && failed_cases > 0 {
                         warn!("Fail-fast enabled, cancelling remaining tests");
@@ -411,7 +428,7 @@ impl TestRunner {
             },
         })
     }
-    
+
     /// Execute a single test case in a standalone context (for parallel execution)
     async fn execute_test_case_standalone(
         test_case: TestCase,
@@ -433,7 +450,10 @@ impl TestRunner {
             };
         }
 
-        debug!("Running test case: {} ({})", test_case.id, test_case.tool_name);
+        debug!(
+            "Running test case: {} ({})",
+            test_case.id, test_case.tool_name
+        );
         let start_time = Instant::now();
 
         // Validation-only mode
@@ -478,19 +498,17 @@ impl TestRunner {
                     performance_metrics: None, // Performance metrics not required for protocol compliance testing
                 }
             }
-            Err(e) => {
-                TestCaseResult {
-                    test_id: test_case.id.clone(),
-                    test_name: test_case.tool_name.clone(),
-                    status: TestStatus::Error,
-                    execution_time_ms: start_time.elapsed().as_millis() as u64,
-                    memory_usage_mb: None,
-                    error_message: Some(e.to_string()),
-                    response: None,
-                    validation_results: vec![],
-                    performance_metrics: None,
-                }
-            }
+            Err(e) => TestCaseResult {
+                test_id: test_case.id.clone(),
+                test_name: test_case.tool_name.clone(),
+                status: TestStatus::Error,
+                execution_time_ms: start_time.elapsed().as_millis() as u64,
+                memory_usage_mb: None,
+                error_message: Some(e.to_string()),
+                response: None,
+                validation_results: vec![],
+                performance_metrics: None,
+            },
         }
     }
 
@@ -501,20 +519,26 @@ impl TestRunner {
     ) -> Result<serde_json::Value> {
         // Create and start MCP server
         let mut server = McpServer::new(server_config.clone());
-        server.start().await
+        server
+            .start()
+            .await
             .map_err(|e| anyhow::anyhow!("Failed to start MCP server: {}", e))?;
 
         // Execute tool call via the server using the proper MCP method
-        let result = server.call_tool(&test_case.tool_name, test_case.input_params.clone()).await
+        let result = server
+            .call_tool(&test_case.tool_name, test_case.input_params.clone())
+            .await
             .map_err(|e| anyhow::anyhow!("Tool call failed: {}", e))?;
 
         // Stop server
-        server.stop().await
+        server
+            .stop()
+            .await
             .map_err(|e| anyhow::anyhow!("Failed to stop MCP server: {}", e))?;
 
         Ok(result)
     }
-    
+
     async fn run_test_case(&mut self, test_case: &TestCase) -> Result<TestCaseResult> {
         if !test_case.enabled {
             return Ok(TestCaseResult {
@@ -529,10 +553,13 @@ impl TestRunner {
                 performance_metrics: None,
             });
         }
-        
-        debug!("Running test case: {} ({})", test_case.id, test_case.tool_name);
+
+        debug!(
+            "Running test case: {} ({})",
+            test_case.id, test_case.tool_name
+        );
         let start_time = Instant::now();
-        
+
         // Validation-only mode
         if self.validation_only {
             let validation_results = self.validator.validate_test_case(test_case);
@@ -552,7 +579,7 @@ impl TestRunner {
                 performance_metrics: None,
             });
         }
-        
+
         // Execute actual test
         let result = match self.execute_test_case(test_case).await {
             Ok(response) => {
@@ -562,7 +589,7 @@ impl TestRunner {
                 } else {
                     TestStatus::Failed
                 };
-                
+
                 TestCaseResult {
                     test_id: test_case.id.clone(),
                     test_name: test_case.tool_name.clone(),
@@ -575,32 +602,32 @@ impl TestRunner {
                     performance_metrics: None, // Performance metrics not used in protocol compliance testing
                 }
             }
-            Err(e) => {
-                TestCaseResult {
-                    test_id: test_case.id.clone(),
-                    test_name: test_case.tool_name.clone(),
-                    status: TestStatus::Error,
-                    execution_time_ms: start_time.elapsed().as_millis() as u64,
-                    memory_usage_mb: None,
-                    error_message: Some(e.to_string()),
-                    response: None,
-                    validation_results: vec![],
-                    performance_metrics: None,
-                }
-            }
+            Err(e) => TestCaseResult {
+                test_id: test_case.id.clone(),
+                test_name: test_case.tool_name.clone(),
+                status: TestStatus::Error,
+                execution_time_ms: start_time.elapsed().as_millis() as u64,
+                memory_usage_mb: None,
+                error_message: Some(e.to_string()),
+                response: None,
+                validation_results: vec![],
+                performance_metrics: None,
+            },
         };
-        
+
         Ok(result)
     }
-    
-    async fn execute_test_case(&mut self, test_case: &TestCase) -> Result<serde_json::Value> {
-        let server = self.server.as_mut()
-            .ok_or_else(|| anyhow!("Server not initialized"))?;
-        
-        server.call_tool(&test_case.tool_name, test_case.input_params.clone()).await
-    }
-    
 
+    async fn execute_test_case(&mut self, test_case: &TestCase) -> Result<serde_json::Value> {
+        let server = self
+            .server
+            .as_mut()
+            .ok_or_else(|| anyhow!("Server not initialized"))?;
+
+        server
+            .call_tool(&test_case.tool_name, test_case.input_params.clone())
+            .await
+    }
 }
 
 impl TestResults {
@@ -608,7 +635,7 @@ impl TestResults {
     pub fn all_passed(&self) -> bool {
         self.summary.failed_tests == 0
     }
-    
+
     /// Display results in table format
     pub fn display_table(&self) {
         println!("\n📊 Test Execution Summary");
@@ -617,13 +644,19 @@ impl TestResults {
         println!("Passed:         {} ✅", self.summary.passed_tests);
         println!("Failed:         {} ❌", self.summary.failed_tests);
         println!("Skipped:        {} ⏭️", self.summary.skipped_tests);
-        println!("Success Rate:   {:.1}%", self.summary.overall_success_rate * 100.0);
-        println!("Execution Time: {:.2}s", self.summary.execution_time_seconds);
-        
+        println!(
+            "Success Rate:   {:.1}%",
+            self.summary.overall_success_rate * 100.0
+        );
+        println!(
+            "Execution Time: {:.2}s",
+            self.summary.execution_time_seconds
+        );
+
         for suite_result in &self.suite_results {
             println!("\n📁 {}", suite_result.suite_name);
             println!("───────────────────────────────────────");
-            
+
             for test_result in &suite_result.test_case_results {
                 let status_icon = match test_result.status {
                     TestStatus::Passed => "✅",
@@ -631,14 +664,12 @@ impl TestResults {
                     TestStatus::Skipped => "⏭️",
                     TestStatus::Error => "💥",
                 };
-                
+
                 println!(
                     "  {} {} ({}ms)",
-                    status_icon,
-                    test_result.test_id,
-                    test_result.execution_time_ms
+                    status_icon, test_result.test_id, test_result.execution_time_ms
                 );
-                
+
                 if let Some(ref error) = test_result.error_message {
                     println!("    Error: {}", error);
                 }
@@ -647,20 +678,18 @@ impl TestResults {
     }
 }
 
-
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::config::TestConfig;
-    
+
     #[tokio::test]
     async fn test_runner_creation() {
         let config = TestConfig::default_config();
         let runner = TestRunner::new(config, "table".to_string());
         assert!(runner.is_ok());
     }
-    
+
     #[test]
     fn test_results_serialization() {
         let results = TestResults {
@@ -682,7 +711,7 @@ mod tests {
                 server_info: None,
             },
         };
-        
+
         let json = serde_json::to_string(&results).unwrap();
         let _deserialized: TestResults = serde_json::from_str(&json).unwrap();
     }

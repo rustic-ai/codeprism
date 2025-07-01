@@ -241,47 +241,45 @@ async fn collect_transitive_deps(
     }
 }
 
-/// List flow analysis tools
+/// List data flow analysis tools
 pub fn list_tools() -> Vec<Tool> {
     vec![
         Tool {
             name: "trace_data_flow".to_string(),
             title: Some("Trace Data Flow".to_string()),
-            description: "Track data flow through the codebase, following variable assignments, function parameters, and transformations".to_string(),
+            description: "Trace data flow through the codebase with variable and parameter tracking".to_string(),
             input_schema: serde_json::json!({
                 "type": "object",
                 "properties": {
                     "variable_or_parameter": {
                         "type": "string",
-                        "description": "Symbol ID of variable or parameter to trace"
+                        "description": "Variable or parameter to trace"
                     },
                     "direction": {
                         "type": "string",
                         "enum": ["forward", "backward", "both"],
-                        "description": "Direction to trace data flow",
-                        "default": "forward"
+                        "default": "forward",
+                        "description": "Direction to trace data flow"
                     },
                     "include_transformations": {
                         "type": "boolean",
-                        "description": "Include data transformations (method calls, assignments)",
-                        "default": true
+                        "default": true,
+                        "description": "Include data transformations in trace"
                     },
                     "max_depth": {
-                        "type": "number",
-                        "description": "Maximum depth for data flow tracing",
+                        "type": "integer",
                         "default": 10,
-                        "minimum": 1,
-                        "maximum": 50
+                        "description": "Maximum depth for flow traversal"
                     },
                     "follow_function_calls": {
                         "type": "boolean",
-                        "description": "Follow data flow across function calls",
-                        "default": true
+                        "default": true,
+                        "description": "Follow data flow through function calls"
                     },
                     "include_field_access": {
                         "type": "boolean",
-                        "description": "Include field/attribute access patterns",
-                        "default": true
+                        "default": true,
+                        "description": "Include field access in data flow"
                     }
                 },
                 "required": ["variable_or_parameter"]
@@ -331,47 +329,40 @@ pub fn list_tools() -> Vec<Tool> {
     ]
 }
 
-/// Route flow analysis tool calls
+/// Call data flow analysis tool
 pub async fn call_tool(
+    tool_name: &str,
     server: &CodePrismMcpServer,
-    params: &CallToolParams,
+    arguments: Option<Value>,
 ) -> Result<CallToolResult> {
-    match params.name.as_str() {
-        "trace_data_flow" => trace_data_flow(server, params.arguments.as_ref()).await,
-        "analyze_transitive_dependencies" => {
-            analyze_transitive_dependencies(server, params.arguments.as_ref()).await
-        }
-        _ => Err(anyhow::anyhow!(
-            "Unknown flow analysis tool: {}",
-            params.name
-        )),
+    match tool_name {
+        "trace_data_flow" => trace_data_flow(server, arguments).await,
+        // NOTE: analyze_transitive_dependencies moved to dependencies module
+        _ => Err(anyhow::anyhow!("Unknown tool: {}", tool_name)),
     }
 }
 
-/// Trace data flow
+/// Trace data flow through the codebase
 async fn trace_data_flow(
     server: &CodePrismMcpServer,
-    arguments: Option<&Value>,
+    arguments: Option<Value>,
 ) -> Result<CallToolResult> {
     let args = arguments.ok_or_else(|| anyhow::anyhow!("Missing arguments"))?;
 
-    // Support multiple parameter names for backward compatibility
     let variable_or_parameter = args
         .get("variable_or_parameter")
-        .or_else(|| args.get("start_symbol"))
-        .or_else(|| args.get("symbol"))
-        .or_else(|| args.get("target"))
         .and_then(|v| v.as_str())
-        .ok_or_else(|| {
-            anyhow::anyhow!(
-                "Missing variable_or_parameter parameter (or start_symbol, symbol, target)"
-            )
-        })?;
+        .ok_or_else(|| anyhow::anyhow!("Missing variable_or_parameter parameter"))?;
 
     let direction = args
         .get("direction")
         .and_then(|v| v.as_str())
         .unwrap_or("forward");
+
+    let include_transformations = args
+        .get("include_transformations")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(true);
 
     let max_depth = args
         .get("max_depth")
@@ -379,107 +370,334 @@ async fn trace_data_flow(
         .map(|v| v as usize)
         .unwrap_or(10);
 
-    let include_transformations = args
-        .get("include_transformations")
+    let follow_function_calls = args
+        .get("follow_function_calls")
         .and_then(|v| v.as_bool())
         .unwrap_or(true);
 
-    // Try to resolve the symbol
-    let result = if let Ok(symbol_results) =
-        server
-            .graph_query()
-            .search_symbols(variable_or_parameter, None, Some(1))
-    {
-        if let Some(symbol_result) = symbol_results.first() {
-            // Found the symbol, now trace its data flow
-            trace_symbol_data_flow(
-                server,
-                &symbol_result.node,
-                direction,
-                max_depth,
-                include_transformations,
-            )
-            .await
-        } else {
-            serde_json::json!({
-                "target": variable_or_parameter,
-                "error": "Symbol not found",
-                "suggestion": "Check if the symbol name is correct or try using a different identifier"
-            })
-        }
-    } else {
-        serde_json::json!({
-            "target": variable_or_parameter,
-            "error": "Failed to search for symbol",
-            "suggestion": "Ensure the repository is properly indexed"
-        })
-    };
+    let include_field_access = args
+        .get("include_field_access")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(true);
+
+    let symbol_id = parse_node_id(variable_or_parameter)?;
+
+    let data_flow_result = perform_data_flow_analysis(
+        server,
+        &symbol_id,
+        direction,
+        include_transformations,
+        max_depth,
+        follow_function_calls,
+        include_field_access,
+    )
+    .await?;
 
     Ok(CallToolResult {
         content: vec![ToolContent::Text {
-            text: serde_json::to_string_pretty(&result)?,
+            text: serde_json::to_string_pretty(&data_flow_result)?,
         }],
-        is_error: Some(result.get("error").is_some()),
+        is_error: Some(false),
     })
 }
 
-/// Analyze transitive dependencies
-async fn analyze_transitive_dependencies(
+async fn perform_data_flow_analysis(
     server: &CodePrismMcpServer,
-    arguments: Option<&Value>,
-) -> Result<CallToolResult> {
-    let args = arguments.ok_or_else(|| anyhow::anyhow!("Missing arguments"))?;
+    symbol_id: &codeprism_core::NodeId,
+    direction: &str,
+    include_transformations: bool,
+    max_depth: usize,
+    follow_function_calls: bool,
+    include_field_access: bool,
+) -> Result<serde_json::Value> {
+    let mut data_flows = Vec::new();
+    let mut visited = std::collections::HashSet::new();
 
-    // Support multiple parameter names for backward compatibility
-    let target = args
-        .get("target")
-        .or_else(|| args.get("symbol"))
-        .and_then(|v| v.as_str())
-        .ok_or_else(|| anyhow::anyhow!("Missing target parameter (or symbol)"))?;
+    // Get the starting symbol information
+    let start_symbol = server
+        .graph_store()
+        .get_node(symbol_id)
+        .ok_or_else(|| anyhow::anyhow!("Symbol not found: {}", symbol_id.to_hex()))?;
 
-    let max_depth = args
-        .get("max_depth")
-        .and_then(|v| v.as_u64())
-        .map(|v| v as usize)
-        .unwrap_or(5);
-
-    let detect_cycles = args
-        .get("detect_cycles")
-        .and_then(|v| v.as_bool())
-        .unwrap_or(true);
-
-    // Try to resolve the symbol
-    let result = if let Ok(symbol_results) =
-        server.graph_query().search_symbols(target, None, Some(1))
-    {
-        if let Some(symbol_result) = symbol_results.first() {
-            // Found the symbol, now analyze its transitive dependencies
-            analyze_symbol_transitive_dependencies(
+    match direction {
+        "forward" => {
+            trace_data_flow_forward(
                 server,
-                &symbol_result.node,
+                symbol_id,
+                &mut data_flows,
+                &mut visited,
+                0,
                 max_depth,
-                detect_cycles,
+                include_transformations,
+                follow_function_calls,
+                include_field_access,
             )
-            .await
-        } else {
-            serde_json::json!({
-                "target": target,
-                "error": "Symbol not found",
-                "suggestion": "Check if the symbol name is correct or try using a different identifier"
-            })
+            .await?;
         }
-    } else {
-        serde_json::json!({
-            "target": target,
-            "error": "Failed to search for symbol",
-            "suggestion": "Ensure the repository is properly indexed"
-        })
-    };
+        "backward" => {
+            trace_data_flow_backward(
+                server,
+                symbol_id,
+                &mut data_flows,
+                &mut visited,
+                0,
+                max_depth,
+                include_transformations,
+                follow_function_calls,
+                include_field_access,
+            )
+            .await?;
+        }
+        "both" => {
+            trace_data_flow_forward(
+                server,
+                symbol_id,
+                &mut data_flows,
+                &mut visited,
+                0,
+                max_depth,
+                include_transformations,
+                follow_function_calls,
+                include_field_access,
+            )
+            .await?;
 
-    Ok(CallToolResult {
-        content: vec![ToolContent::Text {
-            text: serde_json::to_string_pretty(&result)?,
-        }],
-        is_error: Some(result.get("error").is_some()),
-    })
+            visited.clear();
+
+            trace_data_flow_backward(
+                server,
+                symbol_id,
+                &mut data_flows,
+                &mut visited,
+                0,
+                max_depth,
+                include_transformations,
+                follow_function_calls,
+                include_field_access,
+            )
+            .await?;
+        }
+        _ => return Err(anyhow::anyhow!("Invalid direction: {}", direction)),
+    }
+
+    // Build summary statistics
+    let flow_types: std::collections::HashMap<String, usize> =
+        data_flows
+            .iter()
+            .fold(std::collections::HashMap::new(), |mut acc, flow| {
+                if let Some(flow_type) = flow.get("flow_type").and_then(|v| v.as_str()) {
+                    *acc.entry(flow_type.to_string()).or_insert(0) += 1;
+                }
+                acc
+            });
+
+    let transformations_count = data_flows
+        .iter()
+        .filter(|flow| {
+            flow.get("has_transformation")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false)
+        })
+        .count();
+
+    Ok(serde_json::json!({
+        "start_symbol": {
+            "id": symbol_id.to_hex(),
+            "name": start_symbol.name,
+            "kind": format!("{:?}", start_symbol.kind),
+            "file": start_symbol.file.display().to_string(),
+            "line": start_symbol.span.start_line
+        },
+        "data_flows": data_flows,
+        "summary": {
+            "total_flows": data_flows.len(),
+            "flow_types": flow_types,
+            "transformations_found": transformations_count,
+            "direction": direction,
+            "max_depth": max_depth
+        },
+        "parameters": {
+            "include_transformations": include_transformations,
+            "follow_function_calls": follow_function_calls,
+            "include_field_access": include_field_access
+        }
+    }))
+}
+
+#[async_recursion::async_recursion]
+async fn trace_data_flow_forward(
+    server: &CodePrismMcpServer,
+    symbol_id: &codeprism_core::NodeId,
+    data_flows: &mut Vec<serde_json::Value>,
+    visited: &mut std::collections::HashSet<codeprism_core::NodeId>,
+    current_depth: usize,
+    max_depth: usize,
+    include_transformations: bool,
+    follow_function_calls: bool,
+    include_field_access: bool,
+) -> Result<()> {
+    if current_depth >= max_depth || visited.contains(symbol_id) {
+        return Ok(());
+    }
+
+    visited.insert(*symbol_id);
+
+    // Find all references to this symbol (forward flow)
+    if let Ok(references) = server.graph_query().find_references(symbol_id) {
+        for reference in references {
+            let ref_node = &reference.source_node;
+
+            // Determine flow type based on context
+            let flow_type = determine_flow_type(ref_node, include_field_access);
+
+            // Check if this is a transformation
+            let has_transformation = include_transformations && is_transformation_context(ref_node);
+
+            // Create flow entry
+            let flow_entry = serde_json::json!({
+                "source_id": symbol_id.to_hex(),
+                "target_id": ref_node.id.to_hex(),
+                "target_name": ref_node.name,
+                "target_kind": format!("{:?}", ref_node.kind),
+                "flow_type": flow_type,
+                "direction": "forward",
+                "depth": current_depth + 1,
+                "has_transformation": has_transformation,
+                "location": {
+                    "file": ref_node.file.display().to_string(),
+                    "line": ref_node.span.start_line,
+                    "column": ref_node.span.start_column
+                }
+            });
+
+            data_flows.push(flow_entry);
+
+            // Follow function calls if enabled
+            if follow_function_calls
+                && matches!(
+                    ref_node.kind,
+                    codeprism_core::NodeKind::Function | codeprism_core::NodeKind::Method
+                )
+            {
+                trace_data_flow_forward(
+                    server,
+                    &ref_node.id,
+                    data_flows,
+                    visited,
+                    current_depth + 1,
+                    max_depth,
+                    include_transformations,
+                    follow_function_calls,
+                    include_field_access,
+                )
+                .await?;
+            }
+        }
+    }
+
+    Ok(())
+}
+
+#[async_recursion::async_recursion]
+async fn trace_data_flow_backward(
+    server: &CodePrismMcpServer,
+    symbol_id: &codeprism_core::NodeId,
+    data_flows: &mut Vec<serde_json::Value>,
+    visited: &mut std::collections::HashSet<codeprism_core::NodeId>,
+    current_depth: usize,
+    max_depth: usize,
+    include_transformations: bool,
+    follow_function_calls: bool,
+    include_field_access: bool,
+) -> Result<()> {
+    if current_depth >= max_depth || visited.contains(symbol_id) {
+        return Ok(());
+    }
+
+    visited.insert(*symbol_id);
+
+    // Find dependencies that flow into this symbol (backward flow)
+    if let Ok(dependencies) = server
+        .graph_query()
+        .find_dependencies(symbol_id, codeprism_core::graph::DependencyType::Direct)
+    {
+        for dependency in dependencies {
+            let dep_node = &dependency.target_node;
+
+            // Determine flow type based on context
+            let flow_type = determine_flow_type(dep_node, include_field_access);
+
+            // Check if this is a transformation
+            let has_transformation = include_transformations && is_transformation_context(dep_node);
+
+            // Create flow entry
+            let flow_entry = serde_json::json!({
+                "source_id": dep_node.id.to_hex(),
+                "target_id": symbol_id.to_hex(),
+                "source_name": dep_node.name,
+                "source_kind": format!("{:?}", dep_node.kind),
+                "flow_type": flow_type,
+                "direction": "backward",
+                "depth": current_depth + 1,
+                "has_transformation": has_transformation,
+                "location": {
+                    "file": dep_node.file.display().to_string(),
+                    "line": dep_node.span.start_line,
+                    "column": dep_node.span.start_column
+                }
+            });
+
+            data_flows.push(flow_entry);
+
+            // Follow function calls if enabled
+            if follow_function_calls
+                && matches!(
+                    dep_node.kind,
+                    codeprism_core::NodeKind::Function | codeprism_core::NodeKind::Method
+                )
+            {
+                trace_data_flow_backward(
+                    server,
+                    &dep_node.id,
+                    data_flows,
+                    visited,
+                    current_depth + 1,
+                    max_depth,
+                    include_transformations,
+                    follow_function_calls,
+                    include_field_access,
+                )
+                .await?;
+            }
+        }
+    }
+
+    Ok(())
+}
+
+fn determine_flow_type(node: &codeprism_core::Node, include_field_access: bool) -> &'static str {
+    match node.kind {
+        codeprism_core::NodeKind::Variable => "variable_reference",
+        codeprism_core::NodeKind::Parameter => "parameter_passing",
+        codeprism_core::NodeKind::Function | codeprism_core::NodeKind::Method => "function_call",
+        // codeprism_core::NodeKind::Field if include_field_access => "field_access",
+        codeprism_core::NodeKind::Class => "object_instantiation",
+        _ => "generic_reference",
+    }
+}
+
+fn is_transformation_context(node: &codeprism_core::Node) -> bool {
+    // Simple heuristic to detect transformations
+    let name_lower = node.name.to_lowercase();
+    name_lower.contains("transform")
+        || name_lower.contains("convert")
+        || name_lower.contains("map")
+        || name_lower.contains("filter")
+        || name_lower.contains("reduce")
+        || name_lower.contains("process")
+}
+
+fn parse_node_id(hex_str: &str) -> Result<codeprism_core::NodeId> {
+    codeprism_core::NodeId::from_hex(hex_str)
+        .map_err(|_| anyhow::anyhow!("Invalid node ID format: {}", hex_str))
 }

@@ -132,6 +132,11 @@ impl ToolManager {
         // FUTURE: Re-enable symbols tools after API compatibility updates
         // tools.extend(basic::symbols::list_tools());
         tools.extend(analysis::complexity::list_tools());
+        tools.extend(analysis::patterns::list_tools());
+        tools.extend(analysis::dependencies::list_tools());
+        tools.extend(analysis::flow::list_tools());
+        tools.extend(analysis::inheritance::list_tools());
+        tools.extend(analysis::decorators::list_tools());
 
         // Add remaining tools from legacy implementation
         let legacy_manager = crate::tools_legacy::ToolManager::new(self.server.clone());
@@ -208,6 +213,21 @@ impl ToolManager {
             // Analysis tools
             "analyze_complexity" => {
                 analysis::complexity::call_tool(&params.name, &server, params.arguments).await
+            }
+            "detect_patterns" => {
+                analysis::patterns::call_tool(&params.name, &server, params.arguments).await
+            }
+            "analyze_transitive_dependencies" => {
+                analysis::dependencies::call_tool(&params.name, &server, params.arguments).await
+            }
+            "trace_data_flow" => {
+                analysis::flow::call_tool(&params.name, &server, params.arguments).await
+            }
+            "trace_inheritance" => {
+                analysis::inheritance::call_tool(&params.name, &server, params.arguments).await
+            }
+            "analyze_decorators" => {
+                analysis::decorators::call_tool(&params.name, &server, params.arguments).await
             }
 
             // All other tools still use legacy implementation

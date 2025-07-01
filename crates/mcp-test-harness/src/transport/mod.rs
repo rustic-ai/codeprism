@@ -4,6 +4,7 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
+pub mod http;
 pub mod stdio;
 
 /// Transport error types
@@ -67,9 +68,14 @@ pub fn create_transport(
 ) -> Result<Box<dyn Transport>, TransportError> {
     match transport_type {
         TransportType::Stdio => Ok(Box::new(stdio::StdioTransport::new())),
-        TransportType::Http { .. } => Err(TransportError::NotSupported(
-            "HTTP transport not yet implemented".to_string(),
-        )),
+        TransportType::Http { host, port } => {
+            let config = http::HttpTransportConfig {
+                base_url: format!("http://{}:{}", host, port),
+                ..Default::default()
+            };
+            let transport = http::HttpTransport::new(config)?;
+            Ok(Box::new(transport))
+        }
     }
 }
 
@@ -95,18 +101,12 @@ mod tests {
     }
 
     #[test]
-    fn test_unsupported_http_transport() {
+    fn test_create_http_transport() {
         let http = TransportType::Http {
             host: "localhost".to_string(),
             port: 8080,
         };
         let result = create_transport(http);
-        assert!(result.is_err());
-        match result {
-            Err(err) => assert!(err
-                .to_string()
-                .contains("HTTP transport not yet implemented")),
-            Ok(_) => panic!("Expected error, got Ok"),
-        }
+        assert!(result.is_ok());
     }
 }

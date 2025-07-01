@@ -12,6 +12,7 @@ use tracing::{info, warn};
 
 pub mod result;
 pub mod runner;
+pub mod test_servers;
 pub mod validation;
 
 // Re-export key types for external use

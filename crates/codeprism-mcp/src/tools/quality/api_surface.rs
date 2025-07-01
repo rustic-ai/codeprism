@@ -109,7 +109,7 @@ async fn analyze_api_surface(
         .and_then(|v| v.as_bool())
         .unwrap_or(true);
 
-    // Delegate to analysis engine - placeholder implementation
+    // FUTURE: Delegate to codeprism-analysis crate for full API surface analysis
     let result = serde_json::json!({
         "scope": scope,
         "parameters": {

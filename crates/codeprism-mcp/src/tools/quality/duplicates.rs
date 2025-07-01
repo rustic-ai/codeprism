@@ -69,7 +69,7 @@ async fn find_duplicates(
         .and_then(|v| v.as_str())
         .unwrap_or("repository");
 
-    // Delegate to analysis engine - placeholder implementation
+    // FUTURE: Delegate to codeprism-analysis crate for full duplicate detection
     let result = serde_json::json!({
         "scope": scope,
         "parameters": {

@@ -104,7 +104,7 @@ async fn find_unused_code(
         .and_then(|v| v.as_bool())
         .unwrap_or(true);
 
-    // Delegate to analysis engine - placeholder implementation
+    // FUTURE: Delegate to codeprism-analysis crate for full unused code detection
     let result = serde_json::json!({
         "scope": scope,
         "parameters": {

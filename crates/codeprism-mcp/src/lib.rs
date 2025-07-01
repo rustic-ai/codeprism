@@ -28,6 +28,7 @@ pub mod monitoring; // Phase 2.2: Performance monitoring system
 pub mod prompts;
 pub mod protocol;
 pub mod resources;
+pub mod rmcp_bridge; // RMCP bridge for migration
 pub mod server;
 pub mod tools;
 pub mod tools_legacy;
@@ -40,6 +41,7 @@ pub use protocol::{
     InitializeParams, InitializeResult, JsonRpcNotification, JsonRpcRequest, JsonRpcResponse,
     ServerCapabilities,
 };
+pub use rmcp_bridge::CodePrismRmcpBridge; // Re-export RMCP bridge
 pub use server::McpServer;
 pub use transport::{StdioTransport, Transport};
 

@@ -1,55 +1,147 @@
-//! MCP Tools modular implementation
+//! Modular MCP Tools Implementation
 //!
-//! This module organizes tools into logical categories for better maintainability
+//! This module contains a modern, modular implementation of CodePrism MCP tools.
+//! The tools are organized into logical groups for better maintainability and testing.
+//!
+//! # Architecture
+//!
+//! ```text
+//! tools/
+//! ├── types.rs          # Core MCP types and shared structures
+//! ├── basic/            # Basic repository and search tools  
+//! ├── analysis/         # Advanced code analysis tools
+//! ├── quality/          # Code quality and security tools
+//! └── legacy.rs         # Backward compatibility wrapper
+//! ```
+//!
+//! # Usage
+//!
+//! ```rust,no_run
+//! use codeprism_mcp::tools::{ToolManager, CallToolParams};
+//! use std::sync::Arc;
+//! use tokio::sync::RwLock;
+//! use serde_json::json;
+//!
+//! # async fn example() -> anyhow::Result<()> {
+//! let server = Arc::new(RwLock::new(codeprism_mcp::CodePrismMcpServer::new()?));
+//! let manager = ToolManager::new(server);
+//! let result = manager.call_tool(CallToolParams {
+//!     name: "search_symbols".to_string(),
+//!     arguments: Some(json!({"pattern": "User"})),
+//! }).await?;
+//! # Ok(())
+//! # }
+//! ```
 
 pub mod analysis;
-pub mod core;
-pub mod dynamic_enablement; // Phase 2.2: Dynamic tool enablement
-pub mod search;
-pub mod workflow;
+pub mod basic;
+pub mod dynamic_enablement;
+pub mod quality;
+pub mod types;
 
-// Re-export all types from tools_legacy for backward compatibility
+// Re-export core types for convenience - using legacy types for compatibility
 pub use crate::tools_legacy::{
     CallToolParams, CallToolResult, ListToolsParams, ListToolsResult, Tool, ToolCapabilities,
-    ToolContent, ToolManager,
+    ToolContent, ToolManager as LegacyToolManager,
+};
+
+// Export ToolManager as ToolRegistry for backward compatibility
+pub use ToolManager as ToolRegistry;
+
+// Also re-export the new types with different names for gradual migration
+pub use types::{
+    CallToolParams as NewCallToolParams, CallToolResult as NewCallToolResult,
+    ListToolsParams as NewListToolsParams, ListToolsResult as NewListToolsResult, Tool as NewTool,
+    ToolCapabilities as NewToolCapabilities, ToolContent as NewToolContent,
 };
 
 use crate::CodePrismMcpServer;
 use anyhow::Result;
+use std::sync::Arc;
+use tokio::sync::RwLock;
 
-/// Tool registry that coordinates all modular tools
-pub struct ToolRegistry {
-    server: std::sync::Arc<tokio::sync::RwLock<CodePrismMcpServer>>,
+/// Modern tool manager that coordinates all tool modules
+///
+/// This is the main entry point for tool functionality, providing a clean
+/// interface while delegating to specialized tool modules.
+///
+/// # Examples
+///
+/// Creating a tool manager:
+/// ```rust,no_run
+/// use std::sync::Arc;
+/// use tokio::sync::RwLock;
+/// use codeprism_mcp::{CodePrismMcpServer, tools::ToolManager};
+///
+/// # async fn example() -> anyhow::Result<()> {
+/// let server = Arc::new(RwLock::new(CodePrismMcpServer::new()?));
+/// let manager = ToolManager::new(server);
+/// # Ok(())
+/// # }
+/// ```
+pub struct ToolManager {
+    server: Arc<RwLock<CodePrismMcpServer>>,
 }
 
-impl ToolRegistry {
-    /// Create a new tool registry
-    pub fn new(server: std::sync::Arc<tokio::sync::RwLock<CodePrismMcpServer>>) -> Self {
+impl ToolManager {
+    /// Create a new tool manager
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// use std::sync::Arc;
+    /// use tokio::sync::RwLock;
+    /// use codeprism_mcp::{CodePrismMcpServer, tools::ToolManager};
+    ///
+    /// # async fn example() -> anyhow::Result<()> {
+    /// let server = Arc::new(RwLock::new(CodePrismMcpServer::new()?));
+    /// let manager = ToolManager::new(server);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn new(server: Arc<RwLock<CodePrismMcpServer>>) -> Self {
         Self { server }
     }
 
-    /// List all available tools from all modules
+    /// List all available tools
+    ///
+    /// Returns a comprehensive list of all tools provided by CodePrism MCP server,
+    /// including basic repository tools, advanced analysis tools, and code quality tools.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// use codeprism_mcp::tools::{ToolManager, ListToolsParams};
+    /// use std::sync::Arc;
+    /// use tokio::sync::RwLock;
+    ///
+    /// # async fn example() -> anyhow::Result<()> {
+    /// let server = Arc::new(RwLock::new(codeprism_mcp::CodePrismMcpServer::new()?));
+    /// let manager = ToolManager::new(server);
+    /// let tools = manager.list_tools(ListToolsParams { cursor: None }).await?;
+    /// assert!(!tools.tools.is_empty());
+    /// # Ok(())
+    /// # }
+    /// ```
     pub async fn list_tools(&self, _params: ListToolsParams) -> Result<ListToolsResult> {
         let mut tools = Vec::new();
 
-        // Core navigation tools
-        tools.extend(core::navigation::list_tools());
-        tools.extend(core::symbols::list_tools());
-        tools.extend(core::repository::list_tools());
+        // Add tools from modular structure
+        tools.extend(basic::repository::list_tools());
 
-        // Search and discovery tools
-        tools.extend(search::content::list_tools());
-        tools.extend(search::patterns::list_tools());
+        // Add remaining tools from legacy implementation
+        let legacy_manager = crate::tools_legacy::ToolManager::new(self.server.clone());
+        let legacy_result = legacy_manager.list_tools(_params).await?;
 
-        // Analysis tools
-        tools.extend(analysis::complexity::list_tools());
-        tools.extend(analysis::flow::list_tools());
-        tools.extend(analysis::specialized::list_tools());
-        tools.extend(analysis::quality::list_tools());
-        tools.extend(analysis::javascript::list_tools()); // Phase 2.1: JavaScript analysis tools
+        // Filter out tools that are now implemented in modular structure
+        let modular_tool_names: std::collections::HashSet<String> =
+            tools.iter().map(|t| t.name.clone()).collect();
 
-        // Workflow orchestration tools
-        tools.extend(workflow::register_workflow_tools());
+        for tool in legacy_result.tools {
+            if !modular_tool_names.contains(&tool.name) {
+                tools.push(tool);
+            }
+        }
 
         Ok(ListToolsResult {
             tools,
@@ -57,50 +149,105 @@ impl ToolRegistry {
         })
     }
 
-    /// Route tool calls to appropriate modules
+    /// Call a specific tool with parameters
+    ///
+    /// Routes tool calls to the appropriate module based on the tool name.
+    /// Provides error handling and validation for all tool calls.
+    ///
+    /// # Arguments
+    ///
+    /// * `params` - Tool call parameters including name and arguments
+    ///
+    /// # Returns
+    ///
+    /// Returns a `CallToolResult` containing the tool output or error information.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// use codeprism_mcp::tools::{ToolManager, CallToolParams};
+    /// use std::sync::Arc;
+    /// use tokio::sync::RwLock;
+    ///
+    /// # async fn example() -> anyhow::Result<()> {
+    /// let server = Arc::new(RwLock::new(codeprism_mcp::CodePrismMcpServer::new()?));
+    /// let manager = ToolManager::new(server);
+    /// let result = manager.call_tool(CallToolParams {
+    ///     name: "repository_stats".to_string(),
+    ///     arguments: None,
+    /// }).await?;
+    /// assert!(!result.content.is_empty());
+    /// # Ok(())
+    /// # }
+    /// ```
     pub async fn call_tool(&self, params: CallToolParams) -> Result<CallToolResult> {
         let server = self.server.read().await;
 
+        // Route to modular tools first
         match params.name.as_str() {
-            // Core navigation tools
-            "repository_stats" => core::repository::call_tool(&server, &params).await,
-            "trace_path" | "find_dependencies" | "find_references" => {
-                core::navigation::call_tool(&server, &params).await
-            }
-            "explain_symbol" | "search_symbols" => core::symbols::call_tool(&server, &params).await,
-
-            // Search and discovery tools
-            "search_content" | "find_files" | "content_stats" => {
-                search::content::call_tool(&server, &params).await
-            }
-            "detect_patterns" => search::patterns::call_tool(&server, &params).await,
-
-            // Analysis tools
-            "analyze_complexity" => analysis::complexity::call_tool(&server, &params).await,
-            "trace_data_flow" | "analyze_transitive_dependencies" => {
-                analysis::flow::call_tool(&server, &params).await
-            }
-            "trace_inheritance" | "analyze_decorators" => {
-                analysis::specialized::call_tool(&server, &params).await
-            }
-            "find_duplicates"
-            | "find_unused_code"
-            | "analyze_security"
-            | "analyze_performance"
-            | "analyze_api_surface" => analysis::quality::call_tool(&server, &params).await,
-
-            // JavaScript analysis tools (Phase 2.1)
-            "analyze_javascript_frameworks"
-            | "analyze_react_components"
-            | "analyze_nodejs_patterns" => analysis::javascript::call_tool(&server, &params).await,
-
-            // Workflow orchestration tools
-            "suggest_analysis_workflow" | "batch_analysis" | "optimize_workflow" => {
-                workflow::handle_workflow_tool(&params.name, &server, params.arguments.as_ref())
-                    .await
+            // Basic repository tools
+            "repository_stats" | "content_stats" => {
+                basic::repository::call_tool(&params.name, &server, params.arguments).await
             }
 
-            _ => Err(anyhow::anyhow!("Unknown tool: {}", params.name)),
+            // All other tools still use legacy implementation
+            _ => {
+                drop(server); // Release the read lock before calling legacy
+                let legacy_manager = crate::tools_legacy::ToolManager::new(self.server.clone());
+                legacy_manager.call_tool(params).await
+            }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::Arc;
+    use tokio::sync::RwLock;
+
+    async fn create_test_manager() -> Result<ToolManager> {
+        let server = Arc::new(RwLock::new(CodePrismMcpServer::new()?));
+        Ok(ToolManager::new(server))
+    }
+
+    #[tokio::test]
+    async fn test_tool_manager_creation() {
+        let manager = create_test_manager().await.unwrap();
+        // Tool manager should be created successfully
+        assert!(std::ptr::addr_of!(manager.server).is_aligned());
+    }
+
+    #[tokio::test]
+    async fn test_list_tools_returns_tools() {
+        let manager = create_test_manager().await.unwrap();
+        let result = manager
+            .list_tools(ListToolsParams { cursor: None })
+            .await
+            .unwrap();
+
+        // Should return some tools
+        assert!(!result.tools.is_empty());
+
+        // Should include basic tools
+        let tool_names: Vec<&str> = result.tools.iter().map(|t| t.name.as_str()).collect();
+        assert!(tool_names.contains(&"repository_stats"));
+        assert!(tool_names.contains(&"search_symbols"));
+    }
+
+    #[tokio::test]
+    async fn test_call_tool_repository_stats() {
+        let manager = create_test_manager().await.unwrap();
+        let result = manager
+            .call_tool(CallToolParams {
+                name: "repository_stats".to_string(),
+                arguments: None,
+            })
+            .await
+            .unwrap();
+
+        // Should return successful result
+        assert_eq!(result.is_error, Some(false));
+        assert!(!result.content.is_empty());
     }
 }

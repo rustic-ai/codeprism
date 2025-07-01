@@ -19,7 +19,7 @@ pub async fn call_tool(
     params: &CallToolParams,
 ) -> Result<CallToolResult> {
     Err(anyhow::anyhow!(
-        "Semantic search tool '{}' not yet implemented (Phase 2 feature)",
+        "Semantic search tool '{}' not yet implemented in modular architecture (Phase 2 feature)",
         params.name
     ))
 }

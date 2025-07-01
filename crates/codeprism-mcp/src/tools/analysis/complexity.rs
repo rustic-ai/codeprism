@@ -1,6 +1,8 @@
 //! Complexity analysis tools
 
-use crate::tools_legacy::{CallToolParams, CallToolResult, Tool, ToolContent};
+#![allow(dead_code)] // PLANNED: Functions will be used when complexity tools are migrated from legacy
+
+use crate::tools_legacy::{CallToolResult, Tool, ToolContent};
 use crate::CodePrismMcpServer;
 use anyhow::Result;
 use codeprism_analysis::complexity::ComplexityAnalyzer;
@@ -183,52 +185,22 @@ fn analyze_symbol_complexity(
 
 /// List complexity analysis tools
 pub fn list_tools() -> Vec<Tool> {
-    vec![
-        Tool {
-            name: "analyze_complexity".to_string(),
-            title: Some("Analyze Code Complexity".to_string()),
-            description: "Calculate comprehensive complexity metrics including cyclomatic, cognitive, Halstead metrics, and maintainability index for code elements".to_string(),
-            input_schema: serde_json::json!({
-                "type": "object",
-                "properties": {
-                    "target": {
-                        "type": "string",
-                        "description": "File path or symbol ID to analyze"
-                    },
-                    "metrics": {
-                        "type": "array",
-                        "items": {
-                            "type": "string",
-                            "enum": ["cyclomatic", "cognitive", "halstead", "maintainability_index", "maintainability", "all"]
-                        },
-                        "description": "Types of complexity metrics to calculate. 'all' includes all available metrics.",
-                        "default": ["all"]
-                    },
-                    "threshold_warnings": {
-                        "type": "boolean",
-                        "description": "Include warnings for metrics exceeding recommended thresholds",
-                        "default": true
-                    }
-                },
-                "required": ["target"],
-                "additionalProperties": false
-            }),
-        }
-    ]
+    // FUTURE: Implement modular complexity tools
+    // PLANNED: return empty list as these tools are still in legacy
+    Vec::new()
 }
 
-/// Route complexity analysis tool calls
+/// Handle complexity tool calls
 pub async fn call_tool(
-    server: &CodePrismMcpServer,
-    params: &CallToolParams,
+    tool_name: &str,
+    _server: &CodePrismMcpServer,
+    _arguments: Option<Value>,
 ) -> Result<CallToolResult> {
-    match params.name.as_str() {
-        "analyze_complexity" => analyze_complexity(server, params.arguments.as_ref()).await,
-        _ => Err(anyhow::anyhow!(
-            "Unknown complexity analysis tool: {}",
-            params.name
-        )),
-    }
+    // FUTURE: Implement modular complexity tool routing
+    Err(anyhow::anyhow!(
+        "Complexity tool '{}' not yet implemented in modular architecture in modular architecture. Use legacy tools.",
+        tool_name
+    ))
 }
 
 /// Analyze code complexity

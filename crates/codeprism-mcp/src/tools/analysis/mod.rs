@@ -1,10 +1,14 @@
-//! Analysis tools for code quality, complexity, and flow
+//! Advanced code analysis tools.
 //!
-//! This module provides tools for analyzing code quality, detecting patterns,
-//! and understanding code flow and dependencies.
+//! This module contains sophisticated analysis tools for complexity,
+//! patterns, dependencies, data flow, inheritance, and decorators.
 
 pub mod complexity;
-pub mod flow;
-pub mod javascript;
-pub mod quality;
-pub mod specialized; // New module for quality analysis tools // Phase 2.1: JavaScript-specific analysis tools
+pub mod data_flow;
+pub mod decorators;
+pub mod dependencies;
+pub mod inheritance;
+pub mod patterns;
+
+// Re-export specific functions to avoid naming conflicts
+// PLANNED: All analysis modules will be migrated from tools_legacy.rs in future phases

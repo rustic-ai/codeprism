@@ -178,7 +178,7 @@ async fn search_symbols(
         .map(|arr| {
             arr.iter()
                 .filter_map(|v| v.as_str())
-                .filter_map(|s| parse_inheritance_filter(s))
+                .filter_map(parse_inheritance_filter)
                 .collect::<Vec<_>>()
         });
 
@@ -509,7 +509,6 @@ async fn find_files(
 }
 
 /// Helper functions extracted from legacy implementation
-
 /// Parse inheritance filter string into InheritanceFilter enum
 fn parse_inheritance_filter(filter_str: &str) -> Option<codeprism_core::InheritanceFilter> {
     if let Some(colon_pos) = filter_str.find(':') {

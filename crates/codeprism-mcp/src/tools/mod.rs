@@ -129,6 +129,9 @@ impl ToolManager {
         // Add tools from modular structure
         tools.extend(basic::repository::list_tools());
         tools.extend(basic::search::list_tools());
+        // FUTURE: Re-enable symbols tools after API compatibility updates
+        // tools.extend(basic::symbols::list_tools());
+        tools.extend(analysis::complexity::list_tools());
 
         // Add remaining tools from legacy implementation
         let legacy_manager = crate::tools_legacy::ToolManager::new(self.server.clone());
@@ -194,6 +197,17 @@ impl ToolManager {
             // Search tools
             "search_symbols" | "search_content" | "find_files" => {
                 basic::search::call_tool(&params.name, &server, params.arguments).await
+            }
+
+            // FUTURE: Re-enable symbol navigation tools after API compatibility updates
+            // Symbol navigation tools
+            // "trace_path" | "explain_symbol" | "find_dependencies" | "find_references" => {
+            //     basic::symbols::call_tool(&params.name, &server, params.arguments).await
+            // }
+
+            // Analysis tools
+            "analyze_complexity" => {
+                analysis::complexity::call_tool(&params.name, &server, params.arguments).await
             }
 
             // All other tools still use legacy implementation

@@ -185,28 +185,55 @@ fn analyze_symbol_complexity(
 
 /// List complexity analysis tools
 pub fn list_tools() -> Vec<Tool> {
-    // FUTURE: Implement modular complexity tools
-    // PLANNED: return empty list as these tools are still in legacy
-    Vec::new()
+    vec![
+        Tool {
+            name: "analyze_complexity".to_string(),
+            title: Some("Analyze Code Complexity".to_string()),
+            description: "Calculate complexity metrics for code elements including cyclomatic, cognitive, and maintainability metrics".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "properties": {
+                    "target": {
+                        "type": "string",
+                        "description": "File path or symbol ID to analyze"
+                    },
+                    "metrics": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": ["cyclomatic", "cognitive", "halstead", "maintainability_index", "all"]
+                        },
+                        "description": "Types of complexity metrics to calculate",
+                        "default": ["all"]
+                    },
+                    "threshold_warnings": {
+                        "type": "boolean",
+                        "description": "Include warnings for metrics exceeding thresholds",
+                        "default": true
+                    }
+                },
+                "required": ["target"]
+            }),
+        },
+    ]
 }
 
-/// Handle complexity tool calls
+/// Handle complexity analysis tool calls
 pub async fn call_tool(
     tool_name: &str,
-    _server: &CodePrismMcpServer,
-    _arguments: Option<Value>,
+    server: &CodePrismMcpServer,
+    arguments: Option<Value>,
 ) -> Result<CallToolResult> {
-    // FUTURE: Implement modular complexity tool routing
-    Err(anyhow::anyhow!(
-        "Complexity tool '{}' not yet implemented in modular architecture in modular architecture. Use legacy tools.",
-        tool_name
-    ))
+    match tool_name {
+        "analyze_complexity" => analyze_complexity(server, arguments).await,
+        _ => Err(anyhow::anyhow!("Unknown complexity tool: {}", tool_name)),
+    }
 }
 
 /// Analyze code complexity
 async fn analyze_complexity(
     server: &CodePrismMcpServer,
-    arguments: Option<&Value>,
+    arguments: Option<Value>,
 ) -> Result<CallToolResult> {
     let args = arguments.ok_or_else(|| anyhow::anyhow!("Missing arguments"))?;
 

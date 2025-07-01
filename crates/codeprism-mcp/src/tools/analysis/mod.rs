@@ -1,12 +1,13 @@
-//! Advanced code analysis tools.
+//! Analysis tools module.
 //!
-//! This module contains sophisticated analysis tools for complexity,
-//! patterns, dependencies, data flow, inheritance, and decorators.
+//! This module contains advanced analysis tools for code complexity,
+//! pattern detection, dependency analysis, data flow tracing, and
+//! inheritance analysis.
 
 pub mod complexity;
-pub mod data_flow;
 pub mod decorators;
 pub mod dependencies;
+pub mod flow;
 pub mod inheritance;
 pub mod patterns;
 

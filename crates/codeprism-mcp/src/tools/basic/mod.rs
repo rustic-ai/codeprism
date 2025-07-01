@@ -7,7 +7,8 @@
 pub mod navigation;
 pub mod repository;
 pub mod search;
-pub mod symbols;
+// FUTURE: Re-enable symbols module after API compatibility updates
+// pub mod symbols;
 
 // Re-export specific functions to avoid naming conflicts
 pub use repository::{content_stats, content_stats_tool, repository_stats, repository_stats_tool};

@@ -12,6 +12,8 @@ use std::time::{Duration, Instant};
 use tokio::sync::{Mutex, Semaphore};
 use tokio::time::{sleep, timeout};
 use tracing::{debug, error, info, instrument, warn};
+use jsonpath_lib::select;
+use regex::Regex;
 
 /// Advanced execution configuration for test runner
 #[derive(Debug, Clone)]
@@ -486,22 +488,109 @@ impl TestRunner {
         Ok(validation)
     }
 
-    /// Validate a specific field in the response
+    /// Validate a specific field in the response using JSONPath
     fn validate_field(
         &self,
         response: &Value,
-        _field_validation: &crate::spec::schema::FieldValidation,
+        field_validation: &crate::spec::schema::FieldValidation,
     ) -> Result<()> {
-        // FUTURE: Implement JSONPath-based field validation using jsonpath_lib crate
-        // Basic validation: ensure response is valid non-null JSON
-        if response.is_null() {
-            return Err(anyhow::anyhow!("Response is null"));
+        // Parse the JSONPath expression
+        let selected_values = select(response, &field_validation.path)
+            .map_err(|e| anyhow::anyhow!("Invalid JSONPath '{}': {}", field_validation.path, e))?;
+
+        // Check if field is required but missing
+        if field_validation.required && selected_values.is_empty() {
+            return Err(anyhow::anyhow!(
+                "Required field not found at path: {}",
+                field_validation.path
+            ));
         }
 
-        // Validate response structure based on field validation requirements
-        if let Some(expected_value) = &_field_validation.value {
-            if response != expected_value {
-                return Err(anyhow::anyhow!("Response value mismatch"));
+        // If field is not required and missing, validation passes
+        if !field_validation.required && selected_values.is_empty() {
+            return Ok(());
+        }
+
+        // Validate each selected value
+        for selected_value in &selected_values {
+            // Validate exact value match
+            if let Some(expected_value) = &field_validation.value {
+                if *selected_value != expected_value {
+                    return Err(anyhow::anyhow!(
+                        "Value mismatch at path '{}': expected {:?}, got {:?}",
+                        field_validation.path,
+                        expected_value,
+                        selected_value
+                    ));
+                }
+            }
+
+            // Validate field type
+            if let Some(expected_type) = &field_validation.field_type {
+                let actual_type = match selected_value {
+                    Value::Null => "null",
+                    Value::Bool(_) => "boolean",
+                    Value::Number(n) if n.is_i64() => "integer",
+                    Value::Number(_) => "number",
+                    Value::String(_) => "string",
+                    Value::Array(_) => "array",
+                    Value::Object(_) => "object",
+                };
+
+                if actual_type != expected_type {
+                    return Err(anyhow::anyhow!(
+                        "Type mismatch at path '{}': expected {}, got {}",
+                        field_validation.path,
+                        expected_type,
+                        actual_type
+                    ));
+                }
+            }
+
+            // Validate string pattern
+            if let Some(pattern) = &field_validation.pattern {
+                if let Some(string_value) = selected_value.as_str() {
+                    let regex = Regex::new(pattern)
+                        .map_err(|e| anyhow::anyhow!("Invalid regex pattern '{}': {}", pattern, e))?;
+                    
+                    if !regex.is_match(string_value) {
+                        return Err(anyhow::anyhow!(
+                            "Pattern mismatch at path '{}': '{}' does not match pattern '{}'",
+                            field_validation.path,
+                            string_value,
+                            pattern
+                        ));
+                    }
+                } else {
+                    return Err(anyhow::anyhow!(
+                        "Pattern validation requires string value at path '{}', got: {:?}",
+                        field_validation.path,
+                        selected_value
+                    ));
+                }
+            }
+
+            // Validate numeric range
+            if let (Some(min_val), Some(number)) = (&field_validation.min, selected_value.as_f64()) {
+                if number < *min_val {
+                    return Err(anyhow::anyhow!(
+                        "Value at path '{}' ({}) is below minimum ({})",
+                        field_validation.path,
+                        number,
+                        min_val
+                    ));
+                }
+            }
+
+            if let (Some(max_val), Some(number)) = (&field_validation.max, selected_value.as_f64()) {
+                if number > *max_val {
+                    return Err(anyhow::anyhow!(
+                        "Value at path '{}' ({}) is above maximum ({})",
+                        field_validation.path,
+                        number,
+                        max_val
+                    ));
+                }
             }
         }
 
@@ -725,5 +814,380 @@ impl Clone for ExecutionMetrics {
             retry_attempts: self.retry_attempts,
             protocol_errors: self.protocol_errors,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::spec::schema::FieldValidation;
+    use serde_json::json;
+
+    fn create_test_runner() -> TestRunner {
+        TestRunner::new()
+    }
+
+    #[test]
+    fn test_jsonpath_field_validation_exact_value() {
+        let runner = create_test_runner();
+        let response = json!({
+            "result": {
+                "status": "success",
+                "data": {
+                    "count": 42
+                }
+            }
+        });
+
+        // Test exact value match
+        let field_validation = FieldValidation {
+            path: "$.result.status".to_string(),
+            value: Some(json!("success")),
+            field_type: None,
+            required: true,
+            pattern: None,
+            min: None,
+            max: None,
+        };
+
+        assert!(runner.validate_field(&response, &field_validation).is_ok());
+
+        // Test exact value mismatch
+        let field_validation_fail = FieldValidation {
+            path: "$.result.status".to_string(),
+            value: Some(json!("failure")),
+            field_type: None,
+            required: true,
+            pattern: None,
+            min: None,
+            max: None,
+        };
+
+        assert!(runner.validate_field(&response, &field_validation_fail).is_err());
+    }
+
+    #[test]
+    fn test_jsonpath_field_validation_type_checking() {
+        let runner = create_test_runner();
+        let response = json!({
+            "result": {
+                "count": 42,
+                "active": true,
+                "message": "hello",
+                "items": [1, 2, 3],
+                "metadata": {"key": "value"}
+            }
+        });
+
+        // Test integer type
+        let int_validation = FieldValidation {
+            path: "$.result.count".to_string(),
+            value: None,
+            field_type: Some("integer".to_string()),
+            required: true,
+            pattern: None,
+            min: None,
+            max: None,
+        };
+        assert!(runner.validate_field(&response, &int_validation).is_ok());
+
+        // Test boolean type
+        let bool_validation = FieldValidation {
+            path: "$.result.active".to_string(),
+            value: None,
+            field_type: Some("boolean".to_string()),
+            required: true,
+            pattern: None,
+            min: None,
+            max: None,
+        };
+        assert!(runner.validate_field(&response, &bool_validation).is_ok());
+
+        // Test string type
+        let string_validation = FieldValidation {
+            path: "$.result.message".to_string(),
+            value: None,
+            field_type: Some("string".to_string()),
+            required: true,
+            pattern: None,
+            min: None,
+            max: None,
+        };
+        assert!(runner.validate_field(&response, &string_validation).is_ok());
+
+        // Test array type
+        let array_validation = FieldValidation {
+            path: "$.result.items".to_string(),
+            value: None,
+            field_type: Some("array".to_string()),
+            required: true,
+            pattern: None,
+            min: None,
+            max: None,
+        };
+        assert!(runner.validate_field(&response, &array_validation).is_ok());
+
+        // Test object type
+        let object_validation = FieldValidation {
+            path: "$.result.metadata".to_string(),
+            value: None,
+            field_type: Some("object".to_string()),
+            required: true,
+            pattern: None,
+            min: None,
+            max: None,
+        };
+        assert!(runner.validate_field(&response, &object_validation).is_ok());
+
+        // Test type mismatch
+        let type_mismatch = FieldValidation {
+            path: "$.result.count".to_string(),
+            value: None,
+            field_type: Some("string".to_string()),
+            required: true,
+            pattern: None,
+            min: None,
+            max: None,
+        };
+        assert!(runner.validate_field(&response, &type_mismatch).is_err());
+    }
+
+    #[test]
+    fn test_jsonpath_field_validation_pattern_matching() {
+        let runner = create_test_runner();
+        let response = json!({
+            "result": {
+                "email": "user@example.com",
+                "phone": "+1-555-123-4567"
+            }
+        });
+
+        // Test email pattern
+        let email_validation = FieldValidation {
+            path: "$.result.email".to_string(),
+            value: None,
+            field_type: None,
+            required: true,
+            pattern: Some(r"^[^@]+@[^@]+\.[^@]+$".to_string()),
+            min: None,
+            max: None,
+        };
+        assert!(runner.validate_field(&response, &email_validation).is_ok());
+
+        // Test phone pattern
+        let phone_validation = FieldValidation {
+            path: "$.result.phone".to_string(),
+            value: None,
+            field_type: None,
+            required: true,
+            pattern: Some(r"^\+\d{1}-\d{3}-\d{3}-\d{4}$".to_string()),
+            min: None,
+            max: None,
+        };
+        assert!(runner.validate_field(&response, &phone_validation).is_ok());
+
+        // Test pattern mismatch
+        let invalid_pattern = FieldValidation {
+            path: "$.result.email".to_string(),
+            value: None,
+            field_type: None,
+            required: true,
+            pattern: Some(r"^\d+$".to_string()), // Digits only
+            min: None,
+            max: None,
+        };
+        assert!(runner.validate_field(&response, &invalid_pattern).is_err());
+    }
+
+    #[test]
+    fn test_jsonpath_field_validation_numeric_ranges() {
+        let runner = create_test_runner();
+        let response = json!({
+            "result": {
+                "score": 85.5,
+                "count": 100
+            }
+        });
+
+        // Test within range
+        let range_validation = FieldValidation {
+            path: "$.result.score".to_string(),
+            value: None,
+            field_type: None,
+            required: true,
+            pattern: None,
+            min: Some(0.0),
+            max: Some(100.0),
+        };
+        assert!(runner.validate_field(&response, &range_validation).is_ok());
+
+        // Test below minimum
+        let below_min = FieldValidation {
+            path: "$.result.score".to_string(),
+            value: None,
+            field_type: None,
+            required: true,
+            pattern: None,
+            min: Some(90.0),
+            max: None,
+        };
+        assert!(runner.validate_field(&response, &below_min).is_err());
+
+        // Test above maximum
+        let above_max = FieldValidation {
+            path: "$.result.count".to_string(),
+            value: None,
+            field_type: None,
+            required: true,
+            pattern: None,
+            min: None,
+            max: Some(50.0),
+        };
+        assert!(runner.validate_field(&response, &above_max).is_err());
+    }
+
+    #[test]
+    fn test_jsonpath_field_validation_required_fields() {
+        let runner = create_test_runner();
+        let response = json!({
+            "result": {
+                "existing_field": "value"
+            }
+        });
+
+        // Test required field exists
+        let required_exists = FieldValidation {
+            path: "$.result.existing_field".to_string(),
+            value: None,
+            field_type: None,
+            required: true,
+            pattern: None,
+            min: None,
+            max: None,
+        };
+        assert!(runner.validate_field(&response, &required_exists).is_ok());
+
+        // Test required field missing
+        let required_missing = FieldValidation {
+            path: "$.result.missing_field".to_string(),
+            value: None,
+            field_type: None,
+            required: true,
+            pattern: None,
+            min: None,
+            max: None,
+        };
+        assert!(runner.validate_field(&response, &required_missing).is_err());
+
+        // Test optional field missing (should pass)
+        let optional_missing = FieldValidation {
+            path: "$.result.missing_field".to_string(),
+            value: None,
+            field_type: None,
+            required: false,
+            pattern: None,
+            min: None,
+            max: None,
+        };
+        assert!(runner.validate_field(&response, &optional_missing).is_ok());
+    }
+
+    #[test]
+    fn test_jsonpath_field_validation_complex_paths() {
+        let runner = create_test_runner();
+        let response = json!({
+            "result": {
+                "tools": [
+                    {
+                        "name": "calculator",
+                        "version": "1.0.0",
+                        "capabilities": ["add", "subtract"]
+                    },
+                    {
+                        "name": "text_editor",
+                        "version": "2.1.0",
+                        "capabilities": ["read", "write", "format"]
+                    }
+                ]
+            }
+        });
+
+        // Test array element validation
+        let first_tool_name = FieldValidation {
+            path: "$.result.tools[0].name".to_string(),
+            value: Some(json!("calculator")),
+            field_type: None,
+            required: true,
+            pattern: None,
+            min: None,
+            max: None,
+        };
+        assert!(runner.validate_field(&response, &first_tool_name).is_ok());
+
+        // Test wildcard path validation (all tool names should be strings)
+        let all_tool_names = FieldValidation {
+            path: "$.result.tools[*].name".to_string(),
+            value: None,
+            field_type: Some("string".to_string()),
+            required: true,
+            pattern: None,
+            min: None,
+            max: None,
+        };
+        assert!(runner.validate_field(&response, &all_tool_names).is_ok());
+
+        // Test nested array validation
+        let capabilities_type = FieldValidation {
+            path: "$.result.tools[*].capabilities".to_string(),
+            value: None,
+            field_type: Some("array".to_string()),
+            required: true,
+            pattern: None,
+            min: None,
+            max: None,
+        };
+        assert!(runner.validate_field(&response, &capabilities_type).is_ok());
+    }
+
+    #[test]
+    fn test_jsonpath_invalid_expressions() {
+        let runner = create_test_runner();
+        let response = json!({"test": "value"});
+
+        // Test invalid JSONPath expression
+        let invalid_path = FieldValidation {
+            path: "$.invalid.[[[".to_string(), // Invalid syntax
+            value: None,
+            field_type: None,
+            required: true,
+            pattern: None,
+            min: None,
+            max: None,
+        };
+
+        let result = runner.validate_field(&response, &invalid_path);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("Invalid JSONPath"));
+    }
+
+    #[test]
+    fn test_jsonpath_invalid_regex_pattern() {
+        let runner = create_test_runner();
+        let response = json!({"text": "hello world"});
+
+        // Test invalid regex pattern
+        let invalid_regex = FieldValidation {
+            path: "$.text".to_string(),
+            value: None,
+            field_type: None,
+            required: true,
+            pattern: Some("[[[invalid".to_string()), // Invalid regex
+            min: None,
+            max: None,
+        };
+
+        let result = runner.validate_field(&response, &invalid_regex);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("Invalid regex pattern"));
     }
 }

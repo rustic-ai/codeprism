@@ -1,0 +1,299 @@
+# JSONPath Field Validation Demo
+# Demonstrates advanced field validation capabilities using JSONPath expressions
+
+name: "JSONPath Validation Demo Server"
+version: "1.0.0"
+description: "Example server specification demonstrating comprehensive JSONPath field validation"
+
+capabilities:
+  tools: true
+  resources: true
+  prompts: true
+  sampling: false
+  logging: false
+
+server:
+  command: "python"
+  args: ["demo_mcp_server.py"]
+  transport: "stdio"
+  startup_timeout_seconds: 30
+  shutdown_timeout_seconds: 10
+
+tools:
+  - name: "user_profile"
+    description: "Get user profile information with comprehensive validation"
+    tests:
+      - name: "test_user_profile_validation"
+        description: "Validate user profile response structure and data types"
+        input:
+          method: "tools/call"
+          params:
+            name: "user_profile"
+            arguments:
+              user_id: "12345"
+        expected:
+          error: false
+          fields:
+            # Test exact value matching
+            - path: "$.result.status"
+              value: "success"
+              required: true
+            
+            # Test type validation for various JSON types
+            - path: "$.result.user.id"
+              field_type: "integer"
+              required: true
+            
+            - path: "$.result.user.active"
+              field_type: "boolean"
+              required: true
+            
+            - path: "$.result.user.profile"
+              field_type: "object"
+              required: true
+            
+            - path: "$.result.user.tags"
+              field_type: "array"
+              required: true
+            
+            # Test string pattern validation (email format)
+            - path: "$.result.user.email"
+              field_type: "string"
+              pattern: "^[^@]+@[^@]+\\.[^@]+$"
+              required: true
+            
+            # Test numeric range validation
+            - path: "$.result.user.age"
+              field_type: "integer"
+              min: 0
+              max: 150
+              required: true
+              
+            - path: "$.result.user.score"
+              field_type: "number"
+              min: 0.0
+              max: 100.0
+              required: false
+            
+            # Test complex JSONPath expressions with arrays
+            - path: "$.result.user.tags[*]"
+              field_type: "string"
+              required: true
+            
+            # Test array element by index
+            - path: "$.result.user.permissions[0]"
+              value: "read"
+              required: true
+            
+            # Test nested object validation
+            - path: "$.result.user.profile.preferences.theme"
+              field_type: "string"
+              pattern: "^(light|dark|auto)$"
+              required: false
+        tags: ["validation", "jsonpath", "comprehensive"]
+
+      - name: "test_invalid_user_handling"
+        description: "Test error handling for invalid user requests"
+        input:
+          method: "tools/call"
+          params:
+            name: "user_profile" 
+            arguments:
+              user_id: "invalid"
+        expected:
+          error: true
+          error_code: -32602
+          error_message_contains: "invalid user"
+        tags: ["error_handling", "validation"]
+
+  - name: "search_users"
+    description: "Search users with advanced filtering"
+    tests:
+      - name: "test_search_results_structure"
+        description: "Validate search results array structure"
+        input:
+          method: "tools/call"
+          params:
+            name: "search_users"
+            arguments:
+              query: "john"
+              filters:
+                active: true
+                department: "engineering"
+        expected:
+          error: false
+          fields:
+            # Validate result metadata
+            - path: "$.result.total_count"
+              field_type: "integer"
+              min: 0
+              required: true
+            
+            - path: "$.result.page"
+              field_type: "integer"
+              min: 1
+              required: true
+            
+            - path: "$.result.per_page"
+              field_type: "integer"
+              min: 1
+              max: 100
+              required: true
+            
+            # Validate all users in results array have required fields
+            - path: "$.result.users[*].id"
+              field_type: "integer"
+              required: true
+            
+            - path: "$.result.users[*].name"
+              field_type: "string"
+              required: true
+            
+            - path: "$.result.users[*].email"
+              field_type: "string"
+              pattern: "^[^@]+@[^@]+\\.[^@]+$"
+              required: true
+            
+            # Test conditional validation (if users exist, validate first user)
+            - path: "$.result.users[?(@.length > 0)][0].department"
+              field_type: "string"
+              required: false
+        tags: ["search", "array_validation", "complex_paths"]
+
+resources:
+  - name: "user_avatar"
+    uri_template: "avatar://user/{user_id}"
+    mime_type: "image/png"
+    tests:
+      - name: "test_avatar_metadata"
+        description: "Validate avatar resource metadata"
+        input:
+          method: "resources/read"
+          params:
+            uri: "avatar://user/12345"
+        expected:
+          error: false
+          fields:
+            # Validate resource content structure
+            - path: "$.result.contents[0].uri"
+              value: "avatar://user/12345"
+              required: true
+            
+            - path: "$.result.contents[0].mimeType"
+              value: "image/png"
+              required: true
+            
+            # Validate base64 encoded image data format
+            - path: "$.result.contents[0].blob"
+              field_type: "string"
+              pattern: "^[A-Za-z0-9+/]+=*$"
+              required: true
+            
+            # Validate metadata object
+            - path: "$.result.contents[0].metadata.width"
+              field_type: "integer"
+              min: 1
+              max: 2048
+              required: false
+            
+            - path: "$.result.contents[0].metadata.height"
+              field_type: "integer"
+              min: 1
+              max: 2048
+              required: false
+        tags: ["resources", "binary_data", "metadata"]
+
+prompts:
+  - name: "format_user_report"
+    description: "Generate formatted user report"
+    arguments:
+      - name: "user_id"
+        description: "User identifier"
+        required: true
+      - name: "format"
+        description: "Output format (json, html, text)"
+        required: false
+    tests:
+      - name: "test_json_report_format"
+        description: "Validate JSON report format output"
+        input:
+          method: "prompts/get"
+          params:
+            name: "format_user_report"
+            arguments:
+              user_id: "12345"
+              format: "json"
+        expected:
+          error: false
+          fields:
+            # Validate prompt response structure
+            - path: "$.result.description"
+              field_type: "string"
+              required: true
+            
+            - path: "$.result.messages[*].role"
+              field_type: "string"
+              pattern: "^(user|assistant|system)$"
+              required: true
+            
+            - path: "$.result.messages[*].content.type"
+              field_type: "string"
+              pattern: "^(text|image)$"
+              required: true
+            
+            # Validate that text messages have content
+            - path: "$.result.messages[?(@.content.type == 'text')].content.text"
+              field_type: "string"
+              required: true
+            
+            # Test complex conditional JSONPath (if JSON format requested, validate JSON structure)
+            - path: "$.result.messages[?(@.content.text && @.content.text contains 'json')].content.text"
+              pattern: "\\{.*\\}"
+              required: false
+        tags: ["prompts", "conditional_validation", "complex_jsonpath"]
+
+      - name: "test_html_report_format" 
+        description: "Validate HTML report format output"
+        input:
+          method: "prompts/get"
+          params:
+            name: "format_user_report"
+            arguments:
+              user_id: "12345"
+              format: "html"
+        expected:
+          error: false
+          fields:
+            # Validate HTML content structure
+            - path: "$.result.messages[?(@.content.type == 'text')].content.text" 
+              pattern: "<html>.*</html>"
+              required: true
+        tags: ["prompts", "html_validation", "pattern_matching"]
+
+test_config:
+  timeout_seconds: 30
+  max_concurrency: 4
+  fail_fast: false
+  retry:
+    max_retries: 2
+    retry_delay_ms: 1000
+    exponential_backoff: true
+
+metadata:
+  created_by: "JSONPath Validation Demo"
+  validation_features:
+    - "exact_value_matching"
+    - "type_validation" 
+    - "pattern_matching"
+    - "numeric_ranges"
+    - "array_validation"
+    - "complex_jsonpath_expressions"
+    - "conditional_validation"
+    - "error_handling"
+  jsonpath_examples:
+    simple_path: "$.result.status"
+    array_index: "$.result.users[0].name"
+    array_wildcard: "$.result.users[*].email"
+    conditional: "$.result.users[?(@.active == true)].name"
+    nested_object: "$.result.user.profile.preferences.theme"
+    filter_expression: "$.result.messages[?(@.content.type == 'text')].content.text" 

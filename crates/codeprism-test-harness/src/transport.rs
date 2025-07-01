@@ -690,9 +690,9 @@ mod tests {
         assert!(error.to_string().contains("30"));
 
         let error = TransportError::UnsupportedTransport {
-            transport_type: "websocket".to_string(),
+            transport_type: "invalid".to_string(),
         };
-        assert!(error.to_string().contains("websocket"));
+        assert!(error.to_string().contains("invalid"));
     }
 
     #[tokio::test]

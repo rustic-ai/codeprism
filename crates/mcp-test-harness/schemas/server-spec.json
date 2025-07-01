@@ -85,8 +85,8 @@
         },
         "transport": {
           "type": "string",
-          "enum": ["stdio", "http", "websocket"],
-          "description": "Transport mechanism for MCP communication"
+          "enum": ["stdio", "http"],
+          "description": "Transport mechanism for MCP communication (per official MCP specification)"
         },
         "startup_timeout_seconds": {
           "type": "integer",

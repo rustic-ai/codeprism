@@ -20,6 +20,9 @@ pub enum TransportError {
 }
 
 /// Transport type enumeration
+///
+/// MCP specification only supports stdio and HTTP transports.
+/// WebSocket is not part of the official MCP protocol.
 #[derive(Debug, Clone, Serialize, Deserialize, clap::ValueEnum)]
 #[serde(rename_all = "snake_case")]
 pub enum TransportType {
@@ -28,9 +31,6 @@ pub enum TransportType {
     /// HTTP with Server-Sent Events
     #[clap(skip)]
     Http { host: String, port: u16 },
-    /// WebSocket transport
-    #[clap(skip)]
-    WebSocket { url: String },
 }
 
 impl fmt::Display for TransportType {
@@ -38,7 +38,6 @@ impl fmt::Display for TransportType {
         match self {
             TransportType::Stdio => write!(f, "stdio"),
             TransportType::Http { host, port } => write!(f, "http://{}:{}", host, port),
-            TransportType::WebSocket { url } => write!(f, "ws://{}", url),
         }
     }
 }
@@ -71,9 +70,6 @@ pub fn create_transport(
         TransportType::Http { .. } => Err(TransportError::NotSupported(
             "HTTP transport not yet implemented".to_string(),
         )),
-        TransportType::WebSocket { .. } => Err(TransportError::NotSupported(
-            "WebSocket transport not yet implemented".to_string(),
-        )),
     }
 }
 
@@ -99,16 +95,18 @@ mod tests {
     }
 
     #[test]
-    fn test_unsupported_transports() {
+    fn test_unsupported_http_transport() {
         let http = TransportType::Http {
             host: "localhost".to_string(),
             port: 8080,
         };
-        assert!(create_transport(http).is_err());
-
-        let ws = TransportType::WebSocket {
-            url: "localhost:8080".to_string(),
-        };
-        assert!(create_transport(ws).is_err());
+        let result = create_transport(http);
+        assert!(result.is_err());
+        match result {
+            Err(err) => assert!(err
+                .to_string()
+                .contains("HTTP transport not yet implemented")),
+            Ok(_) => panic!("Expected error, got Ok"),
+        }
     }
 }

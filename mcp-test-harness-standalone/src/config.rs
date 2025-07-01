@@ -58,7 +58,7 @@ pub struct ServerConfig {
     /// Environment variables for the server
     pub env: Option<HashMap<String, String>>,
     
-    /// Server URL (for http/websocket)
+    /// Server URL (for HTTP transport)
     pub url: Option<String>,
     
     /// Connection timeout in seconds

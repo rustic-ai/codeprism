@@ -656,10 +656,10 @@ impl ServerSpec {
 
         // Validate transport type
         match self.server.transport.as_str() {
-            "stdio" | "http" | "websocket" => {}
+            "stdio" | "http" => {}
             _ => {
                 return Err(ValidationError::InvalidFormat(format!(
-                    "Invalid transport type: {}",
+                    "Invalid transport type: {}. MCP specification only supports 'stdio' and 'http' transports",
                     self.server.transport
                 )))
             }

@@ -14,6 +14,7 @@
 
 use crate::CodePrismMcpServer;
 use anyhow::Result;
+use async_recursion::async_recursion;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -2966,169 +2967,166 @@ impl ToolManager {
     }
 
     /// Recursive helper for building inheritance tree
-    fn build_tree_recursive<'a>(
-        &'a self,
-        server: &'a CodePrismMcpServer,
-        class_id: &'a codeprism_core::NodeId,
-        tree: &'a mut serde_json::Map<String, serde_json::Value>,
-        visited: &'a mut std::collections::HashSet<codeprism_core::NodeId>,
-        direction: &'a str,
+    #[async_recursion]
+    async fn build_tree_recursive(
+        &self,
+        server: &CodePrismMcpServer,
+        class_id: &codeprism_core::NodeId,
+        tree: &mut serde_json::Map<String, serde_json::Value>,
+        visited: &mut std::collections::HashSet<codeprism_core::NodeId>,
+        direction: &str,
         current_depth: usize,
         max_depth: usize,
         include_source_context: bool,
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<()>> + 'a>> {
-        Box::pin(async move {
-            // Prevent infinite recursion and excessive depth
-            if current_depth >= max_depth || visited.contains(class_id) {
-                return Ok(());
-            }
+    ) -> Result<()> {
+        // Prevent infinite recursion and excessive depth
+        if current_depth >= max_depth || visited.contains(class_id) {
+            return Ok(());
+        }
 
-            visited.insert(*class_id);
+        visited.insert(*class_id);
 
-            if let Some(class_node) = server.graph_store().get_node(class_id) {
-                if let Ok(inheritance_info) = server.graph_query().get_inheritance_info(class_id) {
-                    let mut class_data = serde_json::Map::new();
+        if let Some(class_node) = server.graph_store().get_node(class_id) {
+            if let Ok(inheritance_info) = server.graph_query().get_inheritance_info(class_id) {
+                let mut class_data = serde_json::Map::new();
 
-                    // Basic class information
+                // Basic class information
+                class_data.insert(
+                    "id".to_string(),
+                    serde_json::Value::String(class_id.to_hex()),
+                );
+                class_data.insert(
+                    "name".to_string(),
+                    serde_json::Value::String(class_node.name.clone()),
+                );
+                class_data.insert(
+                    "file".to_string(),
+                    serde_json::Value::String(class_node.file.display().to_string()),
+                );
+                class_data.insert(
+                    "is_metaclass".to_string(),
+                    serde_json::Value::Bool(inheritance_info.is_metaclass),
+                );
+
+                // Add source context if requested
+                if include_source_context {
+                    if let Some(context) =
+                        self.extract_source_context(&class_node.file, class_node.span.start_line, 3)
+                    {
+                        class_data.insert("source_context".to_string(), context);
+                    }
+                }
+
+                // Metaclass information
+                if let Some(metaclass) = &inheritance_info.metaclass {
                     class_data.insert(
-                        "id".to_string(),
-                        serde_json::Value::String(class_id.to_hex()),
-                    );
-                    class_data.insert(
-                        "name".to_string(),
-                        serde_json::Value::String(class_node.name.clone()),
-                    );
-                    class_data.insert(
-                        "file".to_string(),
-                        serde_json::Value::String(class_node.file.display().to_string()),
-                    );
-                    class_data.insert(
-                        "is_metaclass".to_string(),
-                        serde_json::Value::Bool(inheritance_info.is_metaclass),
-                    );
-
-                    // Add source context if requested
-                    if include_source_context {
-                        if let Some(context) = self.extract_source_context(
-                            &class_node.file,
-                            class_node.span.start_line,
-                            3,
-                        ) {
-                            class_data.insert("source_context".to_string(), context);
-                        }
-                    }
-
-                    // Metaclass information
-                    if let Some(metaclass) = &inheritance_info.metaclass {
-                        class_data.insert(
-                            "metaclass".to_string(),
-                            serde_json::json!({
-                                "name": metaclass.class_name,
-                                "file": metaclass.file.display().to_string()
-                            }),
-                        );
-                    }
-
-                    // Process parent classes (up direction)
-                    if direction == "up" || direction == "both" {
-                        let mut parents = serde_json::Map::new();
-                        for base_class in &inheritance_info.base_classes {
-                            // Try to find the actual base class node
-                            let base_classes = server
-                                .graph_store()
-                                .get_nodes_by_kind(codeprism_core::NodeKind::Class);
-                            if let Some(base_node) = base_classes
-                                .iter()
-                                .find(|node| node.name == base_class.class_name)
-                            {
-                                self.build_tree_recursive(
-                                    server,
-                                    &base_node.id,
-                                    &mut parents,
-                                    visited,
-                                    direction,
-                                    current_depth + 1,
-                                    max_depth,
-                                    include_source_context,
-                                )
-                                .await?;
-                            } else {
-                                // External class (not in our codebase)
-                                parents.insert(
-                                    base_class.class_name.clone(),
-                                    serde_json::json!({
-                                        "name": base_class.class_name,
-                                        "external": true,
-                                        "relationship_type": base_class.relationship_type
-                                    }),
-                                );
-                            }
-                        }
-                        if !parents.is_empty() {
-                            class_data.insert(
-                                "parent_classes".to_string(),
-                                serde_json::Value::Object(parents),
-                            );
-                        }
-                    }
-
-                    // Process child classes (down direction)
-                    if direction == "down" || direction == "both" {
-                        let mut children = serde_json::Map::new();
-                        for subclass in &inheritance_info.subclasses {
-                            // Try to find the actual subclass node
-                            let subclasses = server
-                                .graph_store()
-                                .get_nodes_by_kind(codeprism_core::NodeKind::Class);
-                            if let Some(sub_node) = subclasses
-                                .iter()
-                                .find(|node| node.name == subclass.class_name)
-                            {
-                                self.build_tree_recursive(
-                                    server,
-                                    &sub_node.id,
-                                    &mut children,
-                                    visited,
-                                    direction,
-                                    current_depth + 1,
-                                    max_depth,
-                                    include_source_context,
-                                )
-                                .await?;
-                            }
-                        }
-                        if !children.is_empty() {
-                            class_data.insert(
-                                "child_classes".to_string(),
-                                serde_json::Value::Object(children),
-                            );
-                        }
-                    }
-
-                    // Add mixins if any
-                    if !inheritance_info.mixins.is_empty() {
-                        let mixins: Vec<_> = inheritance_info
-                            .mixins
-                            .iter()
-                            .map(|mixin| {
-                                serde_json::json!({
-                                    "name": mixin.class_name,
-                                    "file": mixin.file.display().to_string()
-                                })
-                            })
-                            .collect();
-                        class_data.insert("mixins".to_string(), serde_json::Value::Array(mixins));
-                    }
-
-                    tree.insert(
-                        class_node.name.clone(),
-                        serde_json::Value::Object(class_data),
+                        "metaclass".to_string(),
+                        serde_json::json!({
+                            "name": metaclass.class_name,
+                            "file": metaclass.file.display().to_string()
+                        }),
                     );
                 }
-            }
 
-            Ok(())
-        })
+                // Process parent classes (up direction)
+                if direction == "up" || direction == "both" {
+                    let mut parents = serde_json::Map::new();
+                    for base_class in &inheritance_info.base_classes {
+                        // Try to find the actual base class node
+                        let base_classes = server
+                            .graph_store()
+                            .get_nodes_by_kind(codeprism_core::NodeKind::Class);
+                        if let Some(base_node) = base_classes
+                            .iter()
+                            .find(|node| node.name == base_class.class_name)
+                        {
+                            self.build_tree_recursive(
+                                server,
+                                &base_node.id,
+                                &mut parents,
+                                visited,
+                                direction,
+                                current_depth + 1,
+                                max_depth,
+                                include_source_context,
+                            )
+                            .await?;
+                        } else {
+                            // External class (not in our codebase)
+                            parents.insert(
+                                base_class.class_name.clone(),
+                                serde_json::json!({
+                                    "name": base_class.class_name,
+                                    "external": true,
+                                    "relationship_type": base_class.relationship_type
+                                }),
+                            );
+                        }
+                    }
+                    if !parents.is_empty() {
+                        class_data.insert(
+                            "parent_classes".to_string(),
+                            serde_json::Value::Object(parents),
+                        );
+                    }
+                }
+
+                // Process child classes (down direction)
+                if direction == "down" || direction == "both" {
+                    let mut children = serde_json::Map::new();
+                    for subclass in &inheritance_info.subclasses {
+                        // Try to find the actual subclass node
+                        let subclasses = server
+                            .graph_store()
+                            .get_nodes_by_kind(codeprism_core::NodeKind::Class);
+                        if let Some(sub_node) = subclasses
+                            .iter()
+                            .find(|node| node.name == subclass.class_name)
+                        {
+                            self.build_tree_recursive(
+                                server,
+                                &sub_node.id,
+                                &mut children,
+                                visited,
+                                direction,
+                                current_depth + 1,
+                                max_depth,
+                                include_source_context,
+                            )
+                            .await?;
+                        }
+                    }
+                    if !children.is_empty() {
+                        class_data.insert(
+                            "child_classes".to_string(),
+                            serde_json::Value::Object(children),
+                        );
+                    }
+                }
+
+                // Add mixins if any
+                if !inheritance_info.mixins.is_empty() {
+                    let mixins: Vec<_> = inheritance_info
+                        .mixins
+                        .iter()
+                        .map(|mixin| {
+                            serde_json::json!({
+                                "name": mixin.class_name,
+                                "file": mixin.file.display().to_string()
+                            })
+                        })
+                        .collect();
+                    class_data.insert("mixins".to_string(), serde_json::Value::Array(mixins));
+                }
+
+                tree.insert(
+                    class_node.name.clone(),
+                    serde_json::Value::Object(class_data),
+                );
+            }
+        }
+
+        Ok(())
     }
 
     /// Analyze metaclass impact on inheritance hierarchy
@@ -7617,54 +7615,53 @@ impl ToolManager {
     }
 
     /// Recursive helper for building dependency chains
-    fn build_chains_recursive<'a>(
-        &'a self,
-        server: &'a CodePrismMcpServer,
+    #[async_recursion]
+    async fn build_chains_recursive(
+        &self,
+        server: &CodePrismMcpServer,
         current_node: codeprism_core::NodeId,
         current_chain: Vec<String>,
-        all_chains: &'a mut Vec<serde_json::Value>,
+        all_chains: &mut Vec<serde_json::Value>,
         max_depth: usize,
         current_depth: usize,
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<()>> + 'a>> {
-        Box::pin(async move {
-            if current_depth >= max_depth {
-                return Ok(());
-            }
+    ) -> Result<()> {
+        if current_depth >= max_depth {
+            return Ok(());
+        }
 
-            let mut chain = current_chain;
-            if let Some(node) = server.graph_store().get_node(&current_node) {
-                chain.push(format!("{}:{}", node.name, node.id.to_hex()));
-            }
+        let mut chain = current_chain;
+        if let Some(node) = server.graph_store().get_node(&current_node) {
+            chain.push(format!("{}:{}", node.name, node.id.to_hex()));
+        }
 
-            let edges = server.graph_store().get_outgoing_edges(&current_node);
-            if edges.is_empty() {
-                // End of chain
-                if chain.len() > 1 {
-                    all_chains.push(serde_json::json!({
-                        "chain": chain,
-                        "length": chain.len()
-                    }));
-                }
-            } else {
-                for edge in edges {
-                    if edge.kind == codeprism_core::EdgeKind::Calls
-                        || edge.kind == codeprism_core::EdgeKind::Imports
-                    {
-                        self.build_chains_recursive(
-                            server,
-                            edge.target,
-                            chain.clone(),
-                            all_chains,
-                            max_depth,
-                            current_depth + 1,
-                        )
-                        .await?;
-                    }
+        let edges = server.graph_store().get_outgoing_edges(&current_node);
+        if edges.is_empty() {
+            // End of chain
+            if chain.len() > 1 {
+                all_chains.push(serde_json::json!({
+                    "chain": chain,
+                    "length": chain.len()
+                }));
+            }
+        } else {
+            for edge in edges {
+                if edge.kind == codeprism_core::EdgeKind::Calls
+                    || edge.kind == codeprism_core::EdgeKind::Imports
+                {
+                    self.build_chains_recursive(
+                        server,
+                        edge.target,
+                        chain.clone(),
+                        all_chains,
+                        max_depth,
+                        current_depth + 1,
+                    )
+                    .await?;
                 }
             }
+        }
 
-            Ok(())
-        })
+        Ok(())
     }
 
     /// Detect dependency cycles
@@ -7693,64 +7690,56 @@ impl ToolManager {
     }
 
     /// DFS helper for cycle detection
-    fn detect_cycles_dfs<'a>(
-        &'a self,
-        server: &'a CodePrismMcpServer,
+    #[async_recursion]
+    async fn detect_cycles_dfs(
+        &self,
+        server: &CodePrismMcpServer,
         node: codeprism_core::NodeId,
-        visited: &'a mut std::collections::HashSet<codeprism_core::NodeId>,
-        rec_stack: &'a mut std::collections::HashSet<codeprism_core::NodeId>,
-        path: &'a mut Vec<codeprism_core::NodeId>,
-        cycles: &'a mut Vec<serde_json::Value>,
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<()>> + 'a>> {
-        Box::pin(async move {
-            visited.insert(node);
-            rec_stack.insert(node);
-            path.push(node);
+        visited: &mut std::collections::HashSet<codeprism_core::NodeId>,
+        rec_stack: &mut std::collections::HashSet<codeprism_core::NodeId>,
+        path: &mut Vec<codeprism_core::NodeId>,
+        cycles: &mut Vec<serde_json::Value>,
+    ) -> Result<()> {
+        visited.insert(node);
+        rec_stack.insert(node);
+        path.push(node);
 
-            let edges = server.graph_store().get_outgoing_edges(&node);
-            for edge in edges {
-                if edge.kind == codeprism_core::EdgeKind::Calls
-                    || edge.kind == codeprism_core::EdgeKind::Imports
-                {
-                    if !visited.contains(&edge.target) {
-                        self.detect_cycles_dfs(
-                            server,
-                            edge.target,
-                            visited,
-                            rec_stack,
-                            path,
-                            cycles,
-                        )
+        let edges = server.graph_store().get_outgoing_edges(&node);
+        for edge in edges {
+            if edge.kind == codeprism_core::EdgeKind::Calls
+                || edge.kind == codeprism_core::EdgeKind::Imports
+            {
+                if !visited.contains(&edge.target) {
+                    self.detect_cycles_dfs(server, edge.target, visited, rec_stack, path, cycles)
                         .await?;
-                    } else if rec_stack.contains(&edge.target) {
-                        // Found a cycle
-                        if let Some(cycle_start) = path.iter().position(|&id| id == edge.target) {
-                            let cycle_path: Vec<String> = path[cycle_start..]
-                                .iter()
-                                .map(|id| {
-                                    if let Some(node) = server.graph_store().get_node(id) {
-                                        format!("{}:{}", node.name, id.to_hex())
-                                    } else {
-                                        id.to_hex()
-                                    }
-                                })
-                                .collect();
+                } else if rec_stack.contains(&edge.target) {
+                    // Found a cycle
+                    if let Some(cycle_start) = path.iter().position(|&id| id == edge.target) {
+                        let cycle_path: Vec<String> = path[cycle_start..]
+                            .iter()
+                            .map(|id| {
+                                if let Some(node) = server.graph_store().get_node(id) {
+                                    format!("{}:{}", node.name, id.to_hex())
+                                } else {
+                                    id.to_hex()
+                                }
+                            })
+                            .collect();
 
-                            cycles.push(serde_json::json!({
-                                "cycle_path": cycle_path,
-                                "cycle_length": cycle_path.len(),
-                                "cycle_type": "dependency_cycle"
-                            }));
-                        }
+                        cycles.push(serde_json::json!({
+                            "cycle_path": cycle_path,
+                            "cycle_length": cycle_path.len(),
+                            "cycle_type": "dependency_cycle"
+                        }));
                     }
                 }
             }
+        }
 
-            path.pop();
-            rec_stack.remove(&node);
+        path.pop();
+        rec_stack.remove(&node);
 
-            Ok(())
-        })
+        Ok(())
     }
 
     /// Calculate maximum depth in dependencies
@@ -7946,41 +7935,93 @@ impl ToolManager {
     }
 
     /// Trace data flow in forward direction
-    fn trace_data_flow_forward<'a>(
-        &'a self,
-        server: &'a CodePrismMcpServer,
-        symbol_id: &'a codeprism_core::NodeId,
-        data_flows: &'a mut Vec<serde_json::Value>,
-        visited: &'a mut std::collections::HashSet<codeprism_core::NodeId>,
+    #[async_recursion]
+    async fn trace_data_flow_forward(
+        &self,
+        server: &CodePrismMcpServer,
+        symbol_id: &codeprism_core::NodeId,
+        data_flows: &mut Vec<serde_json::Value>,
+        visited: &mut std::collections::HashSet<codeprism_core::NodeId>,
         current_depth: usize,
         max_depth: usize,
         include_transformations: bool,
         follow_function_calls: bool,
         include_field_access: bool,
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<()>> + 'a>> {
-        Box::pin(async move {
-            if current_depth >= max_depth || visited.contains(symbol_id) {
-                return Ok(());
-            }
+    ) -> Result<()> {
+        if current_depth >= max_depth || visited.contains(symbol_id) {
+            return Ok(());
+        }
 
-            visited.insert(*symbol_id);
+        visited.insert(*symbol_id);
 
-            let current_node = server
-                .graph_store()
-                .get_node(symbol_id)
-                .ok_or_else(|| anyhow::anyhow!("Node not found: {}", symbol_id.to_hex()))?;
+        let current_node = server
+            .graph_store()
+            .get_node(symbol_id)
+            .ok_or_else(|| anyhow::anyhow!("Node not found: {}", symbol_id.to_hex()))?;
 
-            // Find all reads from this symbol (data flowing out)
-            let dependencies = server
+        // Find all reads from this symbol (data flowing out)
+        let dependencies = server
+            .graph_query()
+            .find_dependencies(symbol_id, codeprism_core::graph::DependencyType::Reads)?;
+
+        for dep in dependencies
+            .iter()
+            .filter(|d| self.is_valid_dependency_node(&d.target_node))
+        {
+            let flow_info = serde_json::json!({
+                "flow_type": "read",
+                "depth": current_depth,
+                "source": {
+                    "id": current_node.id.to_hex(),
+                    "name": current_node.name,
+                    "kind": format!("{:?}", current_node.kind),
+                    "file": current_node.file.display().to_string(),
+                    "location": {
+                        "line": current_node.span.start_line,
+                        "column": current_node.span.start_column
+                    }
+                },
+                "target": {
+                    "id": dep.target_node.id.to_hex(),
+                    "name": dep.target_node.name,
+                    "kind": format!("{:?}", dep.target_node.kind),
+                    "file": dep.target_node.file.display().to_string(),
+                    "location": {
+                        "line": dep.target_node.span.start_line,
+                        "column": dep.target_node.span.start_column
+                    }
+                },
+                "edge_kind": format!("{:?}", dep.edge_kind)
+            });
+            data_flows.push(flow_info);
+
+            // Continue tracing from the target
+            self.trace_data_flow_forward(
+                server,
+                &dep.target_node.id,
+                data_flows,
+                visited,
+                current_depth + 1,
+                max_depth,
+                include_transformations,
+                follow_function_calls,
+                include_field_access,
+            )
+            .await?;
+        }
+
+        // If following function calls, trace through function parameters and returns
+        if follow_function_calls {
+            let call_dependencies = server
                 .graph_query()
-                .find_dependencies(symbol_id, codeprism_core::graph::DependencyType::Reads)?;
+                .find_dependencies(symbol_id, codeprism_core::graph::DependencyType::Calls)?;
 
-            for dep in dependencies
+            for dep in call_dependencies
                 .iter()
                 .filter(|d| self.is_valid_dependency_node(&d.target_node))
             {
                 let flow_info = serde_json::json!({
-                    "flow_type": "read",
+                    "flow_type": "function_call",
                     "depth": current_depth,
                     "source": {
                         "id": current_node.id.to_hex(),
@@ -8006,7 +8047,7 @@ impl ToolManager {
                 });
                 data_flows.push(flow_info);
 
-                // Continue tracing from the target
+                // Continue tracing into the function
                 self.trace_data_flow_forward(
                     server,
                     &dep.target_node.id,
@@ -8020,97 +8061,91 @@ impl ToolManager {
                 )
                 .await?;
             }
+        }
 
-            // If following function calls, trace through function parameters and returns
-            if follow_function_calls {
-                let call_dependencies = server
-                    .graph_query()
-                    .find_dependencies(symbol_id, codeprism_core::graph::DependencyType::Calls)?;
-
-                for dep in call_dependencies
-                    .iter()
-                    .filter(|d| self.is_valid_dependency_node(&d.target_node))
-                {
-                    let flow_info = serde_json::json!({
-                        "flow_type": "function_call",
-                        "depth": current_depth,
-                        "source": {
-                            "id": current_node.id.to_hex(),
-                            "name": current_node.name,
-                            "kind": format!("{:?}", current_node.kind),
-                            "file": current_node.file.display().to_string(),
-                            "location": {
-                                "line": current_node.span.start_line,
-                                "column": current_node.span.start_column
-                            }
-                        },
-                        "target": {
-                            "id": dep.target_node.id.to_hex(),
-                            "name": dep.target_node.name,
-                            "kind": format!("{:?}", dep.target_node.kind),
-                            "file": dep.target_node.file.display().to_string(),
-                            "location": {
-                                "line": dep.target_node.span.start_line,
-                                "column": dep.target_node.span.start_column
-                            }
-                        },
-                        "edge_kind": format!("{:?}", dep.edge_kind)
-                    });
-                    data_flows.push(flow_info);
-
-                    // Continue tracing into the function
-                    self.trace_data_flow_forward(
-                        server,
-                        &dep.target_node.id,
-                        data_flows,
-                        visited,
-                        current_depth + 1,
-                        max_depth,
-                        include_transformations,
-                        follow_function_calls,
-                        include_field_access,
-                    )
-                    .await?;
-                }
-            }
-
-            Ok(())
-        })
+        Ok(())
     }
 
     /// Trace data flow in backward direction
-    fn trace_data_flow_backward<'a>(
-        &'a self,
-        server: &'a CodePrismMcpServer,
-        symbol_id: &'a codeprism_core::NodeId,
-        data_flows: &'a mut Vec<serde_json::Value>,
-        visited: &'a mut std::collections::HashSet<codeprism_core::NodeId>,
+    #[async_recursion]
+    async fn trace_data_flow_backward(
+        &self,
+        server: &CodePrismMcpServer,
+        symbol_id: &codeprism_core::NodeId,
+        data_flows: &mut Vec<serde_json::Value>,
+        visited: &mut std::collections::HashSet<codeprism_core::NodeId>,
         current_depth: usize,
         max_depth: usize,
         include_transformations: bool,
         follow_function_calls: bool,
         include_field_access: bool,
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<()>> + 'a>> {
-        Box::pin(async move {
-            if current_depth >= max_depth || visited.contains(symbol_id) {
-                return Ok(());
+    ) -> Result<()> {
+        if current_depth >= max_depth || visited.contains(symbol_id) {
+            return Ok(());
+        }
+
+        visited.insert(*symbol_id);
+
+        let current_node = server
+            .graph_store()
+            .get_node(symbol_id)
+            .ok_or_else(|| anyhow::anyhow!("Node not found: {}", symbol_id.to_hex()))?;
+
+        // Find all writes to this symbol (data flowing in)
+        let references = server.graph_query().find_references(symbol_id)?;
+
+        for ref_info in references.iter() {
+            // Filter for write operations
+            if matches!(ref_info.edge_kind, codeprism_core::EdgeKind::Writes) {
+                let flow_info = serde_json::json!({
+                    "flow_type": "write",
+                    "depth": current_depth,
+                    "source": {
+                        "id": ref_info.source_node.id.to_hex(),
+                        "name": ref_info.source_node.name,
+                        "kind": format!("{:?}", ref_info.source_node.kind),
+                        "file": ref_info.source_node.file.display().to_string(),
+                        "location": {
+                            "line": ref_info.source_node.span.start_line,
+                            "column": ref_info.source_node.span.start_column
+                        }
+                    },
+                    "target": {
+                        "id": current_node.id.to_hex(),
+                        "name": current_node.name,
+                        "kind": format!("{:?}", current_node.kind),
+                        "file": current_node.file.display().to_string(),
+                        "location": {
+                            "line": current_node.span.start_line,
+                            "column": current_node.span.start_column
+                        }
+                    },
+                    "edge_kind": format!("{:?}", ref_info.edge_kind)
+                });
+                data_flows.push(flow_info);
+
+                // Continue tracing from the source
+                self.trace_data_flow_backward(
+                    server,
+                    &ref_info.source_node.id,
+                    data_flows,
+                    visited,
+                    current_depth + 1,
+                    max_depth,
+                    include_transformations,
+                    follow_function_calls,
+                    include_field_access,
+                )
+                .await?;
             }
+        }
 
-            visited.insert(*symbol_id);
-
-            let current_node = server
-                .graph_store()
-                .get_node(symbol_id)
-                .ok_or_else(|| anyhow::anyhow!("Node not found: {}", symbol_id.to_hex()))?;
-
-            // Find all writes to this symbol (data flowing in)
-            let references = server.graph_query().find_references(symbol_id)?;
-
+        // If following function calls, trace backward through function parameters
+        if follow_function_calls {
             for ref_info in references.iter() {
-                // Filter for write operations
-                if matches!(ref_info.edge_kind, codeprism_core::EdgeKind::Writes) {
+                if matches!(ref_info.edge_kind, codeprism_core::EdgeKind::Calls) {
                     let flow_info = serde_json::json!({
-                        "flow_type": "write",
+                        "flow_type": "function_parameter",
                         "depth": current_depth,
                         "source": {
                             "id": ref_info.source_node.id.to_hex(),
@@ -8136,7 +8171,7 @@ impl ToolManager {
                     });
                     data_flows.push(flow_info);
 
-                    // Continue tracing from the source
+                    // Continue tracing backward from the caller
                     self.trace_data_flow_backward(
                         server,
                         &ref_info.source_node.id,
@@ -8151,57 +8186,9 @@ impl ToolManager {
                     .await?;
                 }
             }
+        }
 
-            // If following function calls, trace backward through function parameters
-            if follow_function_calls {
-                for ref_info in references.iter() {
-                    if matches!(ref_info.edge_kind, codeprism_core::EdgeKind::Calls) {
-                        let flow_info = serde_json::json!({
-                            "flow_type": "function_parameter",
-                            "depth": current_depth,
-                            "source": {
-                                "id": ref_info.source_node.id.to_hex(),
-                                "name": ref_info.source_node.name,
-                                "kind": format!("{:?}", ref_info.source_node.kind),
-                                "file": ref_info.source_node.file.display().to_string(),
-                                "location": {
-                                    "line": ref_info.source_node.span.start_line,
-                                    "column": ref_info.source_node.span.start_column
-                                }
-                            },
-                            "target": {
-                                "id": current_node.id.to_hex(),
-                                "name": current_node.name,
-                                "kind": format!("{:?}", current_node.kind),
-                                "file": current_node.file.display().to_string(),
-                                "location": {
-                                    "line": current_node.span.start_line,
-                                    "column": current_node.span.start_column
-                                }
-                            },
-                            "edge_kind": format!("{:?}", ref_info.edge_kind)
-                        });
-                        data_flows.push(flow_info);
-
-                        // Continue tracing backward from the caller
-                        self.trace_data_flow_backward(
-                            server,
-                            &ref_info.source_node.id,
-                            data_flows,
-                            visited,
-                            current_depth + 1,
-                            max_depth,
-                            include_transformations,
-                            follow_function_calls,
-                            include_field_access,
-                        )
-                        .await?;
-                    }
-                }
-            }
-
-            Ok(())
-        })
+        Ok(())
     }
 
     /// Perform unused code analysis

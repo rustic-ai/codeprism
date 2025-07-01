@@ -23,7 +23,7 @@ serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 
 # Official RMCP SDK for migration
-rmcp = { git = "https://github.com/modelcontextprotocol/rust-sdk", branch = "main", features = ["server"] }
+rmcp = { git = "https://github.com/modelcontextprotocol/rust-sdk", branch = "main", features = ["server", "transport-async-rw", "transport-io"] }
 
 # Regex for pattern matching  
 regex = "1.0"
@@ -46,6 +46,7 @@ codeprism-core = { version = "0.3.3", path = "../codeprism-core" }
 codeprism-analysis = { version = "0.3.3", path = "../codeprism-analysis" }
 codeprism-lang-python = { version = "0.3.3", path = "../codeprism-lang-python" }
 codeprism-lang-js = { version = "0.3.3", path = "../codeprism-lang-js" }
+async-recursion = "1.1.1"
 
 [dev-dependencies]
 tokio-test = "0.4"

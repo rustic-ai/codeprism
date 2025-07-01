@@ -27,12 +27,15 @@ pub mod error_handler;
 pub mod monitoring; // Phase 2.2: Performance monitoring system
 pub mod prompts;
 pub mod protocol;
+pub mod protocol_rmcp; // RMCP-based protocol implementation
 pub mod resources;
 pub mod rmcp_bridge; // RMCP bridge for migration
 pub mod server;
+pub mod server_rmcp; // RMCP-based server implementation
 pub mod tools;
 pub mod tools_legacy;
 pub mod transport;
+pub mod transport_rmcp; // RMCP-based transport implementation
 pub mod validation; // Phase 2.2: Configuration validation & health checks
 
 // Re-export main types

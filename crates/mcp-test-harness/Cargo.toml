@@ -69,6 +69,17 @@ tokio-tungstenite = { version = "0.20", optional = true }
 # URL parsing
 url = "2.0"
 
+# Enhanced reporting dependencies
+handlebars = { version = "5.1", optional = true }  # Template engine for HTML reports
+base64 = "0.22"              # For embedding images in HTML
+
+# CSS and styling
+include_dir = { version = "0.7", optional = true }  # For embedding CSS and templates
+
+# Chart generation for reports (removed due to system dependencies)
+# charming = { version = "0.3", optional = true }  # Rust chart library  
+# plotters = { version = "0.3", optional = true }  # Alternative chart library 
+
 [dev-dependencies]
 # Enhanced testing
 rstest = "0.18"
@@ -83,17 +94,22 @@ mockall = "0.11"
 proptest = "1.0"
 
 [features]
-default = ["stdio-transport", "json-reports"]
+default = ["stdio-transport", "json-reports", "html-reports"]
 
 # Transport mechanisms
 stdio-transport = []
 http-transport = ["reqwest"]
 websocket-transport = ["tokio-tungstenite"]
 
-# Report formats
+# Enhanced report formats
 json-reports = []
-html-reports = []
+html-reports = ["handlebars", "include_dir"]
+interactive-reports = ["html-reports"]
 junit-reports = []
+
+# Chart and visualization features (disabled due to system dependencies)
+# charts = ["charming", "plotters"]
+# advanced-charts = ["charts", "plotters"]
 
 # Performance monitoring
 performance-monitoring = []

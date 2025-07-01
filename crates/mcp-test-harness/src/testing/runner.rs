@@ -6,14 +6,14 @@ use crate::transport::{create_transport, Transport, TransportType};
 use crate::types::{McpCapabilities, RetryConfig, ValidationResult};
 use anyhow::Result;
 use chrono::Utc;
+use jsonpath_lib::select;
+use regex::Regex;
 use serde_json::{json, Value};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::{Mutex, Semaphore};
 use tokio::time::{sleep, timeout};
 use tracing::{debug, error, info, instrument, warn};
-use jsonpath_lib::select;
-use regex::Regex;
 
 /// Advanced execution configuration for test runner
 #[derive(Debug, Clone)]
@@ -550,9 +550,10 @@ impl TestRunner {
             // Validate string pattern
             if let Some(pattern) = &field_validation.pattern {
                 if let Some(string_value) = selected_value.as_str() {
-                    let regex = Regex::new(pattern)
-                        .map_err(|e| anyhow::anyhow!("Invalid regex pattern '{}': {}", pattern, e))?;
-                    
+                    let regex = Regex::new(pattern).map_err(|e| {
+                        anyhow::anyhow!("Invalid regex pattern '{}': {}", pattern, e)
+                    })?;
+
                     if !regex.is_match(string_value) {
                         return Err(anyhow::anyhow!(
                             "Pattern mismatch at path '{}': '{}' does not match pattern '{}'",
@@ -571,7 +572,8 @@ impl TestRunner {
             }
 
             // Validate numeric range
-            if let (Some(min_val), Some(number)) = (&field_validation.min, selected_value.as_f64()) {
+            if let (Some(min_val), Some(number)) = (&field_validation.min, selected_value.as_f64())
+            {
                 if number < *min_val {
                     return Err(anyhow::anyhow!(
                         "Value at path '{}' ({}) is below minimum ({})",
@@ -582,7 +584,8 @@ impl TestRunner {
                 }
             }
 
-            if let (Some(max_val), Some(number)) = (&field_validation.max, selected_value.as_f64()) {
+            if let (Some(max_val), Some(number)) = (&field_validation.max, selected_value.as_f64())
+            {
                 if number > *max_val {
                     return Err(anyhow::anyhow!(
                         "Value at path '{}' ({}) is above maximum ({})",
@@ -863,7 +866,9 @@ mod tests {
             max: None,
         };
 
-        assert!(runner.validate_field(&response, &field_validation_fail).is_err());
+        assert!(runner
+            .validate_field(&response, &field_validation_fail)
+            .is_err());
     }
 
     #[test]
@@ -1188,6 +1193,9 @@ mod tests {
 
         let result = runner.validate_field(&response, &invalid_regex);
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("Invalid regex pattern"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Invalid regex pattern"));
     }
 }

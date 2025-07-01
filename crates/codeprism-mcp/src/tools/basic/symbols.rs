@@ -240,8 +240,7 @@ async fn explain_symbol(
 
         // Enhanced inheritance information for classes
         if matches!(node.kind, codeprism_core::NodeKind::Class) {
-            if let Ok(inheritance_info) = server.graph_query().get_inheritance_info(&symbol_id)
-            {
+            if let Ok(inheritance_info) = server.graph_query().get_inheritance_info(&symbol_id) {
                 let mut inheritance_data = serde_json::Map::new();
 
                 // Basic inheritance information
@@ -338,8 +337,7 @@ async fn explain_symbol(
                             })
                         })
                         .collect();
-                    inheritance_data
-                        .insert("mixins".to_string(), serde_json::Value::Array(mixins));
+                    inheritance_data.insert("mixins".to_string(), serde_json::Value::Array(mixins));
                 }
 
                 result["inheritance"] = serde_json::Value::Object(inheritance_data);
@@ -348,7 +346,10 @@ async fn explain_symbol(
 
         // Add dependency information if requested
         if include_dependencies {
-            if let Ok(dependencies) = server.graph_query().find_dependencies(&symbol_id, codeprism_core::graph::DependencyType::Direct) {
+            if let Ok(dependencies) = server
+                .graph_query()
+                .find_dependencies(&symbol_id, codeprism_core::graph::DependencyType::Direct)
+            {
                 let deps: Vec<_> = dependencies
                     .iter()
                     .map(|dep| {
@@ -418,114 +419,115 @@ async fn find_dependencies(
         // Target is a node ID
         match dependency_type {
             "direct" => {
-                let deps = server.graph_query().get_dependencies(&node_id)?;
+                let deps = server
+                    .graph_query()
+                    .find_dependencies(&node_id, codeprism_core::graph::DependencyType::Direct)?;
                 deps.into_iter()
-                    .filter(|dep| is_valid_dependency_node(server.graph_store().get_node(&dep.target).as_ref().unwrap()))
+                    .filter(|dep| is_valid_dependency_node(&dep.target_node))
                     .map(|dep| {
-                        let target_node = server.graph_store().get_node(&dep.target).unwrap();
                         serde_json::json!({
-                            "target_id": dep.target.to_hex(),
-                            "target_name": target_node.name,
-                            "target_kind": format!("{:?}", target_node.kind),
-                            "dependency_kind": format!("{:?}", dep.kind),
-                            "target_file": target_node.file.display().to_string(),
+                            "target_id": dep.target_node.id.to_hex(),
+                            "target_name": dep.target_node.name,
+                            "target_kind": format!("{:?}", dep.target_node.kind),
+                            "dependency_kind": format!("{:?}", dep.edge_kind),
+                            "target_file": dep.target_node.file.display().to_string(),
                             "target_span": {
-                                "start_line": target_node.span.start_line,
-                                "end_line": target_node.span.end_line,
-                                "start_column": target_node.span.start_column,
-                                "end_column": target_node.span.end_column
+                                "start_line": dep.target_node.span.start_line,
+                                "end_line": dep.target_node.span.end_line,
+                                "start_column": dep.target_node.span.start_column,
+                                "end_column": dep.target_node.span.end_column
                             }
                         })
                     })
                     .collect()
             }
             "calls" => {
-                let deps = server.graph_query().get_dependencies(&node_id)?;
+                let deps = server
+                    .graph_query()
+                    .find_dependencies(&node_id, codeprism_core::graph::DependencyType::Calls)?;
                 deps.into_iter()
-                    .filter(|dep| matches!(dep.kind, codeprism_core::EdgeKind::Calls))
-                    .filter(|dep| is_valid_dependency_node(server.graph_store().get_node(&dep.target).as_ref().unwrap()))
+                    .filter(|dep| is_valid_dependency_node(&dep.target_node))
                     .map(|dep| {
-                        let target_node = server.graph_store().get_node(&dep.target).unwrap();
                         serde_json::json!({
-                            "target_id": dep.target.to_hex(),
-                            "target_name": target_node.name,
-                            "target_kind": format!("{:?}", target_node.kind),
+                            "target_id": dep.target_node.id.to_hex(),
+                            "target_name": dep.target_node.name,
+                            "target_kind": format!("{:?}", dep.target_node.kind),
                             "dependency_kind": "calls",
-                            "target_file": target_node.file.display().to_string(),
+                            "target_file": dep.target_node.file.display().to_string(),
                             "target_span": {
-                                "start_line": target_node.span.start_line,
-                                "end_line": target_node.span.end_line,
-                                "start_column": target_node.span.start_column,
-                                "end_column": target_node.span.end_column
+                                "start_line": dep.target_node.span.start_line,
+                                "end_line": dep.target_node.span.end_line,
+                                "start_column": dep.target_node.span.start_column,
+                                "end_column": dep.target_node.span.end_column
                             }
                         })
                     })
                     .collect()
             }
             "imports" => {
-                let deps = server.graph_query().get_dependencies(&node_id)?;
+                let deps = server
+                    .graph_query()
+                    .find_dependencies(&node_id, codeprism_core::graph::DependencyType::Imports)?;
                 deps.into_iter()
-                    .filter(|dep| matches!(dep.kind, codeprism_core::EdgeKind::Imports))
-                    .filter(|dep| is_valid_dependency_node(server.graph_store().get_node(&dep.target).as_ref().unwrap()))
+                    .filter(|dep| is_valid_dependency_node(&dep.target_node))
                     .map(|dep| {
-                        let target_node = server.graph_store().get_node(&dep.target).unwrap();
                         serde_json::json!({
-                            "target_id": dep.target.to_hex(),
-                            "target_name": target_node.name,
-                            "target_kind": format!("{:?}", target_node.kind),
+                            "target_id": dep.target_node.id.to_hex(),
+                            "target_name": dep.target_node.name,
+                            "target_kind": format!("{:?}", dep.target_node.kind),
                             "dependency_kind": "imports",
-                            "target_file": target_node.file.display().to_string(),
+                            "target_file": dep.target_node.file.display().to_string(),
                             "target_span": {
-                                "start_line": target_node.span.start_line,
-                                "end_line": target_node.span.end_line,
-                                "start_column": target_node.span.start_column,
-                                "end_column": target_node.span.end_column
+                                "start_line": dep.target_node.span.start_line,
+                                "end_line": dep.target_node.span.end_line,
+                                "start_column": dep.target_node.span.start_column,
+                                "end_column": dep.target_node.span.end_column
                             }
                         })
                     })
                     .collect()
             }
             "reads" => {
-                let deps = server.graph_query().get_dependencies(&node_id)?;
+                let deps = server
+                    .graph_query()
+                    .find_dependencies(&node_id, codeprism_core::graph::DependencyType::Reads)?;
                 deps.into_iter()
-                    .filter(|dep| matches!(dep.kind, codeprism_core::EdgeKind::Reads))
-                    .filter(|dep| is_valid_dependency_node(server.graph_store().get_node(&dep.target).as_ref().unwrap()))
+                    .filter(|dep| is_valid_dependency_node(&dep.target_node))
                     .map(|dep| {
-                        let target_node = server.graph_store().get_node(&dep.target).unwrap();
                         serde_json::json!({
-                            "target_id": dep.target.to_hex(),
-                            "target_name": target_node.name,
-                            "target_kind": format!("{:?}", target_node.kind),
+                            "target_id": dep.target_node.id.to_hex(),
+                            "target_name": dep.target_node.name,
+                            "target_kind": format!("{:?}", dep.target_node.kind),
                             "dependency_kind": "reads",
-                            "target_file": target_node.file.display().to_string(),
+                            "target_file": dep.target_node.file.display().to_string(),
                             "target_span": {
-                                "start_line": target_node.span.start_line,
-                                "end_line": target_node.span.end_line,
-                                "start_column": target_node.span.start_column,
-                                "end_column": target_node.span.end_column
+                                "start_line": dep.target_node.span.start_line,
+                                "end_line": dep.target_node.span.end_line,
+                                "start_column": dep.target_node.span.start_column,
+                                "end_column": dep.target_node.span.end_column
                             }
                         })
                     })
                     .collect()
             }
             "writes" => {
-                let deps = server.graph_query().get_dependencies(&node_id)?;
+                let deps = server
+                    .graph_query()
+                    .find_dependencies(&node_id, codeprism_core::graph::DependencyType::Writes)?;
                 deps.into_iter()
-                    .filter(|dep| matches!(dep.kind, codeprism_core::EdgeKind::Writes))
-                    .filter(|dep| is_valid_dependency_node(server.graph_store().get_node(&dep.target).as_ref().unwrap()))
+                    .filter(|dep| is_valid_dependency_node(&dep.target_node))
                     .map(|dep| {
-                        let target_node = server.graph_store().get_node(&dep.target).unwrap();
                         serde_json::json!({
-                            "target_id": dep.target.to_hex(),
-                            "target_name": target_node.name,
-                            "target_kind": format!("{:?}", target_node.kind),
+                            "target_id": dep.target_node.id.to_hex(),
+                            "target_name": dep.target_node.name,
+                            "target_kind": format!("{:?}", dep.target_node.kind),
                             "dependency_kind": "writes",
-                            "target_file": target_node.file.display().to_string(),
+                            "target_file": dep.target_node.file.display().to_string(),
                             "target_span": {
-                                "start_line": target_node.span.start_line,
-                                "end_line": target_node.span.end_line,
-                                "start_column": target_node.span.start_column,
-                                "end_column": target_node.span.end_column
+                                "start_line": dep.target_node.span.start_line,
+                                "end_line": dep.target_node.span.end_line,
+                                "start_column": dep.target_node.span.start_column,
+                                "end_column": dep.target_node.span.end_column
                             }
                         })
                     })
@@ -591,29 +593,27 @@ async fn find_references(
     });
 
     // Find references to the symbol
-    if let Ok(references) = server.graph_query().get_references(&symbol_id) {
+    if let Ok(references) = server.graph_query().find_references(&symbol_id) {
         let refs: Vec<_> = references
             .iter()
-            .filter_map(|ref_info| {
-                server.graph_store().get_node(&ref_info.source).map(|source_node| {
-                    serde_json::json!({
-                        "source_id": ref_info.source.to_hex(),
-                        "source_name": source_node.name,
-                        "source_kind": format!("{:?}", source_node.kind),
-                        "reference_kind": format!("{:?}", ref_info.kind),
-                        "file": source_node.file.display().to_string(),
-                        "span": {
-                            "start_line": source_node.span.start_line,
-                            "end_line": source_node.span.end_line,
-                            "start_column": source_node.span.start_column,
-                            "end_column": source_node.span.end_column
-                        },
-                        "source_context": extract_source_context(
-                            &source_node.file,
-                            source_node.span.start_line,
-                            context_lines
-                        )
-                    })
+            .map(|ref_info| {
+                serde_json::json!({
+                    "source_id": ref_info.source_node.id.to_hex(),
+                    "source_name": ref_info.source_node.name,
+                    "source_kind": format!("{:?}", ref_info.source_node.kind),
+                    "reference_kind": format!("{:?}", ref_info.edge_kind),
+                    "file": ref_info.source_node.file.display().to_string(),
+                    "span": {
+                        "start_line": ref_info.source_node.span.start_line,
+                        "end_line": ref_info.source_node.span.end_line,
+                        "start_column": ref_info.source_node.span.start_column,
+                        "end_column": ref_info.source_node.span.end_column
+                    },
+                    "source_context": extract_source_context(
+                        &ref_info.source_node.file,
+                        ref_info.source_node.span.start_line,
+                        context_lines
+                    )
                 })
             })
             .collect();
@@ -739,9 +739,7 @@ fn create_node_info_with_context(
     });
 
     // Add source context around the symbol location
-    if let Some(context) =
-        extract_source_context(&node.file, node.span.start_line, context_lines)
-    {
+    if let Some(context) = extract_source_context(&node.file, node.span.start_line, context_lines) {
         node_info["source_context"] = context;
     }
 
@@ -754,7 +752,7 @@ mod tests {
 
     #[test]
     fn test_parse_node_id_valid() {
-        let hex_str = "1234567890abcdef";
+        let hex_str = "1234567890abcdef1234567890abcdef"; // 32 characters = 16 bytes
         let result = parse_node_id(hex_str);
         assert!(result.is_ok());
     }
@@ -768,15 +766,15 @@ mod tests {
 
     #[test]
     fn test_is_valid_dependency_node() {
-        let node = codeprism_core::Node {
-            id: codeprism_core::NodeId::from_u64(1),
-            name: "test_function".to_string(),
-            kind: codeprism_core::NodeKind::Function,
-            lang: codeprism_core::Language::Python,
-            file: std::path::PathBuf::from("test.py"),
-            span: codeprism_core::Span::new(1, 1, 1, 10),
-            signature: Some("def test_function():".to_string()),
-        };
+        let node = codeprism_core::Node::new(
+            "test_repo",
+            codeprism_core::NodeKind::Function,
+            "test_function".to_string(),
+            codeprism_core::Language::Python,
+            std::path::PathBuf::from("test.py"),
+            codeprism_core::Span::new(0, 10, 1, 1, 1, 10),
+        )
+        .with_signature("def test_function():".to_string());
 
         assert!(is_valid_dependency_node(&node));
     }
@@ -785,7 +783,7 @@ mod tests {
     fn test_symbol_tools_list() {
         let tools = list_tools();
         assert_eq!(tools.len(), 4);
-        
+
         let tool_names: Vec<&str> = tools.iter().map(|t| t.name.as_str()).collect();
         assert!(tool_names.contains(&"trace_path"));
         assert!(tool_names.contains(&"explain_symbol"));

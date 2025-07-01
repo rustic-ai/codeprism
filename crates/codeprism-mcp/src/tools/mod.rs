@@ -128,6 +128,7 @@ impl ToolManager {
 
         // Add tools from modular structure
         tools.extend(basic::repository::list_tools());
+        tools.extend(basic::search::list_tools());
 
         // Add remaining tools from legacy implementation
         let legacy_manager = crate::tools_legacy::ToolManager::new(self.server.clone());
@@ -188,6 +189,11 @@ impl ToolManager {
             // Basic repository tools
             "repository_stats" | "content_stats" => {
                 basic::repository::call_tool(&params.name, &server, params.arguments).await
+            }
+
+            // Search tools
+            "search_symbols" | "search_content" | "find_files" => {
+                basic::search::call_tool(&params.name, &server, params.arguments).await
             }
 
             // All other tools still use legacy implementation

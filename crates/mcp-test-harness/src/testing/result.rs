@@ -1,6 +1,6 @@
 //! Test result types and utilities
 
-use crate::types::{PerformanceMetrics, ValidationResult};
+use crate::types::ValidationResult;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
@@ -26,8 +26,7 @@ pub struct TestResult {
     pub error: Option<String>,
     /// Validation results
     pub validation: ValidationResult,
-    /// Performance metrics
-    pub performance: Option<PerformanceMetrics>,
+    // Performance metrics removed - out of scope for current design
     /// Test tags/categories
     pub tags: Vec<String>,
 }
@@ -51,7 +50,6 @@ impl TestResult {
             response: Some(response),
             error: None,
             validation: ValidationResult::success(),
-            performance: None,
             tags: Vec::new(),
         }
     }
@@ -74,16 +72,11 @@ impl TestResult {
             response: None,
             error: Some(error),
             validation: ValidationResult::error("Test failed"),
-            performance: None,
             tags: Vec::new(),
         }
     }
 
-    /// Add performance metrics to the result
-    pub fn with_performance(mut self, metrics: PerformanceMetrics) -> Self {
-        self.performance = Some(metrics);
-        self
-    }
+    // Performance metrics functionality removed - out of scope
 
     /// Add tags to the result
     pub fn with_tags(mut self, tags: Vec<String>) -> Self {
@@ -102,10 +95,7 @@ impl TestResult {
         self.duration.as_millis()
     }
 
-    /// Check if the test has performance metrics
-    pub fn has_performance_metrics(&self) -> bool {
-        self.performance.is_some()
-    }
+    // Performance metrics functionality removed - out of scope
 }
 
 #[cfg(test)]

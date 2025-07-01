@@ -3,7 +3,7 @@
 use crate::spec::schema::{ServerConfig, TestCase};
 use crate::testing::result::TestResult;
 use crate::transport::{create_transport, Transport, TransportType};
-use crate::types::{McpCapabilities, PerformanceMetrics, RetryConfig, ValidationResult};
+use crate::types::{McpCapabilities, RetryConfig, ValidationResult};
 use anyhow::Result;
 use chrono::Utc;
 use serde_json::{json, Value};
@@ -291,9 +291,6 @@ impl TestRunner {
             }
         }
 
-        // Build performance metrics
-        let performance = self.collect_performance_metrics(&execution_start).await;
-
         let result = TestResult::success(
             test_case.name.clone(),
             start_time,
@@ -301,7 +298,6 @@ impl TestRunner {
             test_case.input.clone(),
             response,
         )
-        .with_performance(performance)
         .with_tags(test_case.tags.clone());
 
         // Update validation result
@@ -512,18 +508,7 @@ impl TestRunner {
         Ok(())
     }
 
-    /// Collect performance metrics for the test execution
-    async fn collect_performance_metrics(&self, start_time: &Instant) -> PerformanceMetrics {
-        let execution_time = start_time.elapsed();
-
-        PerformanceMetrics {
-            response_time_ms: execution_time.as_millis() as u64,
-            memory_usage_bytes: 0, // FUTURE: Implement actual memory monitoring using sysinfo crate
-            cpu_usage_percent: 0.0, // FUTURE: Implement CPU monitoring using sysinfo crate
-            network_latency_ms: None,
-            throughput_ops_per_sec: None,
-        }
-    }
+    // Performance monitoring removed - out of scope for current design
 
     /// Check if an error is retryable based on configuration
     fn is_retryable_error(&self, error: &anyhow::Error) -> bool {

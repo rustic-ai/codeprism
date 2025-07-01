@@ -111,20 +111,7 @@ impl TestStats {
     }
 }
 
-/// Performance metrics for a test execution
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
-pub struct PerformanceMetrics {
-    /// Response time in milliseconds
-    pub response_time_ms: u64,
-    /// Memory usage in bytes
-    pub memory_usage_bytes: u64,
-    /// CPU usage percentage
-    pub cpu_usage_percent: f64,
-    /// Network latency in milliseconds
-    pub network_latency_ms: Option<u64>,
-    /// Throughput in operations per second
-    pub throughput_ops_per_sec: Option<f64>,
-}
+// Performance metrics removed - out of scope for current design
 
 /// Test execution context
 #[derive(Debug, Clone)]

@@ -360,24 +360,7 @@ impl TestHarness {
             }
         }
 
-        // Show performance summary
-        let performance_results: Vec<_> = results
-            .results
-            .iter()
-            .filter(|r| r.has_performance_metrics())
-            .collect();
-
-        if !performance_results.is_empty() {
-            println!("\n📈 Performance Summary:");
-            let avg_response_time = performance_results
-                .iter()
-                .filter_map(|r| r.performance.as_ref())
-                .map(|p| p.response_time_ms)
-                .sum::<u64>() as f64
-                / performance_results.len() as f64;
-
-            println!("  Average Response Time: {:.1}ms", avg_response_time);
-        }
+        // Performance monitoring removed - out of scope for current design
 
         println!("\n");
         Ok(())
@@ -448,13 +431,7 @@ impl TestReport {
         self.results.iter().filter(|r| r.passed).collect()
     }
 
-    /// Get tests with performance metrics
-    pub fn performance_tests(&self) -> Vec<&result::TestResult> {
-        self.results
-            .iter()
-            .filter(|r| r.has_performance_metrics())
-            .collect()
-    }
+    // Performance metrics functionality removed - out of scope
 
     /// Get tests by tag
     pub fn tests_with_tag(&self, tag: &str) -> Vec<&result::TestResult> {

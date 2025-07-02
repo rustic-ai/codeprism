@@ -653,7 +653,6 @@ async fn find_references(
 }
 
 /// Helper functions extracted from legacy implementation
-
 /// Parse a node ID from a hex string
 fn parse_node_id(hex_str: &str) -> Result<codeprism_core::NodeId> {
     codeprism_core::NodeId::from_hex(hex_str)

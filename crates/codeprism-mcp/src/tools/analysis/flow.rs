@@ -246,90 +246,48 @@ async fn collect_transitive_deps(
 
 /// List data flow analysis tools
 pub fn list_tools() -> Vec<Tool> {
-    vec![
-        Tool {
-            name: "trace_data_flow".to_string(),
-            title: Some("Trace Data Flow".to_string()),
-            description: "Trace data flow through the codebase with variable and parameter tracking".to_string(),
-            input_schema: serde_json::json!({
-                "type": "object",
-                "properties": {
-                    "variable_or_parameter": {
-                        "type": "string",
-                        "description": "Variable or parameter to trace"
-                    },
-                    "direction": {
-                        "type": "string",
-                        "enum": ["forward", "backward", "both"],
-                        "default": "forward",
-                        "description": "Direction to trace data flow"
-                    },
-                    "include_transformations": {
-                        "type": "boolean",
-                        "default": true,
-                        "description": "Include data transformations in trace"
-                    },
-                    "max_depth": {
-                        "type": "integer",
-                        "default": 10,
-                        "description": "Maximum depth for flow traversal"
-                    },
-                    "follow_function_calls": {
-                        "type": "boolean",
-                        "default": true,
-                        "description": "Follow data flow through function calls"
-                    },
-                    "include_field_access": {
-                        "type": "boolean",
-                        "default": true,
-                        "description": "Include field access in data flow"
-                    }
+    vec![Tool {
+        name: "trace_data_flow".to_string(),
+        title: Some("Trace Data Flow".to_string()),
+        description: "Trace data flow through the codebase with variable and parameter tracking"
+            .to_string(),
+        input_schema: serde_json::json!({
+            "type": "object",
+            "properties": {
+                "variable_or_parameter": {
+                    "type": "string",
+                    "description": "Variable or parameter to trace"
                 },
-                "required": ["variable_or_parameter"]
-            }),
-        },
-        Tool {
-            name: "analyze_transitive_dependencies".to_string(),
-            title: Some("Analyze Transitive Dependencies".to_string()),
-            description: "Analyze complete dependency chains, detect cycles, and map transitive relationships".to_string(),
-            input_schema: serde_json::json!({
-                "type": "object",
-                "properties": {
-                    "target": {
-                        "type": "string",
-                        "description": "Symbol ID or file path to analyze"
-                    },
-                    "max_depth": {
-                        "type": "number",
-                        "description": "Maximum depth for transitive analysis",
-                        "default": 5,
-                        "minimum": 1,
-                        "maximum": 20
-                    },
-                    "detect_cycles": {
-                        "type": "boolean",
-                        "description": "Detect circular dependencies",
-                        "default": true
-                    },
-                    "include_external_dependencies": {
-                        "type": "boolean",
-                        "description": "Include external/third-party dependencies",
-                        "default": false
-                    },
-                    "dependency_types": {
-                        "type": "array",
-                        "items": {
-                            "type": "string",
-                            "enum": ["calls", "imports", "reads", "writes", "extends", "implements", "all"]
-                        },
-                        "description": "Types of dependencies to analyze",
-                        "default": ["all"]
-                    }
+                "direction": {
+                    "type": "string",
+                    "enum": ["forward", "backward", "both"],
+                    "default": "forward",
+                    "description": "Direction to trace data flow"
                 },
-                "required": ["target"]
-            }),
-        }
-    ]
+                "include_transformations": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Include data transformations in trace"
+                },
+                "max_depth": {
+                    "type": "integer",
+                    "default": 10,
+                    "description": "Maximum depth for flow traversal"
+                },
+                "follow_function_calls": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Follow data flow through function calls"
+                },
+                "include_field_access": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Include field access in data flow"
+                }
+            },
+            "required": ["variable_or_parameter"]
+        }),
+    }]
 }
 
 /// Call data flow analysis tool

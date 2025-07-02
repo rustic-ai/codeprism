@@ -410,47 +410,6 @@ impl ToolManager {
                 }),
             },
             Tool {
-                name: "analyze_transitive_dependencies".to_string(),
-                title: Some("Analyze Transitive Dependencies".to_string()),
-                description: "Analyze complete dependency chains, detect cycles, and map transitive relationships".to_string(),
-                input_schema: serde_json::json!({
-                    "type": "object",
-                    "properties": {
-                        "target": {
-                            "type": "string",
-                            "description": "Symbol ID or file path to analyze"
-                        },
-                        "max_depth": {
-                            "type": "number",
-                            "description": "Maximum depth for transitive analysis",
-                            "default": 5,
-                            "minimum": 1,
-                            "maximum": 20
-                        },
-                        "detect_cycles": {
-                            "type": "boolean",
-                            "description": "Detect circular dependencies",
-                            "default": true
-                        },
-                        "include_external_dependencies": {
-                            "type": "boolean",
-                            "description": "Include external/third-party dependencies",
-                            "default": false
-                        },
-                        "dependency_types": {
-                            "type": "array",
-                            "items": {
-                                "type": "string",
-                                "enum": ["calls", "imports", "reads", "writes", "extends", "implements", "all"]
-                            },
-                            "description": "Types of dependencies to analyze",
-                            "default": ["all"]
-                        }
-                    },
-                    "required": ["target"]
-                }),
-            },
-            Tool {
                 name: "trace_data_flow".to_string(),
                 title: Some("Trace Data Flow".to_string()),
                 description: "Track data flow through the codebase, following variable assignments, function parameters, and transformations".to_string(),
@@ -880,10 +839,6 @@ impl ToolManager {
             "find_duplicates" => self.find_duplicates(&server, params.arguments).await,
 
             "detect_patterns" => self.detect_patterns(&server, params.arguments).await,
-            "analyze_transitive_dependencies" => {
-                self.analyze_transitive_dependencies(&server, params.arguments)
-                    .await
-            }
             "trace_data_flow" => self.trace_data_flow(&server, params.arguments).await,
             "find_unused_code" => self.find_unused_code(&server, params.arguments).await,
 
@@ -2546,84 +2501,6 @@ impl ToolManager {
                     "total_patterns_detected": detected_patterns.len(),
                     "confidence_threshold": confidence_threshold,
                     "pattern_types_analyzed": pattern_types
-                },
-                "analysis_successful": true
-            })
-        } else {
-            serde_json::json!({
-                "error": "No repository initialized",
-                "analysis_successful": false
-            })
-        };
-
-        Ok(CallToolResult {
-            content: vec![ToolContent::Text {
-                text: serde_json::to_string_pretty(&result)?,
-            }],
-            is_error: Some(false),
-        })
-    }
-
-    /// Analyze transitive dependencies
-    async fn analyze_transitive_dependencies(
-        &self,
-        server: &CodePrismMcpServer,
-        arguments: Option<Value>,
-    ) -> Result<CallToolResult> {
-        let args = arguments.ok_or_else(|| anyhow::anyhow!("Missing arguments"))?;
-
-        let target = args
-            .get("target")
-            .and_then(|v| v.as_str())
-            .ok_or_else(|| anyhow::anyhow!("Missing target parameter"))?;
-
-        let max_depth = args
-            .get("max_depth")
-            .and_then(|v| v.as_u64())
-            .map(|v| v as usize)
-            .unwrap_or(5);
-
-        let detect_cycles = args
-            .get("detect_cycles")
-            .and_then(|v| v.as_bool())
-            .unwrap_or(true);
-
-        let include_external = args
-            .get("include_external_dependencies")
-            .and_then(|v| v.as_bool())
-            .unwrap_or(false);
-
-        let dependency_types: Vec<String> = args
-            .get("dependency_types")
-            .and_then(|v| v.as_array())
-            .map(|arr| {
-                arr.iter()
-                    .filter_map(|v| v.as_str())
-                    .map(|s| s.to_string())
-                    .collect()
-            })
-            .unwrap_or_else(|| vec!["all".to_string()]);
-
-        let result = if let Some(_repo_path) = server.repository_path() {
-            let analysis = self
-                .perform_transitive_analysis(
-                    server,
-                    target,
-                    max_depth,
-                    detect_cycles,
-                    include_external,
-                    &dependency_types,
-                )
-                .await?;
-
-            serde_json::json!({
-                "target": target,
-                "analysis": analysis,
-                "parameters": {
-                    "max_depth": max_depth,
-                    "detect_cycles": detect_cycles,
-                    "include_external": include_external,
-                    "dependency_types": dependency_types
                 },
                 "analysis_successful": true
             })
@@ -4612,7 +4489,7 @@ def process_data(input_data: str) -> str:
         assert!(result.is_ok());
 
         let tools_result = result.unwrap();
-        assert_eq!(tools_result.tools.len(), 20); // All implemented tools including API surface analysis
+        assert_eq!(tools_result.tools.len(), 19); // All implemented tools (analyze_transitive_dependencies moved to modular)
         assert!(tools_result.next_cursor.is_none());
 
         // Verify all expected tools are present
@@ -5571,10 +5448,12 @@ def test_function(x, y):
 
     #[tokio::test]
     async fn test_analyze_transitive_dependencies_tool() {
+        // NOTE: analyze_transitive_dependencies has been moved to the modular system
+        // This test verifies that the legacy system correctly reports it as unknown
         let server = create_test_server().await;
         let manager = ToolManager::new(server.clone());
 
-        // Test with valid parameters
+        // Test with valid parameters - should fail as tool moved to modular
         let params = crate::tools::CallToolParams {
             name: "analyze_transitive_dependencies".to_string(),
             arguments: Some(serde_json::json!({
@@ -5589,15 +5468,11 @@ def test_function(x, y):
         assert!(result.is_ok());
 
         let call_result = result.unwrap();
-        assert_eq!(call_result.is_error, Some(false));
+        assert_eq!(call_result.is_error, Some(true)); // Should error as tool moved to modular
 
-        // Verify the response contains expected fields
+        // Verify the response indicates unknown tool
         if let ToolContent::Text { text } = &call_result.content[0] {
-            let parsed: serde_json::Value = serde_json::from_str(text).unwrap();
-            assert!(parsed["target"].is_string());
-            assert!(parsed["analysis"].is_object());
-            assert!(parsed["parameters"].is_object());
-            assert!(parsed["analysis_successful"].as_bool().unwrap_or(false));
+            assert!(text.contains("Unknown tool"));
         }
     }
 
@@ -5615,10 +5490,10 @@ def test_function(x, y):
 
         // Check that our new Phase 2 tools are included
         assert!(tool_names.contains(&&"detect_patterns".to_string()));
-        assert!(tool_names.contains(&&"analyze_transitive_dependencies".to_string()));
+        // NOTE: analyze_transitive_dependencies moved to modular system
 
         // Should have all tools including Phase 1 and Phase 2 and Phase 3
-        assert!(tools_result.tools.len() >= 13); // Original + Phase 1 + Phase 2 + Phase 3
+        assert!(tools_result.tools.len() >= 12); // Original + Phase 1 + Phase 2 + Phase 3 (minus transitive deps)
     }
 
     #[tokio::test]
@@ -6281,8 +6156,8 @@ def test_function(x, y):
         assert!(tool_names.contains(&"trace_data_flow".to_string()));
         assert!(tool_names.contains(&"find_unused_code".to_string()));
 
-        // Total tools should now be 20
-        assert_eq!(tools_result.tools.len(), 20);
+        // Total tools should now be 19 (analyze_transitive_dependencies moved to modular)
+        assert_eq!(tools_result.tools.len(), 19);
     }
 }
 
@@ -6360,93 +6235,6 @@ impl ToolManager {
         }
 
         Ok(detected_patterns)
-    }
-
-    /// Helper method for transitive dependency analysis
-    async fn perform_transitive_analysis(
-        &self,
-        server: &CodePrismMcpServer,
-        target: &str,
-        max_depth: usize,
-        detect_cycles: bool,
-        _include_external: bool,
-        dependency_types: &[String],
-    ) -> Result<serde_json::Value> {
-        // Parse target (could be node ID or file path)
-        let target_nodes = if target.len() == 32 && target.chars().all(|c| c.is_ascii_hexdigit()) {
-            // It's a node ID
-            if let Ok(node_id) = self.parse_node_id(target) {
-                if let Some(node) = server.graph_store().get_node(&node_id) {
-                    vec![node]
-                } else {
-                    return Ok(serde_json::json!({
-                        "error": "Node not found",
-                        "target": target
-                    }));
-                }
-            } else {
-                return Ok(serde_json::json!({
-                    "error": "Invalid node ID format",
-                    "target": target
-                }));
-            }
-        } else {
-            // It's a file path
-            let file_path = std::path::PathBuf::from(target);
-            server.graph_store().get_nodes_in_file(&file_path)
-        };
-
-        if target_nodes.is_empty() {
-            return Ok(serde_json::json!({
-                "error": "No nodes found for target",
-                "target": target
-            }));
-        }
-
-        let mut analysis_results = Vec::new();
-
-        for target_node in &target_nodes {
-            let dependencies = self
-                .build_transitive_dependencies(server, &target_node.id, max_depth, dependency_types)
-                .await?;
-
-            let mut cycles = Vec::new();
-            if detect_cycles {
-                cycles = self
-                    .detect_dependency_cycles(server, &target_node.id, &dependencies)
-                    .await?;
-            }
-
-            let analysis = serde_json::json!({
-                "target_node": {
-                    "id": target_node.id.to_hex(),
-                    "name": target_node.name,
-                    "kind": format!("{:?}", target_node.kind),
-                    "file": target_node.file.display().to_string(),
-                    "span": target_node.span
-                },
-                "transitive_dependencies": dependencies,
-                "dependency_chains": self.build_dependency_chains(server, &target_node.id, max_depth).await?,
-                "cycles": cycles,
-                "statistics": {
-                    "total_dependencies": dependencies.len(),
-                    "max_depth_reached": self.calculate_max_depth(&dependencies),
-                    "cycles_detected": cycles.len()
-                }
-            });
-
-            analysis_results.push(analysis);
-        }
-
-        Ok(serde_json::json!({
-            "target_file_or_symbol": target,
-            "analyses": analysis_results,
-            "summary": {
-                "total_nodes_analyzed": target_nodes.len(),
-                "total_unique_dependencies": self.count_unique_dependencies(&analysis_results),
-                "total_cycles_found": self.count_total_cycles(&analysis_results)
-            }
-        }))
     }
 
     /// Detect Singleton pattern
@@ -7525,268 +7313,6 @@ impl ToolManager {
             ],
             _ => vec!["No specific suggestions available".to_string()],
         }
-    }
-
-    /// Build transitive dependencies map
-    async fn build_transitive_dependencies(
-        &self,
-        server: &CodePrismMcpServer,
-        start_node: &codeprism_core::NodeId,
-        max_depth: usize,
-        dependency_types: &[String],
-    ) -> Result<Vec<serde_json::Value>> {
-        let mut dependencies = Vec::new();
-        let mut visited = std::collections::HashSet::new();
-        let mut queue = std::collections::VecDeque::new();
-
-        queue.push_back((*start_node, 0));
-        visited.insert(*start_node);
-
-        while let Some((current_node, depth)) = queue.pop_front() {
-            if depth >= max_depth {
-                continue;
-            }
-
-            let edges = server.graph_store().get_outgoing_edges(&current_node);
-            for edge in edges {
-                // Filter by dependency types
-                let include_edge = dependency_types.contains(&"all".to_string())
-                    || dependency_types.iter().any(|dt| match dt.as_str() {
-                        "calls" => edge.kind == codeprism_core::EdgeKind::Calls,
-                        "imports" => edge.kind == codeprism_core::EdgeKind::Imports,
-                        "reads" => edge.kind == codeprism_core::EdgeKind::Reads,
-                        "writes" => edge.kind == codeprism_core::EdgeKind::Writes,
-                        "extends" => edge.kind == codeprism_core::EdgeKind::Extends,
-                        "implements" => edge.kind == codeprism_core::EdgeKind::Implements,
-                        _ => false,
-                    });
-
-                if include_edge {
-                    if let Some(target_node) = server.graph_store().get_node(&edge.target) {
-                        dependencies.push(serde_json::json!({
-                            "source": {
-                                "id": current_node.to_hex(),
-                                "name": server.graph_store().get_node(&current_node)
-                                    .map(|n| n.name.clone()).unwrap_or("unknown".to_string())
-                            },
-                            "target": {
-                                "id": target_node.id.to_hex(),
-                                "name": target_node.name,
-                                "kind": format!("{:?}", target_node.kind),
-                                "file": target_node.file.display().to_string()
-                            },
-                            "edge_type": format!("{:?}", edge.kind),
-                            "depth": depth + 1
-                        }));
-
-                        if !visited.contains(&edge.target) {
-                            visited.insert(edge.target);
-                            queue.push_back((edge.target, depth + 1));
-                        }
-                    }
-                }
-            }
-        }
-
-        Ok(dependencies)
-    }
-
-    /// Build dependency chains
-    async fn build_dependency_chains(
-        &self,
-        server: &CodePrismMcpServer,
-        start_node: &codeprism_core::NodeId,
-        max_depth: usize,
-    ) -> Result<Vec<serde_json::Value>> {
-        let mut chains = Vec::new();
-        let current_chain = Vec::new();
-
-        self.build_chains_recursive(
-            server,
-            *start_node,
-            current_chain,
-            &mut chains,
-            max_depth,
-            0,
-        )
-        .await?;
-
-        Ok(chains)
-    }
-
-    /// Recursive helper for building dependency chains
-    #[async_recursion]
-    async fn build_chains_recursive(
-        &self,
-        server: &CodePrismMcpServer,
-        current_node: codeprism_core::NodeId,
-        current_chain: Vec<String>,
-        all_chains: &mut Vec<serde_json::Value>,
-        max_depth: usize,
-        current_depth: usize,
-    ) -> Result<()> {
-        if current_depth >= max_depth {
-            return Ok(());
-        }
-
-        let mut chain = current_chain;
-        if let Some(node) = server.graph_store().get_node(&current_node) {
-            chain.push(format!("{}:{}", node.name, node.id.to_hex()));
-        }
-
-        let edges = server.graph_store().get_outgoing_edges(&current_node);
-        if edges.is_empty() {
-            // End of chain
-            if chain.len() > 1 {
-                all_chains.push(serde_json::json!({
-                    "chain": chain,
-                    "length": chain.len()
-                }));
-            }
-        } else {
-            for edge in edges {
-                if edge.kind == codeprism_core::EdgeKind::Calls
-                    || edge.kind == codeprism_core::EdgeKind::Imports
-                {
-                    self.build_chains_recursive(
-                        server,
-                        edge.target,
-                        chain.clone(),
-                        all_chains,
-                        max_depth,
-                        current_depth + 1,
-                    )
-                    .await?;
-                }
-            }
-        }
-
-        Ok(())
-    }
-
-    /// Detect dependency cycles
-    async fn detect_dependency_cycles(
-        &self,
-        server: &CodePrismMcpServer,
-        start_node: &codeprism_core::NodeId,
-        _dependencies: &[serde_json::Value],
-    ) -> Result<Vec<serde_json::Value>> {
-        let mut cycles = Vec::new();
-        let mut visited = std::collections::HashSet::new();
-        let mut rec_stack = std::collections::HashSet::new();
-        let mut path = Vec::new();
-
-        self.detect_cycles_dfs(
-            server,
-            *start_node,
-            &mut visited,
-            &mut rec_stack,
-            &mut path,
-            &mut cycles,
-        )
-        .await?;
-
-        Ok(cycles)
-    }
-
-    /// DFS helper for cycle detection
-    #[async_recursion]
-    async fn detect_cycles_dfs(
-        &self,
-        server: &CodePrismMcpServer,
-        node: codeprism_core::NodeId,
-        visited: &mut std::collections::HashSet<codeprism_core::NodeId>,
-        rec_stack: &mut std::collections::HashSet<codeprism_core::NodeId>,
-        path: &mut Vec<codeprism_core::NodeId>,
-        cycles: &mut Vec<serde_json::Value>,
-    ) -> Result<()> {
-        visited.insert(node);
-        rec_stack.insert(node);
-        path.push(node);
-
-        let edges = server.graph_store().get_outgoing_edges(&node);
-        for edge in edges {
-            if edge.kind == codeprism_core::EdgeKind::Calls
-                || edge.kind == codeprism_core::EdgeKind::Imports
-            {
-                if !visited.contains(&edge.target) {
-                    self.detect_cycles_dfs(server, edge.target, visited, rec_stack, path, cycles)
-                        .await?;
-                } else if rec_stack.contains(&edge.target) {
-                    // Found a cycle
-                    if let Some(cycle_start) = path.iter().position(|&id| id == edge.target) {
-                        let cycle_path: Vec<String> = path[cycle_start..]
-                            .iter()
-                            .map(|id| {
-                                if let Some(node) = server.graph_store().get_node(id) {
-                                    format!("{}:{}", node.name, id.to_hex())
-                                } else {
-                                    id.to_hex()
-                                }
-                            })
-                            .collect();
-
-                        cycles.push(serde_json::json!({
-                            "cycle_path": cycle_path,
-                            "cycle_length": cycle_path.len(),
-                            "cycle_type": "dependency_cycle"
-                        }));
-                    }
-                }
-            }
-        }
-
-        path.pop();
-        rec_stack.remove(&node);
-
-        Ok(())
-    }
-
-    /// Calculate maximum depth in dependencies
-    fn calculate_max_depth(&self, dependencies: &[serde_json::Value]) -> usize {
-        dependencies
-            .iter()
-            .filter_map(|dep| dep.get("depth").and_then(|d| d.as_u64()))
-            .max()
-            .unwrap_or(0) as usize
-    }
-
-    /// Count unique dependencies across all analyses
-    fn count_unique_dependencies(&self, analyses: &[serde_json::Value]) -> usize {
-        let mut unique_deps = std::collections::HashSet::new();
-
-        for analysis in analyses {
-            if let Some(deps) = analysis
-                .get("transitive_dependencies")
-                .and_then(|d| d.as_array())
-            {
-                for dep in deps {
-                    if let Some(target_id) = dep
-                        .get("target")
-                        .and_then(|t| t.get("id"))
-                        .and_then(|id| id.as_str())
-                    {
-                        unique_deps.insert(target_id.to_string());
-                    }
-                }
-            }
-        }
-
-        unique_deps.len()
-    }
-
-    /// Count total cycles across all analyses
-    fn count_total_cycles(&self, analyses: &[serde_json::Value]) -> usize {
-        analyses
-            .iter()
-            .map(|analysis| {
-                analysis
-                    .get("cycles")
-                    .and_then(|c| c.as_array())
-                    .map(|arr| arr.len())
-                    .unwrap_or(0)
-            })
-            .sum()
     }
 
     /// Perform data flow analysis on a symbol

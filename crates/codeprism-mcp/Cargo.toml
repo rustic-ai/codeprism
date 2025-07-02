@@ -55,3 +55,11 @@ tempfile = { workspace = true }
 [[bin]]
 name = "codeprism-mcp"
 path = "src/main.rs" 
+
+[[bin]]
+name = "basic_rmcp_test"
+path = "examples/basic_rmcp_test.rs" 
+
+[[bin]]
+name = "basic_router_test"
+path = "examples/basic_router_test.rs" 

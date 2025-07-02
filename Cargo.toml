@@ -10,7 +10,7 @@ members = [
     "crates/codeprism-mcp",
     "crates/codeprism-dev-tools",
     "crates/codeprism-test-harness",
-    "crates/mcp-test-harness",
+    "crates/mcp-test-harness", "cursor_workspace/rmcp-test",
 ]
 resolver = "2"
 

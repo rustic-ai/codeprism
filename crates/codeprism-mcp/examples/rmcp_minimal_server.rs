@@ -1,13 +1,11 @@
-//! Minimal RMCP Server Example
+//! Native RMCP Server Example
 //!
-//! This demonstrates the RMCP SDK integration with stdio transport
-//! and the CodePrism tool bridge for Phase 1 of the migration.
+//! This demonstrates the native RMCP SDK implementation with CodePrism tools.
+//! Shows how to use the official RMCP server with stdio transport.
 
 use anyhow::Result;
-use codeprism_mcp::{CodePrismMcpServer, CodePrismRmcpBridge};
-use serde_json::Value;
-use std::sync::Arc;
-use tokio::sync::RwLock;
+use codeprism_mcp::server::CodePrismRmcpServer;
+use rmcp::ServiceExt;
 use tracing_subscriber::fmt::init;
 
 #[tokio::main]
@@ -15,43 +13,29 @@ async fn main() -> Result<()> {
     // Initialize tracing
     init();
 
-    println!("🚀 Starting minimal RMCP server example...");
+    println!("🚀 Starting native RMCP server example...");
 
-    // Create CodePrism MCP server instance
-    let codeprism_server = CodePrismMcpServer::new()?;
-    let server_arc = Arc::new(RwLock::new(codeprism_server));
+    // Create native RMCP server instance
+    let mut server = CodePrismRmcpServer::new()?;
 
-    // Create RMCP bridge
-    let bridge = CodePrismRmcpBridge::new(server_arc.clone());
+    // Initialize with current directory as repository
+    let current_dir = std::env::current_dir()?;
+    server.initialize_with_repository(&current_dir).await?;
 
-    println!("📋 Available tools through RMCP bridge:");
-    for tool in bridge.get_available_tools() {
-        println!("  - {}", tool);
-    }
+    println!("📋 Native RMCP server created with tools:");
+    println!("  - repository_stats: Get comprehensive repository statistics");
+    println!("  - content_stats: Get detailed content statistics");
+    println!("  - analyze_complexity: Analyze code complexity metrics");
 
-    // Test a simple tool call through the bridge
-    println!("\n🔧 Testing repository_stats tool...");
-    match bridge.call_tool("repository_stats", Value::Null).await {
-        Ok(result) => {
-            println!("✅ Tool call successful!");
-            println!("📊 Result: {}", serde_json::to_string_pretty(&result)?);
-        }
-        Err(e) => {
-            println!("⚠️  Tool call failed: {}", e);
-            println!("ℹ️  This is expected if no repository is loaded");
-        }
-    }
+    println!("\n🔧 Starting server with stdio transport...");
+    println!("ℹ️  Use Ctrl+C to stop the server");
 
-    // FUTURE(Phase2): Integrate with actual RMCP SDK Server when available
-    // This foundation is ready for Phase 2 custom code elimination
-    println!("\n📝 Next steps:");
-    println!("  1. ✅ RMCP dependency added");
-    println!("  2. ✅ Tool adapter bridge created");
-    println!("  3. ⏳ Integrate with RMCP Server (Phase 2)");
-    println!("  4. ⏳ Test stdio transport through RMCP");
-    println!("  5. ⏳ Performance benchmark comparison");
+    // Start the server with stdio transport (like the main binary)
+    let service = server
+        .serve((tokio::io::stdin(), tokio::io::stdout()))
+        .await?;
 
-    println!("\n🎯 Phase 1 foundation ready for RMCP Server integration!");
+    service.waiting().await?;
 
     Ok(())
 }

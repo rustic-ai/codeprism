@@ -1,11 +1,12 @@
-//! # CodePrism MCP Server
+//! # CodePrism Native RMCP MCP Server
 //!
-//! A Model Context Protocol (MCP) compliant server that provides access to code repositories
-//! through standardized Resources, Tools, and Prompts.
+//! A native RMCP (Rust Model Context Protocol) server that provides advanced code analysis
+//! and repository exploration tools using the official MCP Rust SDK.
 //!
-//! This implementation follows the MCP specification for JSON-RPC 2.0 communication
-//! over stdio transport, enabling integration with MCP clients like Claude Desktop,
-//! Cursor, and other AI applications.
+//! This implementation leverages the official RMCP SDK with the toolbox pattern for
+//! automatic tool registration and comprehensive schema documentation. All CodePrism
+//! tools are implemented as native RMCP tools with rich type information for optimal
+//! AI understanding and integration.
 
 use anyhow::Result;
 
@@ -17,41 +18,35 @@ use codeprism_core::{
     repository::RepositoryManager,
     scanner::RepositoryScanner,
 };
-use std::collections::HashMap;
+use rmcp::model::ServerCapabilities;
+use std::collections::BTreeMap;
 use std::path::Path;
 use std::sync::Arc;
 
-pub mod config; // Phase 2.2: Advanced configuration system
+// Native RMCP server implementation
+pub mod server;
+
+// Core components and utilities
+pub mod config;
 pub mod context;
 pub mod error_handler;
-pub mod monitoring; // Phase 2.2: Performance monitoring system
+pub mod monitoring;
 pub mod prompts;
-pub mod protocol;
-pub mod protocol_rmcp; // RMCP-based protocol implementation
 pub mod resources;
-pub mod rmcp_bridge; // RMCP bridge for migration
-pub mod server;
-pub mod server_rmcp; // RMCP-based server implementation
 pub mod tools;
+pub mod validation;
+
+// Legacy modules (kept for transition)
 pub mod tools_legacy;
-pub mod transport;
-pub mod transport_rmcp; // RMCP-based transport implementation
-pub mod validation; // Phase 2.2: Configuration validation & health checks
 
-// Re-export main types
-pub use error_handler::{McpError, McpErrorHandler, McpResult};
-pub use protocol::{
-    InitializeParams, InitializeResult, JsonRpcNotification, JsonRpcRequest, JsonRpcResponse,
-    ServerCapabilities,
-};
-pub use rmcp_bridge::CodePrismRmcpBridge; // Re-export RMCP bridge
-pub use server::McpServer;
-pub use transport::{StdioTransport, Transport};
+// Re-export main types for the native RMCP implementation
+pub use server::CodePrismRmcpServer;
 
-// Re-export Phase 2.2 types
+// Re-export core configuration and monitoring types
 pub use config::{
     CachingConfig, ConfigProfileManager, McpConfigProfile, MonitoringConfig, SecurityConfig,
 };
+pub use error_handler::{McpError, McpErrorHandler, McpResult};
 pub use monitoring::{MonitoringMiddleware, PerformanceMonitor, PerformanceSummary};
 pub use tools::dynamic_enablement::{DynamicToolManager, RepositoryAnalysis};
 pub use validation::{StartupReport, SystemValidator, ValidationResult};
@@ -391,17 +386,19 @@ impl CodePrismMcpServer {
         ));
 
         let capabilities = ServerCapabilities {
-            resources: Some(resources::ResourceCapabilities {
+            resources: Some(rmcp::model::ResourcesCapability {
                 subscribe: Some(true),
                 list_changed: Some(true),
             }),
-            tools: Some(tools::ToolCapabilities {
+            tools: Some(rmcp::model::ToolsCapability {
                 list_changed: Some(true),
             }),
-            prompts: Some(prompts::PromptCapabilities {
+            prompts: Some(rmcp::model::PromptsCapability {
                 list_changed: Some(false),
             }),
-            experimental: Some(HashMap::new()),
+            logging: None,
+            completions: None,
+            experimental: Some(BTreeMap::new()),
         };
 
         Ok(Self {
@@ -486,17 +483,19 @@ impl CodePrismMcpServer {
         ));
 
         let capabilities = ServerCapabilities {
-            resources: Some(resources::ResourceCapabilities {
+            resources: Some(rmcp::model::ResourcesCapability {
                 subscribe: Some(true),
                 list_changed: Some(true),
             }),
-            tools: Some(tools::ToolCapabilities {
+            tools: Some(rmcp::model::ToolsCapability {
                 list_changed: Some(true),
             }),
-            prompts: Some(prompts::PromptCapabilities {
+            prompts: Some(rmcp::model::PromptsCapability {
                 list_changed: Some(false),
             }),
-            experimental: Some(HashMap::new()),
+            logging: None,
+            completions: None,
+            experimental: Some(BTreeMap::new()),
         };
 
         tracing::info!("MCP server configured with:");

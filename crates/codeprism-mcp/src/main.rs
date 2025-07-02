@@ -1,14 +1,16 @@
 //! CodePrism MCP Server Binary
 //!
-//! This binary provides a command-line interface for running the CodePrism MCP server.
-//! It supports stdio transport for integration with MCP clients like Claude Desktop and Cursor.
+//! Native RMCP MCP Server using the official Rust SDK with stdio and SSE transport support.
+//! Provides all CodePrism code analysis tools as native MCP tools with comprehensive schema documentation.
 
 use anyhow::Result;
 use clap::{Arg, Command};
+use rmcp::transport::sse_server::SseServer;
+use rmcp::ServiceExt;
 use std::path::PathBuf;
 use tracing::{error, info, warn};
 
-use codeprism_mcp::server::McpServer;
+use codeprism_mcp::server::CodePrismRmcpServer;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -22,12 +24,14 @@ async fn main() -> Result<()> {
         .init();
 
     let matches = Command::new("codeprism-mcp")
-        .version("0.1.0")
+        .version(env!("CARGO_PKG_VERSION"))
         .author("DragonScale Team")
-        .about("CodePrism Model Context Protocol Server")
+        .about("CodePrism Model Context Protocol Server (Native RMCP)")
         .long_about(
-            "A Model Context Protocol (MCP) compliant server that provides access to code repositories \
-             through standardized Resources, Tools, and Prompts. Integrates with MCP clients like \
+            "A native RMCP (Rust Model Context Protocol) server that provides advanced code analysis \
+             and repository exploration tools. Uses the official MCP Rust SDK with comprehensive \
+             tool support including complexity analysis, dependency tracing, security analysis, \
+             performance profiling, and more. Integrates seamlessly with MCP clients like \
              Claude Desktop, Cursor, and other AI applications."
         )
         .arg(
@@ -45,52 +49,25 @@ async fn main() -> Result<()> {
                 .action(clap::ArgAction::SetTrue)
         )
         .arg(
-            Arg::new("memory-limit")
-                .long("memory-limit")
-                .help("Memory limit for indexing in MB (default: 4096)")
-                .value_name("MB")
+            Arg::new("transport")
+                .long("transport")
+                .help("Transport protocol to use: 'stdio' or 'sse'")
+                .value_name("TRANSPORT")
+                .default_value("stdio")
         )
         .arg(
-            Arg::new("batch-size")
-                .long("batch-size")
-                .help("Batch size for parallel processing (default: 30)")
-                .value_name("SIZE")
+            Arg::new("host")
+                .long("host")
+                .help("Host to bind for SSE transport (default: 127.0.0.1)")
+                .value_name("HOST")
+                .default_value("127.0.0.1")
         )
         .arg(
-            Arg::new("max-file-size")
-                .long("max-file-size")
-                .help("Maximum file size to process in MB (default: 10)")
-                .value_name("MB")
-        )
-        .arg(
-            Arg::new("exclude-dirs")
-                .long("exclude-dirs")
-                .help("Comma-separated list of directories to exclude (default: comprehensive list including .tox, venv, node_modules, etc.)")
-                .value_name("DIRS")
-        )
-        .arg(
-            Arg::new("include-extensions")
-                .long("include-extensions")
-                .help("Comma-separated list of file extensions to include (default: common programming languages)")
-                .value_name("EXTS")
-        )
-        .arg(
-            Arg::new("disable-memory-limit")
-                .long("disable-memory-limit")
-                .help("Disable memory limit checking (use with caution)")
-                .action(clap::ArgAction::SetTrue)
-        )
-        .arg(
-            Arg::new("include-deps")
-                .long("include-deps")
-                .help("Include dependency directories (.tox, venv, node_modules) for complete code analysis")
-                .action(clap::ArgAction::SetTrue)
-        )
-        .arg(
-            Arg::new("smart-deps")
-                .long("smart-deps")
-                .help("Smart dependency scanning - include only public APIs and commonly referenced files")
-                .action(clap::ArgAction::SetTrue)
+            Arg::new("port")
+                .long("port")
+                .help("Port to bind for SSE transport (default: 3000)")
+                .value_name("PORT")
+                .default_value("3000")
         )
         .get_matches();
 
@@ -101,160 +78,14 @@ async fn main() -> Result<()> {
         std::env::set_var("RUST_LOG", "info");
     }
 
-    info!("Starting CodePrism MCP Server");
-
-    // Parse configuration options
-    let memory_limit_mb = matches
-        .get_one::<String>("memory-limit")
-        .and_then(|s| s.parse::<usize>().ok())
-        .unwrap_or(4096);
-
-    let batch_size = matches
-        .get_one::<String>("batch-size")
-        .and_then(|s| s.parse::<usize>().ok())
-        .unwrap_or(30);
-
-    let max_file_size_mb = matches
-        .get_one::<String>("max-file-size")
-        .and_then(|s| s.parse::<usize>().ok())
-        .unwrap_or(10);
-
-    let disable_memory_limit = matches.get_flag("disable-memory-limit");
-    let include_deps = matches.get_flag("include-deps");
-    let smart_deps = matches.get_flag("smart-deps");
-
-    let exclude_dirs = matches
-        .get_one::<String>("exclude-dirs")
-        .map(|s| {
-            s.split(',')
-                .map(|s| s.trim().to_string())
-                .collect::<Vec<_>>()
-        })
-        .unwrap_or_else(|| {
-            let mut dirs = vec![
-                ".git".to_string(),
-                "build".to_string(),
-                "dist".to_string(),
-                // IDE and editor directories
-                ".vscode".to_string(),
-                ".idea".to_string(),
-                // OS files
-                ".DS_Store".to_string(),
-                "Thumbs.db".to_string(),
-            ];
-
-            // Add dependency directories unless specifically requested to include them
-            if !include_deps && !smart_deps {
-                dirs.extend(vec![
-                    "node_modules".to_string(),
-                    "target".to_string(),
-                    ".venv".to_string(),
-                    "__pycache__".to_string(),
-                    "vendor".to_string(),
-                    // Python virtual environments and package caches
-                    ".tox".to_string(),
-                    "venv".to_string(),
-                    ".env".to_string(),
-                    "env".to_string(),
-                    ".pytest_cache".to_string(),
-                    ".mypy_cache".to_string(),
-                    ".ruff_cache".to_string(),
-                    // Web build artifacts
-                    ".next".to_string(),
-                    ".nuxt".to_string(),
-                    "coverage".to_string(),
-                    ".coverage".to_string(),
-                ]);
-            } else if smart_deps {
-                // In smart mode, exclude some dependency subdirectories but keep main ones
-                dirs.extend(vec![
-                    // Keep main dependency dirs but exclude their caches/builds
-                    "__pycache__".to_string(),
-                    ".pytest_cache".to_string(),
-                    ".mypy_cache".to_string(),
-                    ".ruff_cache".to_string(),
-                    ".coverage".to_string(),
-                ]);
-            }
-
-            dirs
-        });
-
-    let include_extensions = matches
-        .get_one::<String>("include-extensions")
-        .map(|s| {
-            s.split(',')
-                .map(|s| s.trim().to_string())
-                .collect::<Vec<_>>()
-        })
-        .or_else(|| {
-            Some(vec![
-                // Default to common programming language extensions
-                "py".to_string(),
-                "js".to_string(),
-                "ts".to_string(),
-                "jsx".to_string(),
-                "tsx".to_string(),
-                "rs".to_string(),
-                "java".to_string(),
-                "cpp".to_string(),
-                "c".to_string(),
-                "h".to_string(),
-                "hpp".to_string(),
-                "go".to_string(),
-                "php".to_string(),
-                "rb".to_string(),
-                "kt".to_string(),
-                "swift".to_string(),
-            ])
-        });
-
-    // Log configuration
-    info!("Configuration:");
     info!(
-        "  Memory limit: {}MB{}",
-        memory_limit_mb,
-        if disable_memory_limit {
-            " (disabled)"
-        } else {
-            ""
-        }
+        "Starting CodePrism Native RMCP MCP Server v{}",
+        env!("CARGO_PKG_VERSION")
     );
-    info!("  Batch size: {}", batch_size);
-    info!("  Max file size: {}MB", max_file_size_mb);
-    info!(
-        "  Dependency scanning: {}",
-        if include_deps {
-            "Full (includes all dependencies)"
-        } else if smart_deps {
-            "Smart (includes dependency APIs only)"
-        } else {
-            "Minimal (excludes dependencies)"
-        }
-    );
-    info!("  Excluded directories: {:?}", exclude_dirs);
-    if let Some(ref exts) = include_extensions {
-        info!("  Included extensions: {:?}", exts);
-    }
 
-    // Create MCP server with custom configuration
-    let server = McpServer::new_with_config(
-        memory_limit_mb,
-        batch_size,
-        max_file_size_mb,
-        disable_memory_limit,
-        exclude_dirs,
-        include_extensions,
-        if include_deps {
-            Some("include_all".to_string())
-        } else if smart_deps {
-            Some("smart".to_string())
-        } else {
-            Some("exclude".to_string())
-        },
-    )
-    .map_err(|e| {
-        error!("Failed to create MCP server: {}", e);
+    // Create the native RMCP server
+    let mut server = CodePrismRmcpServer::new().map_err(|e| {
+        error!("Failed to create RMCP server: {}", e);
         e
     })?;
 
@@ -293,10 +124,9 @@ async fn main() -> Result<()> {
                     if size.contains('G')
                         && size.chars().next().unwrap_or('0').to_digit(10).unwrap_or(0) > 1
                     {
-                        warn!("Large repository detected ({}). Consider using filtering options or increasing memory limit.", size);
-                        warn!("Use --exclude-dirs to exclude directories like node_modules, target, .git");
-                        warn!("Use --include-extensions to limit file types, e.g., --include-extensions py,js,ts");
-                        warn!("Use --memory-limit to increase memory limit, e.g., --memory-limit 4096");
+                        warn!("Large repository detected ({}). Consider using filtering in your MCP client configuration.", size);
+                        warn!("Use content filtering tools like search_content with file_pattern to limit scope.");
+                        warn!("Use find_files with exclude_patterns to filter out unwanted directories.");
                     }
                 }
             }
@@ -312,26 +142,131 @@ async fn main() -> Result<()> {
     } else {
         info!("No repository specified - server will start without repository context");
         info!("Repository can be specified as: codeprism-mcp <path> or via REPOSITORY_PATH environment variable");
+        info!("Repository will be loaded on first tool use if tools can infer the path.");
     }
 
-    // Run the server with stdio transport
-    info!("Starting MCP server with stdio transport");
-    server.run_stdio().await.map_err(|e| {
-        error!("MCP server error: {}", e);
-        e
-    })?;
+    // Select transport based on configuration
+    let transport = matches.get_one::<String>("transport").unwrap();
 
-    info!("CodePrism MCP Server stopped");
+    match transport.as_str() {
+        "stdio" => {
+            info!("Starting native RMCP server with stdio transport");
+            info!("Available tools: repository_stats, content_stats, analyze_complexity, search_symbols,");
+            info!(
+                "                 search_content, find_files, find_references, find_dependencies,"
+            );
+            info!(
+                "                 trace_path, explain_symbol, trace_data_flow, trace_inheritance,"
+            );
+            info!("                 detect_patterns, analyze_decorators, find_duplicates, find_unused_code,");
+            info!("                 analyze_transitive_dependencies, analyze_security, analyze_performance, analyze_api_surface");
+
+            // Use stdio transport following mcp-containerd pattern
+            let service = server
+                .serve((tokio::io::stdin(), tokio::io::stdout()))
+                .await
+                .map_err(|e| {
+                    error!("RMCP server error: {}", e);
+                    anyhow::anyhow!("Server failed: {}", e)
+                })?;
+
+            service.waiting().await?;
+        }
+        "sse" => {
+            let host = matches.get_one::<String>("host").unwrap();
+            let port = matches
+                .get_one::<String>("port")
+                .unwrap()
+                .parse::<u16>()
+                .map_err(|e| {
+                    error!("Invalid port number: {}", e);
+                    e
+                })?;
+
+            info!(
+                "Starting native RMCP server with SSE transport on {}:{}",
+                host, port
+            );
+            info!("Server will be available at: http://{}:{}/sse", host, port);
+            info!("Available tools: repository_stats, content_stats, analyze_complexity, search_symbols,");
+            info!(
+                "                 search_content, find_files, find_references, find_dependencies,"
+            );
+            info!(
+                "                 trace_path, explain_symbol, trace_data_flow, trace_inheritance,"
+            );
+            info!("                 detect_patterns, analyze_decorators, find_duplicates, find_unused_code,");
+            info!("                 analyze_transitive_dependencies, analyze_security, analyze_performance, analyze_api_surface");
+
+            // Use SSE server following mcp-containerd pattern
+            let ct = SseServer::serve(format!("{}:{}", host, port).parse()?)
+                .await?
+                .with_service(move || server.clone());
+
+            tokio::signal::ctrl_c().await?;
+            ct.cancel();
+        }
+        _ => {
+            error!("Unsupported transport: {}. Use 'stdio' or 'sse'", transport);
+            std::process::exit(1);
+        }
+    }
+
+    info!("CodePrism Native RMCP MCP Server stopped");
     Ok(())
 }
 
 #[cfg(test)]
 mod tests {
-    // Note: Integration tests for the binary would typically use external test harnesses
-    // since testing stdio interaction requires careful setup of stdin/stdout mocking
+    use super::*;
+
+    #[tokio::test]
+    async fn test_server_creation() {
+        // Test that the server can be created successfully
+        let result = CodePrismRmcpServer::new();
+        assert!(result.is_ok(), "Server creation should succeed");
+    }
 
     #[test]
-    fn test_binary_compilation() {
-        // This test just ensures the binary compiles successfully
+    fn test_cli_argument_parsing() {
+        // Test basic argument parsing
+        let app = Command::new("test")
+            .arg(Arg::new("repository").index(1))
+            .arg(
+                Arg::new("verbose")
+                    .short('v')
+                    .action(clap::ArgAction::SetTrue),
+            )
+            .arg(
+                Arg::new("transport")
+                    .long("transport")
+                    .default_value("stdio"),
+            );
+
+        // Test default values
+        let matches = app.clone().try_get_matches_from(vec!["test"]).unwrap();
+        assert_eq!(
+            matches.get_one::<String>("transport"),
+            Some(&"stdio".to_string())
+        );
+
+        // Test with repository path
+        let matches = app
+            .clone()
+            .try_get_matches_from(vec!["test", "/path/to/repo"])
+            .unwrap();
+        assert_eq!(
+            matches.get_one::<String>("repository"),
+            Some(&"/path/to/repo".to_string())
+        );
+
+        // Test with transport option
+        let matches = app
+            .try_get_matches_from(vec!["test", "--transport", "sse"])
+            .unwrap();
+        assert_eq!(
+            matches.get_one::<String>("transport"),
+            Some(&"sse".to_string())
+        );
     }
 }

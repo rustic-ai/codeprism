@@ -3,15 +3,50 @@
 //! This module provides centralized error handling, recovery mechanisms,
 //! and integration with observability systems for production reliability.
 
-use crate::protocol::{JsonRpcError, JsonRpcResponse};
+use anyhow::Result;
 use codeprism_core::{
     resilience::CircuitBreakerConfig, CircuitState, Error as CoreError, ErrorContext,
     ErrorSeverity, HealthMonitor, MetricsCollector, PerformanceMonitor, RecoveryStrategy,
     ResilienceManager, RetryConfig,
 };
+use serde::{Deserialize, Serialize};
+use serde_json;
+use serde_json::Value;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::{debug, error, info, warn};
+
+/// Local JSON-RPC Error structure
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct JsonRpcError {
+    pub code: i32,
+    pub message: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub data: Option<Value>,
+}
+
+impl JsonRpcError {
+    pub const INVALID_REQUEST: i32 = -32600;
+
+    pub fn new(code: i32, message: String, data: Option<Value>) -> Self {
+        Self {
+            code,
+            message,
+            data,
+        }
+    }
+}
+
+/// Local JSON-RPC Response structure
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct JsonRpcResponse {
+    pub jsonrpc: String,
+    pub id: Value,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub result: Option<Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<JsonRpcError>,
+}
 
 /// Enhanced error type for MCP operations
 #[derive(Debug, Clone, thiserror::Error)]

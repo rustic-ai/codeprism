@@ -21,6 +21,10 @@ struct Cli {
     #[arg(short, long, value_name = "FILE")]
     config: Option<String>,
 
+    /// Configuration profile (development, production, enterprise)
+    #[arg(short, long, value_name = "PROFILE")]
+    profile: Option<String>,
+
     /// Log level (trace, debug, info, warn, error)
     #[arg(short, long, default_value = "info")]
     log_level: String,
@@ -44,7 +48,7 @@ async fn main() -> Result<()> {
     );
 
     // Load configuration
-    let config = load_config(cli.config.as_deref()).await?;
+    let config = load_config(cli.config.as_deref(), cli.profile.as_deref()).await?;
 
     // Validate config and exit if requested
     if cli.validate_config {
@@ -82,16 +86,31 @@ fn init_logging(log_level: &str) -> Result<()> {
     Ok(())
 }
 
-/// Load configuration from file or use defaults
-async fn load_config(config_path: Option<&str>) -> Result<Config> {
+/// Load configuration from file, environment, or use defaults
+async fn load_config(config_path: Option<&str>, profile: Option<&str>) -> Result<Config> {
     match config_path {
         Some(path) => {
-            info!("Loading configuration from: {}", path);
+            info!("Loading configuration from file: {}", path);
             Config::from_file(path).await.map_err(Into::into)
         }
         None => {
-            info!("Using default configuration");
-            Ok(Config::default())
+            // Set profile from CLI if provided
+            if let Some(prof) = profile {
+                std::env::set_var("CODEPRISM_PROFILE", prof);
+                info!("Using configuration profile: {}", prof);
+            }
+
+            // Try loading from environment variables first
+            if std::env::var("CODEPRISM_PROFILE").is_ok()
+                || std::env::var("CODEPRISM_MEMORY_LIMIT_MB").is_ok()
+                || std::env::var("CODEPRISM_BATCH_SIZE").is_ok()
+            {
+                info!("Loading configuration from environment variables");
+                Config::from_env().await.map_err(Into::into)
+            } else {
+                info!("Using default configuration (development profile)");
+                Ok(Config::default())
+            }
         }
     }
 }

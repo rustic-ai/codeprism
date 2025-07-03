@@ -104,14 +104,14 @@ impl CodePrismMcpServer {
         info!("Version tool called");
 
         let version_info = serde_json::json!({
-            "server_name": self.config.server.name,
-            "server_version": self.config.server.version,
+            "server_name": self.config.server().name,
+            "server_version": self.config.server().version,
             "mcp_protocol_version": crate::MCP_VERSION,
             "tools_enabled": {
-                "core": self.config.tools.enable_core,
-                "search": self.config.tools.enable_search,
-                "analysis": self.config.tools.enable_analysis,
-                "workflow": self.config.tools.enable_workflow
+                "core": self.config.tools().enable_core,
+                "search": self.config.tools().enable_search,
+                "analysis": self.config.tools().enable_analysis,
+                "workflow": self.config.tools().enable_workflow
             }
         });
 
@@ -132,10 +132,10 @@ impl CodePrismMcpServer {
             "family": std::env::consts::FAMILY,
             "rust_version": env!("CARGO_PKG_VERSION"),
             "server_config": {
-                "name": self.config.server.name,
-                "version": self.config.server.version,
-                "max_concurrent_tools": self.config.server.max_concurrent_tools,
-                "request_timeout_secs": self.config.server.request_timeout_secs
+                "name": self.config.server().name,
+                "version": self.config.server().version,
+                "max_concurrent_tools": self.config.server().max_concurrent_tools,
+                "request_timeout_secs": self.config.server().request_timeout_secs
             }
         });
 
@@ -838,8 +838,8 @@ impl ServerHandler for CodePrismMcpServer {
             protocol_version: ProtocolVersion::V_2024_11_05,
             capabilities: ServerCapabilities::builder().enable_tools().build(),
             server_info: Implementation {
-                name: self.config.server.name.clone(),
-                version: self.config.server.version.clone(),
+                name: self.config.server().name.clone(),
+                version: self.config.server().version.clone(),
             },
             instructions: Some(
                 "CodePrism MCP Server - Advanced code analysis and navigation tools".to_string(),

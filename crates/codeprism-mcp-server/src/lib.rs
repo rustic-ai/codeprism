@@ -60,7 +60,7 @@ mod tests {
         assert!(server.is_ok(), "Server creation should succeed");
 
         let server = server.unwrap();
-        assert_eq!(server.config().server.name, "codeprism-mcp-server");
+        assert_eq!(server.config().server().name, "codeprism-mcp-server");
     }
 
     #[tokio::test]

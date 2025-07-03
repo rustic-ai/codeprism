@@ -2804,7 +2804,7 @@ impl CodePrismMcpServer {
         )]))
     }
 
-    /// Initialize the server with a repository path
+    /// Initialize the server with a repository path and populate the graph store
     pub async fn initialize_repository<P: AsRef<std::path::Path>>(
         &mut self,
         repo_path: P,
@@ -2813,6 +2813,21 @@ impl CodePrismMcpServer {
 
         info!("Initializing repository: {}", repo_path.display());
 
+        // Validate repository path
+        if !repo_path.exists() {
+            return Err(crate::Error::server_init(format!(
+                "Repository path does not exist: {}",
+                repo_path.display()
+            )));
+        }
+
+        if !repo_path.is_dir() {
+            return Err(crate::Error::server_init(format!(
+                "Repository path is not a directory: {}",
+                repo_path.display()
+            )));
+        }
+
         // Create repository configuration
         let repo_id = repo_path
             .file_name()
@@ -2820,14 +2835,224 @@ impl CodePrismMcpServer {
             .unwrap_or("default")
             .to_string();
 
-        let _repo_config = RepositoryConfig::new(repo_id.clone(), &repo_path);
+        let repo_config = RepositoryConfig::new(repo_id.clone(), &repo_path)
+            .with_name(format!("Repository: {}", repo_id))
+            .with_description(format!(
+                "CodePrism MCP Server repository at {}",
+                repo_path.display()
+            ));
 
-        // NOTE: Due to Arc constraints, we'll implement graph population in the tool methods
-        // instead of during initialization. This allows for lazy loading when tools are called.
+        // Clear existing graph data
+        self.graph_store.clear();
+        info!("Cleared existing graph data");
 
+        // Register repository with the repository manager
+        match Arc::get_mut(&mut self.repository_manager) {
+            Some(manager) => {
+                manager
+                    .register_repository(repo_config.clone())
+                    .map_err(|e| {
+                        crate::Error::server_init(format!("Failed to register repository: {}", e))
+                    })?;
+                info!("Registered repository with manager: {}", repo_id);
+            }
+            None => {
+                // If we can't get mutable access, create a new manager and replace it
+                let language_registry = Arc::new(codeprism_core::LanguageRegistry::new());
+                let mut new_manager = codeprism_core::RepositoryManager::new(language_registry);
+                new_manager
+                    .register_repository(repo_config.clone())
+                    .map_err(|e| {
+                        crate::Error::server_init(format!("Failed to register repository: {}", e))
+                    })?;
+                self.repository_manager = Arc::new(new_manager);
+                info!(
+                    "Created new repository manager and registered repository: {}",
+                    repo_id
+                );
+            }
+        }
+
+        // Create a progress reporter for indexing
+        struct IndexingProgressReporter {
+            total_files: std::sync::atomic::AtomicUsize,
+            processed_files: std::sync::atomic::AtomicUsize,
+        }
+
+        impl IndexingProgressReporter {
+            fn new() -> Self {
+                Self {
+                    total_files: std::sync::atomic::AtomicUsize::new(0),
+                    processed_files: std::sync::atomic::AtomicUsize::new(0),
+                }
+            }
+        }
+
+        impl codeprism_core::ProgressReporter for IndexingProgressReporter {
+            fn report_progress(&self, current: usize, total: Option<usize>) {
+                if let Some(total) = total {
+                    self.total_files
+                        .store(total, std::sync::atomic::Ordering::Relaxed);
+                }
+                self.processed_files
+                    .store(current, std::sync::atomic::Ordering::Relaxed);
+
+                if current % 100 == 0 || (total.is_some() && current == total.unwrap()) {
+                    info!(
+                        "Repository indexing progress: {}/{}",
+                        current,
+                        total
+                            .map(|t| t.to_string())
+                            .unwrap_or_else(|| "?".to_string())
+                    );
+                }
+            }
+
+            fn report_complete(&self, result: &codeprism_core::ScanResult) {
+                info!(
+                    "Repository scan completed: {} files discovered in {}ms",
+                    result.total_files, result.duration_ms
+                );
+            }
+
+            fn report_error(&self, error: &codeprism_core::Error) {
+                warn!("Repository scanning error: {}", error);
+            }
+        }
+
+        let progress_reporter = Arc::new(IndexingProgressReporter::new());
+
+        // Index the repository to populate the graph store
+        info!("Starting repository indexing...");
+        let start_time = std::time::Instant::now();
+
+        // Get mutable access to repository manager for indexing
+        let indexing_result = match Arc::try_unwrap(self.repository_manager.clone()) {
+            Ok(mut manager) => {
+                let result = manager
+                    .index_repository(&repo_id, Some(progress_reporter.clone()))
+                    .await
+                    .map_err(|e| {
+                        crate::Error::server_init(format!("Failed to index repository: {}", e))
+                    })?;
+
+                // Replace the repository manager
+                self.repository_manager = Arc::new(manager);
+                result
+            }
+            Err(shared_manager) => {
+                // If we can't get exclusive access, this means the manager is being used elsewhere
+                // This is a concurrency safety measure - we defer indexing to avoid conflicts
+                warn!("Repository manager is in use, deferring graph population");
+                warn!("Repository will be indexed on next initialization or when manager becomes available");
+
+                // Keep the existing manager
+                self.repository_manager = shared_manager;
+
+                // Set repository path and return early
+                self.repository_path = Some(repo_path);
+                return Ok(());
+            }
+        };
+
+        let duration = start_time.elapsed();
+        info!(
+            "Repository indexing completed in {:.2}s",
+            duration.as_secs_f64()
+        );
+
+        // Apply patches to populate the graph store
+        info!(
+            "Applying {} patches to graph store...",
+            indexing_result.patches.len()
+        );
+
+        let mut nodes_added = 0;
+        let mut edges_added = 0;
+
+        for patch in &indexing_result.patches {
+            // Add nodes from the patch
+            for node in &patch.nodes_add {
+                self.graph_store.add_node(node.clone());
+                nodes_added += 1;
+            }
+
+            // Add edges from the patch
+            for edge in &patch.edges_add {
+                self.graph_store.add_edge(edge.clone());
+                edges_added += 1;
+            }
+        }
+
+        info!(
+            "Graph store populated: {} nodes, {} edges",
+            nodes_added, edges_added
+        );
+
+        // Update content search manager with repository data
+        info!("Updating content search index...");
+        let content_search_manager =
+            ContentSearchManager::with_graph_store(Arc::clone(&self.graph_store));
+
+        // Extract unique file paths from all nodes in patches
+        let mut file_paths = std::collections::HashSet::new();
+        for patch in &indexing_result.patches {
+            for node in &patch.nodes_add {
+                file_paths.insert(&node.file);
+            }
+        }
+
+        // Index content for all discovered files
+        let mut content_files_indexed = 0;
+        for file_path in file_paths {
+            if let Ok(content) = std::fs::read_to_string(file_path) {
+                if let Err(e) = content_search_manager.index_file(file_path, &content) {
+                    warn!("Failed to index content for {}: {}", file_path.display(), e);
+                } else {
+                    content_files_indexed += 1;
+                }
+            }
+        }
+
+        // Replace the content search manager
+        self.content_search = Arc::new(content_search_manager);
+        info!(
+            "Content search index updated: {} files indexed",
+            content_files_indexed
+        );
+
+        // Set repository path
         self.repository_path = Some(repo_path);
 
-        info!("Repository path configured: {}", repo_id);
+        // Log final statistics
+        let graph_stats = self.graph_store.get_stats();
+        info!("Repository initialization completed:");
+        info!("  - Repository ID: {}", repo_id);
+        info!(
+            "  - Files processed: {}",
+            indexing_result.stats.files_processed
+        );
+        info!("  - Nodes in graph: {}", graph_stats.total_nodes);
+        info!("  - Edges in graph: {}", graph_stats.total_edges);
+        info!("  - Files indexed: {}", graph_stats.total_files);
+        info!("  - Content files indexed: {}", content_files_indexed);
+        info!("  - Processing time: {:.2}s", duration.as_secs_f64());
+
+        if !indexing_result.failed_files.is_empty() {
+            warn!(
+                "  - Failed files: {} (check logs for details)",
+                indexing_result.failed_files.len()
+            );
+            for (file_path, error) in indexing_result.failed_files.iter().take(5) {
+                warn!("    • {}: {}", file_path.display(), error);
+            }
+            if indexing_result.failed_files.len() > 5 {
+                warn!(
+                    "    ... and {} more",
+                    indexing_result.failed_files.len() - 5
+                );
+            }
+        }
 
         Ok(())
     }

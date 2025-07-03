@@ -1,56 +1,13 @@
-//! Search MCP tools for semantic search and dependency analysis
+//! Search tools parameter types
 
-use super::McpTool;
-use serde_json::json;
+use serde::{Deserialize, Serialize};
 
-/// Search tools implementation
-pub struct SearchTools;
+// PLANNED(#170): Add search parameter types when implementing search tools
+// NOTE: Foundation module for search tool parameter definitions
 
-impl SearchTools {
-    /// Create a new instance of search tools
-    pub fn new() -> Self {
-        Self
-    }
-}
-
-impl McpTool for SearchTools {
-    fn name(&self) -> &str {
-        "search"
-    }
-
-    fn description(&self) -> &str {
-        "Search tools for semantic search and dependency analysis"
-    }
-
-    fn schema(&self) -> serde_json::Value {
-        json!({
-            "type": "object",
-            "properties": {
-                "operation": {
-                    "type": "string",
-                    "enum": [
-                        "semantic_search",
-                        "find_references",
-                        "find_dependencies",
-                        "symbol_search"
-                    ]
-                },
-                "query": {
-                    "type": "string",
-                    "description": "Search query"
-                },
-                "scope": {
-                    "type": "string",
-                    "description": "Search scope (file, directory, project)"
-                }
-            },
-            "required": ["operation", "query"]
-        })
-    }
-}
-
-impl Default for SearchTools {
-    fn default() -> Self {
-        Self::new()
-    }
+/// Search tool parameters foundation type
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SearchParams {
+    /// Search query
+    pub query: String,
 }

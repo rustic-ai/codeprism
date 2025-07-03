@@ -496,6 +496,116 @@ impl CodePrismMcpServer {
         )]))
     }
 
+    // Workflow Tools (FUTURE: Full implementation in issues #168-171)
+
+    /// Provide guidance and suggestions for code improvement
+    #[tool(
+        description = "Provide guidance and suggestions for code improvement and best practices"
+    )]
+    fn provide_guidance(&self) -> std::result::Result<CallToolResult, McpError> {
+        info!("Provide guidance tool called");
+
+        let response = serde_json::json!({
+            "status": "not_implemented",
+            "message": "Guidance provision not yet implemented",
+            "example_guidance": [
+                {
+                    "type": "performance",
+                    "title": "Consider using HashMap for lookups",
+                    "description": "Replace linear search with HashMap for O(1) lookups",
+                    "priority": "medium"
+                },
+                {
+                    "type": "maintainability",
+                    "title": "Extract complex function",
+                    "description": "Function has high complexity, consider breaking into smaller functions",
+                    "priority": "high"
+                }
+            ]
+        });
+
+        Ok(CallToolResult::success(vec![Content::text(
+            response.to_string(),
+        )]))
+    }
+
+    /// Optimize code for performance and maintainability
+    #[tool(description = "Optimize code for performance, readability, and maintainability")]
+    fn optimize_code(&self) -> std::result::Result<CallToolResult, McpError> {
+        info!("Optimize code tool called");
+
+        let response = serde_json::json!({
+            "status": "not_implemented",
+            "message": "Code optimization not yet implemented",
+            "example_optimizations": {
+                "performance": [
+                    {"type": "algorithm", "improvement": "Replace O(n²) with O(n log n)"},
+                    {"type": "memory", "improvement": "Use string interning for repeated strings"}
+                ],
+                "maintainability": [
+                    {"type": "structure", "improvement": "Extract common patterns into traits"},
+                    {"type": "naming", "improvement": "Use more descriptive variable names"}
+                ]
+            }
+        });
+
+        Ok(CallToolResult::success(vec![Content::text(
+            response.to_string(),
+        )]))
+    }
+
+    /// Process multiple files or operations in batch
+    #[tool(description = "Process multiple files or operations in batch mode")]
+    fn batch_process(&self) -> std::result::Result<CallToolResult, McpError> {
+        info!("Batch process tool called");
+
+        let response = serde_json::json!({
+            "status": "not_implemented",
+            "message": "Batch processing not yet implemented",
+            "example_batch": {
+                "total_files": 150,
+                "processed": 0,
+                "failed": 0,
+                "operations": [
+                    {"operation": "format", "files": 89},
+                    {"operation": "analyze", "files": 150},
+                    {"operation": "optimize", "files": 45}
+                ]
+            }
+        });
+
+        Ok(CallToolResult::success(vec![Content::text(
+            response.to_string(),
+        )]))
+    }
+
+    /// Automate complex workflows and processes
+    #[tool(description = "Automate complex workflows and processes for development tasks")]
+    fn workflow_automation(&self) -> std::result::Result<CallToolResult, McpError> {
+        info!("Workflow automation tool called");
+
+        let response = serde_json::json!({
+            "status": "not_implemented",
+            "message": "Workflow automation not yet implemented",
+            "example_workflows": [
+                {
+                    "name": "ci_cd_pipeline",
+                    "steps": ["test", "build", "deploy"],
+                    "status": "not_configured"
+                },
+                {
+                    "name": "code_review_process",
+                    "steps": ["analyze", "format", "test", "document"],
+                    "status": "not_configured"
+                }
+            ]
+        });
+
+        Ok(CallToolResult::success(vec![Content::text(
+            response.to_string(),
+        )]))
+    }
+
     /// Run the MCP server with stdio transport
     pub async fn run(self) -> std::result::Result<(), crate::Error> {
         info!(

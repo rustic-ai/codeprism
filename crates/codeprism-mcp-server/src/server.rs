@@ -326,6 +326,176 @@ impl CodePrismMcpServer {
         )]))
     }
 
+    // Analysis Tools (FUTURE: Full implementation in issues #168-171)
+
+    /// Analyze code complexity metrics
+    #[tool(
+        description = "Analyze code complexity including cyclomatic complexity and maintainability"
+    )]
+    fn analyze_complexity(&self) -> std::result::Result<CallToolResult, McpError> {
+        info!("Analyze complexity tool called");
+
+        let response = serde_json::json!({
+            "status": "not_implemented",
+            "message": "Complexity analysis not yet implemented",
+            "example_metrics": {
+                "cyclomatic_complexity": 8.5,
+                "cognitive_complexity": 12.3,
+                "maintainability_index": 85.2,
+                "lines_of_code": 1250,
+                "complexity_distribution": {
+                    "low": 45,
+                    "medium": 23,
+                    "high": 8,
+                    "very_high": 2
+                }
+            }
+        });
+
+        Ok(CallToolResult::success(vec![Content::text(
+            response.to_string(),
+        )]))
+    }
+
+    /// Analyze control flow patterns
+    #[tool(description = "Analyze control flow patterns and execution paths in code")]
+    fn analyze_control_flow(&self) -> std::result::Result<CallToolResult, McpError> {
+        info!("Analyze control flow tool called");
+
+        let response = serde_json::json!({
+            "status": "not_implemented",
+            "message": "Control flow analysis not yet implemented",
+            "example_patterns": {
+                "decision_points": 156,
+                "loops": 45,
+                "recursions": 12,
+                "exception_handling": 23,
+                "execution_paths": 89,
+                "dead_code_blocks": 3
+            }
+        });
+
+        Ok(CallToolResult::success(vec![Content::text(
+            response.to_string(),
+        )]))
+    }
+
+    /// Analyze code quality metrics
+    #[tool(description = "Analyze code quality including best practices and code smells")]
+    fn analyze_code_quality(&self) -> std::result::Result<CallToolResult, McpError> {
+        info!("Analyze code quality tool called");
+
+        let response = serde_json::json!({
+            "status": "not_implemented",
+            "message": "Code quality analysis not yet implemented",
+            "example_quality": {
+                "overall_score": 7.8,
+                "code_smells": 14,
+                "duplication_percentage": 3.2,
+                "test_coverage": 89.5,
+                "documentation_coverage": 76.3,
+                "issues": {
+                    "naming_conventions": 5,
+                    "function_length": 3,
+                    "deep_nesting": 2
+                }
+            }
+        });
+
+        Ok(CallToolResult::success(vec![Content::text(
+            response.to_string(),
+        )]))
+    }
+
+    /// Analyze performance characteristics
+    #[tool(description = "Analyze performance bottlenecks and optimization opportunities")]
+    fn analyze_performance(&self) -> std::result::Result<CallToolResult, McpError> {
+        info!("Analyze performance tool called");
+
+        let response = serde_json::json!({
+            "status": "not_implemented",
+            "message": "Performance analysis not yet implemented",
+            "example_metrics": {
+                "hotspots": [
+                    {"function": "heavy_computation", "cpu_time": "45%"},
+                    {"function": "database_query", "cpu_time": "23%"}
+                ],
+                "memory_usage": {
+                    "peak_usage": "256MB",
+                    "allocation_rate": "high",
+                    "garbage_collection": "moderate"
+                },
+                "optimization_suggestions": [
+                    "Consider caching database results",
+                    "Optimize algorithm in heavy_computation"
+                ]
+            }
+        });
+
+        Ok(CallToolResult::success(vec![Content::text(
+            response.to_string(),
+        )]))
+    }
+
+    /// Analyze JavaScript-specific patterns
+    #[tool(description = "Analyze JavaScript-specific code patterns and best practices")]
+    fn analyze_javascript(&self) -> std::result::Result<CallToolResult, McpError> {
+        info!("Analyze JavaScript tool called");
+
+        let response = serde_json::json!({
+            "status": "not_implemented",
+            "message": "JavaScript analysis not yet implemented",
+            "example_analysis": {
+                "es_version": "ES2020",
+                "async_patterns": 45,
+                "callback_depth": 3.2,
+                "promises_vs_callbacks": {
+                    "promises": 78,
+                    "callbacks": 23
+                },
+                "framework_usage": {
+                    "react": 156,
+                    "node": 89,
+                    "express": 34
+                }
+            }
+        });
+
+        Ok(CallToolResult::success(vec![Content::text(
+            response.to_string(),
+        )]))
+    }
+
+    /// Perform specialized analysis for specific domains
+    #[tool(description = "Perform specialized analysis for specific domains or patterns")]
+    fn specialized_analysis(&self) -> std::result::Result<CallToolResult, McpError> {
+        info!("Specialized analysis tool called");
+
+        let response = serde_json::json!({
+            "status": "not_implemented",
+            "message": "Specialized analysis not yet implemented",
+            "example_domains": {
+                "security": {
+                    "vulnerabilities": 2,
+                    "risk_level": "low"
+                },
+                "concurrency": {
+                    "race_conditions": 0,
+                    "deadlock_potential": "none"
+                },
+                "architecture": {
+                    "coupling": "loose",
+                    "cohesion": "high",
+                    "patterns": ["observer", "factory", "strategy"]
+                }
+            }
+        });
+
+        Ok(CallToolResult::success(vec![Content::text(
+            response.to_string(),
+        )]))
+    }
+
     /// Run the MCP server with stdio transport
     pub async fn run(self) -> std::result::Result<(), crate::Error> {
         info!(

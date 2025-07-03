@@ -45,6 +45,7 @@ rmcp = { git = "https://github.com/modelcontextprotocol/rust-sdk", branch = "mai
 # Codeprism dependencies for real tool implementations
 codeprism-core = { path = "../codeprism-core" }
 codeprism-analysis = { path = "../codeprism-analysis" }
+regex.workspace = true
 
 [dev-dependencies]
 tempfile = { workspace = true }

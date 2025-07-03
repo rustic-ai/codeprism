@@ -76,6 +76,37 @@ pub struct FindPatternsParams {
     pub limit: Option<u32>,
 }
 
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct SearchByTypeParams {
+    pub symbol_types: Vec<String>,
+    pub include_inherited: Option<bool>,
+    pub file_patterns: Option<Vec<String>>,
+    pub limit: Option<usize>,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct SemanticSearchParams {
+    pub concept: String,
+    pub context: Option<String>,
+    pub relevance_threshold: Option<f32>,
+    pub include_similar: Option<bool>,
+    pub limit: Option<usize>,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct AdvancedSearchParams {
+    pub query: String,
+    pub file_types: Option<Vec<String>>,
+    pub symbol_types: Option<Vec<String>>,
+    pub date_range: Option<String>,
+    pub size_range: Option<String>,
+    pub complexity_filter: Option<String>,
+    pub exclude_patterns: Option<Vec<String>>,
+    pub include_tests: Option<bool>,
+    pub include_dependencies: Option<bool>,
+    pub limit: Option<usize>,
+}
+
 // Analysis tool parameter types
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
@@ -1037,7 +1068,7 @@ impl CodePrismMcpServer {
         info!("Find patterns tool called with pattern: {}", params.pattern);
 
         let p_type = params.pattern_type.unwrap_or_else(|| "glob".to_string());
-        let max_results = params.limit.unwrap_or(100);
+        let max_results = params.limit.unwrap_or(100) as usize;
 
         // Validate pattern type
         match p_type.as_str() {
@@ -1053,18 +1084,133 @@ impl CodePrismMcpServer {
             }
         }
 
-        // PLANNED(#169): Implement with CodePrism core functionality
-        let result = serde_json::json!({
-            "status": "not_implemented",
-            "message": "Pattern finding not yet implemented in rust-sdk server",
-            "request": {
-                "pattern": params.pattern,
-                "pattern_type": p_type,
-                "file_types": params.file_types,
-                "limit": max_results
-            },
-            "note": "Will implement full pattern finding once core integration is complete"
-        });
+        let result = match p_type.as_str() {
+            "regex" => {
+                // Use regex search for content patterns
+                match self
+                    .content_search
+                    .regex_search(&params.pattern, Some(max_results))
+                {
+                    Ok(search_results) => {
+                        let mut pattern_matches = Vec::new();
+
+                        for search_result in search_results {
+                            let file_path =
+                                search_result.chunk.file_path.to_string_lossy().to_string();
+
+                            // Check file type filters if specified
+                            if let Some(ref file_types) = params.file_types {
+                                let extension = search_result
+                                    .chunk
+                                    .file_path
+                                    .extension()
+                                    .and_then(|ext| ext.to_str())
+                                    .unwrap_or("");
+
+                                if !file_types.iter().any(|ft| {
+                                    ft.trim_start_matches('*').trim_start_matches('.') == extension
+                                        || ft == "*"
+                                        || ft == "all"
+                                }) {
+                                    continue;
+                                }
+                            }
+
+                            for search_match in search_result.matches {
+                                pattern_matches.push(serde_json::json!({
+                                    "file_path": file_path,
+                                    "match_text": search_match.text,
+                                    "line_number": search_match.line_number,
+                                    "column_number": search_match.column_number,
+                                    "position": search_match.position,
+                                    "context_before": search_match.context_before,
+                                    "context_after": search_match.context_after,
+                                    "score": search_result.score
+                                }));
+                            }
+                        }
+
+                        serde_json::json!({
+                            "status": "success",
+                            "pattern_type": "regex",
+                            "pattern": params.pattern,
+                            "matches_found": pattern_matches.len(),
+                            "matches": pattern_matches,
+                            "file_types": params.file_types,
+                            "limit": max_results
+                        })
+                    }
+                    Err(e) => {
+                        serde_json::json!({
+                            "status": "error",
+                            "message": format!("Regex pattern search failed: {}", e),
+                            "pattern": params.pattern,
+                            "pattern_type": "regex"
+                        })
+                    }
+                }
+            }
+            "glob" => {
+                // Use file pattern matching for glob patterns
+                match self.content_search.find_files(&params.pattern) {
+                    Ok(file_paths) => {
+                        let mut filtered_files: Vec<_> =
+                            file_paths.into_iter().take(max_results).collect();
+
+                        // Apply file type filters if specified
+                        if let Some(ref file_types) = params.file_types {
+                            filtered_files.retain(|path| {
+                                let extension =
+                                    path.extension().and_then(|ext| ext.to_str()).unwrap_or("");
+
+                                file_types.iter().any(|ft| {
+                                    ft.trim_start_matches('*').trim_start_matches('.') == extension
+                                        || ft == "*"
+                                        || ft == "all"
+                                })
+                            });
+                        }
+
+                        let file_matches: Vec<_> = filtered_files
+                            .iter()
+                            .map(|path| {
+                                serde_json::json!({
+                                    "file_path": path.to_string_lossy(),
+                                    "file_name": path.file_name()
+                                        .and_then(|name| name.to_str())
+                                        .unwrap_or(""),
+                                    "extension": path.extension()
+                                        .and_then(|ext| ext.to_str())
+                                        .unwrap_or(""),
+                                    "directory": path.parent()
+                                        .map(|p| p.to_string_lossy().to_string())
+                                        .unwrap_or_else(|| ".".to_string())
+                                })
+                            })
+                            .collect();
+
+                        serde_json::json!({
+                            "status": "success",
+                            "pattern_type": "glob",
+                            "pattern": params.pattern,
+                            "files_found": file_matches.len(),
+                            "files": file_matches,
+                            "file_types": params.file_types,
+                            "limit": max_results
+                        })
+                    }
+                    Err(e) => {
+                        serde_json::json!({
+                            "status": "error",
+                            "message": format!("Glob pattern search failed: {}", e),
+                            "pattern": params.pattern,
+                            "pattern_type": "glob"
+                        })
+                    }
+                }
+            }
+            _ => unreachable!("Pattern type already validated"),
+        };
 
         Ok(CallToolResult::success(vec![Content::text(
             serde_json::to_string_pretty(&result)
@@ -1074,63 +1220,383 @@ impl CodePrismMcpServer {
 
     /// Perform semantic search across codebase
     #[tool(description = "Perform semantic search to find conceptually related code")]
-    fn semantic_search(&self) -> std::result::Result<CallToolResult, McpError> {
-        info!("Semantic search tool called");
+    fn semantic_search(
+        &self,
+        Parameters(params): Parameters<SemanticSearchParams>,
+    ) -> std::result::Result<CallToolResult, McpError> {
+        info!(
+            "Semantic search tool called for concept: {}",
+            params.concept
+        );
 
-        let response = serde_json::json!({
-            "status": "not_implemented",
-            "message": "Semantic search not yet implemented",
-            "example_results": [
-                {"file": "src/auth.rs", "relevance": 0.95, "concept": "authentication logic"},
-                {"file": "src/middleware.rs", "relevance": 0.82, "concept": "request handling"}
+        let max_results = params.limit.unwrap_or(20);
+        let relevance_threshold = params.relevance_threshold.unwrap_or(0.3);
+        let include_similar = params.include_similar.unwrap_or(true);
+
+        // Build a comprehensive search using multiple strategies
+        let mut semantic_results = Vec::new();
+        let mut seen_files = std::collections::HashSet::new();
+
+        // Strategy 1: Direct keyword search with variations
+        let keywords = self.extract_semantic_keywords(&params.concept);
+
+        for keyword in &keywords {
+            // Search in content
+            if let Ok(content_results) = self.content_search.search(
+                &SearchQueryBuilder::new(keyword)
+                    .max_results(max_results / keywords.len().max(1))
+                    .build(),
+            ) {
+                for content_result in content_results {
+                    let file_path = content_result.chunk.file_path.to_string_lossy().to_string();
+
+                    if seen_files.contains(&file_path) {
+                        continue;
+                    }
+                    seen_files.insert(file_path.clone());
+
+                    // Calculate semantic relevance based on context match
+                    let relevance = self.calculate_semantic_relevance(
+                        &params.concept,
+                        &content_result.chunk.content,
+                        params.context.as_deref(),
+                    );
+
+                    if relevance >= relevance_threshold {
+                        semantic_results.push(serde_json::json!({
+                            "type": "content_match",
+                            "file": file_path,
+                            "relevance": relevance,
+                            "keyword": keyword,
+                            "matches": content_result.matches.iter().map(|m| {
+                                serde_json::json!({
+                                    "text": m.text,
+                                    "line": m.line_number,
+                                    "column": m.column_number,
+                                    "context_before": m.context_before,
+                                    "context_after": m.context_after
+                                })
+                            }).collect::<Vec<_>>(),
+                            "chunk_type": content_result.chunk.content_type,
+                            "score": content_result.score
+                        }));
+                    }
+                }
+            }
+
+            // Search in symbols
+            if let Ok(symbol_results) = self.graph_query.search_symbols(
+                keyword,
+                None,
+                Some(max_results / keywords.len().max(1)),
+            ) {
+                for symbol_result in symbol_results {
+                    let file_path = symbol_result.node.file.to_string_lossy().to_string();
+
+                    // Calculate semantic relevance for symbols
+                    let relevance = self.calculate_symbol_semantic_relevance(
+                        &params.concept,
+                        &symbol_result.node,
+                        params.context.as_deref(),
+                    );
+
+                    if relevance >= relevance_threshold {
+                        semantic_results.push(serde_json::json!({
+                            "type": "symbol_match",
+                            "file": file_path,
+                            "relevance": relevance,
+                            "keyword": keyword,
+                            "symbol": {
+                                "id": symbol_result.node.id.to_hex(),
+                                "name": symbol_result.node.name,
+                                "kind": format!("{:?}", symbol_result.node.kind).to_lowercase(),
+                                "line": symbol_result.node.span.start_line,
+                                "column": symbol_result.node.span.start_column,
+                                "metadata": symbol_result.node.metadata
+                            },
+                            "references_count": symbol_result.references_count,
+                            "dependencies_count": symbol_result.dependencies_count
+                        }));
+                    }
+                }
+            }
+        }
+
+        // Strategy 2: Look for related symbols by naming patterns (if include_similar is true)
+        if include_similar {
+            let concept_variations = self.generate_concept_variations(&params.concept);
+
+            for variation in concept_variations {
+                if let Ok(similar_symbols) =
+                    self.graph_query.search_symbols(&variation, None, Some(5))
+                {
+                    for symbol_result in similar_symbols {
+                        let file_path = symbol_result.node.file.to_string_lossy().to_string();
+
+                        if !seen_files.contains(&file_path) {
+                            let relevance = self.calculate_symbol_semantic_relevance(
+                                &params.concept,
+                                &symbol_result.node,
+                                params.context.as_deref(),
+                            ) * 0.8; // Slightly lower relevance for variations
+
+                            if relevance >= relevance_threshold {
+                                semantic_results.push(serde_json::json!({
+                                    "type": "similar_symbol",
+                                    "file": file_path,
+                                    "relevance": relevance,
+                                    "variation": variation,
+                                    "symbol": {
+                                        "id": symbol_result.node.id.to_hex(),
+                                        "name": symbol_result.node.name,
+                                        "kind": format!("{:?}", symbol_result.node.kind).to_lowercase(),
+                                        "line": symbol_result.node.span.start_line,
+                                        "column": symbol_result.node.span.start_column
+                                    }
+                                }));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Sort by relevance and limit results
+        semantic_results.sort_by(|a, b| {
+            let relevance_a = a["relevance"].as_f64().unwrap_or(0.0);
+            let relevance_b = b["relevance"].as_f64().unwrap_or(0.0);
+            relevance_b
+                .partial_cmp(&relevance_a)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
+
+        semantic_results.truncate(max_results);
+
+        let result = serde_json::json!({
+            "status": "success",
+            "concept": params.concept,
+            "context": params.context,
+            "results_found": semantic_results.len(),
+            "results": semantic_results,
+            "search_strategy": {
+                "keywords_used": keywords,
+                "relevance_threshold": relevance_threshold,
+                "include_similar": include_similar,
+                "max_results": max_results
+            },
+            "notes": [
+                "Semantic search combines keyword matching with contextual analysis",
+                "Relevance scores are calculated based on concept match and context",
+                "Similar symbol variations are included when include_similar=true"
             ]
         });
 
         Ok(CallToolResult::success(vec![Content::text(
-            response.to_string(),
-        )]))
-    }
-
-    /// Search by specific code element types
-    #[tool(description = "Search for specific types of code elements (functions, structs, etc.)")]
-    fn search_by_type(&self) -> std::result::Result<CallToolResult, McpError> {
-        info!("Search by type tool called");
-
-        let response = serde_json::json!({
-            "status": "not_implemented",
-            "message": "Type-based search not yet implemented",
-            "example_types": {
-                "functions": 156,
-                "structs": 45,
-                "enums": 23,
-                "traits": 12,
-                "modules": 18
-            }
-        });
-
-        Ok(CallToolResult::success(vec![Content::text(
-            response.to_string(),
+            serde_json::to_string_pretty(&result)
+                .unwrap_or_else(|_| "Error formatting response".to_string()),
         )]))
     }
 
     /// Advanced search with multiple criteria
     #[tool(description = "Advanced search combining multiple search criteria and filters")]
-    fn advanced_search(&self) -> std::result::Result<CallToolResult, McpError> {
-        info!("Advanced search tool called");
+    fn advanced_search(
+        &self,
+        Parameters(params): Parameters<AdvancedSearchParams>,
+    ) -> std::result::Result<CallToolResult, McpError> {
+        info!("Advanced search tool called with query: {}", params.query);
 
-        let response = serde_json::json!({
-            "status": "not_implemented",
-            "message": "Advanced search not yet implemented",
-            "example_filters": {
-                "file_types": ["rs", "toml", "md"],
-                "date_range": "last_30_days",
-                "size_range": "1kb_to_100kb",
-                "complexity": "medium_to_high"
+        let max_results = params.limit.unwrap_or(50);
+        let include_tests = params.include_tests.unwrap_or(false);
+        let include_dependencies = params.include_dependencies.unwrap_or(false);
+
+        // Build comprehensive search strategy
+        let mut search_results = Vec::new();
+        let mut processed_files = std::collections::HashSet::new();
+
+        // Strategy 1: Content-based search with file type filtering
+        let mut content_query_builder =
+            SearchQueryBuilder::new(&params.query).max_results(max_results);
+
+        // Apply file type filters
+        if let Some(ref file_types) = params.file_types {
+            let file_patterns: Vec<String> = file_types
+                .iter()
+                .map(|ext| format!("*.{}", ext.trim_start_matches('*').trim_start_matches('.')))
+                .collect();
+            content_query_builder = content_query_builder.include_files(file_patterns);
+        }
+
+        // Apply exclude patterns
+        if let Some(ref exclude_patterns) = params.exclude_patterns {
+            content_query_builder = content_query_builder.exclude_files(exclude_patterns.clone());
+        }
+
+        // Perform content search
+        if let Ok(content_results) = self.content_search.search(&content_query_builder.build()) {
+            for content_result in content_results {
+                let file_path = content_result.chunk.file_path.to_string_lossy().to_string();
+
+                // Filter out test files if not included
+                if !include_tests && self.is_test_file(&file_path) {
+                    continue;
+                }
+
+                // Filter out dependency files if not included
+                if !include_dependencies && self.is_dependency_file(&file_path) {
+                    continue;
+                }
+
+                // Apply size range filter if specified
+                if let Some(ref size_range) = params.size_range {
+                    if let Ok(metadata) = std::fs::metadata(&content_result.chunk.file_path) {
+                        if !self.matches_size_range(metadata.len(), size_range) {
+                            continue;
+                        }
+                    }
+                }
+
+                processed_files.insert(file_path.clone());
+
+                search_results.push(serde_json::json!({
+                    "type": "content_match",
+                    "file": file_path,
+                    "score": content_result.score,
+                    "matches": content_result.matches.iter().map(|m| {
+                        serde_json::json!({
+                            "text": m.text,
+                            "line": m.line_number,
+                            "column": m.column_number,
+                            "context_before": m.context_before,
+                            "context_after": m.context_after
+                        })
+                    }).collect::<Vec<_>>(),
+                    "content_type": content_result.chunk.content_type,
+                    "file_size": std::fs::metadata(&content_result.chunk.file_path)
+                        .map(|m| m.len())
+                        .unwrap_or(0)
+                }));
             }
+        }
+
+        // Strategy 2: Symbol-based search
+        let symbol_types = if let Some(ref types) = params.symbol_types {
+            let mut node_kinds = Vec::new();
+            for sym_type in types {
+                match sym_type.as_str() {
+                    "function" | "functions" => node_kinds.push(NodeKind::Function),
+                    "class" | "classes" => node_kinds.push(NodeKind::Class),
+                    "method" | "methods" => node_kinds.push(NodeKind::Method),
+                    "variable" | "variables" => node_kinds.push(NodeKind::Variable),
+                    "module" | "modules" => node_kinds.push(NodeKind::Module),
+                    _ => {}
+                }
+            }
+            Some(node_kinds)
+        } else {
+            None
+        };
+
+        if let Ok(symbol_results) =
+            self.graph_query
+                .search_symbols(&params.query, symbol_types, Some(max_results))
+        {
+            for symbol_result in symbol_results {
+                let file_path = symbol_result.node.file.to_string_lossy().to_string();
+
+                // Skip if already processed or filtered
+                if processed_files.contains(&file_path) {
+                    continue;
+                }
+
+                // Apply same filters as content search
+                if !include_tests && self.is_test_file(&file_path) {
+                    continue;
+                }
+
+                if !include_dependencies && self.is_dependency_file(&file_path) {
+                    continue;
+                }
+
+                // Apply complexity filter if specified
+                if let Some(ref complexity_filter) = params.complexity_filter {
+                    let complexity_score = self.estimate_symbol_complexity(&symbol_result.node);
+                    if !self.matches_complexity_filter(complexity_score, complexity_filter) {
+                        continue;
+                    }
+                }
+
+                search_results.push(serde_json::json!({
+                    "type": "symbol_match",
+                    "file": file_path,
+                    "symbol": {
+                        "id": symbol_result.node.id.to_hex(),
+                        "name": symbol_result.node.name,
+                        "kind": format!("{:?}", symbol_result.node.kind).to_lowercase(),
+                        "line": symbol_result.node.span.start_line,
+                        "column": symbol_result.node.span.start_column,
+                        "metadata": symbol_result.node.metadata
+                    },
+                    "references_count": symbol_result.references_count,
+                    "dependencies_count": symbol_result.dependencies_count,
+                    "complexity_estimate": self.estimate_symbol_complexity(&symbol_result.node)
+                }));
+            }
+        }
+
+        // Apply date range filter if specified (file modification time)
+        if let Some(ref date_range) = params.date_range {
+            search_results.retain(|result| {
+                if let Some(file_path) = result["file"].as_str() {
+                    if let Ok(metadata) = std::fs::metadata(file_path) {
+                        if let Ok(modified) = metadata.modified() {
+                            return self.matches_date_range(modified, date_range);
+                        }
+                    }
+                }
+                false
+            });
+        }
+
+        // Sort results by relevance/score
+        search_results.sort_by(|a, b| {
+            let score_a = a["score"].as_f64().unwrap_or(0.0);
+            let score_b = b["score"].as_f64().unwrap_or(0.0);
+            score_b
+                .partial_cmp(&score_a)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
+
+        // Limit final results
+        search_results.truncate(max_results);
+
+        let result = serde_json::json!({
+            "status": "success",
+            "query": params.query,
+            "results_found": search_results.len(),
+            "results": search_results,
+            "filters_applied": {
+                "file_types": params.file_types,
+                "symbol_types": params.symbol_types,
+                "date_range": params.date_range,
+                "size_range": params.size_range,
+                "complexity_filter": params.complexity_filter,
+                "exclude_patterns": params.exclude_patterns,
+                "include_tests": include_tests,
+                "include_dependencies": include_dependencies,
+                "limit": max_results
+            },
+            "search_strategy": [
+                "Content-based search with text matching",
+                "Symbol-based search with type filtering",
+                "File metadata filtering (size, date, type)",
+                "Complexity analysis integration",
+                "Test and dependency file filtering"
+            ]
         });
 
         Ok(CallToolResult::success(vec![Content::text(
-            response.to_string(),
+            serde_json::to_string_pretty(&result)
+                .unwrap_or_else(|_| "Error formatting response".to_string()),
         )]))
     }
 
@@ -1394,21 +1860,11 @@ impl CodePrismMcpServer {
                     if let Ok(paths) = glob::glob(&pattern) {
                         for path in paths.flatten() {
                             if let Ok(content) = std::fs::read_to_string(&path) {
-                                if let Ok(mut issues) =
-                                    self.code_analyzer.performance.analyze_content(
-                                        &content,
-                                        &analysis_types,
-                                        &complexity_threshold,
-                                    )
-                                {
-                                    // Add file path to issues
-                                    for issue in &mut issues {
-                                        issue.location = Some(format!(
-                                            "{}: {}",
-                                            path.display(),
-                                            issue.location.as_deref().unwrap_or("Unknown location")
-                                        ));
-                                    }
+                                if let Ok(issues) = self.code_analyzer.performance.analyze_content(
+                                    &content,
+                                    &analysis_types,
+                                    &complexity_threshold,
+                                ) {
                                     all_issues.extend(issues);
                                     files_analyzed += 1;
                                 }
@@ -1885,6 +2341,476 @@ impl CodePrismMcpServer {
     /// Get the server configuration
     pub fn config(&self) -> &Config {
         &self.config
+    }
+
+    /// Extract semantic keywords from a concept for search
+    fn extract_semantic_keywords(&self, concept: &str) -> Vec<String> {
+        let mut keywords = Vec::new();
+
+        // Add the original concept
+        keywords.push(concept.to_lowercase());
+
+        // Split by common separators and add individual words
+        let words: Vec<&str> = concept
+            .split(&[' ', '_', '-', '.', '/', '\\'][..])
+            .filter(|w| !w.is_empty() && w.len() > 2)
+            .collect();
+
+        for word in words {
+            keywords.push(word.to_lowercase());
+        }
+
+        // Add programming-related variations
+        let programming_keywords = [
+            "function",
+            "method",
+            "class",
+            "interface",
+            "service",
+            "manager",
+            "handler",
+            "controller",
+            "repository",
+            "model",
+            "view",
+            "component",
+            "module",
+            "package",
+            "config",
+            "configuration",
+            "settings",
+            "utils",
+            "utilities",
+            "helpers",
+        ];
+
+        for keyword in &programming_keywords {
+            if concept.to_lowercase().contains(keyword) {
+                keywords.push(keyword.to_string());
+            }
+        }
+
+        // Remove duplicates and return
+        keywords.sort();
+        keywords.dedup();
+        keywords
+    }
+
+    /// Calculate semantic relevance between concept and content
+    fn calculate_semantic_relevance(
+        &self,
+        concept: &str,
+        content: &str,
+        context: Option<&str>,
+    ) -> f32 {
+        let mut relevance = 0.0;
+        let concept_lower = concept.to_lowercase();
+        let content_lower = content.to_lowercase();
+
+        // Direct match gets highest score
+        if content_lower.contains(&concept_lower) {
+            relevance += 0.8;
+        }
+
+        // Word-by-word matching
+        let concept_words: Vec<&str> = concept_lower.split_whitespace().collect();
+        let mut matched_words = 0;
+
+        for word in &concept_words {
+            if content_lower.contains(word) {
+                matched_words += 1;
+            }
+        }
+
+        if !concept_words.is_empty() {
+            relevance += (matched_words as f32 / concept_words.len() as f32) * 0.5;
+        }
+
+        // Context matching bonus
+        if let Some(ctx) = context {
+            let context_lower = ctx.to_lowercase();
+            if content_lower.contains(&context_lower) {
+                relevance += 0.3;
+            }
+        }
+
+        // Length and complexity factors
+        if content.len() > 50 && content.len() < 500 {
+            relevance += 0.1; // Prefer moderate-length content
+        }
+
+        relevance.min(1.0f32)
+    }
+
+    /// Calculate semantic relevance for symbols
+    fn calculate_symbol_semantic_relevance(
+        &self,
+        concept: &str,
+        node: &codeprism_core::Node,
+        context: Option<&str>,
+    ) -> f32 {
+        let mut relevance: f32 = 0.0;
+        let concept_lower = concept.to_lowercase();
+        let name_lower = node.name.to_lowercase();
+
+        // Direct name match
+        if name_lower.contains(&concept_lower) {
+            relevance += 0.7;
+        }
+
+        // Symbol type relevance
+        match node.kind {
+            NodeKind::Function | NodeKind::Method => {
+                if concept_lower.contains("function") || concept_lower.contains("method") {
+                    relevance += 0.3;
+                }
+            }
+            NodeKind::Class => {
+                if concept_lower.contains("class") || concept_lower.contains("type") {
+                    relevance += 0.3;
+                }
+            }
+            NodeKind::Variable => {
+                if concept_lower.contains("variable") || concept_lower.contains("data") {
+                    relevance += 0.2;
+                }
+            }
+            _ => {}
+        }
+
+        // Context matching
+        if let Some(ctx) = context {
+            let context_lower = ctx.to_lowercase();
+            if name_lower.contains(&context_lower) {
+                relevance += 0.2;
+            }
+
+            // Check file path context
+            let file_path = node.file.to_string_lossy().to_lowercase();
+            if file_path.contains(&context_lower) {
+                relevance += 0.2;
+            }
+        }
+
+        // Metadata matching
+        if let serde_json::Value::Object(metadata_obj) = &node.metadata {
+            for (key, value) in metadata_obj {
+                let metadata_text = format!("{}: {}", key, value).to_lowercase();
+                if metadata_text.contains(&concept_lower) {
+                    relevance += 0.1;
+                }
+            }
+        }
+
+        relevance.min(1.0f32)
+    }
+
+    /// Generate concept variations for broader search
+    fn generate_concept_variations(&self, concept: &str) -> Vec<String> {
+        let mut variations = Vec::new();
+        let concept_lower = concept.to_lowercase();
+
+        // Add camelCase and snake_case variations
+        let words: Vec<&str> = concept.split_whitespace().collect();
+        if words.len() > 1 {
+            // camelCase
+            let mut camel_case = words[0].to_lowercase();
+            for word in &words[1..] {
+                let mut chars = word.chars();
+                if let Some(first) = chars.next() {
+                    camel_case.push(first.to_uppercase().next().unwrap());
+                    camel_case.push_str(chars.as_str().to_lowercase().as_str());
+                }
+            }
+            variations.push(camel_case);
+
+            // snake_case
+            variations.push(words.join("_").to_lowercase());
+
+            // PascalCase
+            let pascal_case = words
+                .iter()
+                .map(|word| {
+                    let mut chars = word.chars();
+                    if let Some(first) = chars.next() {
+                        first
+                            .to_uppercase()
+                            .chain(chars.as_str().to_lowercase().chars())
+                            .collect()
+                    } else {
+                        String::new()
+                    }
+                })
+                .collect::<Vec<String>>()
+                .join("");
+            variations.push(pascal_case);
+        }
+
+        // Add common programming suffixes/prefixes
+        let suffixes = [
+            "er",
+            "or",
+            "ed",
+            "ing",
+            "s",
+            "es",
+            "Manager",
+            "Service",
+            "Handler",
+            "Controller",
+        ];
+        let prefixes = ["get", "set", "is", "has", "can", "should", "will"];
+
+        for suffix in &suffixes {
+            variations.push(format!("{}{}", concept_lower, suffix.to_lowercase()));
+        }
+
+        for prefix in &prefixes {
+            variations.push(format!("{}{}", prefix, concept));
+        }
+
+        // Add regex patterns for flexible matching
+        if concept_lower.len() > 3 {
+            variations.push(format!(".*{}.*", concept_lower));
+        }
+
+        variations
+    }
+
+    /// Check if a file is a test file based on path patterns
+    fn is_test_file(&self, file_path: &str) -> bool {
+        let path_lower = file_path.to_lowercase();
+        path_lower.contains("/test/")
+            || path_lower.contains("/tests/")
+            || path_lower.contains("\\test\\")
+            || path_lower.contains("\\tests\\")
+            || path_lower.ends_with("_test.rs")
+            || path_lower.ends_with("_test.py")
+            || path_lower.ends_with("_test.js")
+            || path_lower.ends_with("_test.ts")
+            || path_lower.ends_with(".test.js")
+            || path_lower.ends_with(".test.ts")
+            || path_lower.ends_with(".spec.js")
+            || path_lower.ends_with(".spec.ts")
+            || path_lower.contains("test_")
+            || path_lower.contains("spec_")
+    }
+
+    /// Check if a file is a dependency file (node_modules, vendor, etc.)
+    fn is_dependency_file(&self, file_path: &str) -> bool {
+        let path_lower = file_path.to_lowercase();
+        path_lower.contains("/node_modules/")
+            || path_lower.contains("\\node_modules\\")
+            || path_lower.contains("/vendor/")
+            || path_lower.contains("\\vendor\\")
+            || path_lower.contains("/target/")
+            || path_lower.contains("\\target\\")
+            || path_lower.contains("/.cargo/")
+            || path_lower.contains("\\.cargo\\")
+            || path_lower.contains("/build/")
+            || path_lower.contains("\\build\\")
+            || path_lower.contains("/dist/")
+            || path_lower.contains("\\dist\\")
+            || path_lower.contains("/coverage/")
+            || path_lower.contains("\\coverage\\")
+    }
+
+    /// Check if file size matches the specified range
+    fn matches_size_range(&self, file_size: u64, size_range: &str) -> bool {
+        match size_range {
+            "small" => file_size < 10_000,                        // < 10KB
+            "medium" => (10_000..100_000).contains(&file_size),   // 10KB - 100KB
+            "large" => (100_000..1_000_000).contains(&file_size), // 100KB - 1MB
+            "very_large" => file_size >= 1_000_000,               // > 1MB
+            range if range.contains("kb") => {
+                if let Ok(kb) = range.trim_end_matches("kb").parse::<u64>() {
+                    file_size <= kb * 1_024
+                } else {
+                    true
+                }
+            }
+            range if range.contains("mb") => {
+                if let Ok(mb) = range.trim_end_matches("mb").parse::<u64>() {
+                    file_size <= mb * 1_024 * 1_024
+                } else {
+                    true
+                }
+            }
+            range if range.contains("-") => {
+                // Handle range like "1kb-100kb"
+                let parts: Vec<&str> = range.split('-').collect();
+                if parts.len() == 2 {
+                    let min_size = Self::parse_size(parts[0]).unwrap_or(0);
+                    let max_size = Self::parse_size(parts[1]).unwrap_or(u64::MAX);
+                    file_size >= min_size && file_size <= max_size
+                } else {
+                    true
+                }
+            }
+            _ => true, // If range format is not recognized, include all files
+        }
+    }
+
+    /// Parse size string to bytes
+    fn parse_size(size_str: &str) -> Option<u64> {
+        let size_str = size_str.trim().to_lowercase();
+        if size_str.ends_with("kb") {
+            size_str
+                .trim_end_matches("kb")
+                .parse::<u64>()
+                .ok()
+                .map(|s| s * 1_024)
+        } else if size_str.ends_with("mb") {
+            size_str
+                .trim_end_matches("mb")
+                .parse::<u64>()
+                .ok()
+                .map(|s| s * 1_024 * 1_024)
+        } else if size_str.ends_with("gb") {
+            size_str
+                .trim_end_matches("gb")
+                .parse::<u64>()
+                .ok()
+                .map(|s| s * 1_024 * 1_024 * 1_024)
+        } else {
+            size_str.parse::<u64>().ok()
+        }
+    }
+
+    /// Estimate complexity of a symbol based on its properties
+    fn estimate_symbol_complexity(&self, node: &codeprism_core::Node) -> u32 {
+        let mut complexity = 1; // Base complexity
+
+        // Factor in symbol type
+        complexity += match node.kind {
+            NodeKind::Function | NodeKind::Method => 3,
+            NodeKind::Class => 5,
+            NodeKind::Module => 2,
+            NodeKind::Variable => 1,
+            _ => 0,
+        };
+
+        // Factor in span size (rough measure of code length)
+        let span_lines = node.span.end_line.saturating_sub(node.span.start_line);
+        complexity += match span_lines {
+            0..=10 => 1,
+            11..=50 => 3,
+            51..=100 => 5,
+            101..=200 => 8,
+            _ => 10,
+        };
+
+        // Factor in metadata complexity indicators
+        if let serde_json::Value::Object(metadata) = &node.metadata {
+            // Check for complexity indicators in metadata
+            for (key, value) in metadata {
+                if key.contains("complexity") || key.contains("cyclomatic") {
+                    if let Some(complex_value) = value.as_u64() {
+                        complexity += complex_value as u32;
+                    }
+                }
+            }
+        }
+
+        complexity
+    }
+
+    /// Check if complexity matches the specified filter
+    fn matches_complexity_filter(&self, complexity_score: u32, complexity_filter: &str) -> bool {
+        match complexity_filter {
+            "low" => complexity_score <= 5,
+            "medium" => complexity_score > 5 && complexity_score <= 15,
+            "high" => complexity_score > 15 && complexity_score <= 30,
+            "very_high" => complexity_score > 30,
+            filter if filter.starts_with("<=") => {
+                if let Ok(threshold) = filter[2..].parse::<u32>() {
+                    complexity_score <= threshold
+                } else {
+                    true
+                }
+            }
+            filter if filter.starts_with(">=") => {
+                if let Ok(threshold) = filter[2..].parse::<u32>() {
+                    complexity_score >= threshold
+                } else {
+                    true
+                }
+            }
+            filter if filter.starts_with('<') => {
+                if let Ok(threshold) = filter[1..].parse::<u32>() {
+                    complexity_score < threshold
+                } else {
+                    true
+                }
+            }
+            filter if filter.starts_with('>') => {
+                if let Ok(threshold) = filter[1..].parse::<u32>() {
+                    complexity_score > threshold
+                } else {
+                    true
+                }
+            }
+            _ => true, // Unknown filter, include all
+        }
+    }
+
+    /// Check if file modification time matches the specified date range
+    fn matches_date_range(&self, modified_time: std::time::SystemTime, date_range: &str) -> bool {
+        let now = std::time::SystemTime::now();
+
+        match date_range {
+            "today" => {
+                if let Ok(duration) = now.duration_since(modified_time) {
+                    duration.as_secs() < 24 * 60 * 60 // Less than 1 day
+                } else {
+                    false
+                }
+            }
+            "week" | "last_week" => {
+                if let Ok(duration) = now.duration_since(modified_time) {
+                    duration.as_secs() < 7 * 24 * 60 * 60 // Less than 7 days
+                } else {
+                    false
+                }
+            }
+            "month" | "last_month" => {
+                if let Ok(duration) = now.duration_since(modified_time) {
+                    duration.as_secs() < 30 * 24 * 60 * 60 // Less than 30 days
+                } else {
+                    false
+                }
+            }
+            "year" | "last_year" => {
+                if let Ok(duration) = now.duration_since(modified_time) {
+                    duration.as_secs() < 365 * 24 * 60 * 60 // Less than 365 days
+                } else {
+                    false
+                }
+            }
+            range if range.ends_with("d") => {
+                if let Ok(days) = range.trim_end_matches('d').parse::<u64>() {
+                    if let Ok(duration) = now.duration_since(modified_time) {
+                        duration.as_secs() < days * 24 * 60 * 60
+                    } else {
+                        false
+                    }
+                } else {
+                    true
+                }
+            }
+            range if range.ends_with("h") => {
+                if let Ok(hours) = range.trim_end_matches('h').parse::<u64>() {
+                    if let Ok(duration) = now.duration_since(modified_time) {
+                        duration.as_secs() < hours * 60 * 60
+                    } else {
+                        false
+                    }
+                } else {
+                    true
+                }
+            }
+            _ => true, // Unknown format, include all
+        }
     }
 }
 

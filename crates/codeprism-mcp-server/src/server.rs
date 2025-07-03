@@ -181,7 +181,7 @@ impl CodePrismMcpServer {
             params.source, params.target
         );
 
-        // PLANNED(#170): Implement with CodePrism core functionality
+        // PLANNED(#168): Implement with CodePrism core functionality
         // NOTE: Awaiting graph query system integration for full implementation
         let result = serde_json::json!({
             "status": "not_implemented",
@@ -223,7 +223,7 @@ impl CodePrismMcpServer {
             }
         }
 
-        // PLANNED(#170): Implement with CodePrism core functionality
+        // PLANNED(#168): Implement with CodePrism core functionality
         let result = serde_json::json!({
             "status": "not_implemented",
             "message": "Dependency analysis not yet implemented in rust-sdk server",
@@ -251,7 +251,7 @@ impl CodePrismMcpServer {
         let include_defs = params.include_definitions.unwrap_or(true);
         let context = params.context_lines.unwrap_or(4);
 
-        // PLANNED(#170): Implement with CodePrism core functionality
+        // PLANNED(#168): Implement with CodePrism core functionality
         let result = serde_json::json!({
             "status": "not_implemented",
             "message": "Reference finding not yet implemented in rust-sdk server",
@@ -283,7 +283,7 @@ impl CodePrismMcpServer {
         let include_uses = params.include_usages.unwrap_or(false);
         let context = params.context_lines.unwrap_or(4);
 
-        // PLANNED(#170): Implement with CodePrism core functionality
+        // PLANNED(#168): Implement with CodePrism core functionality
         let result = serde_json::json!({
             "status": "not_implemented",
             "message": "Symbol explanation not yet implemented in rust-sdk server",
@@ -331,7 +331,7 @@ impl CodePrismMcpServer {
             }
         }
 
-        // PLANNED(#170): Implement with CodePrism core functionality
+        // PLANNED(#168): Implement with CodePrism core functionality
         let result = serde_json::json!({
             "status": "not_implemented",
             "message": "Symbol search not yet implemented in rust-sdk server",
@@ -360,7 +360,7 @@ impl CodePrismMcpServer {
     fn get_repository_info(&self) -> std::result::Result<CallToolResult, McpError> {
         info!("Get repository info tool called");
 
-        // PLANNED(#170): Implement with CodePrism core functionality
+        // PLANNED(#168): Implement with CodePrism core functionality
         let result = serde_json::json!({
             "status": "not_implemented",
             "message": "Repository analysis not yet implemented in rust-sdk server",
@@ -378,7 +378,7 @@ impl CodePrismMcpServer {
     fn analyze_dependencies(&self) -> std::result::Result<CallToolResult, McpError> {
         info!("Analyze dependencies tool called");
 
-        // PLANNED(#170): Implement with CodePrism core functionality
+        // PLANNED(#168): Implement with CodePrism core functionality
         let result = serde_json::json!({
             "status": "not_implemented",
             "message": "Dependency analysis not yet implemented in rust-sdk server",
@@ -405,7 +405,7 @@ impl CodePrismMcpServer {
         let use_regex = params.regex.unwrap_or(false);
         let max_results = params.limit.unwrap_or(100);
 
-        // PLANNED(#170): Implement with CodePrism core functionality
+        // PLANNED(#169): Implement with CodePrism core functionality
         let result = serde_json::json!({
             "status": "not_implemented",
             "message": "Content search not yet implemented in rust-sdk server",
@@ -450,7 +450,7 @@ impl CodePrismMcpServer {
             }
         }
 
-        // PLANNED(#170): Implement with CodePrism core functionality
+        // PLANNED(#169): Implement with CodePrism core functionality
         let result = serde_json::json!({
             "status": "not_implemented",
             "message": "Pattern finding not yet implemented in rust-sdk server",

@@ -22,6 +22,9 @@ pub mod error;
 pub mod server;
 pub mod tools;
 
+#[cfg(test)]
+mod integration_test;
+
 pub use config::Config;
 pub use error::{Error, Result};
 pub use server::CodePrismMcpServer;
@@ -74,4 +77,6 @@ mod tests {
         assert!(info.instructions.is_some());
         assert!(info.capabilities.tools.is_some());
     }
+
+    // Additional tests moved to integration_test.rs module
 }

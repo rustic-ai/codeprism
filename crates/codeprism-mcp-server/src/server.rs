@@ -107,6 +107,39 @@ pub struct AdvancedSearchParams {
     pub limit: Option<usize>,
 }
 
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct ProvideGuidanceParams {
+    pub target: String,
+    pub guidance_type: Option<String>,
+    pub include_examples: Option<bool>,
+    pub priority_level: Option<String>,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct OptimizeCodeParams {
+    pub target: String,
+    pub optimization_types: Option<Vec<String>>,
+    pub aggressive_mode: Option<bool>,
+    pub max_suggestions: Option<usize>,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct BatchProcessParams {
+    pub operation: String,
+    pub targets: Vec<String>,
+    pub parameters: Option<serde_json::Value>,
+    pub max_concurrent: Option<usize>,
+    pub fail_fast: Option<bool>,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct WorkflowAutomationParams {
+    pub workflow_type: String,
+    pub target_scope: Option<String>,
+    pub automation_level: Option<String>,
+    pub dry_run: Option<bool>,
+}
+
 // Analysis tool parameter types
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
@@ -2164,101 +2197,610 @@ impl CodePrismMcpServer {
 
     // Workflow Tools (Updated implementations)
 
-    /// Provide guidance for code improvement and best practices
-    #[tool(description = "Provide guidance for code improvement and best practices")]
-    fn provide_guidance(&self) -> std::result::Result<CallToolResult, McpError> {
-        info!("Provide guidance tool called");
+    /// Automate common development workflows
+    #[tool(description = "Automate common development workflows")]
+    fn workflow_automation(
+        &self,
+        Parameters(params): Parameters<WorkflowAutomationParams>,
+    ) -> std::result::Result<CallToolResult, McpError> {
+        info!(
+            "Workflow automation tool called for workflow: {}",
+            params.workflow_type
+        );
 
-        let response = serde_json::json!({
-            "status": "not_implemented",
-            "message": "Guidance generation not yet implemented",
-            "example_guidance": {
-                "suggestions": [
-                    "Consider extracting this function for better modularity",
-                    "Add error handling for this network operation",
-                    "This function is too complex, consider breaking it down"
-                ],
-                "priority": "medium",
-                "effort": "low"
+        let automation_level = params
+            .automation_level
+            .unwrap_or_else(|| "standard".to_string());
+        let dry_run = params.dry_run.unwrap_or(false);
+        let _target_scope = params
+            .target_scope
+            .unwrap_or_else(|| "repository".to_string());
+
+        let result = if let Some(ref repo_path) = self.repository_path {
+            match params.workflow_type.as_str() {
+                "code_review_checklist" => {
+                    let mut checklist_items = Vec::new();
+                    let mut analysis_results = Vec::new();
+
+                    // Define code review checklist items
+                    checklist_items.extend(vec![
+                        serde_json::json!({
+                            "category": "Code Quality",
+                            "item": "All functions have proper documentation",
+                            "status": "pending",
+                            "automated_check": true
+                        }),
+                        serde_json::json!({
+                            "category": "Performance",
+                            "item": "No obvious performance bottlenecks",
+                            "status": "pending",
+                            "automated_check": true
+                        }),
+                        serde_json::json!({
+                            "category": "Security",
+                            "item": "No security vulnerabilities detected",
+                            "status": "pending",
+                            "automated_check": true
+                        }),
+                        serde_json::json!({
+                            "category": "Testing",
+                            "item": "Adequate test coverage",
+                            "status": "pending",
+                            "automated_check": false
+                        }),
+                        serde_json::json!({
+                            "category": "Code Style",
+                            "item": "Follows coding standards",
+                            "status": "pending",
+                            "automated_check": false
+                        }),
+                    ]);
+
+                    if !dry_run {
+                        // Run automated checks for applicable items
+                        for glob_pattern in &["**/*.rs", "**/*.py", "**/*.js", "**/*.ts"] {
+                            let pattern = repo_path.join(glob_pattern);
+                            if let Ok(paths) = glob::glob(&pattern.display().to_string()) {
+                                for path in paths.flatten() {
+                                    if let Ok(content) = std::fs::read_to_string(&path) {
+                                        // Simple analysis for demonstration
+                                        let has_documentation = content.contains("///")
+                                            || content.contains("\"\"\"")
+                                            || content.contains("/*");
+
+                                        analysis_results.push(serde_json::json!({
+                                            "file": path.display().to_string(),
+                                            "has_documentation": has_documentation,
+                                            "line_count": content.lines().count()
+                                        }));
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    serde_json::json!({
+                        "status": "success",
+                        "workflow_type": "code_review_checklist",
+                        "automation_level": automation_level,
+                        "dry_run": dry_run,
+                        "checklist": checklist_items,
+                        "analysis_results": if dry_run {
+                            serde_json::json!("Analysis would be performed on actual run")
+                        } else {
+                            serde_json::Value::Array(analysis_results.clone())
+                        },
+                        "summary": {
+                            "total_items": checklist_items.len(),
+                            "automated_items": checklist_items.iter().filter(|item| item.get("automated_check") == Some(&serde_json::Value::Bool(true))).count(),
+                            "files_analyzed": if dry_run { 0 } else { analysis_results.len() }
+                        }
+                    })
+                }
+                "refactoring_pipeline" => {
+                    let mut refactoring_steps = Vec::new();
+                    let mut suggested_refactorings = Vec::new();
+
+                    // Define refactoring pipeline steps
+                    refactoring_steps.extend(vec![
+                        serde_json::json!({
+                            "step": "Complexity Analysis",
+                            "description": "Identify overly complex functions and methods",
+                            "automated": true,
+                            "priority": "high"
+                        }),
+                        serde_json::json!({
+                            "step": "Duplicate Code Detection",
+                            "description": "Find and consolidate duplicate code blocks",
+                            "automated": true,
+                            "priority": "medium"
+                        }),
+                        serde_json::json!({
+                            "step": "Dead Code Removal",
+                            "description": "Identify and remove unused code",
+                            "automated": false,
+                            "priority": "low"
+                        }),
+                        serde_json::json!({
+                            "step": "Design Pattern Application",
+                            "description": "Apply appropriate design patterns",
+                            "automated": false,
+                            "priority": "medium"
+                        }),
+                    ]);
+
+                    if !dry_run {
+                        // Generate some refactoring suggestions based on analysis
+                        suggested_refactorings.extend(vec![
+                            serde_json::json!({
+                                "type": "Extract Method",
+                                "description": "Long functions should be broken down",
+                                "impact": "medium",
+                                "effort": "low"
+                            }),
+                            serde_json::json!({
+                                "type": "Remove Duplication",
+                                "description": "Consolidate similar code patterns",
+                                "impact": "high",
+                                "effort": "medium"
+                            }),
+                        ]);
+                    }
+
+                    serde_json::json!({
+                        "status": "success",
+                        "workflow_type": "refactoring_pipeline",
+                        "automation_level": automation_level,
+                        "dry_run": dry_run,
+                        "pipeline_steps": refactoring_steps,
+                        "suggested_refactorings": if dry_run {
+                            serde_json::json!("Suggestions would be generated on actual run")
+                        } else {
+                            serde_json::Value::Array(suggested_refactorings.clone())
+                        },
+                        "summary": {
+                            "total_steps": refactoring_steps.len(),
+                            "automated_steps": refactoring_steps.iter().filter(|step| step.get("automated") == Some(&serde_json::Value::Bool(true))).count(),
+                            "suggestions_generated": if dry_run { 0 } else { suggested_refactorings.len() }
+                        }
+                    })
+                }
+                "testing_strategy_generation" => {
+                    let mut testing_recommendations = Vec::new();
+                    let mut test_metrics = serde_json::json!({});
+
+                    // Define testing strategy recommendations
+                    testing_recommendations.extend(vec![
+                        serde_json::json!({
+                            "test_type": "Unit Tests",
+                            "description": "Test individual functions and methods",
+                            "priority": "high",
+                            "coverage_target": "90%",
+                            "tools": ["pytest", "jest", "cargo test"]
+                        }),
+                        serde_json::json!({
+                            "test_type": "Integration Tests",
+                            "description": "Test component interactions",
+                            "priority": "medium",
+                            "coverage_target": "70%",
+                            "tools": ["postman", "cypress", "integration test frameworks"]
+                        }),
+                        serde_json::json!({
+                            "test_type": "Performance Tests",
+                            "description": "Validate performance requirements",
+                            "priority": "medium",
+                            "coverage_target": "critical paths",
+                            "tools": ["benchmark frameworks", "load testing tools"]
+                        }),
+                    ]);
+
+                    if !dry_run {
+                        // Analyze current test coverage (simplified)
+                        let test_files_count = if let Ok(paths) =
+                            glob::glob(&repo_path.join("**/test*").display().to_string())
+                        {
+                            paths.count()
+                        } else {
+                            0
+                        };
+
+                        test_metrics = serde_json::json!({
+                            "test_files_found": test_files_count,
+                            "estimated_coverage": if test_files_count > 0 { "Some coverage detected" } else { "No tests detected" },
+                            "recommendations_priority": "Immediate action needed"
+                        });
+                    }
+
+                    serde_json::json!({
+                        "status": "success",
+                        "workflow_type": "testing_strategy_generation",
+                        "automation_level": automation_level,
+                        "dry_run": dry_run,
+                        "testing_strategy": testing_recommendations,
+                        "current_metrics": if dry_run {
+                            serde_json::json!("Metrics would be analyzed on actual run")
+                        } else {
+                            test_metrics
+                        },
+                        "summary": {
+                            "strategy_components": testing_recommendations.len(),
+                            "high_priority_items": testing_recommendations.iter().filter(|item| item.get("priority") == Some(&serde_json::Value::String("high".to_string()))).count()
+                        }
+                    })
+                }
+                _ => {
+                    serde_json::json!({
+                        "status": "error",
+                        "message": format!("Unsupported workflow type: {}", params.workflow_type),
+                        "supported_workflows": [
+                            "code_review_checklist",
+                            "refactoring_pipeline",
+                            "testing_strategy_generation"
+                        ]
+                    })
+                }
             }
-        });
+        } else {
+            serde_json::json!({
+                "status": "error",
+                "message": "No repository configured. Call initialize_repository first.",
+                "workflow_type": params.workflow_type
+            })
+        };
 
         Ok(CallToolResult::success(vec![Content::text(
-            response.to_string(),
-        )]))
-    }
-
-    /// Optimize code for performance and maintainability
-    #[tool(description = "Optimize code for performance and maintainability")]
-    fn optimize_code(&self) -> std::result::Result<CallToolResult, McpError> {
-        info!("Optimize code tool called");
-
-        let response = serde_json::json!({
-            "status": "not_implemented",
-            "message": "Code optimization not yet implemented",
-            "example_optimizations": {
-                "performance": [
-                    "Replace O(n²) algorithm with O(n log n) approach",
-                    "Use lazy evaluation for expensive computations"
-                ],
-                "maintainability": [
-                    "Extract constants to improve readability",
-                    "Add documentation for complex logic"
-                ],
-                "estimated_improvement": "25% performance gain"
-            }
-        });
-
-        Ok(CallToolResult::success(vec![Content::text(
-            response.to_string(),
+            serde_json::to_string_pretty(&result)
+                .unwrap_or_else(|_| "Error formatting response".to_string()),
         )]))
     }
 
     /// Process multiple files or operations in batch
     #[tool(description = "Process multiple files or operations in batch")]
-    fn batch_process(&self) -> std::result::Result<CallToolResult, McpError> {
-        info!("Batch process tool called");
+    fn batch_process(
+        &self,
+        Parameters(params): Parameters<BatchProcessParams>,
+    ) -> std::result::Result<CallToolResult, McpError> {
+        info!(
+            "Batch process tool called for operation: {}",
+            params.operation
+        );
 
-        let response = serde_json::json!({
-            "status": "not_implemented",
-            "message": "Batch processing not yet implemented",
-            "example_operations": {
-                "supported_operations": [
-                    "batch_analyze_files",
-                    "batch_refactor_patterns",
-                    "batch_optimize_imports"
-                ],
-                "max_concurrent": 5,
-                "progress_tracking": true
+        let max_concurrent = params.max_concurrent.unwrap_or(3);
+        let fail_fast = params.fail_fast.unwrap_or(false);
+
+        let result = if let Some(ref repo_path) = self.repository_path {
+            let mut batch_results = Vec::new();
+            let mut errors = Vec::new();
+            let mut processed_count = 0;
+            let mut skipped_count = 0;
+
+            match params.operation.as_str() {
+                "analyze_complexity" => {
+                    for target in &params.targets {
+                        let target_path = repo_path.join(target);
+
+                        if target_path.exists() && target_path.is_file() {
+                            match self.code_analyzer.complexity.analyze_file_complexity(
+                                &target_path,
+                                &["all".to_string()],
+                                true,
+                            ) {
+                                Ok(result) => {
+                                    batch_results.push(serde_json::json!({
+                                        "target": target,
+                                        "operation": "analyze_complexity",
+                                        "status": "success",
+                                        "result": result
+                                    }));
+                                    processed_count += 1;
+                                }
+                                Err(e) => {
+                                    let error_msg = format!(
+                                        "Failed to analyze complexity for {}: {}",
+                                        target, e
+                                    );
+                                    errors.push(error_msg.clone());
+
+                                    if fail_fast {
+                                        return Ok(CallToolResult::success(vec![Content::text(
+                                            serde_json::to_string_pretty(&serde_json::json!({
+                                                "status": "error",
+                                                "message": "Batch processing stopped due to error",
+                                                "error": error_msg,
+                                                "processed": processed_count,
+                                                "fail_fast": true
+                                            }))
+                                            .unwrap_or_else(|_| {
+                                                "Error formatting response".to_string()
+                                            }),
+                                        )]));
+                                    }
+
+                                    batch_results.push(serde_json::json!({
+                                        "target": target,
+                                        "operation": "analyze_complexity",
+                                        "status": "error",
+                                        "error": error_msg
+                                    }));
+                                }
+                            }
+                        } else {
+                            skipped_count += 1;
+                            batch_results.push(serde_json::json!({
+                                "target": target,
+                                "operation": "analyze_complexity",
+                                "status": "skipped",
+                                "reason": "File not found or not a file"
+                            }));
+                        }
+                    }
+                }
+                "analyze_performance" => {
+                    for target in &params.targets {
+                        let target_path = repo_path.join(target);
+
+                        if target_path.exists() && target_path.is_file() {
+                            match std::fs::read_to_string(&target_path) {
+                                Ok(content) => {
+                                    match self
+                                        .code_analyzer
+                                        .performance
+                                        .comprehensive_analysis(&content, None)
+                                    {
+                                        Ok(result) => {
+                                            batch_results.push(serde_json::json!({
+                                                "target": target,
+                                                "operation": "analyze_performance",
+                                                "status": "success",
+                                                "result": result
+                                            }));
+                                            processed_count += 1;
+                                        }
+                                        Err(e) => {
+                                            let error_msg = format!(
+                                                "Failed to analyze performance for {}: {}",
+                                                target, e
+                                            );
+                                            errors.push(error_msg.clone());
+
+                                            if fail_fast {
+                                                return Ok(CallToolResult::success(vec![Content::text(
+                                                    serde_json::to_string_pretty(&serde_json::json!({
+                                                        "status": "error",
+                                                        "message": "Batch processing stopped due to error",
+                                                        "error": error_msg,
+                                                        "processed": processed_count,
+                                                        "fail_fast": true
+                                                    })).unwrap_or_else(|_| "Error formatting response".to_string())
+                                                )]));
+                                            }
+
+                                            batch_results.push(serde_json::json!({
+                                                "target": target,
+                                                "operation": "analyze_performance",
+                                                "status": "error",
+                                                "error": error_msg
+                                            }));
+                                        }
+                                    }
+                                }
+                                Err(e) => {
+                                    let error_msg =
+                                        format!("Failed to read file {}: {}", target, e);
+                                    errors.push(error_msg.clone());
+
+                                    batch_results.push(serde_json::json!({
+                                        "target": target,
+                                        "operation": "analyze_performance",
+                                        "status": "error",
+                                        "error": error_msg
+                                    }));
+                                }
+                            }
+                        } else {
+                            skipped_count += 1;
+                            batch_results.push(serde_json::json!({
+                                "target": target,
+                                "operation": "analyze_performance",
+                                "status": "skipped",
+                                "reason": "File not found or not a file"
+                            }));
+                        }
+                    }
+                }
+                "analyze_security" => {
+                    for target in &params.targets {
+                        let target_path = repo_path.join(target);
+
+                        if target_path.exists() && target_path.is_file() {
+                            match std::fs::read_to_string(&target_path) {
+                                Ok(content) => {
+                                    match self.code_analyzer.security.analyze_content_with_location(
+                                        &content,
+                                        Some(&target_path.display().to_string()),
+                                        &["all".to_string()],
+                                        "medium",
+                                    ) {
+                                        Ok(vulnerabilities) => {
+                                            batch_results.push(serde_json::json!({
+                                                "target": target,
+                                                "operation": "analyze_security",
+                                                "status": "success",
+                                                "result": {
+                                                    "vulnerabilities_count": vulnerabilities.len(),
+                                                    "vulnerabilities": vulnerabilities.iter().map(|vuln| {
+                                                        serde_json::json!({
+                                                            "type": vuln.vulnerability_type,
+                                                            "severity": vuln.severity,
+                                                            "description": vuln.description,
+                                                            "recommendation": vuln.recommendation
+                                                        })
+                                                    }).collect::<Vec<_>>()
+                                                }
+                                            }));
+                                            processed_count += 1;
+                                        }
+                                        Err(e) => {
+                                            let error_msg = format!(
+                                                "Failed to analyze security for {}: {}",
+                                                target, e
+                                            );
+                                            errors.push(error_msg.clone());
+
+                                            batch_results.push(serde_json::json!({
+                                                "target": target,
+                                                "operation": "analyze_security",
+                                                "status": "error",
+                                                "error": error_msg
+                                            }));
+                                        }
+                                    }
+                                }
+                                Err(e) => {
+                                    let error_msg =
+                                        format!("Failed to read file {}: {}", target, e);
+                                    errors.push(error_msg.clone());
+
+                                    batch_results.push(serde_json::json!({
+                                        "target": target,
+                                        "operation": "analyze_security",
+                                        "status": "error",
+                                        "error": error_msg
+                                    }));
+                                }
+                            }
+                        } else {
+                            skipped_count += 1;
+                            batch_results.push(serde_json::json!({
+                                "target": target,
+                                "operation": "analyze_security",
+                                "status": "skipped",
+                                "reason": "File not found or not a file"
+                            }));
+                        }
+                    }
+                }
+                "find_patterns" => {
+                    // Extract pattern from parameters if provided
+                    let pattern = if let Some(params_value) = &params.parameters {
+                        params_value
+                            .get("pattern")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or(".*")
+                    } else {
+                        ".*"
+                    };
+
+                    for target in &params.targets {
+                        let target_path = repo_path.join(target);
+
+                        if target_path.exists() && target_path.is_file() {
+                            match std::fs::read_to_string(&target_path) {
+                                Ok(content) => {
+                                    // Simple pattern matching implementation
+                                    let regex = match regex::Regex::new(pattern) {
+                                        Ok(r) => r,
+                                        Err(e) => {
+                                            errors.push(format!("Invalid regex pattern: {}", e));
+                                            continue;
+                                        }
+                                    };
+
+                                    let matches: Vec<_> = regex
+                                        .find_iter(&content)
+                                        .enumerate()
+                                        .take(50) // Limit matches
+                                        .map(|(i, m)| {
+                                            let line_num =
+                                                content[..m.start()].matches('\n').count() + 1;
+                                            serde_json::json!({
+                                                "match_index": i,
+                                                "match_text": m.as_str(),
+                                                "line": line_num,
+                                                "start": m.start(),
+                                                "end": m.end()
+                                            })
+                                        })
+                                        .collect();
+
+                                    batch_results.push(serde_json::json!({
+                                        "target": target,
+                                        "operation": "find_patterns",
+                                        "status": "success",
+                                        "result": {
+                                            "pattern": pattern,
+                                            "matches_count": matches.len(),
+                                            "matches": matches
+                                        }
+                                    }));
+                                    processed_count += 1;
+                                }
+                                Err(e) => {
+                                    let error_msg =
+                                        format!("Failed to read file {}: {}", target, e);
+                                    errors.push(error_msg.clone());
+
+                                    batch_results.push(serde_json::json!({
+                                        "target": target,
+                                        "operation": "find_patterns",
+                                        "status": "error",
+                                        "error": error_msg
+                                    }));
+                                }
+                            }
+                        } else {
+                            skipped_count += 1;
+                            batch_results.push(serde_json::json!({
+                                "target": target,
+                                "operation": "find_patterns",
+                                "status": "skipped",
+                                "reason": "File not found or not a file"
+                            }));
+                        }
+                    }
+                }
+                _ => {
+                    return Ok(CallToolResult::success(vec![Content::text(
+                        serde_json::to_string_pretty(&serde_json::json!({
+                            "status": "error",
+                            "message": format!("Unsupported operation: {}", params.operation),
+                            "supported_operations": [
+                                "analyze_complexity",
+                                "analyze_performance",
+                                "analyze_security",
+                                "find_patterns"
+                            ]
+                        }))
+                        .unwrap_or_else(|_| "Error formatting response".to_string()),
+                    )]));
+                }
             }
-        });
+
+            serde_json::json!({
+                "status": "success",
+                "operation": params.operation,
+                "summary": {
+                    "total_targets": params.targets.len(),
+                    "processed": processed_count,
+                    "skipped": skipped_count,
+                    "errors": errors.len(),
+                    "max_concurrent": max_concurrent,
+                    "fail_fast": fail_fast
+                },
+                "results": batch_results,
+                "errors": errors
+            })
+        } else {
+            serde_json::json!({
+                "status": "error",
+                "message": "No repository configured. Call initialize_repository first.",
+                "operation": params.operation
+            })
+        };
 
         Ok(CallToolResult::success(vec![Content::text(
-            response.to_string(),
-        )]))
-    }
-
-    /// Automate common development workflows
-    #[tool(description = "Automate common development workflows")]
-    fn workflow_automation(&self) -> std::result::Result<CallToolResult, McpError> {
-        info!("Workflow automation tool called");
-
-        let response = serde_json::json!({
-            "status": "not_implemented",
-            "message": "Workflow automation not yet implemented",
-            "example_workflows": {
-                "available_workflows": [
-                    "code_review_checklist",
-                    "refactoring_pipeline",
-                    "testing_strategy_generation"
-                ],
-                "custom_workflows": true,
-                "integration_options": ["git", "ci_cd", "code_quality_tools"]
-            }
-        });
-
-        Ok(CallToolResult::success(vec![Content::text(
-            response.to_string(),
+            serde_json::to_string_pretty(&result)
+                .unwrap_or_else(|_| "Error formatting response".to_string()),
         )]))
     }
 

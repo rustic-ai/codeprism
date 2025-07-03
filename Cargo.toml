@@ -8,6 +8,7 @@ members = [
     "crates/codeprism-analysis",
     "crates/codeprism-storage",
     "crates/codeprism-mcp",
+    "crates/codeprism-mcp-server",
     "crates/codeprism-dev-tools",
     "crates/codeprism-test-harness",
     "crates/mcp-test-harness",

@@ -224,6 +224,108 @@ impl CodePrismMcpServer {
         )]))
     }
 
+    // Search Tools (FUTURE: Full implementation in issues #168-171)
+
+    /// Search for content across the codebase
+    #[tool(description = "Search for content across files in the codebase")]
+    fn search_content(&self) -> std::result::Result<CallToolResult, McpError> {
+        info!("Search content tool called");
+
+        let response = serde_json::json!({
+            "status": "not_implemented",
+            "message": "Content search not yet implemented",
+            "example_results": [
+                {"file": "src/main.rs", "line": 42, "content": "example content match", "context": "surrounding code context"},
+                {"file": "src/lib.rs", "line": 15, "content": "another match", "context": "more context"}
+            ]
+        });
+
+        Ok(CallToolResult::success(vec![Content::text(
+            response.to_string(),
+        )]))
+    }
+
+    /// Find patterns using regex or glob patterns
+    #[tool(description = "Find patterns using regex or glob patterns in the codebase")]
+    fn find_patterns(&self) -> std::result::Result<CallToolResult, McpError> {
+        info!("Find patterns tool called");
+
+        let response = serde_json::json!({
+            "status": "not_implemented",
+            "message": "Pattern finding not yet implemented",
+            "example_patterns": [
+                {"pattern": "*.rs", "type": "glob", "matches": 150},
+                {"pattern": "fn\\s+\\w+\\(", "type": "regex", "matches": 89}
+            ]
+        });
+
+        Ok(CallToolResult::success(vec![Content::text(
+            response.to_string(),
+        )]))
+    }
+
+    /// Perform semantic search across codebase
+    #[tool(description = "Perform semantic search to find conceptually related code")]
+    fn semantic_search(&self) -> std::result::Result<CallToolResult, McpError> {
+        info!("Semantic search tool called");
+
+        let response = serde_json::json!({
+            "status": "not_implemented",
+            "message": "Semantic search not yet implemented",
+            "example_results": [
+                {"file": "src/auth.rs", "relevance": 0.95, "concept": "authentication logic"},
+                {"file": "src/middleware.rs", "relevance": 0.82, "concept": "request handling"}
+            ]
+        });
+
+        Ok(CallToolResult::success(vec![Content::text(
+            response.to_string(),
+        )]))
+    }
+
+    /// Search by specific code element types
+    #[tool(description = "Search for specific types of code elements (functions, structs, etc.)")]
+    fn search_by_type(&self) -> std::result::Result<CallToolResult, McpError> {
+        info!("Search by type tool called");
+
+        let response = serde_json::json!({
+            "status": "not_implemented",
+            "message": "Type-based search not yet implemented",
+            "example_types": {
+                "functions": 156,
+                "structs": 45,
+                "enums": 23,
+                "traits": 12,
+                "modules": 18
+            }
+        });
+
+        Ok(CallToolResult::success(vec![Content::text(
+            response.to_string(),
+        )]))
+    }
+
+    /// Advanced search with multiple criteria
+    #[tool(description = "Advanced search combining multiple search criteria and filters")]
+    fn advanced_search(&self) -> std::result::Result<CallToolResult, McpError> {
+        info!("Advanced search tool called");
+
+        let response = serde_json::json!({
+            "status": "not_implemented",
+            "message": "Advanced search not yet implemented",
+            "example_filters": {
+                "file_types": ["rs", "toml", "md"],
+                "date_range": "last_30_days",
+                "size_range": "1kb_to_100kb",
+                "complexity": "medium_to_high"
+            }
+        });
+
+        Ok(CallToolResult::success(vec![Content::text(
+            response.to_string(),
+        )]))
+    }
+
     /// Run the MCP server with stdio transport
     pub async fn run(self) -> std::result::Result<(), crate::Error> {
         info!(

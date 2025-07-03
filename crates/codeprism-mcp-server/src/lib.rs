@@ -48,4 +48,30 @@ mod tests {
         assert_eq!(SERVER_NAME, "codeprism-mcp-server");
         assert_eq!(MCP_VERSION, "2025-06-18");
     }
+
+    #[tokio::test]
+    async fn test_server_creation() {
+        // Test that we can create a server instance with default configuration
+        let config = Config::default();
+        let server = CodePrismMcpServer::new(config).await;
+        assert!(server.is_ok(), "Server creation should succeed");
+
+        let server = server.unwrap();
+        assert_eq!(server.config().server.name, "codeprism-mcp-server");
+    }
+
+    #[tokio::test]
+    async fn test_server_info() {
+        // Test that server info is correctly configured
+        use rmcp::{model::ProtocolVersion, ServerHandler};
+
+        let config = Config::default();
+        let server = CodePrismMcpServer::new(config).await.unwrap();
+
+        let info = server.get_info();
+        assert_eq!(info.protocol_version, ProtocolVersion::V_2024_11_05);
+        assert_eq!(info.server_info.name, "codeprism-mcp-server");
+        assert!(info.instructions.is_some());
+        assert!(info.capabilities.tools.is_some());
+    }
 }

@@ -34,3 +34,18 @@ pub const SERVER_NAME: &str = "codeprism-mcp-server";
 
 /// The MCP protocol version this server implements
 pub const MCP_VERSION: &str = "2025-06-18";
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_can_import_rmcp_crate() {
+        // Test that we can import the rmcp crate - specific types will be explored in task #159
+        extern crate rmcp;
+
+        // Basic verification that the constants are defined correctly
+        assert_eq!(SERVER_NAME, "codeprism-mcp-server");
+        assert_eq!(MCP_VERSION, "2025-06-18");
+    }
+}

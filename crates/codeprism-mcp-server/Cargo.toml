@@ -32,6 +32,9 @@ config = { workspace = true }
 toml = "0.8"
 serde_yaml = "0.9"
 
+# MCP Rust SDK dependencies
+rmcp = { git = "https://github.com/modelcontextprotocol/rust-sdk", branch = "main", features = ["server", "transport-io", "transport-sse-server"] }
+
 # Codeprism dependencies - will be added as implementation progresses
 # codeprism-core = { path = "../codeprism-core" }
 # codeprism-analysis = { path = "../codeprism-analysis" }

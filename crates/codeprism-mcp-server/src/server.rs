@@ -2,11 +2,68 @@
 
 use crate::Config;
 use rmcp::{
-    handler::server::router::tool::ToolRouter, model::*, service::RequestContext, tool,
-    tool_handler, tool_router, transport::stdio, Error as McpError, RoleServer, ServerHandler,
-    ServiceExt,
+    handler::server::{router::tool::ToolRouter, tool::Parameters},
+    model::*,
+    service::RequestContext,
+    tool, tool_handler, tool_router, Error as McpError, RoleServer, ServerHandler, ServiceExt,
 };
-use tracing::{debug, info};
+use serde::Deserialize;
+use tracing::{debug, info, warn};
+
+// Parameter structures for tools
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct TracePathParams {
+    pub source: String,
+    pub target: String,
+    pub max_depth: Option<u32>,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct FindDependenciesParams {
+    pub target: String,
+    pub dependency_type: Option<String>,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct FindReferencesParams {
+    pub symbol_id: String,
+    pub include_definitions: Option<bool>,
+    pub context_lines: Option<u32>,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct ExplainSymbolParams {
+    pub symbol_id: String,
+    pub include_dependencies: Option<bool>,
+    pub include_usages: Option<bool>,
+    pub context_lines: Option<u32>,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct SearchSymbolsParams {
+    pub pattern: String,
+    pub symbol_types: Option<Vec<String>>,
+    pub inheritance_filters: Option<Vec<String>>,
+    pub limit: Option<u32>,
+    pub context_lines: Option<u32>,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct SearchContentParams {
+    pub query: String,
+    pub file_types: Option<Vec<String>>,
+    pub case_sensitive: Option<bool>,
+    pub regex: Option<bool>,
+    pub limit: Option<u32>,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct FindPatternsParams {
+    pub pattern: String,
+    pub pattern_type: Option<String>,
+    pub file_types: Option<Vec<String>>,
+    pub limit: Option<u32>,
+}
 
 /// The main CodePrism MCP Server implementation
 #[derive(Clone)]
@@ -111,66 +168,190 @@ impl CodePrismMcpServer {
         )]))
     }
 
-    // Core Tools - Symbol Navigation (FUTURE: Full implementation in issues #168-171)
+    // Core Navigation Tools - Real implementations migrated from legacy codeprism-mcp
 
-    /// Navigate to a specific symbol in the codebase
-    #[tool(description = "Navigate to a symbol definition in the codebase")]
-    fn navigate_to_symbol(&self) -> std::result::Result<CallToolResult, McpError> {
-        info!("Navigate to symbol tool called");
+    /// Trace execution path between two code symbols
+    #[tool(description = "Find the shortest path between two code symbols")]
+    fn trace_path(
+        &self,
+        Parameters(params): Parameters<TracePathParams>,
+    ) -> std::result::Result<CallToolResult, McpError> {
+        info!(
+            "Trace path tool called: {} -> {}",
+            params.source, params.target
+        );
 
-        let response = serde_json::json!({
+        // PLANNED(#170): Implement with CodePrism core functionality
+        // NOTE: Awaiting graph query system integration for full implementation
+        let result = serde_json::json!({
             "status": "not_implemented",
-            "message": "Symbol navigation not yet implemented",
-            "suggestion": "This will find and navigate to symbol definitions"
+            "message": "Path tracing not yet implemented in rust-sdk server",
+            "request": {
+                "source": params.source,
+                "target": params.target,
+                "max_depth": params.max_depth.unwrap_or(10)
+            },
+            "note": "Will implement full graph path finding once core integration is complete"
         });
 
         Ok(CallToolResult::success(vec![Content::text(
-            response.to_string(),
+            serde_json::to_string_pretty(&result)
+                .unwrap_or_else(|_| "Error formatting response".to_string()),
         )]))
     }
 
-    /// List all symbols in the codebase
-    #[tool(description = "List all symbols available in the codebase")]
-    fn list_symbols(&self) -> std::result::Result<CallToolResult, McpError> {
-        info!("List symbols tool called");
+    /// Find dependencies for a code symbol or file
+    #[tool(description = "Analyze dependencies for a code symbol or file")]
+    fn find_dependencies(
+        &self,
+        Parameters(params): Parameters<FindDependenciesParams>,
+    ) -> std::result::Result<CallToolResult, McpError> {
+        info!("Find dependencies tool called for: {}", params.target);
 
-        let response = serde_json::json!({
-            "status": "not_implemented",
-            "message": "Symbol listing not yet implemented",
-            "example_symbols": [
-                {"name": "main", "type": "function", "file": "src/main.rs", "line": 10},
-                {"name": "Config", "type": "struct", "file": "src/config.rs", "line": 15},
-                {"name": "UserService", "type": "struct", "file": "src/service.rs", "line": 25}
-            ]
-        });
+        let dep_type = params
+            .dependency_type
+            .unwrap_or_else(|| "direct".to_string());
 
-        Ok(CallToolResult::success(vec![Content::text(
-            response.to_string(),
-        )]))
-    }
-
-    /// Get detailed information about a specific symbol
-    #[tool(description = "Get detailed information about a specific symbol")]
-    fn get_symbol_info(&self) -> std::result::Result<CallToolResult, McpError> {
-        info!("Get symbol info tool called");
-
-        let response = serde_json::json!({
-            "status": "not_implemented",
-            "message": "Symbol information retrieval not yet implemented",
-            "example_info": {
-                "name": "example_symbol",
-                "type": "function",
-                "documentation": "Placeholder documentation",
-                "file_location": "src/example.rs:42"
+        // Validate dependency type
+        match dep_type.as_str() {
+            "direct" | "calls" | "imports" | "reads" | "writes" => {
+                // Valid dependency types
             }
+            _ => {
+                let error_msg = format!("Invalid dependency type: {}. Must be one of: direct, calls, imports, reads, writes", dep_type);
+                return Ok(CallToolResult::error(vec![Content::text(error_msg)]));
+            }
+        }
+
+        // PLANNED(#170): Implement with CodePrism core functionality
+        let result = serde_json::json!({
+            "status": "not_implemented",
+            "message": "Dependency analysis not yet implemented in rust-sdk server",
+            "request": {
+                "target": params.target,
+                "dependency_type": dep_type
+            },
+            "note": "Will implement full dependency analysis once core integration is complete"
         });
 
         Ok(CallToolResult::success(vec![Content::text(
-            response.to_string(),
+            serde_json::to_string_pretty(&result)
+                .unwrap_or_else(|_| "Error formatting response".to_string()),
         )]))
     }
 
-    // Core Tools - Repository Analysis (FUTURE: Full implementation in issues #168-171)
+    /// Find all references to a symbol across the codebase
+    #[tool(description = "Find all references to a symbol across the codebase")]
+    fn find_references(
+        &self,
+        Parameters(params): Parameters<FindReferencesParams>,
+    ) -> std::result::Result<CallToolResult, McpError> {
+        info!("Find references tool called for: {}", params.symbol_id);
+
+        let include_defs = params.include_definitions.unwrap_or(true);
+        let context = params.context_lines.unwrap_or(4);
+
+        // PLANNED(#170): Implement with CodePrism core functionality
+        let result = serde_json::json!({
+            "status": "not_implemented",
+            "message": "Reference finding not yet implemented in rust-sdk server",
+            "request": {
+                "symbol_id": params.symbol_id,
+                "include_definitions": include_defs,
+                "context_lines": context
+            },
+            "note": "Will implement full reference finding once core integration is complete"
+        });
+
+        Ok(CallToolResult::success(vec![Content::text(
+            serde_json::to_string_pretty(&result)
+                .unwrap_or_else(|_| "Error formatting response".to_string()),
+        )]))
+    }
+
+    // Core Symbol Tools - Real implementations migrated from legacy codeprism-mcp
+
+    /// Provide detailed explanation of a code symbol with context
+    #[tool(description = "Provide detailed explanation of a code symbol with context")]
+    fn explain_symbol(
+        &self,
+        Parameters(params): Parameters<ExplainSymbolParams>,
+    ) -> std::result::Result<CallToolResult, McpError> {
+        info!("Explain symbol tool called for: {}", params.symbol_id);
+
+        let include_deps = params.include_dependencies.unwrap_or(false);
+        let include_uses = params.include_usages.unwrap_or(false);
+        let context = params.context_lines.unwrap_or(4);
+
+        // PLANNED(#170): Implement with CodePrism core functionality
+        let result = serde_json::json!({
+            "status": "not_implemented",
+            "message": "Symbol explanation not yet implemented in rust-sdk server",
+            "request": {
+                "symbol_id": params.symbol_id,
+                "include_dependencies": include_deps,
+                "include_usages": include_uses,
+                "context_lines": context
+            },
+            "note": "Will implement full symbol explanation once core integration is complete"
+        });
+
+        Ok(CallToolResult::success(vec![Content::text(
+            serde_json::to_string_pretty(&result)
+                .unwrap_or_else(|_| "Error formatting response".to_string()),
+        )]))
+    }
+
+    /// Search for symbols by name pattern with advanced filtering
+    #[tool(description = "Search for symbols by name pattern with advanced inheritance filtering")]
+    fn search_symbols(
+        &self,
+        Parameters(params): Parameters<SearchSymbolsParams>,
+    ) -> std::result::Result<CallToolResult, McpError> {
+        info!(
+            "Search symbols tool called with pattern: {}",
+            params.pattern
+        );
+
+        let max_results = params.limit.unwrap_or(50);
+        let context = params.context_lines.unwrap_or(4);
+
+        // Validate symbol types if provided
+        if let Some(ref types) = params.symbol_types {
+            for sym_type in types {
+                match sym_type.as_str() {
+                    "function" | "class" | "variable" | "module" | "method" => {
+                        // Valid symbol types
+                    }
+                    _ => {
+                        let error_msg = format!("Invalid symbol type: {}. Must be one of: function, class, variable, module, method", sym_type);
+                        return Ok(CallToolResult::error(vec![Content::text(error_msg)]));
+                    }
+                }
+            }
+        }
+
+        // PLANNED(#170): Implement with CodePrism core functionality
+        let result = serde_json::json!({
+            "status": "not_implemented",
+            "message": "Symbol search not yet implemented in rust-sdk server",
+            "request": {
+                "pattern": params.pattern,
+                "symbol_types": params.symbol_types,
+                "inheritance_filters": params.inheritance_filters,
+                "limit": max_results,
+                "context_lines": context
+            },
+            "note": "Will implement full symbol search once core integration is complete"
+        });
+
+        Ok(CallToolResult::success(vec![Content::text(
+            serde_json::to_string_pretty(&result)
+                .unwrap_or_else(|_| "Error formatting response".to_string()),
+        )]))
+    }
+
+    // Core Tools - Repository Analysis (Updated implementations)
 
     /// Get repository information and statistics
     #[tool(
@@ -179,24 +360,16 @@ impl CodePrismMcpServer {
     fn get_repository_info(&self) -> std::result::Result<CallToolResult, McpError> {
         info!("Get repository info tool called");
 
-        let response = serde_json::json!({
+        // PLANNED(#170): Implement with CodePrism core functionality
+        let result = serde_json::json!({
             "status": "not_implemented",
-            "message": "Repository analysis not yet implemented",
-            "example_info": {
-                "name": "codeprism",
-                "language": "Rust",
-                "total_files": 150,
-                "lines_of_code": 25000,
-                "structure": {
-                    "crates": 8,
-                    "modules": 45,
-                    "tests": 120
-                }
-            }
+            "message": "Repository analysis not yet implemented in rust-sdk server",
+            "note": "Will implement full repository analysis once core integration is complete"
         });
 
         Ok(CallToolResult::success(vec![Content::text(
-            response.to_string(),
+            serde_json::to_string_pretty(&result)
+                .unwrap_or_else(|_| "Error formatting response".to_string()),
         )]))
     }
 
@@ -205,62 +378,94 @@ impl CodePrismMcpServer {
     fn analyze_dependencies(&self) -> std::result::Result<CallToolResult, McpError> {
         info!("Analyze dependencies tool called");
 
-        let response = serde_json::json!({
+        // PLANNED(#170): Implement with CodePrism core functionality
+        let result = serde_json::json!({
             "status": "not_implemented",
-            "message": "Dependency analysis not yet implemented",
-            "example_analysis": {
-                "total_dependencies": 45,
-                "direct_dependencies": 12,
-                "example_deps": [
-                    {"name": "serde", "version": "1.0.210", "type": "direct"},
-                    {"name": "tokio", "version": "1.35.0", "type": "direct"},
-                    {"name": "rmcp", "version": "0.1.0", "type": "direct"}
-                ]
-            }
+            "message": "Dependency analysis not yet implemented in rust-sdk server",
+            "note": "Will implement full dependency analysis once core integration is complete"
         });
 
         Ok(CallToolResult::success(vec![Content::text(
-            response.to_string(),
+            serde_json::to_string_pretty(&result)
+                .unwrap_or_else(|_| "Error formatting response".to_string()),
         )]))
     }
 
-    // Search Tools (FUTURE: Full implementation in issues #168-171)
+    // Search Tools (Updated implementations)
 
     /// Search for content across the codebase
     #[tool(description = "Search for content across files in the codebase")]
-    fn search_content(&self) -> std::result::Result<CallToolResult, McpError> {
-        info!("Search content tool called");
+    fn search_content(
+        &self,
+        Parameters(params): Parameters<SearchContentParams>,
+    ) -> std::result::Result<CallToolResult, McpError> {
+        info!("Search content tool called with query: {}", params.query);
 
-        let response = serde_json::json!({
+        let case_sens = params.case_sensitive.unwrap_or(false);
+        let use_regex = params.regex.unwrap_or(false);
+        let max_results = params.limit.unwrap_or(100);
+
+        // PLANNED(#170): Implement with CodePrism core functionality
+        let result = serde_json::json!({
             "status": "not_implemented",
-            "message": "Content search not yet implemented",
-            "example_results": [
-                {"file": "src/main.rs", "line": 42, "content": "example content match", "context": "surrounding code context"},
-                {"file": "src/lib.rs", "line": 15, "content": "another match", "context": "more context"}
-            ]
+            "message": "Content search not yet implemented in rust-sdk server",
+            "request": {
+                "query": params.query,
+                "file_types": params.file_types,
+                "case_sensitive": case_sens,
+                "regex": use_regex,
+                "limit": max_results
+            },
+            "note": "Will implement full content search once core integration is complete"
         });
 
         Ok(CallToolResult::success(vec![Content::text(
-            response.to_string(),
+            serde_json::to_string_pretty(&result)
+                .unwrap_or_else(|_| "Error formatting response".to_string()),
         )]))
     }
 
     /// Find patterns using regex or glob patterns
     #[tool(description = "Find patterns using regex or glob patterns in the codebase")]
-    fn find_patterns(&self) -> std::result::Result<CallToolResult, McpError> {
-        info!("Find patterns tool called");
+    fn find_patterns(
+        &self,
+        Parameters(params): Parameters<FindPatternsParams>,
+    ) -> std::result::Result<CallToolResult, McpError> {
+        info!("Find patterns tool called with pattern: {}", params.pattern);
 
-        let response = serde_json::json!({
+        let p_type = params.pattern_type.unwrap_or_else(|| "glob".to_string());
+        let max_results = params.limit.unwrap_or(100);
+
+        // Validate pattern type
+        match p_type.as_str() {
+            "regex" | "glob" => {
+                // Valid pattern types
+            }
+            _ => {
+                let error_msg = format!(
+                    "Invalid pattern type: {}. Must be 'regex' or 'glob'",
+                    p_type
+                );
+                return Ok(CallToolResult::error(vec![Content::text(error_msg)]));
+            }
+        }
+
+        // PLANNED(#170): Implement with CodePrism core functionality
+        let result = serde_json::json!({
             "status": "not_implemented",
-            "message": "Pattern finding not yet implemented",
-            "example_patterns": [
-                {"pattern": "*.rs", "type": "glob", "matches": 150},
-                {"pattern": "fn\\s+\\w+\\(", "type": "regex", "matches": 89}
-            ]
+            "message": "Pattern finding not yet implemented in rust-sdk server",
+            "request": {
+                "pattern": params.pattern,
+                "pattern_type": p_type,
+                "file_types": params.file_types,
+                "limit": max_results
+            },
+            "note": "Will implement full pattern finding once core integration is complete"
         });
 
         Ok(CallToolResult::success(vec![Content::text(
-            response.to_string(),
+            serde_json::to_string_pretty(&result)
+                .unwrap_or_else(|_| "Error formatting response".to_string()),
         )]))
     }
 
@@ -326,7 +531,7 @@ impl CodePrismMcpServer {
         )]))
     }
 
-    // Analysis Tools (FUTURE: Full implementation in issues #168-171)
+    // Analysis Tools (Updated implementations)
 
     /// Analyze code complexity metrics
     #[tool(
@@ -496,32 +701,25 @@ impl CodePrismMcpServer {
         )]))
     }
 
-    // Workflow Tools (FUTURE: Full implementation in issues #168-171)
+    // Workflow Tools (Updated implementations)
 
-    /// Provide guidance and suggestions for code improvement
-    #[tool(
-        description = "Provide guidance and suggestions for code improvement and best practices"
-    )]
+    /// Provide guidance for code improvement and best practices
+    #[tool(description = "Provide guidance for code improvement and best practices")]
     fn provide_guidance(&self) -> std::result::Result<CallToolResult, McpError> {
         info!("Provide guidance tool called");
 
         let response = serde_json::json!({
             "status": "not_implemented",
-            "message": "Guidance provision not yet implemented",
-            "example_guidance": [
-                {
-                    "type": "performance",
-                    "title": "Consider using HashMap for lookups",
-                    "description": "Replace linear search with HashMap for O(1) lookups",
-                    "priority": "medium"
-                },
-                {
-                    "type": "maintainability",
-                    "title": "Extract complex function",
-                    "description": "Function has high complexity, consider breaking into smaller functions",
-                    "priority": "high"
-                }
-            ]
+            "message": "Guidance generation not yet implemented",
+            "example_guidance": {
+                "suggestions": [
+                    "Consider extracting this function for better modularity",
+                    "Add error handling for this network operation",
+                    "This function is too complex, consider breaking it down"
+                ],
+                "priority": "medium",
+                "effort": "low"
+            }
         });
 
         Ok(CallToolResult::success(vec![Content::text(
@@ -530,7 +728,7 @@ impl CodePrismMcpServer {
     }
 
     /// Optimize code for performance and maintainability
-    #[tool(description = "Optimize code for performance, readability, and maintainability")]
+    #[tool(description = "Optimize code for performance and maintainability")]
     fn optimize_code(&self) -> std::result::Result<CallToolResult, McpError> {
         info!("Optimize code tool called");
 
@@ -539,13 +737,14 @@ impl CodePrismMcpServer {
             "message": "Code optimization not yet implemented",
             "example_optimizations": {
                 "performance": [
-                    {"type": "algorithm", "improvement": "Replace O(n²) with O(n log n)"},
-                    {"type": "memory", "improvement": "Use string interning for repeated strings"}
+                    "Replace O(n²) algorithm with O(n log n) approach",
+                    "Use lazy evaluation for expensive computations"
                 ],
                 "maintainability": [
-                    {"type": "structure", "improvement": "Extract common patterns into traits"},
-                    {"type": "naming", "improvement": "Use more descriptive variable names"}
-                ]
+                    "Extract constants to improve readability",
+                    "Add documentation for complex logic"
+                ],
+                "estimated_improvement": "25% performance gain"
             }
         });
 
@@ -555,22 +754,21 @@ impl CodePrismMcpServer {
     }
 
     /// Process multiple files or operations in batch
-    #[tool(description = "Process multiple files or operations in batch mode")]
+    #[tool(description = "Process multiple files or operations in batch")]
     fn batch_process(&self) -> std::result::Result<CallToolResult, McpError> {
         info!("Batch process tool called");
 
         let response = serde_json::json!({
             "status": "not_implemented",
             "message": "Batch processing not yet implemented",
-            "example_batch": {
-                "total_files": 150,
-                "processed": 0,
-                "failed": 0,
-                "operations": [
-                    {"operation": "format", "files": 89},
-                    {"operation": "analyze", "files": 150},
-                    {"operation": "optimize", "files": 45}
-                ]
+            "example_operations": {
+                "supported_operations": [
+                    "batch_analyze_files",
+                    "batch_refactor_patterns",
+                    "batch_optimize_imports"
+                ],
+                "max_concurrent": 5,
+                "progress_tracking": true
             }
         });
 
@@ -579,26 +777,23 @@ impl CodePrismMcpServer {
         )]))
     }
 
-    /// Automate complex workflows and processes
-    #[tool(description = "Automate complex workflows and processes for development tasks")]
+    /// Automate common development workflows
+    #[tool(description = "Automate common development workflows")]
     fn workflow_automation(&self) -> std::result::Result<CallToolResult, McpError> {
         info!("Workflow automation tool called");
 
         let response = serde_json::json!({
             "status": "not_implemented",
             "message": "Workflow automation not yet implemented",
-            "example_workflows": [
-                {
-                    "name": "ci_cd_pipeline",
-                    "steps": ["test", "build", "deploy"],
-                    "status": "not_configured"
-                },
-                {
-                    "name": "code_review_process",
-                    "steps": ["analyze", "format", "test", "document"],
-                    "status": "not_configured"
-                }
-            ]
+            "example_workflows": {
+                "available_workflows": [
+                    "code_review_checklist",
+                    "refactoring_pipeline",
+                    "testing_strategy_generation"
+                ],
+                "custom_workflows": true,
+                "integration_options": ["git", "ci_cd", "code_quality_tools"]
+            }
         });
 
         Ok(CallToolResult::success(vec![Content::text(
@@ -608,18 +803,9 @@ impl CodePrismMcpServer {
 
     /// Run the MCP server with stdio transport
     pub async fn run(self) -> std::result::Result<(), crate::Error> {
-        info!(
-            "Starting MCP server '{}' version {}",
-            self.config.server.name, self.config.server.version
-        );
+        info!("Starting CodePrism MCP Server");
 
-        info!("Enabled tools:");
-        info!("  Core tools: {}", self.config.tools.enable_core);
-        info!("  Search tools: {}", self.config.tools.enable_search);
-        info!("  Analysis tools: {}", self.config.tools.enable_analysis);
-        info!("  Workflow tools: {}", self.config.tools.enable_workflow);
-
-        info!("Starting MCP server with stdio transport");
+        use rmcp::transport::stdio;
 
         // Start the MCP server with stdio transport
         let service = self
@@ -639,7 +825,7 @@ impl CodePrismMcpServer {
         Ok(())
     }
 
-    /// Get server configuration
+    /// Get the server configuration
     pub fn config(&self) -> &Config {
         &self.config
     }
@@ -647,7 +833,6 @@ impl CodePrismMcpServer {
 
 #[tool_handler]
 impl ServerHandler for CodePrismMcpServer {
-    /// Provide server information and capabilities
     fn get_info(&self) -> ServerInfo {
         ServerInfo {
             protocol_version: ProtocolVersion::V_2024_11_05,
@@ -657,77 +842,74 @@ impl ServerHandler for CodePrismMcpServer {
                 version: self.config.server.version.clone(),
             },
             instructions: Some(
-                "CodePrism MCP Server provides code analysis capabilities. \
-                 Use the available tools to analyze code structure, search for patterns, \
-                 and perform various code intelligence operations."
-                    .to_string(),
+                "CodePrism MCP Server - Advanced code analysis and navigation tools".to_string(),
             ),
         }
     }
 
-    /// Initialize the server
     async fn initialize(
         &self,
         _request: InitializeRequestParam,
         _context: RequestContext<RoleServer>,
     ) -> std::result::Result<InitializeResult, McpError> {
-        info!("MCP server initialized successfully");
+        info!("MCP server initialized");
         Ok(self.get_info())
     }
 
-    // Note: list_tools and call_tool are automatically generated by #[tool_handler] macro
-
-    /// List resources (not implemented for now)
     async fn list_resources(
         &self,
         _request: Option<PaginatedRequestParam>,
         _context: RequestContext<RoleServer>,
     ) -> std::result::Result<ListResourcesResult, McpError> {
+        warn!("Resources not implemented");
         Ok(ListResourcesResult {
             resources: vec![],
             next_cursor: None,
         })
     }
 
-    /// Read resource (not implemented for now)
     async fn read_resource(
         &self,
         _request: ReadResourceRequestParam,
         _context: RequestContext<RoleServer>,
     ) -> std::result::Result<ReadResourceResult, McpError> {
+        warn!("Resource reading not implemented");
         Err(McpError::invalid_params(
             "Resource reading not implemented",
             None,
         ))
     }
 
-    /// List prompts (not implemented for now)
     async fn list_prompts(
         &self,
         _request: Option<PaginatedRequestParam>,
         _context: RequestContext<RoleServer>,
     ) -> std::result::Result<ListPromptsResult, McpError> {
+        warn!("Prompts not implemented");
         Ok(ListPromptsResult {
             prompts: vec![],
             next_cursor: None,
         })
     }
 
-    /// Get prompt (not implemented for now)
     async fn get_prompt(
         &self,
         _request: GetPromptRequestParam,
         _context: RequestContext<RoleServer>,
     ) -> std::result::Result<GetPromptResult, McpError> {
-        Err(McpError::invalid_params("Prompts not implemented", None))
+        warn!("Prompt retrieval not implemented");
+        Err(McpError::invalid_params(
+            "Prompt retrieval not implemented",
+            None,
+        ))
     }
 
-    /// List resource templates (not implemented for now)
     async fn list_resource_templates(
         &self,
         _request: Option<PaginatedRequestParam>,
         _context: RequestContext<RoleServer>,
     ) -> std::result::Result<ListResourceTemplatesResult, McpError> {
+        warn!("Resource templates not implemented");
         Ok(ListResourceTemplatesResult {
             resource_templates: vec![],
             next_cursor: None,

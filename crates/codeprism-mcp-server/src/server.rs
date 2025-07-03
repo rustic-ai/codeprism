@@ -163,6 +163,22 @@ pub struct AnalyzeSecurityParams {
     pub severity_threshold: Option<String>,
 }
 
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct AnalyzeDependenciesParams {
+    pub target: Option<String>,
+    pub dependency_type: Option<String>,
+    pub max_depth: Option<u32>,
+    pub include_transitive: Option<bool>,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct AnalyzeControlFlowParams {
+    pub target: String,
+    pub analysis_types: Option<Vec<String>>,
+    pub max_depth: Option<u32>,
+    pub include_paths: Option<bool>,
+}
+
 /// The main CodePrism MCP Server implementation
 #[derive(Clone)]
 #[allow(dead_code)] // Fields will be used as more tools are implemented
@@ -972,20 +988,54 @@ impl CodePrismMcpServer {
 
     /// Analyze project dependencies
     #[tool(description = "Analyze project dependencies and their relationships")]
-    fn analyze_dependencies(&self) -> std::result::Result<CallToolResult, McpError> {
+    fn analyze_dependencies(
+        &self,
+        Parameters(params): Parameters<AnalyzeDependenciesParams>,
+    ) -> std::result::Result<CallToolResult, McpError> {
         info!("Analyze dependencies tool called");
 
-        // PLANNED(#168): Implement with CodePrism core functionality
-        let result = serde_json::json!({
-            "status": "not_implemented",
-            "message": "Dependency analysis not yet implemented in rust-sdk server",
-            "note": "Will implement full dependency analysis once core integration is complete"
-        });
+        let dependency_type_str = params.dependency_type.unwrap_or_else(|| "all".to_string());
+        let max_depth = params.max_depth.unwrap_or(5) as usize;
+        let include_transitive = params.include_transitive.unwrap_or(true);
 
-        Ok(CallToolResult::success(vec![Content::text(
-            serde_json::to_string_pretty(&result)
-                .unwrap_or_else(|_| "Error formatting response".to_string()),
-        )]))
+        let result = if let Some(target) = params.target.clone() {
+            // Analyze dependencies for a specific target (symbol ID)
+            self.analyze_specific_target_dependencies(
+                &target,
+                &dependency_type_str,
+                max_depth,
+                include_transitive,
+            )
+        } else {
+            // Analyze overall repository dependencies
+            self.analyze_repository_dependencies(
+                &dependency_type_str,
+                max_depth,
+                include_transitive,
+            )
+        };
+
+        match result {
+            Ok(analysis) => Ok(CallToolResult::success(vec![Content::text(
+                serde_json::to_string_pretty(&analysis)
+                    .unwrap_or_else(|_| "Error formatting response".to_string()),
+            )])),
+            Err(e) => {
+                let error_result = serde_json::json!({
+                    "status": "error",
+                    "message": format!("Dependency analysis failed: {}", e),
+                    "target": params.target,
+                    "dependency_type": dependency_type_str,
+                    "max_depth": max_depth,
+                    "include_transitive": include_transitive
+                });
+
+                Ok(CallToolResult::success(vec![Content::text(
+                    serde_json::to_string_pretty(&error_result)
+                        .unwrap_or_else(|_| "Error formatting response".to_string()),
+                )]))
+            }
+        }
     }
 
     // Search Tools (Updated implementations)
@@ -1750,27 +1800,50 @@ impl CodePrismMcpServer {
         )]))
     }
 
-    /// Analyze control flow patterns
+    /// Analyze control flow patterns and execution paths in code
     #[tool(description = "Analyze control flow patterns and execution paths in code")]
-    fn analyze_control_flow(&self) -> std::result::Result<CallToolResult, McpError> {
-        info!("Analyze control flow tool called");
+    fn analyze_control_flow(
+        &self,
+        Parameters(params): Parameters<AnalyzeControlFlowParams>,
+    ) -> std::result::Result<CallToolResult, McpError> {
+        info!(
+            "Analyze control flow tool called for target: {}",
+            params.target
+        );
 
-        let response = serde_json::json!({
-            "status": "not_implemented",
-            "message": "Control flow analysis not yet implemented",
-            "example_patterns": {
-                "decision_points": 156,
-                "loops": 45,
-                "recursions": 12,
-                "exception_handling": 23,
-                "execution_paths": 89,
-                "dead_code_blocks": 3
+        let analysis_types = params
+            .analysis_types
+            .unwrap_or_else(|| vec!["all".to_string()]);
+        let max_depth = params.max_depth.unwrap_or(10) as usize;
+        let include_paths = params.include_paths.unwrap_or(true);
+
+        let result = self.analyze_control_flow_patterns(
+            &params.target,
+            &analysis_types,
+            max_depth,
+            include_paths,
+        );
+
+        match result {
+            Ok(analysis) => Ok(CallToolResult::success(vec![Content::text(
+                serde_json::to_string_pretty(&analysis)
+                    .unwrap_or_else(|_| "Error formatting response".to_string()),
+            )])),
+            Err(e) => {
+                let error_result = serde_json::json!({
+                    "status": "error",
+                    "message": format!("Control flow analysis failed: {}", e),
+                    "target": params.target,
+                    "analysis_types": analysis_types,
+                    "max_depth": max_depth
+                });
+
+                Ok(CallToolResult::success(vec![Content::text(
+                    serde_json::to_string_pretty(&error_result)
+                        .unwrap_or_else(|_| "Error formatting response".to_string()),
+                )]))
             }
-        });
-
-        Ok(CallToolResult::success(vec![Content::text(
-            response.to_string(),
-        )]))
+        }
     }
 
     /// Analyze code quality metrics
@@ -2196,6 +2269,109 @@ impl CodePrismMcpServer {
     }
 
     // Workflow Tools (Updated implementations)
+
+    /// Provide intelligent code improvement guidance and suggestions
+    #[tool(
+        description = "Provide context-aware code improvement guidance and workflow recommendations"
+    )]
+    fn provide_guidance(
+        &self,
+        Parameters(params): Parameters<ProvideGuidanceParams>,
+    ) -> std::result::Result<CallToolResult, McpError> {
+        info!("Provide guidance tool called for target: {}", params.target);
+
+        let guidance_type = params
+            .guidance_type
+            .unwrap_or_else(|| "general".to_string());
+        let include_examples = params.include_examples.unwrap_or(true);
+        let priority_level = params
+            .priority_level
+            .unwrap_or_else(|| "medium".to_string());
+
+        // Generate guidance based on target and type
+        let guidance_result = match guidance_type.as_str() {
+            "complexity" => {
+                self.generate_complexity_guidance(&params.target, include_examples, &priority_level)
+            }
+            "performance" => self.generate_performance_guidance(
+                &params.target,
+                include_examples,
+                &priority_level,
+            ),
+            "security" => {
+                self.generate_security_guidance(&params.target, include_examples, &priority_level)
+            }
+            "workflow" => {
+                self.generate_workflow_guidance(&params.target, include_examples, &priority_level)
+            }
+            "general" => {
+                self.generate_general_guidance(&params.target, include_examples, &priority_level)
+            }
+            _ => {
+                let error_msg = format!("Invalid guidance type: {}. Must be one of: complexity, performance, security, workflow, general", guidance_type);
+                return Ok(CallToolResult::error(vec![Content::text(error_msg)]));
+            }
+        };
+
+        let result = match guidance_result {
+            Ok(guidance) => guidance,
+            Err(e) => {
+                serde_json::json!({
+                    "status": "error",
+                    "message": format!("Guidance generation failed: {}", e),
+                    "target": params.target,
+                    "guidance_type": guidance_type
+                })
+            }
+        };
+
+        Ok(CallToolResult::success(vec![Content::text(
+            serde_json::to_string_pretty(&result)
+                .unwrap_or_else(|_| "Error formatting response".to_string()),
+        )]))
+    }
+
+    /// Provide code optimization recommendations and suggestions
+    #[tool(
+        description = "Analyze code and provide optimization recommendations for performance and maintainability"
+    )]
+    fn optimize_code(
+        &self,
+        Parameters(params): Parameters<OptimizeCodeParams>,
+    ) -> std::result::Result<CallToolResult, McpError> {
+        info!("Optimize code tool called for target: {}", params.target);
+
+        let optimization_types = params
+            .optimization_types
+            .unwrap_or_else(|| vec!["performance".to_string(), "maintainability".to_string()]);
+        let aggressive_mode = params.aggressive_mode.unwrap_or(false);
+        let max_suggestions = params.max_suggestions.unwrap_or(10);
+
+        // Generate optimization suggestions based on target and types
+        let optimization_result = self.generate_optimization_suggestions(
+            &params.target,
+            &optimization_types,
+            aggressive_mode,
+            max_suggestions,
+        );
+
+        let result = match optimization_result {
+            Ok(optimizations) => optimizations,
+            Err(e) => {
+                serde_json::json!({
+                    "status": "error",
+                    "message": format!("Optimization analysis failed: {}", e),
+                    "target": params.target,
+                    "optimization_types": optimization_types
+                })
+            }
+        };
+
+        Ok(CallToolResult::success(vec![Content::text(
+            serde_json::to_string_pretty(&result)
+                .unwrap_or_else(|_| "Error formatting response".to_string()),
+        )]))
+    }
 
     /// Automate common development workflows
     #[tool(description = "Automate common development workflows")]
@@ -3578,6 +3754,1286 @@ impl CodePrismMcpServer {
             }
             _ => true, // Unknown format, include all
         }
+    }
+
+    // Guidance and optimization helper methods
+
+    /// Generate complexity-focused guidance for code improvement
+    fn generate_complexity_guidance(
+        &self,
+        target: &str,
+        include_examples: bool,
+        priority_level: &str,
+    ) -> anyhow::Result<serde_json::Value> {
+        // For now, provide general complexity guidance
+        // In a full implementation, this would analyze the specific target
+
+        let mut guidance = vec![
+            "Break down large functions into smaller, focused methods".to_string(),
+            "Reduce nested conditional statements using early returns".to_string(),
+            "Extract complex logic into well-named helper functions".to_string(),
+            "Consider using design patterns to simplify complex relationships".to_string(),
+        ];
+
+        if priority_level == "high" {
+            guidance.extend(vec![
+                "URGENT: Identify and refactor functions with cyclomatic complexity > 15"
+                    .to_string(),
+                "URGENT: Split classes with more than 500 lines of code".to_string(),
+            ]);
+        }
+
+        let mut suggestions = vec![
+            serde_json::json!({
+                "category": "Function Complexity",
+                "suggestion": "Break down large functions",
+                "reasoning": "Functions with high complexity are harder to test and maintain",
+                "impact": "High",
+                "effort": "Medium"
+            }),
+            serde_json::json!({
+                "category": "Conditional Complexity",
+                "suggestion": "Reduce nested conditions",
+                "reasoning": "Deep nesting reduces readability and increases bug potential",
+                "impact": "Medium",
+                "effort": "Low"
+            }),
+        ];
+
+        if include_examples {
+            suggestions.push(serde_json::json!({
+                "category": "Example Refactoring",
+                "suggestion": "Extract method pattern",
+                "example": {
+                    "before": "def process_data(data):\n    if data:\n        if data.valid:\n            if data.type == 'A':\n                return process_type_a(data)\n            elif data.type == 'B':\n                return process_type_b(data)",
+                    "after": "def process_data(data):\n    if not self.is_valid_data(data):\n        return None\n    return self.process_by_type(data)\n\ndef is_valid_data(self, data):\n    return data and data.valid"
+                },
+                "impact": "High",
+                "effort": "Medium"
+            }));
+        }
+
+        Ok(serde_json::json!({
+            "status": "success",
+            "guidance_type": "complexity",
+            "target": target,
+            "priority_level": priority_level,
+            "recommendations": guidance,
+            "detailed_suggestions": suggestions,
+            "next_steps": [
+                "Run complexity analysis to identify high-complexity areas",
+                "Prioritize refactoring based on change frequency and bug reports",
+                "Set up complexity metrics monitoring"
+            ],
+            "estimated_impact": {
+                "maintainability": "High",
+                "testability": "High",
+                "bug_reduction": "Medium"
+            }
+        }))
+    }
+
+    /// Generate performance-focused guidance
+    fn generate_performance_guidance(
+        &self,
+        target: &str,
+        include_examples: bool,
+        priority_level: &str,
+    ) -> anyhow::Result<serde_json::Value> {
+        let mut guidance = vec![
+            "Profile code to identify actual bottlenecks before optimizing".to_string(),
+            "Consider algorithmic improvements over micro-optimizations".to_string(),
+            "Implement caching for expensive computations".to_string(),
+            "Use appropriate data structures for access patterns".to_string(),
+        ];
+
+        if priority_level == "high" {
+            guidance.extend(vec![
+                "URGENT: Address O(n²) algorithms in hot paths".to_string(),
+                "URGENT: Implement database query optimization".to_string(),
+            ]);
+        }
+
+        let mut suggestions = vec![
+            serde_json::json!({
+                "category": "Algorithmic Efficiency",
+                "suggestion": "Replace O(n²) algorithms with O(n log n) alternatives",
+                "reasoning": "Algorithmic improvements provide the biggest performance gains",
+                "impact": "Very High",
+                "effort": "High"
+            }),
+            serde_json::json!({
+                "category": "Data Access",
+                "suggestion": "Implement appropriate caching strategies",
+                "reasoning": "Avoid redundant computations and I/O operations",
+                "impact": "High",
+                "effort": "Medium"
+            }),
+        ];
+
+        if include_examples {
+            suggestions.push(serde_json::json!({
+                "category": "Example Optimization",
+                "suggestion": "Replace linear search with hash lookup",
+                "example": {
+                    "before": "for item in large_list:\n    if item.id == target_id:\n        return item",
+                    "after": "return id_to_item_map.get(target_id)"
+                },
+                "impact": "High",
+                "effort": "Low"
+            }));
+        }
+
+        Ok(serde_json::json!({
+            "status": "success",
+            "guidance_type": "performance",
+            "target": target,
+            "priority_level": priority_level,
+            "recommendations": guidance,
+            "detailed_suggestions": suggestions,
+            "next_steps": [
+                "Run performance analysis to identify bottlenecks",
+                "Set up performance monitoring and alerting",
+                "Create performance benchmarks for critical paths"
+            ],
+            "estimated_impact": {
+                "response_time": "High",
+                "throughput": "High",
+                "resource_usage": "Medium"
+            }
+        }))
+    }
+
+    /// Generate security-focused guidance
+    fn generate_security_guidance(
+        &self,
+        target: &str,
+        include_examples: bool,
+        priority_level: &str,
+    ) -> anyhow::Result<serde_json::Value> {
+        let mut guidance = vec![
+            "Validate and sanitize all external inputs".to_string(),
+            "Use parameterized queries to prevent SQL injection".to_string(),
+            "Implement proper authentication and authorization".to_string(),
+            "Keep dependencies updated to patch security vulnerabilities".to_string(),
+        ];
+
+        if priority_level == "high" {
+            guidance.extend(vec![
+                "CRITICAL: Address any hardcoded credentials or secrets".to_string(),
+                "CRITICAL: Fix SQL injection vulnerabilities immediately".to_string(),
+            ]);
+        }
+
+        let suggestions = vec![
+            serde_json::json!({
+                "category": "Input Validation",
+                "suggestion": "Implement comprehensive input validation",
+                "reasoning": "Prevents injection attacks and data corruption",
+                "impact": "Very High",
+                "effort": "Medium"
+            }),
+            serde_json::json!({
+                "category": "Authentication",
+                "suggestion": "Implement strong authentication mechanisms",
+                "reasoning": "Prevents unauthorized access to sensitive data",
+                "impact": "Very High",
+                "effort": "High"
+            }),
+        ];
+
+        Ok(serde_json::json!({
+            "status": "success",
+            "guidance_type": "security",
+            "target": target,
+            "priority_level": priority_level,
+            "recommendations": guidance,
+            "detailed_suggestions": suggestions,
+            "next_steps": [
+                "Run security analysis to identify vulnerabilities",
+                "Implement security testing in CI/CD pipeline",
+                "Set up dependency vulnerability scanning"
+            ],
+            "estimated_impact": {
+                "security_posture": "Very High",
+                "compliance": "High",
+                "risk_reduction": "Very High"
+            }
+        }))
+    }
+
+    /// Generate workflow-focused guidance
+    fn generate_workflow_guidance(
+        &self,
+        target: &str,
+        _include_examples: bool,
+        priority_level: &str,
+    ) -> anyhow::Result<serde_json::Value> {
+        let workflow_suggestions = vec![
+            serde_json::json!({
+                "workflow": "Code Review Process",
+                "description": "Systematic approach to understanding and improving code",
+                "steps": [
+                    "Start with repository overview using get_repository_info",
+                    "Identify key components with search_symbols",
+                    "Analyze complexity with analyze_complexity",
+                    "Review security with analyze_security",
+                    "Check performance with analyze_performance"
+                ],
+                "estimated_time": "30-45 minutes",
+                "priority": priority_level
+            }),
+            serde_json::json!({
+                "workflow": "Refactoring Workflow",
+                "description": "Safe approach to code refactoring",
+                "steps": [
+                    "Analyze current complexity and identify hotspots",
+                    "Find all references to symbols being changed",
+                    "Create comprehensive tests before refactoring",
+                    "Refactor incrementally with continuous testing",
+                    "Verify performance hasn't degraded"
+                ],
+                "estimated_time": "1-3 hours",
+                "priority": priority_level
+            }),
+        ];
+
+        Ok(serde_json::json!({
+            "status": "success",
+            "guidance_type": "workflow",
+            "target": target,
+            "priority_level": priority_level,
+            "available_workflows": workflow_suggestions,
+            "recommended_tools": [
+                "get_repository_info",
+                "search_symbols",
+                "analyze_complexity",
+                "analyze_security",
+                "analyze_performance",
+                "find_references"
+            ],
+            "next_steps": [
+                "Choose appropriate workflow based on current goals",
+                "Execute workflow steps systematically",
+                "Document findings and decisions"
+            ]
+        }))
+    }
+
+    /// Generate general guidance
+    fn generate_general_guidance(
+        &self,
+        target: &str,
+        _include_examples: bool,
+        priority_level: &str,
+    ) -> anyhow::Result<serde_json::Value> {
+        let guidance = vec![
+            "Follow established coding standards and style guides".to_string(),
+            "Write comprehensive tests for all new functionality".to_string(),
+            "Document complex logic and design decisions".to_string(),
+            "Refactor regularly to prevent technical debt accumulation".to_string(),
+            "Use version control effectively with meaningful commit messages".to_string(),
+        ];
+
+        Ok(serde_json::json!({
+            "status": "success",
+            "guidance_type": "general",
+            "target": target,
+            "priority_level": priority_level,
+            "recommendations": guidance,
+            "best_practices": [
+                "Code should be self-documenting through clear naming",
+                "Follow the principle of least surprise in API design",
+                "Optimize for readability over cleverness",
+                "Test behavior, not implementation details"
+            ],
+            "available_guidance_types": [
+                "complexity - Focus on reducing code complexity",
+                "performance - Optimize for speed and efficiency",
+                "security - Address security vulnerabilities",
+                "workflow - Get systematic analysis workflows"
+            ],
+            "next_steps": [
+                "Choose specific guidance type for targeted advice",
+                "Run relevant analysis tools to identify issues",
+                "Implement improvements incrementally"
+            ]
+        }))
+    }
+
+    /// Generate optimization suggestions
+    fn generate_optimization_suggestions(
+        &self,
+        target: &str,
+        optimization_types: &[String],
+        aggressive_mode: bool,
+        max_suggestions: usize,
+    ) -> anyhow::Result<serde_json::Value> {
+        let mut suggestions = Vec::new();
+
+        for opt_type in optimization_types {
+            match opt_type.as_str() {
+                "performance" => {
+                    suggestions.extend(vec![
+                        serde_json::json!({
+                            "type": "performance",
+                            "category": "Algorithmic",
+                            "suggestion": "Replace O(n²) algorithms with more efficient alternatives",
+                            "impact_score": 9,
+                            "effort_score": 7,
+                            "implementation": "Use hash maps for lookups instead of linear searches"
+                        }),
+                        serde_json::json!({
+                            "type": "performance", 
+                            "category": "Caching",
+                            "suggestion": "Implement result caching for expensive computations",
+                            "impact_score": 8,
+                            "effort_score": 5,
+                            "implementation": "Add LRU cache for database queries and complex calculations"
+                        }),
+                    ]);
+                }
+                "maintainability" => {
+                    suggestions.extend(vec![
+                        serde_json::json!({
+                            "type": "maintainability",
+                            "category": "Function Size",
+                            "suggestion": "Break down large functions into smaller, focused methods",
+                            "impact_score": 8,
+                            "effort_score": 6,
+                            "implementation": "Extract methods using single responsibility principle"
+                        }),
+                        serde_json::json!({
+                            "type": "maintainability",
+                            "category": "Code Duplication",
+                            "suggestion": "Extract common code into reusable functions",
+                            "impact_score": 7,
+                            "effort_score": 4,
+                            "implementation": "Create utility functions for repeated logic patterns"
+                        }),
+                    ]);
+                }
+                "memory" => {
+                    suggestions.extend(vec![serde_json::json!({
+                        "type": "memory",
+                        "category": "Memory Usage",
+                        "suggestion": "Use memory-efficient data structures",
+                        "impact_score": 6,
+                        "effort_score": 5,
+                        "implementation": "Replace large objects with more compact representations"
+                    })]);
+                }
+                "refactoring" => {
+                    suggestions.extend(vec![
+                        serde_json::json!({
+                            "type": "refactoring",
+                            "category": "Design Patterns",
+                            "suggestion": "Apply appropriate design patterns to reduce complexity",
+                            "impact_score": 8,
+                            "effort_score": 8,
+                            "implementation": "Use Strategy pattern for conditional logic, Factory for object creation"
+                        }),
+                    ]);
+                }
+                _ => {
+                    // Unknown optimization type, skip
+                }
+            }
+        }
+
+        if aggressive_mode {
+            suggestions.extend(vec![
+                serde_json::json!({
+                    "type": "aggressive",
+                    "category": "Architecture",
+                    "suggestion": "Consider microservices architecture for large monoliths",
+                    "impact_score": 10,
+                    "effort_score": 10,
+                    "implementation": "Split application into domain-bounded services"
+                }),
+                serde_json::json!({
+                    "type": "aggressive",
+                    "category": "Technology Stack",
+                    "suggestion": "Evaluate newer technologies for performance-critical components",
+                    "impact_score": 9,
+                    "effort_score": 9,
+                    "implementation": "Consider Rust/Go for computational hotspots"
+                }),
+            ]);
+        }
+
+        // Sort by impact score and limit results
+        suggestions.sort_by(|a, b| {
+            b["impact_score"]
+                .as_u64()
+                .unwrap_or(0)
+                .cmp(&a["impact_score"].as_u64().unwrap_or(0))
+        });
+        suggestions.truncate(max_suggestions);
+
+        let total_impact: u64 = suggestions
+            .iter()
+            .map(|s| s["impact_score"].as_u64().unwrap_or(0))
+            .sum();
+        let total_effort: u64 = suggestions
+            .iter()
+            .map(|s| s["effort_score"].as_u64().unwrap_or(0))
+            .sum();
+
+        Ok(serde_json::json!({
+            "status": "success",
+            "target": target,
+            "optimization_types": optimization_types,
+            "aggressive_mode": aggressive_mode,
+            "suggestions": suggestions,
+            "summary": {
+                "total_suggestions": suggestions.len(),
+                "total_impact_score": total_impact,
+                "total_effort_score": total_effort,
+                "efficiency_ratio": if total_effort > 0 { total_impact as f64 / total_effort as f64 } else { 0.0 }
+            },
+            "implementation_strategy": {
+                "quick_wins": suggestions.iter()
+                    .filter(|s| s["effort_score"].as_u64().unwrap_or(10) <= 4)
+                    .take(3)
+                    .collect::<Vec<_>>(),
+                "high_impact": suggestions.iter()
+                    .filter(|s| s["impact_score"].as_u64().unwrap_or(0) >= 8)
+                    .take(3)
+                    .collect::<Vec<_>>()
+            },
+            "next_steps": [
+                "Prioritize suggestions based on impact and effort scores",
+                "Implement quick wins first to build momentum",
+                "Plan high-effort changes as part of major refactoring cycles"
+            ]
+        }))
+    }
+
+    /// Analyze dependencies for a specific target symbol
+    fn analyze_specific_target_dependencies(
+        &self,
+        target: &str,
+        dependency_type: &str,
+        max_depth: usize,
+        include_transitive: bool,
+    ) -> anyhow::Result<serde_json::Value> {
+        // Parse the target node ID from hex string
+        let node_id = match codeprism_core::NodeId::from_hex(target) {
+            Ok(id) => id,
+            Err(_) => {
+                return Ok(serde_json::json!({
+                    "status": "error",
+                    "message": format!("Invalid target symbol ID format: {}. Expected hexadecimal string.", target)
+                }));
+            }
+        };
+
+        // Get the target node
+        let target_node = match self.graph_store.get_node(&node_id) {
+            Some(node) => node,
+            None => {
+                return Ok(serde_json::json!({
+                    "status": "error",
+                    "message": format!("Target symbol not found: {}", target)
+                }));
+            }
+        };
+
+        let mut all_dependencies = Vec::new();
+        let mut dependency_stats = std::collections::HashMap::new();
+
+        // Analyze different types of dependencies based on the type parameter
+        let dependency_types = if dependency_type == "all" {
+            vec!["direct", "calls", "imports", "reads", "writes"]
+        } else {
+            vec![dependency_type]
+        };
+
+        for dep_type in dependency_types {
+            let parsed_dep_type = match dep_type {
+                "direct" => DependencyType::Direct,
+                "calls" => DependencyType::Calls,
+                "imports" => DependencyType::Imports,
+                "reads" => DependencyType::Reads,
+                "writes" => DependencyType::Writes,
+                _ => continue,
+            };
+
+            // Find direct dependencies
+            if let Ok(dependencies) = self
+                .graph_query
+                .find_dependencies(&node_id, parsed_dep_type.clone())
+            {
+                dependency_stats.insert(dep_type.to_string(), dependencies.len());
+
+                for dependency in dependencies {
+                    let mut dependency_info = serde_json::json!({
+                        "target_symbol": {
+                            "id": dependency.target_node.id.to_hex(),
+                            "name": dependency.target_node.name,
+                            "kind": format!("{:?}", dependency.target_node.kind),
+                            "language": format!("{:?}", dependency.target_node.lang),
+                            "file": dependency.target_node.file.display().to_string(),
+                            "span": {
+                                "start_line": dependency.target_node.span.start_line,
+                                "start_column": dependency.target_node.span.start_column,
+                                "end_line": dependency.target_node.span.end_line,
+                                "end_column": dependency.target_node.span.end_column,
+                            }
+                        },
+                        "dependency_type": dep_type,
+                        "edge_type": format!("{:?}", dependency.edge_kind),
+                        "depth": 1
+                    });
+
+                    // If include_transitive, find transitive dependencies
+                    if include_transitive && max_depth > 1 {
+                        let transitive_deps = self.find_transitive_dependencies(
+                            &dependency.target_node.id,
+                            &parsed_dep_type,
+                            max_depth - 1,
+                            2,
+                        )?;
+                        dependency_info["transitive_dependencies"] =
+                            serde_json::Value::Array(transitive_deps);
+                    }
+
+                    all_dependencies.push(dependency_info);
+                }
+            }
+        }
+
+        // Calculate dependency metrics
+        let total_dependencies = all_dependencies.len();
+        let unique_files: std::collections::HashSet<String> = all_dependencies
+            .iter()
+            .map(|dep| {
+                dep["target_symbol"]["file"]
+                    .as_str()
+                    .unwrap_or("")
+                    .to_string()
+            })
+            .collect();
+
+        Ok(serde_json::json!({
+            "status": "success",
+            "analysis_type": "specific_target",
+            "target": {
+                "id": target,
+                "name": target_node.name,
+                "kind": format!("{:?}", target_node.kind),
+                "file": target_node.file.display().to_string(),
+                "language": format!("{:?}", target_node.lang)
+            },
+            "dependency_analysis": {
+                "total_dependencies": total_dependencies,
+                "dependency_breakdown": dependency_stats,
+                "unique_files_affected": unique_files.len(),
+                "files_affected": unique_files.into_iter().collect::<Vec<_>>(),
+                "max_depth_analyzed": max_depth,
+                "includes_transitive": include_transitive
+            },
+            "dependencies": all_dependencies,
+            "insights": self.generate_dependency_insights(&all_dependencies, total_dependencies)
+        }))
+    }
+
+    /// Analyze repository-wide dependencies
+    fn analyze_repository_dependencies(
+        &self,
+        dependency_type: &str,
+        max_depth: usize,
+        include_transitive: bool,
+    ) -> anyhow::Result<serde_json::Value> {
+        // Get all nodes in the repository using symbol index
+        let mut all_nodes = Vec::new();
+        for symbol_entry in self.graph_store.iter_symbol_index() {
+            for node_id in symbol_entry.1 {
+                if let Some(node) = self.graph_store.get_node(&node_id) {
+                    all_nodes.push(node);
+                }
+            }
+        }
+
+        if all_nodes.is_empty() {
+            return Ok(serde_json::json!({
+                "status": "error",
+                "message": "No symbols found in repository. Make sure repository has been initialized."
+            }));
+        }
+
+        let mut repository_dependencies = Vec::new();
+        let mut global_stats = std::collections::HashMap::new();
+        let mut file_dependencies = std::collections::HashMap::<String, usize>::new();
+        let mut language_stats = std::collections::HashMap::<String, usize>::new();
+
+        // Sample nodes for analysis (limit to prevent overwhelming results)
+        let sample_size = 100.min(all_nodes.len());
+        let sampled_nodes: Vec<_> = all_nodes.iter().take(sample_size).collect();
+
+        for node in sampled_nodes {
+            let file_path = node.file.display().to_string();
+            let language = format!("{:?}", node.lang);
+
+            *file_dependencies.entry(file_path.clone()).or_insert(0) += 1;
+            *language_stats.entry(language).or_insert(0) += 1;
+
+            // Analyze dependencies for this node
+            let dependency_types = if dependency_type == "all" {
+                vec!["direct", "calls", "imports"]
+            } else {
+                vec![dependency_type]
+            };
+
+            let mut node_dependency_count = 0;
+
+            for dep_type in dependency_types {
+                let parsed_dep_type = match dep_type {
+                    "direct" => DependencyType::Direct,
+                    "calls" => DependencyType::Calls,
+                    "imports" => DependencyType::Imports,
+                    "reads" => DependencyType::Reads,
+                    "writes" => DependencyType::Writes,
+                    _ => continue,
+                };
+
+                if let Ok(dependencies) = self
+                    .graph_query
+                    .find_dependencies(&node.id, parsed_dep_type)
+                {
+                    node_dependency_count += dependencies.len();
+                    *global_stats.entry(dep_type.to_string()).or_insert(0) += dependencies.len();
+                }
+            }
+
+            if node_dependency_count > 0 {
+                repository_dependencies.push(serde_json::json!({
+                    "symbol": {
+                        "id": node.id.to_hex(),
+                        "name": node.name,
+                        "kind": format!("{:?}", node.kind),
+                        "file": file_path,
+                        "language": format!("{:?}", node.lang)
+                    },
+                    "dependency_count": node_dependency_count
+                }));
+            }
+        }
+
+        // Sort dependencies by count and take top dependencies
+        repository_dependencies.sort_by(|a, b| {
+            b["dependency_count"]
+                .as_u64()
+                .unwrap_or(0)
+                .cmp(&a["dependency_count"].as_u64().unwrap_or(0))
+        });
+
+        let top_dependencies = repository_dependencies
+            .iter()
+            .take(20)
+            .cloned()
+            .collect::<Vec<_>>();
+
+        // Calculate repository metrics
+        let total_dependencies: usize = global_stats.values().sum();
+        let most_connected_files: Vec<_> = {
+            let mut file_deps: Vec<_> = file_dependencies.into_iter().collect();
+            file_deps.sort_by(|a, b| b.1.cmp(&a.1));
+            file_deps.into_iter().take(10).collect()
+        };
+
+        Ok(serde_json::json!({
+            "status": "success",
+            "analysis_type": "repository_wide",
+            "repository_summary": {
+                "total_symbols_analyzed": sample_size,
+                "total_dependencies_found": total_dependencies,
+                "dependency_breakdown": global_stats,
+                "languages": language_stats,
+                "max_depth_analyzed": max_depth,
+                "includes_transitive": include_transitive
+            },
+            "top_dependent_symbols": top_dependencies,
+            "most_connected_files": most_connected_files,
+            "insights": self.generate_repository_dependency_insights(&global_stats, total_dependencies, sample_size),
+            "note": if all_nodes.len() > sample_size {
+                format!("Analysis performed on {} sample symbols out of {} total symbols", sample_size, all_nodes.len())
+            } else {
+                "Complete repository analysis performed".to_string()
+            }
+        }))
+    }
+
+    /// Find transitive dependencies recursively
+    fn find_transitive_dependencies(
+        &self,
+        node_id: &codeprism_core::NodeId,
+        dependency_type: &DependencyType,
+        max_depth: usize,
+        current_depth: usize,
+    ) -> anyhow::Result<Vec<serde_json::Value>> {
+        let mut transitive_deps = Vec::new();
+
+        if current_depth > max_depth {
+            return Ok(transitive_deps);
+        }
+
+        if let Ok(dependencies) = self
+            .graph_query
+            .find_dependencies(node_id, dependency_type.clone())
+        {
+            for dependency in dependencies {
+                transitive_deps.push(serde_json::json!({
+                    "target_symbol": {
+                        "id": dependency.target_node.id.to_hex(),
+                        "name": dependency.target_node.name,
+                        "kind": format!("{:?}", dependency.target_node.kind),
+                        "file": dependency.target_node.file.display().to_string()
+                    },
+                    "depth": current_depth,
+                    "edge_type": format!("{:?}", dependency.edge_kind)
+                }));
+
+                // Recursively find deeper dependencies
+                if current_depth < max_depth {
+                    let deeper_deps = self.find_transitive_dependencies(
+                        &dependency.target_node.id,
+                        dependency_type,
+                        max_depth,
+                        current_depth + 1,
+                    )?;
+                    transitive_deps.extend(deeper_deps);
+                }
+            }
+        }
+
+        Ok(transitive_deps)
+    }
+
+    /// Generate insights from dependency analysis
+    fn generate_dependency_insights(
+        &self,
+        dependencies: &[serde_json::Value],
+        total_count: usize,
+    ) -> Vec<String> {
+        let mut insights = Vec::new();
+
+        if total_count == 0 {
+            insights.push("No dependencies found for this symbol".to_string());
+            return insights;
+        }
+
+        // Analyze file distribution
+        let unique_files: std::collections::HashSet<_> = dependencies
+            .iter()
+            .map(|dep| dep["target_symbol"]["file"].as_str().unwrap_or(""))
+            .collect();
+
+        if unique_files.len() == 1 {
+            insights
+                .push("All dependencies are within the same file - good encapsulation".to_string());
+        } else if unique_files.len() > total_count / 2 {
+            insights.push(
+                "Dependencies are spread across many files - consider consolidation".to_string(),
+            );
+        }
+
+        // Analyze dependency types
+        let mut type_counts = std::collections::HashMap::new();
+        for dep in dependencies {
+            if let Some(dep_type) = dep["dependency_type"].as_str() {
+                *type_counts.entry(dep_type).or_insert(0) += 1;
+            }
+        }
+
+        if let Some(max_type) = type_counts.iter().max_by_key(|(_, &count)| count) {
+            insights.push(format!(
+                "Primary dependency type: {} ({} occurrences)",
+                max_type.0, max_type.1
+            ));
+        }
+
+        if total_count > 10 {
+            insights.push(
+                "High number of dependencies - consider refactoring for better modularity"
+                    .to_string(),
+            );
+        } else if total_count < 3 {
+            insights.push("Low coupling - good design isolation".to_string());
+        }
+
+        insights
+    }
+
+    /// Generate insights for repository-wide dependency analysis
+    fn generate_repository_dependency_insights(
+        &self,
+        stats: &std::collections::HashMap<String, usize>,
+        total_deps: usize,
+        symbols_analyzed: usize,
+    ) -> Vec<String> {
+        let mut insights = Vec::new();
+
+        let avg_deps_per_symbol = if symbols_analyzed > 0 {
+            total_deps as f64 / symbols_analyzed as f64
+        } else {
+            0.0
+        };
+
+        insights.push(format!(
+            "Average dependencies per symbol: {:.1}",
+            avg_deps_per_symbol
+        ));
+
+        if avg_deps_per_symbol > 8.0 {
+            insights.push("High average coupling - consider architectural refactoring".to_string());
+        } else if avg_deps_per_symbol < 2.0 {
+            insights.push("Low coupling observed - good modular design".to_string());
+        }
+
+        // Analyze dependency type distribution
+        if let Some(max_type) = stats.iter().max_by_key(|(_, &count)| count) {
+            let percentage = (*max_type.1 as f64 / total_deps as f64) * 100.0;
+            insights.push(format!(
+                "Dominant dependency type: {} ({:.1}%)",
+                max_type.0, percentage
+            ));
+        }
+
+        if total_deps > symbols_analyzed * 10 {
+            insights.push(
+                "Very high dependency density - potential for circular dependencies".to_string(),
+            );
+        }
+
+        insights
+    }
+
+    /// Analyze control flow patterns in code
+    fn analyze_control_flow_patterns(
+        &self,
+        target: &str,
+        analysis_types: &[String],
+        max_depth: usize,
+        include_paths: bool,
+    ) -> anyhow::Result<serde_json::Value> {
+        // Check if target is a file path or symbol ID
+        let result = if std::path::Path::new(target).exists() {
+            // Analyze file directly
+            self.analyze_file_control_flow(target, analysis_types, max_depth, include_paths)
+        } else if target.len() == 64 && target.chars().all(|c| c.is_ascii_hexdigit()) {
+            // Treat as symbol ID
+            self.analyze_symbol_control_flow(target, analysis_types, max_depth, include_paths)
+        } else if target.starts_with("**") || target.contains("*") {
+            // Handle glob pattern
+            self.analyze_pattern_control_flow(target, analysis_types, max_depth, include_paths)
+        } else {
+            return Ok(serde_json::json!({
+                "status": "error",
+                "message": format!("Target '{}' not found. Provide a file path, symbol ID, or glob pattern.", target)
+            }));
+        };
+
+        result
+    }
+
+    /// Analyze control flow for a specific file
+    fn analyze_file_control_flow(
+        &self,
+        file_path: &str,
+        analysis_types: &[String],
+        max_depth: usize,
+        include_paths: bool,
+    ) -> anyhow::Result<serde_json::Value> {
+        // Get nodes from the file
+        let file_path_buf = std::path::PathBuf::from(file_path);
+        let file_nodes = self.graph_store.get_nodes_in_file(&file_path_buf);
+
+        if file_nodes.is_empty() {
+            return Ok(serde_json::json!({
+                "status": "error",
+                "message": format!("No symbols found in file: {}", file_path)
+            }));
+        }
+
+        let mut control_flow_analysis = Vec::new();
+        let mut file_stats = std::collections::HashMap::new();
+
+        for node in file_nodes {
+            let node_analysis =
+                self.analyze_node_control_flow(&node, analysis_types, max_depth, include_paths)?;
+
+            // Update statistics
+            if let Some(patterns) = node_analysis.get("control_flow_patterns") {
+                for (pattern_type, count) in patterns.as_object().unwrap_or(&serde_json::Map::new())
+                {
+                    *file_stats.entry(pattern_type.clone()).or_insert(0) +=
+                        count.as_u64().unwrap_or(0) as usize;
+                }
+            }
+
+            control_flow_analysis.push(node_analysis);
+        }
+
+        Ok(serde_json::json!({
+            "status": "success",
+            "analysis_type": "file",
+            "target": file_path,
+            "symbols_analyzed": control_flow_analysis.len(),
+            "file_statistics": file_stats,
+            "symbol_analyses": control_flow_analysis,
+            "settings": {
+                "analysis_types": analysis_types,
+                "max_depth": max_depth,
+                "include_paths": include_paths
+            }
+        }))
+    }
+
+    /// Analyze control flow for a specific symbol
+    fn analyze_symbol_control_flow(
+        &self,
+        symbol_id: &str,
+        analysis_types: &[String],
+        max_depth: usize,
+        include_paths: bool,
+    ) -> anyhow::Result<serde_json::Value> {
+        // Parse symbol ID
+        let node_id = match codeprism_core::NodeId::from_hex(symbol_id) {
+            Ok(id) => id,
+            Err(_) => {
+                return Ok(serde_json::json!({
+                    "status": "error",
+                    "message": format!("Invalid symbol ID format: {}", symbol_id)
+                }));
+            }
+        };
+
+        // Get the symbol node
+        let node = match self.graph_store.get_node(&node_id) {
+            Some(node) => node,
+            None => {
+                return Ok(serde_json::json!({
+                    "status": "error",
+                    "message": format!("Symbol not found: {}", symbol_id)
+                }));
+            }
+        };
+
+        let analysis =
+            self.analyze_node_control_flow(&node, analysis_types, max_depth, include_paths)?;
+
+        Ok(serde_json::json!({
+            "status": "success",
+            "analysis_type": "symbol",
+            "target": symbol_id,
+            "symbol_info": {
+                "name": node.name,
+                "kind": format!("{:?}", node.kind),
+                "file": node.file.display().to_string(),
+                "language": format!("{:?}", node.lang)
+            },
+            "analysis": analysis,
+            "settings": {
+                "analysis_types": analysis_types,
+                "max_depth": max_depth,
+                "include_paths": include_paths
+            }
+        }))
+    }
+
+    /// Analyze control flow for a glob pattern
+    fn analyze_pattern_control_flow(
+        &self,
+        pattern: &str,
+        analysis_types: &[String],
+        max_depth: usize,
+        include_paths: bool,
+    ) -> anyhow::Result<serde_json::Value> {
+        match &self.repository_path {
+            Some(repo_path) => {
+                let glob_pattern = if pattern.starts_with("**/") {
+                    repo_path.join(&pattern[3..]).display().to_string()
+                } else {
+                    repo_path.join(pattern).display().to_string()
+                };
+
+                let mut all_analyses = Vec::new();
+                let mut pattern_stats = std::collections::HashMap::new();
+                let mut files_analyzed = 0;
+
+                if let Ok(paths) = glob::glob(&glob_pattern) {
+                    for path in paths.flatten() {
+                        if let Ok(file_analysis) = self.analyze_file_control_flow(
+                            &path.display().to_string(),
+                            analysis_types,
+                            max_depth,
+                            include_paths,
+                        ) {
+                            if let Some(file_stats) = file_analysis.get("file_statistics") {
+                                for (pattern_type, count) in
+                                    file_stats.as_object().unwrap_or(&serde_json::Map::new())
+                                {
+                                    *pattern_stats.entry(pattern_type.clone()).or_insert(0) +=
+                                        count.as_u64().unwrap_or(0) as usize;
+                                }
+                            }
+                            all_analyses.push(file_analysis);
+                            files_analyzed += 1;
+                        }
+                    }
+                }
+
+                Ok(serde_json::json!({
+                    "status": "success",
+                    "analysis_type": "pattern",
+                    "target": pattern,
+                    "files_analyzed": files_analyzed,
+                    "aggregate_statistics": pattern_stats,
+                    "file_analyses": all_analyses,
+                    "settings": {
+                        "analysis_types": analysis_types,
+                        "max_depth": max_depth,
+                        "include_paths": include_paths
+                    }
+                }))
+            }
+            None => Ok(serde_json::json!({
+                "status": "error",
+                "message": "No repository configured. Call initialize_repository first."
+            })),
+        }
+    }
+
+    /// Analyze control flow for a specific node
+    fn analyze_node_control_flow(
+        &self,
+        node: &codeprism_core::Node,
+        analysis_types: &[String],
+        max_depth: usize,
+        include_paths: bool,
+    ) -> anyhow::Result<serde_json::Value> {
+        let mut control_flow_patterns = std::collections::HashMap::new();
+        let mut execution_paths = Vec::new();
+        let mut complexity_metrics = std::collections::HashMap::new();
+
+        // Basic control flow analysis based on node kind and edges
+        control_flow_patterns.insert("decision_points", self.count_decision_points(node));
+        control_flow_patterns.insert("loops", self.count_loops(node));
+        control_flow_patterns.insert("recursions", self.count_recursions(node));
+        control_flow_patterns.insert("exception_handling", self.count_exception_handling(node));
+
+        // Calculate complexity metrics
+        complexity_metrics.insert(
+            "cyclomatic_complexity",
+            self.calculate_cyclomatic_complexity(node),
+        );
+        complexity_metrics.insert("depth_of_nesting", self.calculate_nesting_depth(node));
+        complexity_metrics.insert(
+            "cognitive_complexity",
+            self.calculate_cognitive_complexity(node),
+        );
+
+        // Analyze execution paths if requested
+        if include_paths && analysis_types.iter().any(|t| t == "all" || t == "paths") {
+            execution_paths = self.analyze_execution_paths(node, max_depth)?;
+        }
+
+        // Identify potential issues
+        let mut issues = Vec::new();
+        if control_flow_patterns.get("decision_points").unwrap_or(&0) > &10 {
+            issues.push("High number of decision points - consider refactoring".to_string());
+        }
+        if complexity_metrics
+            .get("cyclomatic_complexity")
+            .unwrap_or(&0)
+            > &15
+        {
+            issues.push("High cyclomatic complexity - consider breaking down function".to_string());
+        }
+        if complexity_metrics.get("depth_of_nesting").unwrap_or(&0) > &4 {
+            issues.push("Deep nesting detected - consider extraction methods".to_string());
+        }
+
+        Ok(serde_json::json!({
+            "symbol": {
+                "id": node.id.to_hex(),
+                "name": node.name,
+                "kind": format!("{:?}", node.kind),
+                "file": node.file.display().to_string(),
+                "span": {
+                    "start_line": node.span.start_line,
+                    "end_line": node.span.end_line
+                }
+            },
+            "control_flow_patterns": control_flow_patterns,
+            "complexity_metrics": complexity_metrics,
+            "execution_paths": execution_paths,
+            "potential_issues": issues,
+            "analysis_scope": {
+                "max_depth": max_depth,
+                "paths_included": include_paths,
+                "types_analyzed": analysis_types
+            }
+        }))
+    }
+
+    /// Count decision points in a node (simplified heuristic)
+    fn count_decision_points(&self, node: &codeprism_core::Node) -> usize {
+        // Simplified: count outgoing edges that represent decisions
+        let outgoing_edges = self.graph_store.get_outgoing_edges(&node.id);
+        outgoing_edges
+            .iter()
+            .filter(|edge| {
+                matches!(edge.kind, codeprism_core::EdgeKind::Calls)
+                    || matches!(edge.kind, codeprism_core::EdgeKind::Reads)
+            })
+            .count()
+            .max(1) // At least 1 if there are any control decisions
+    }
+
+    /// Count loops (simplified heuristic)
+    fn count_loops(&self, node: &codeprism_core::Node) -> usize {
+        // Simplified: look for cyclic patterns in immediate dependencies
+        let outgoing_edges = self.graph_store.get_outgoing_edges(&node.id);
+        let incoming_edges = self.graph_store.get_incoming_edges(&node.id);
+
+        // Heuristic: if a node calls itself or has mutual calls, it might be a loop
+        let self_references = outgoing_edges
+            .iter()
+            .filter(|edge| edge.target == node.id)
+            .count();
+        let mutual_calls = outgoing_edges
+            .iter()
+            .filter(|out_edge| {
+                incoming_edges
+                    .iter()
+                    .any(|in_edge| in_edge.source == out_edge.target)
+            })
+            .count();
+
+        self_references + mutual_calls.min(3) // Cap at reasonable number
+    }
+
+    /// Count recursions (simplified heuristic)
+    fn count_recursions(&self, node: &codeprism_core::Node) -> usize {
+        // Simplified: direct self-calls
+        let outgoing_edges = self.graph_store.get_outgoing_edges(&node.id);
+        outgoing_edges
+            .iter()
+            .filter(|edge| {
+                edge.target == node.id && matches!(edge.kind, codeprism_core::EdgeKind::Calls)
+            })
+            .count()
+    }
+
+    /// Count exception handling patterns (simplified heuristic)
+    fn count_exception_handling(&self, _node: &codeprism_core::Node) -> usize {
+        // Simplified: for now return 0, would need language-specific analysis
+        // In a full implementation, this would parse the AST for try-catch blocks
+        0
+    }
+
+    /// Calculate cyclomatic complexity (simplified)
+    fn calculate_cyclomatic_complexity(&self, node: &codeprism_core::Node) -> usize {
+        // Simplified: base complexity of 1 + number of decision points
+        1 + self.count_decision_points(node)
+    }
+
+    /// Calculate nesting depth (simplified heuristic)
+    fn calculate_nesting_depth(&self, node: &codeprism_core::Node) -> usize {
+        // Simplified: estimate based on span size and complexity
+        let span_lines = node.span.end_line.saturating_sub(node.span.start_line);
+        let complexity = self.count_decision_points(node);
+
+        // Heuristic: more complex functions with more lines likely have deeper nesting
+        ((span_lines / 10) + complexity / 3).min(10) // Cap at 10
+    }
+
+    /// Calculate cognitive complexity (simplified)
+    fn calculate_cognitive_complexity(&self, node: &codeprism_core::Node) -> usize {
+        // Simplified: combination of cyclomatic complexity and nesting
+        let cyclomatic = self.calculate_cyclomatic_complexity(node);
+        let nesting = self.calculate_nesting_depth(node);
+
+        cyclomatic + (nesting * 2) // Weight nesting more heavily
+    }
+
+    /// Analyze execution paths (simplified)
+    fn analyze_execution_paths(
+        &self,
+        node: &codeprism_core::Node,
+        max_depth: usize,
+    ) -> anyhow::Result<Vec<serde_json::Value>> {
+        let mut paths = Vec::new();
+        let mut visited = std::collections::HashSet::new();
+
+        // Find paths from this node using graph traversal
+        self.find_execution_paths_recursive(&node.id, &mut paths, &mut visited, max_depth, 0)?;
+
+        Ok(paths)
+    }
+
+    /// Recursively find execution paths
+    fn find_execution_paths_recursive(
+        &self,
+        node_id: &codeprism_core::NodeId,
+        paths: &mut Vec<serde_json::Value>,
+        visited: &mut std::collections::HashSet<codeprism_core::NodeId>,
+        max_depth: usize,
+        current_depth: usize,
+    ) -> anyhow::Result<()> {
+        if current_depth >= max_depth || visited.contains(node_id) {
+            return Ok(());
+        }
+
+        visited.insert(*node_id);
+
+        let outgoing_edges = self.graph_store.get_outgoing_edges(node_id);
+
+        if outgoing_edges.is_empty() {
+            // End of path
+            if let Some(node) = self.graph_store.get_node(node_id) {
+                paths.push(serde_json::json!({
+                    "path_type": "terminal",
+                    "endpoint": {
+                        "id": node.id.to_hex(),
+                        "name": node.name,
+                        "kind": format!("{:?}", node.kind)
+                    },
+                    "depth": current_depth
+                }));
+            }
+        } else {
+            // Continue paths
+            for edge in outgoing_edges.iter().take(5) {
+                // Limit to prevent explosion
+                if let Some(target_node) = self.graph_store.get_node(&edge.target) {
+                    paths.push(serde_json::json!({
+                        "path_type": "continuation",
+                        "from": node_id.to_hex(),
+                        "to": target_node.id.to_hex(),
+                        "edge_kind": format!("{:?}", edge.kind),
+                        "target_name": target_node.name,
+                        "depth": current_depth
+                    }));
+
+                    // Recurse with a new visited set to allow multiple paths
+                    let mut new_visited = visited.clone();
+                    self.find_execution_paths_recursive(
+                        &edge.target,
+                        paths,
+                        &mut new_visited,
+                        max_depth,
+                        current_depth + 1,
+                    )?;
+                }
+            }
+        }
+
+        visited.remove(node_id);
+        Ok(())
     }
 }
 

@@ -11,6 +11,7 @@ use serde::Deserialize;
 use tracing::{debug, info, warn};
 
 // CodePrism core components
+use codeprism_analysis::CodeAnalyzer;
 use codeprism_core::graph::DependencyType;
 use codeprism_core::{
     ContentSearchManager, GraphQuery, GraphStore, InheritanceFilter, LanguageRegistry,
@@ -75,6 +76,29 @@ pub struct FindPatternsParams {
     pub limit: Option<u32>,
 }
 
+// Analysis tool parameter types
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct AnalyzeComplexityParams {
+    pub target: String,
+    pub metrics: Option<Vec<String>>,
+    pub threshold_warnings: Option<bool>,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct AnalyzePerformanceParams {
+    pub target: String,
+    pub analysis_types: Option<Vec<String>>,
+    pub complexity_threshold: Option<String>,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct AnalyzeSecurityParams {
+    pub target: String,
+    pub vulnerability_types: Option<Vec<String>>,
+    pub severity_threshold: Option<String>,
+}
+
 /// The main CodePrism MCP Server implementation
 #[derive(Clone)]
 #[allow(dead_code)] // Fields will be used as more tools are implemented
@@ -95,6 +119,8 @@ pub struct CodePrismMcpServer {
     repository_manager: Arc<RepositoryManager>,
     /// Current repository path
     repository_path: Option<PathBuf>,
+    /// Code analyzer for complexity, performance, and security analysis
+    code_analyzer: Arc<CodeAnalyzer>,
 }
 
 #[tool_router]
@@ -118,6 +144,9 @@ impl CodePrismMcpServer {
         let language_registry = Arc::new(LanguageRegistry::new());
         let repository_manager = Arc::new(RepositoryManager::new(language_registry));
 
+        // Initialize code analyzer
+        let code_analyzer = Arc::new(CodeAnalyzer::new());
+
         Ok(Self {
             config,
             tool_router: Self::tool_router(),
@@ -127,6 +156,7 @@ impl CodePrismMcpServer {
             content_search,
             repository_manager,
             repository_path: None,
+            code_analyzer,
         })
     }
 
@@ -1110,28 +1140,114 @@ impl CodePrismMcpServer {
     #[tool(
         description = "Analyze code complexity including cyclomatic complexity and maintainability"
     )]
-    fn analyze_complexity(&self) -> std::result::Result<CallToolResult, McpError> {
-        info!("Analyze complexity tool called");
+    fn analyze_complexity(
+        &self,
+        Parameters(params): Parameters<AnalyzeComplexityParams>,
+    ) -> std::result::Result<CallToolResult, McpError> {
+        info!(
+            "Analyze complexity tool called for target: {}",
+            params.target
+        );
 
-        let response = serde_json::json!({
-            "status": "not_implemented",
-            "message": "Complexity analysis not yet implemented",
-            "example_metrics": {
-                "cyclomatic_complexity": 8.5,
-                "cognitive_complexity": 12.3,
-                "maintainability_index": 85.2,
-                "lines_of_code": 1250,
-                "complexity_distribution": {
-                    "low": 45,
-                    "medium": 23,
-                    "high": 8,
-                    "very_high": 2
+        let metrics = params.metrics.unwrap_or_else(|| vec!["all".to_string()]);
+        let threshold_warnings = params.threshold_warnings.unwrap_or(true);
+
+        // Check if target is a file path
+        let result = if std::path::Path::new(&params.target).exists() {
+            // Analyze file directly
+            match self.code_analyzer.complexity.analyze_file_complexity(
+                std::path::Path::new(&params.target),
+                &metrics,
+                threshold_warnings,
+            ) {
+                Ok(analysis) => {
+                    serde_json::json!({
+                        "status": "success",
+                        "target_type": "file",
+                        "target": params.target,
+                        "analysis": analysis,
+                        "settings": {
+                            "metrics": metrics,
+                            "threshold_warnings": threshold_warnings
+                        }
+                    })
+                }
+                Err(e) => {
+                    serde_json::json!({
+                        "status": "error",
+                        "message": format!("Failed to analyze file complexity: {}", e),
+                        "target": params.target
+                    })
                 }
             }
-        });
+        } else if params.target.starts_with("**") || params.target.contains("*") {
+            // Handle glob pattern
+            match &self.repository_path {
+                Some(repo_path) => {
+                    let pattern = if params.target.starts_with("**/") {
+                        // Convert **/*.ext to repo_path/**/*.ext
+                        repo_path.join(&params.target[3..]).display().to_string()
+                    } else {
+                        repo_path.join(&params.target).display().to_string()
+                    };
+
+                    // Find matching files using glob
+                    let mut all_results = Vec::new();
+                    if let Ok(paths) = glob::glob(&pattern) {
+                        for path in paths.flatten() {
+                            if let Ok(analysis) = self
+                                .code_analyzer
+                                .complexity
+                                .analyze_file_complexity(&path, &metrics, threshold_warnings)
+                            {
+                                all_results.push(analysis);
+                            }
+                        }
+                    }
+
+                    if all_results.is_empty() {
+                        serde_json::json!({
+                            "status": "success",
+                            "target_type": "pattern",
+                            "target": params.target,
+                            "message": "No files found matching pattern",
+                            "files_analyzed": 0
+                        })
+                    } else {
+                        serde_json::json!({
+                            "status": "success",
+                            "target_type": "pattern",
+                            "target": params.target,
+                            "files_analyzed": all_results.len(),
+                            "results": all_results,
+                            "settings": {
+                                "metrics": metrics,
+                                "threshold_warnings": threshold_warnings
+                            }
+                        })
+                    }
+                }
+                None => {
+                    serde_json::json!({
+                        "status": "error",
+                        "message": "No repository configured. Call initialize_repository first.",
+                        "target": params.target
+                    })
+                }
+            }
+        } else {
+            // Check if target might be a symbol ID, but for now return an error
+            serde_json::json!({
+                "status": "error",
+                "message": format!("Target '{}' not found. Provide a valid file path or glob pattern.", params.target),
+                "target": params.target,
+                "hint": "Use a file path like 'src/main.rs' or a pattern like '**/*.rs'"
+            })
+        };
 
         Ok(CallToolResult::success(vec![Content::text(
-            response.to_string(),
+            serde_json::to_string_pretty(&result)
+                .unwrap_or_else(|_| "Error formatting response".to_string()),
         )]))
     }
 
@@ -1187,31 +1303,172 @@ impl CodePrismMcpServer {
 
     /// Analyze performance characteristics
     #[tool(description = "Analyze performance bottlenecks and optimization opportunities")]
-    fn analyze_performance(&self) -> std::result::Result<CallToolResult, McpError> {
-        info!("Analyze performance tool called");
+    fn analyze_performance(
+        &self,
+        Parameters(params): Parameters<AnalyzePerformanceParams>,
+    ) -> std::result::Result<CallToolResult, McpError> {
+        info!(
+            "Analyze performance tool called for target: {}",
+            params.target
+        );
 
-        let response = serde_json::json!({
-            "status": "not_implemented",
-            "message": "Performance analysis not yet implemented",
-            "example_metrics": {
-                "hotspots": [
-                    {"function": "heavy_computation", "cpu_time": "45%"},
-                    {"function": "database_query", "cpu_time": "23%"}
-                ],
-                "memory_usage": {
-                    "peak_usage": "256MB",
-                    "allocation_rate": "high",
-                    "garbage_collection": "moderate"
-                },
-                "optimization_suggestions": [
-                    "Consider caching database results",
-                    "Optimize algorithm in heavy_computation"
-                ]
+        let analysis_types = params
+            .analysis_types
+            .unwrap_or_else(|| vec!["all".to_string()]);
+        let complexity_threshold = params
+            .complexity_threshold
+            .unwrap_or_else(|| "medium".to_string());
+
+        // Check if target is a file path
+        let result = if std::path::Path::new(&params.target).exists() {
+            // Analyze file directly
+            let file_content = match std::fs::read_to_string(&params.target) {
+                Ok(content) => content,
+                Err(e) => {
+                    return Ok(CallToolResult::error(vec![Content::text(format!(
+                        "Failed to read file '{}': {}",
+                        params.target, e
+                    ))]));
+                }
+            };
+
+            match self.code_analyzer.performance.analyze_content(
+                &file_content,
+                &analysis_types,
+                &complexity_threshold,
+            ) {
+                Ok(issues) => {
+                    let recommendations = self
+                        .code_analyzer
+                        .performance
+                        .get_performance_recommendations(&issues);
+
+                    serde_json::json!({
+                        "status": "success",
+                        "target_type": "file",
+                        "target": params.target,
+                        "performance_analysis": {
+                            "issues_found": issues.len(),
+                            "issues": issues.iter().map(|issue| {
+                                serde_json::json!({
+                                    "type": issue.issue_type,
+                                    "severity": issue.severity,
+                                    "description": issue.description,
+                                    "location": issue.location,
+                                    "recommendation": issue.recommendation,
+                                    "complexity_estimate": issue.complexity_estimate,
+                                    "impact_score": issue.impact_score,
+                                    "optimization_effort": issue.optimization_effort
+                                })
+                            }).collect::<Vec<_>>(),
+                            "recommendations": recommendations,
+                            "overall_grade": self.calculate_performance_grade(&issues)
+                        },
+                        "settings": {
+                            "analysis_types": analysis_types,
+                            "complexity_threshold": complexity_threshold
+                        }
+                    })
+                }
+                Err(e) => {
+                    serde_json::json!({
+                        "status": "error",
+                        "message": format!("Failed to analyze performance: {}", e),
+                        "target": params.target
+                    })
+                }
             }
-        });
+        } else if params.target.starts_with("**") || params.target.contains("*") {
+            // Handle glob pattern
+            match &self.repository_path {
+                Some(repo_path) => {
+                    let pattern = if params.target.starts_with("**/") {
+                        repo_path.join(&params.target[3..]).display().to_string()
+                    } else {
+                        repo_path.join(&params.target).display().to_string()
+                    };
+
+                    let mut all_issues = Vec::new();
+                    let mut files_analyzed = 0;
+
+                    if let Ok(paths) = glob::glob(&pattern) {
+                        for path in paths.flatten() {
+                            if let Ok(content) = std::fs::read_to_string(&path) {
+                                if let Ok(mut issues) =
+                                    self.code_analyzer.performance.analyze_content(
+                                        &content,
+                                        &analysis_types,
+                                        &complexity_threshold,
+                                    )
+                                {
+                                    // Add file path to issues
+                                    for issue in &mut issues {
+                                        issue.location = Some(format!(
+                                            "{}: {}",
+                                            path.display(),
+                                            issue.location.as_deref().unwrap_or("Unknown location")
+                                        ));
+                                    }
+                                    all_issues.extend(issues);
+                                    files_analyzed += 1;
+                                }
+                            }
+                        }
+                    }
+
+                    let recommendations = self
+                        .code_analyzer
+                        .performance
+                        .get_performance_recommendations(&all_issues);
+
+                    serde_json::json!({
+                        "status": "success",
+                        "target_type": "pattern",
+                        "target": params.target,
+                        "files_analyzed": files_analyzed,
+                        "performance_analysis": {
+                            "total_issues": all_issues.len(),
+                            "issues": all_issues.iter().map(|issue| {
+                                serde_json::json!({
+                                    "type": issue.issue_type,
+                                    "severity": issue.severity,
+                                    "description": issue.description,
+                                    "location": issue.location,
+                                    "recommendation": issue.recommendation,
+                                    "complexity_estimate": issue.complexity_estimate,
+                                    "impact_score": issue.impact_score,
+                                    "optimization_effort": issue.optimization_effort
+                                })
+                            }).collect::<Vec<_>>(),
+                            "recommendations": recommendations,
+                            "overall_grade": self.calculate_performance_grade(&all_issues)
+                        },
+                        "settings": {
+                            "analysis_types": analysis_types,
+                            "complexity_threshold": complexity_threshold
+                        }
+                    })
+                }
+                None => {
+                    serde_json::json!({
+                        "status": "error",
+                        "message": "No repository configured. Call initialize_repository first.",
+                        "target": params.target
+                    })
+                }
+            }
+        } else {
+            serde_json::json!({
+                "status": "error",
+                "message": format!("Target '{}' not found. Provide a valid file path or glob pattern.", params.target),
+                "target": params.target,
+                "hint": "Use a file path like 'src/main.rs' or a pattern like '**/*.rs'"
+            })
+        };
 
         Ok(CallToolResult::success(vec![Content::text(
-            response.to_string(),
+            serde_json::to_string_pretty(&result)
+                .unwrap_or_else(|_| "Error formatting response".to_string()),
         )]))
     }
 
@@ -1241,6 +1498,181 @@ impl CodePrismMcpServer {
 
         Ok(CallToolResult::success(vec![Content::text(
             response.to_string(),
+        )]))
+    }
+
+    /// Analyze security vulnerabilities
+    #[tool(description = "Analyze security vulnerabilities and potential threats")]
+    fn analyze_security(
+        &self,
+        Parameters(params): Parameters<AnalyzeSecurityParams>,
+    ) -> std::result::Result<CallToolResult, McpError> {
+        info!("Analyze security tool called for target: {}", params.target);
+
+        let vulnerability_types = params
+            .vulnerability_types
+            .unwrap_or_else(|| vec!["all".to_string()]);
+        let severity_threshold = params
+            .severity_threshold
+            .unwrap_or_else(|| "low".to_string());
+
+        // Check if target is a file path
+        let result = if std::path::Path::new(&params.target).exists() {
+            // Analyze file directly
+            let file_content = match std::fs::read_to_string(&params.target) {
+                Ok(content) => content,
+                Err(e) => {
+                    return Ok(CallToolResult::error(vec![Content::text(format!(
+                        "Failed to read file '{}': {}",
+                        params.target, e
+                    ))]));
+                }
+            };
+
+            match self.code_analyzer.security.analyze_content_with_location(
+                &file_content,
+                Some(&params.target),
+                &vulnerability_types,
+                &severity_threshold,
+            ) {
+                Ok(vulnerabilities) => {
+                    let recommendations = self
+                        .code_analyzer
+                        .security
+                        .get_security_recommendations(&vulnerabilities);
+
+                    let security_report = self
+                        .code_analyzer
+                        .security
+                        .generate_security_report(&vulnerabilities);
+
+                    serde_json::json!({
+                        "status": "success",
+                        "target_type": "file",
+                        "target": params.target,
+                        "security_analysis": {
+                            "vulnerabilities_found": vulnerabilities.len(),
+                            "vulnerabilities": vulnerabilities.iter().map(|vuln| {
+                                serde_json::json!({
+                                    "type": vuln.vulnerability_type,
+                                    "severity": vuln.severity,
+                                    "description": vuln.description,
+                                    "location": vuln.location,
+                                    "recommendation": vuln.recommendation,
+                                    "cvss_score": vuln.cvss_score,
+                                    "owasp_category": vuln.owasp_category,
+                                    "confidence": vuln.confidence,
+                                    "line_number": vuln.line_number
+                                })
+                            }).collect::<Vec<_>>(),
+                            "recommendations": recommendations,
+                            "security_report": security_report
+                        },
+                        "settings": {
+                            "vulnerability_types": vulnerability_types,
+                            "severity_threshold": severity_threshold
+                        }
+                    })
+                }
+                Err(e) => {
+                    serde_json::json!({
+                        "status": "error",
+                        "message": format!("Failed to analyze security: {}", e),
+                        "target": params.target
+                    })
+                }
+            }
+        } else if params.target.starts_with("**") || params.target.contains("*") {
+            // Handle glob pattern
+            match &self.repository_path {
+                Some(repo_path) => {
+                    let pattern = if params.target.starts_with("**/") {
+                        repo_path.join(&params.target[3..]).display().to_string()
+                    } else {
+                        repo_path.join(&params.target).display().to_string()
+                    };
+
+                    let mut all_vulnerabilities = Vec::new();
+                    let mut files_analyzed = 0;
+
+                    if let Ok(paths) = glob::glob(&pattern) {
+                        for path in paths.flatten() {
+                            if let Ok(content) = std::fs::read_to_string(&path) {
+                                if let Ok(vulnerabilities) =
+                                    self.code_analyzer.security.analyze_content_with_location(
+                                        &content,
+                                        Some(&path.display().to_string()),
+                                        &vulnerability_types,
+                                        &severity_threshold,
+                                    )
+                                {
+                                    all_vulnerabilities.extend(vulnerabilities);
+                                    files_analyzed += 1;
+                                }
+                            }
+                        }
+                    }
+
+                    let recommendations = self
+                        .code_analyzer
+                        .security
+                        .get_security_recommendations(&all_vulnerabilities);
+
+                    let security_report = self
+                        .code_analyzer
+                        .security
+                        .generate_security_report(&all_vulnerabilities);
+
+                    serde_json::json!({
+                        "status": "success",
+                        "target_type": "pattern",
+                        "target": params.target,
+                        "files_analyzed": files_analyzed,
+                        "security_analysis": {
+                            "total_vulnerabilities": all_vulnerabilities.len(),
+                            "vulnerabilities": all_vulnerabilities.iter().map(|vuln| {
+                                serde_json::json!({
+                                    "type": vuln.vulnerability_type,
+                                    "severity": vuln.severity,
+                                    "description": vuln.description,
+                                    "location": vuln.location,
+                                    "recommendation": vuln.recommendation,
+                                    "cvss_score": vuln.cvss_score,
+                                    "owasp_category": vuln.owasp_category,
+                                    "confidence": vuln.confidence,
+                                    "file_path": vuln.file_path,
+                                    "line_number": vuln.line_number
+                                })
+                            }).collect::<Vec<_>>(),
+                            "recommendations": recommendations,
+                            "security_report": security_report
+                        },
+                        "settings": {
+                            "vulnerability_types": vulnerability_types,
+                            "severity_threshold": severity_threshold
+                        }
+                    })
+                }
+                None => {
+                    serde_json::json!({
+                        "status": "error",
+                        "message": "No repository configured. Call initialize_repository first.",
+                        "target": params.target
+                    })
+                }
+            }
+        } else {
+            serde_json::json!({
+                "status": "error",
+                "message": format!("Target '{}' not found. Provide a valid file path or glob pattern.", params.target),
+                "target": params.target,
+                "hint": "Use a file path like 'src/main.rs' or a pattern like '**/*.rs'"
+            })
+        };
+
+        Ok(CallToolResult::success(vec![Content::text(
+            serde_json::to_string_pretty(&result)
+                .unwrap_or_else(|_| "Error formatting response".to_string()),
         )]))
     }
 
@@ -1400,6 +1832,30 @@ impl CodePrismMcpServer {
         info!("Repository path configured: {}", repo_id);
 
         Ok(())
+    }
+
+    /// Calculate performance grade based on issues found
+    fn calculate_performance_grade(
+        &self,
+        issues: &[codeprism_analysis::performance::PerformanceIssue],
+    ) -> String {
+        if issues.is_empty() {
+            return "A".to_string();
+        }
+
+        let critical_count = issues.iter().filter(|i| i.severity == "critical").count();
+        let high_count = issues.iter().filter(|i| i.severity == "high").count();
+        let medium_count = issues.iter().filter(|i| i.severity == "medium").count();
+
+        match (critical_count, high_count, medium_count) {
+            (0, 0, 0..=2) => "A",
+            (0, 0, 3..=5) => "B",
+            (0, 0, _) => "C", // 6 or more medium issues
+            (0, 1..=2, _) => "C",
+            (0, _, _) => "D", // 3 or more high issues
+            (_, _, _) => "F", // any critical issues
+        }
+        .to_string()
     }
 
     /// Run the MCP server with stdio transport

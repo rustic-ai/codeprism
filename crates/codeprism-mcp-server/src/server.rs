@@ -11,9 +11,11 @@ use serde::Deserialize;
 use tracing::{debug, info, warn};
 
 // CodePrism core components
+use codeprism_core::graph::DependencyType;
 use codeprism_core::{
     ContentSearchManager, GraphQuery, GraphStore, InheritanceFilter, LanguageRegistry,
     NoOpProgressReporter, NodeKind, RepositoryConfig, RepositoryManager, RepositoryScanner,
+    SearchQueryBuilder,
 };
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -344,31 +346,85 @@ impl CodePrismMcpServer {
     ) -> std::result::Result<CallToolResult, McpError> {
         info!("Find dependencies tool called for: {}", params.target);
 
-        let dep_type = params
+        let dep_type_str = params
             .dependency_type
             .unwrap_or_else(|| "direct".to_string());
 
-        // Validate dependency type
-        match dep_type.as_str() {
-            "direct" | "calls" | "imports" | "reads" | "writes" => {
-                // Valid dependency types
-            }
+        // Parse dependency type
+        let dependency_type = match dep_type_str.as_str() {
+            "direct" => DependencyType::Direct,
+            "calls" => DependencyType::Calls,
+            "imports" => DependencyType::Imports,
+            "reads" => DependencyType::Reads,
+            "writes" => DependencyType::Writes,
             _ => {
-                let error_msg = format!("Invalid dependency type: {}. Must be one of: direct, calls, imports, reads, writes", dep_type);
+                let error_msg = format!("Invalid dependency type: {}. Must be one of: direct, calls, imports, reads, writes", dep_type_str);
                 return Ok(CallToolResult::error(vec![Content::text(error_msg)]));
             }
-        }
+        };
 
-        // PLANNED(#168): Implement with CodePrism core functionality
-        let result = serde_json::json!({
-            "status": "not_implemented",
-            "message": "Dependency analysis not yet implemented in rust-sdk server",
-            "request": {
-                "target": params.target,
-                "dependency_type": dep_type
-            },
-            "note": "Will implement full dependency analysis once core integration is complete"
-        });
+        // Parse the target node ID from hex string
+        let node_id = match codeprism_core::NodeId::from_hex(&params.target) {
+            Ok(id) => id,
+            Err(_) => {
+                let error_msg = format!(
+                    "Invalid target symbol ID format: {}. Expected hexadecimal string.",
+                    params.target
+                );
+                return Ok(CallToolResult::error(vec![Content::text(error_msg)]));
+            }
+        };
+
+        // Find dependencies using graph query
+        let dependencies_result = self
+            .graph_query
+            .find_dependencies(&node_id, dependency_type.clone());
+
+        let result = match dependencies_result {
+            Ok(dependencies) => {
+                serde_json::json!({
+                    "status": "success",
+                    "target_symbol_id": params.target,
+                    "dependency_type": dep_type_str,
+                    "dependencies": dependencies.iter().map(|dependency| {
+                        serde_json::json!({
+                            "target_symbol": {
+                                "id": dependency.target_node.id.to_hex(),
+                                "name": dependency.target_node.name,
+                                "kind": format!("{:?}", dependency.target_node.kind),
+                                "language": format!("{:?}", dependency.target_node.lang),
+                                "file": dependency.target_node.file.display().to_string(),
+                                "span": {
+                                    "start_byte": dependency.target_node.span.start_byte,
+                                    "end_byte": dependency.target_node.span.end_byte,
+                                    "start_line": dependency.target_node.span.start_line,
+                                    "start_column": dependency.target_node.span.start_column,
+                                    "end_line": dependency.target_node.span.end_line,
+                                    "end_column": dependency.target_node.span.end_column,
+                                }
+                            },
+                            "edge_type": format!("{:?}", dependency.edge_kind),
+                            "dependency_classification": format!("{:?}", dependency.dependency_type),
+                        })
+                    }).collect::<Vec<_>>(),
+                    "total_dependencies": dependencies.len(),
+                    "query": {
+                        "target": params.target,
+                        "dependency_type": dep_type_str
+                    }
+                })
+            }
+            Err(e) => {
+                serde_json::json!({
+                    "status": "error",
+                    "message": format!("Dependency finding failed: {}", e),
+                    "query": {
+                        "target": params.target,
+                        "dependency_type": dep_type_str
+                    }
+                })
+            }
+        };
 
         Ok(CallToolResult::success(vec![Content::text(
             serde_json::to_string_pretty(&result)
@@ -479,21 +535,145 @@ impl CodePrismMcpServer {
         let include_uses = params.include_usages.unwrap_or(false);
         let context = params.context_lines.unwrap_or(4);
 
-        // PLANNED(#168): Implement with CodePrism core functionality
-        let result = serde_json::json!({
-            "status": "not_implemented",
-            "message": "Symbol explanation not yet implemented in rust-sdk server",
-            "request": {
-                "symbol_id": params.symbol_id,
-                "include_dependencies": include_deps,
-                "include_usages": include_uses,
-                "context_lines": context
-            },
-            "note": "Will implement full symbol explanation once core integration is complete"
+        // Parse the symbol ID from hex string
+        let node_id = match codeprism_core::NodeId::from_hex(&params.symbol_id) {
+            Ok(id) => id,
+            Err(_) => {
+                let error_msg = format!(
+                    "Invalid symbol ID format: {}. Expected hexadecimal string.",
+                    params.symbol_id
+                );
+                return Ok(CallToolResult::error(vec![Content::text(error_msg)]));
+            }
+        };
+
+        // Get the symbol node
+        let symbol_node = match self.graph_store.get_node(&node_id) {
+            Some(node) => node,
+            None => {
+                let error_msg = format!("Symbol with ID {} not found in graph", params.symbol_id);
+                return Ok(CallToolResult::error(vec![Content::text(error_msg)]));
+            }
+        };
+
+        // Get basic symbol information
+        let mut explanation = serde_json::json!({
+            "status": "success",
+            "symbol": {
+                "id": symbol_node.id.to_hex(),
+                "name": symbol_node.name,
+                "kind": format!("{:?}", symbol_node.kind),
+                "language": format!("{:?}", symbol_node.lang),
+                "file": symbol_node.file.display().to_string(),
+                "span": {
+                    "start_byte": symbol_node.span.start_byte,
+                    "end_byte": symbol_node.span.end_byte,
+                    "start_line": symbol_node.span.start_line,
+                    "start_column": symbol_node.span.start_column,
+                    "end_line": symbol_node.span.end_line,
+                    "end_column": symbol_node.span.end_column,
+                }
+            }
+        });
+
+        // Get inheritance information for classes
+        if symbol_node.kind == NodeKind::Class {
+            match self.graph_query.get_inheritance_info(&node_id) {
+                Ok(inheritance_info) => {
+                    explanation["inheritance"] = serde_json::json!({
+                        "base_classes": inheritance_info.base_classes.iter().map(|base| {
+                            serde_json::json!({
+                                "name": base.class_name,
+                                "relationship": base.relationship_type,
+                                "file": base.file.display().to_string()
+                            })
+                        }).collect::<Vec<_>>(),
+                        "subclasses": inheritance_info.subclasses.iter().map(|sub| {
+                            serde_json::json!({
+                                "name": sub.class_name,
+                                "relationship": sub.relationship_type,
+                                "file": sub.file.display().to_string()
+                            })
+                        }).collect::<Vec<_>>(),
+                        "method_resolution_order": inheritance_info.method_resolution_order,
+                        "is_metaclass": inheritance_info.is_metaclass
+                    });
+                }
+                Err(_) => {
+                    explanation["inheritance"] = serde_json::json!({
+                        "note": "Inheritance information not available"
+                    });
+                }
+            }
+        }
+
+        // Include dependencies if requested
+        if include_deps {
+            match self
+                .graph_query
+                .find_dependencies(&node_id, DependencyType::Direct)
+            {
+                Ok(dependencies) => {
+                    explanation["dependencies"] = serde_json::json!({
+                        "count": dependencies.len(),
+                        "items": dependencies.iter().take(10).map(|dep| {
+                            serde_json::json!({
+                                "name": dep.target_node.name,
+                                "kind": format!("{:?}", dep.target_node.kind),
+                                "file": dep.target_node.file.display().to_string(),
+                                "relationship": format!("{:?}", dep.edge_kind)
+                            })
+                        }).collect::<Vec<_>>(),
+                        "truncated": dependencies.len() > 10
+                    });
+                }
+                Err(_) => {
+                    explanation["dependencies"] = serde_json::json!({
+                        "note": "Dependencies information not available"
+                    });
+                }
+            }
+        }
+
+        // Include usages/references if requested
+        if include_uses {
+            match self.graph_query.find_references(&node_id) {
+                Ok(references) => {
+                    explanation["usages"] = serde_json::json!({
+                        "count": references.len(),
+                        "items": references.iter().take(10).map(|reference| {
+                            serde_json::json!({
+                                "source_name": reference.source_node.name,
+                                "source_kind": format!("{:?}", reference.source_node.kind),
+                                "file": reference.source_node.file.display().to_string(),
+                                "relationship": format!("{:?}", reference.edge_kind),
+                                "location": {
+                                    "line": reference.location.span.start_line,
+                                    "column": reference.location.span.start_column
+                                }
+                            })
+                        }).collect::<Vec<_>>(),
+                        "truncated": references.len() > 10
+                    });
+                }
+                Err(_) => {
+                    explanation["usages"] = serde_json::json!({
+                        "note": "Usage information not available"
+                    });
+                }
+            }
+        }
+
+        // Add query information
+        explanation["query"] = serde_json::json!({
+            "symbol_id": params.symbol_id,
+            "include_dependencies": include_deps,
+            "include_usages": include_uses,
+            "context_lines": context
         });
 
         Ok(CallToolResult::success(vec![Content::text(
-            serde_json::to_string_pretty(&result)
+            serde_json::to_string_pretty(&explanation)
                 .unwrap_or_else(|_| "Error formatting response".to_string()),
         )]))
     }
@@ -726,21 +906,91 @@ impl CodePrismMcpServer {
 
         let case_sens = params.case_sensitive.unwrap_or(false);
         let use_regex = params.regex.unwrap_or(false);
-        let max_results = params.limit.unwrap_or(100);
+        let max_results = params.limit.unwrap_or(100) as usize;
 
-        // PLANNED(#169): Implement with CodePrism core functionality
-        let result = serde_json::json!({
-            "status": "not_implemented",
-            "message": "Content search not yet implemented in rust-sdk server",
-            "request": {
-                "query": params.query,
-                "file_types": params.file_types,
-                "case_sensitive": case_sens,
-                "regex": use_regex,
-                "limit": max_results
-            },
-            "note": "Will implement full content search once core integration is complete"
-        });
+        // Check if repository is configured
+        let _repo_path = match &self.repository_path {
+            Some(path) => path.clone(),
+            None => {
+                let error_msg = "No repository configured. Call initialize_repository first.";
+                return Ok(CallToolResult::error(vec![Content::text(
+                    error_msg.to_string(),
+                )]));
+            }
+        };
+
+        // Build search query
+        let mut query_builder = SearchQueryBuilder::new(&params.query).max_results(max_results);
+
+        if case_sens {
+            query_builder = query_builder.case_sensitive();
+        }
+
+        if use_regex {
+            query_builder = query_builder.use_regex();
+        }
+
+        // Add file type filters if provided
+        if let Some(ref file_types) = params.file_types {
+            let file_patterns = file_types.iter().map(|ext| format!("*.{}", ext)).collect();
+            query_builder = query_builder.include_files(file_patterns);
+        }
+
+        let search_query = query_builder.build();
+
+        // Perform search using content search manager
+        let search_result = self.content_search.search(&search_query);
+
+        let result = match search_result {
+            Ok(search_results) => {
+                serde_json::json!({
+                    "status": "success",
+                    "query_text": params.query,
+                    "results": search_results.iter().map(|result| {
+                        serde_json::json!({
+                            "file": result.chunk.file_path.display().to_string(),
+                            "content_type": format!("{:?}", result.chunk.content_type),
+                            "relevance_score": result.score,
+                            "matches": result.matches.iter().map(|match_item| {
+                                serde_json::json!({
+                                    "matched_text": match_item.text,
+                                    "line_number": match_item.line_number,
+                                    "column_number": match_item.column_number,
+                                    "position": match_item.position,
+                                    "context_before": match_item.context_before,
+                                    "context_after": match_item.context_after
+                                })
+                            }).collect::<Vec<_>>(),
+                            "chunk_content": if result.chunk.content.len() > 500 {
+                                format!("{}...", &result.chunk.content[..500])
+                            } else {
+                                result.chunk.content.clone()
+                            }
+                        })
+                    }).collect::<Vec<_>>(),
+                    "total_results": search_results.len(),
+                    "search_settings": {
+                        "case_sensitive": case_sens,
+                        "regex": use_regex,
+                        "file_types": params.file_types,
+                        "max_results": max_results
+                    }
+                })
+            }
+            Err(e) => {
+                serde_json::json!({
+                    "status": "error",
+                    "message": format!("Content search failed: {}", e),
+                    "query": {
+                        "query": params.query,
+                        "file_types": params.file_types,
+                        "case_sensitive": case_sens,
+                        "regex": use_regex,
+                        "limit": max_results
+                    }
+                })
+            }
+        };
 
         Ok(CallToolResult::success(vec![Content::text(
             serde_json::to_string_pretty(&result)

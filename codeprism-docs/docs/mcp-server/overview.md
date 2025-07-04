@@ -1,7 +1,7 @@
 ---
 title: MCP Server Overview
 description: Model Context Protocol server implementation with graph-based code intelligence
-sidebar_position: 3
+sidebar_position: 1
 ---
 
 # CodePrism MCP Server Overview
@@ -209,9 +209,9 @@ Add to your Claude Desktop configuration:
 
 - **[API Reference](api-reference)** - Complete tools and capabilities documentation
 - **[Tools Documentation](tools-documentation)** - Detailed tool usage examples
-- **[Installation Guide](../getting-started/installation)** - Set up CodePrism MCP server
+- **[Installation Guide](getting-started/installation)** - Set up CodePrism MCP server
 - **[Architecture Overview](../architecture/overview)** - Technical architecture details
 
 ---
 
-**Ready to use CodePrism?** Follow the [Installation Guide](../getting-started/installation) to get started with MCP integration. 
+**Ready to use CodePrism?** Follow the [Installation Guide](getting-started/installation) to get started with MCP integration. 

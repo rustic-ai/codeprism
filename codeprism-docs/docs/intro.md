@@ -53,7 +53,7 @@ As a Model Context Protocol server, CodePrism provides standardized interfaces f
 
 Ready to explore CodePrism? Here are your next steps:
 
-1. **[Installation Guide](getting-started/installation)** - Set up CodePrism in your environment
+1. **[Installation Guide](mcp-server/getting-started/installation)** - Set up CodePrism in your environment
 2. **[Architecture Overview](architecture/overview)** - Understand the technical design
 3. **[Current Status](architecture/current-status)** - See what's available now
 4. **[API Reference](mcp-server/api-reference)** - Explore the available tools and capabilities
@@ -82,8 +82,8 @@ Ready to explore CodePrism? Here are your next steps:
 ## 📖 Documentation Sections
 
 ### 🏁 Getting Started
-- **[Installation](getting-started/installation)** - Complete setup instructions
-- **[Large Repositories](getting-started/large-repositories)** - Working with big codebases
+- **[Installation](mcp-server/getting-started/installation)** - Complete setup instructions
+- **[Large Repositories](mcp-server/getting-started/large-repositories)** - Working with big codebases
 
 ### 🏗️ Architecture & Status
 - **[Architecture Overview](architecture/overview)** - Technical design and components

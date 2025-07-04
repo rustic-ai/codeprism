@@ -1,6 +1,7 @@
 ---
 title: Mandrel MCP Test Harness
 description: Comprehensive testing framework for Model Context Protocol (MCP) servers
+sidebar_position: 1
 ---
 
 # Mandrel MCP Test Harness
@@ -52,7 +53,7 @@ moth validate my-server.yaml
 
 ### Getting Started
 - **[Quick Start Guide](getting-started/quick-start)** - Get up and running in 5 minutes
-- **[Installation Guide](getting-started/installation)** - Complete installation instructions
+- **[Installation Guide](../mcp-server/getting-started/installation)** - Complete installation instructions
 
 ### Reference Documentation
 - **[CLI Reference](cli-reference)** - Complete command-line documentation
@@ -125,7 +126,7 @@ graph TB
 ## 🎓 Learning Path
 
 ### Beginner (New to MCP Test Harness)
-1. [Installation Guide](getting-started/installation) - Set up your environment
+1. [Installation Guide](../mcp-server/getting-started/installation) - Set up your environment
 2. [Quick Start Tutorial](getting-started/quick-start) - Run your first test
 3. [User Guide](user-guide) - Master the command-line interface
 

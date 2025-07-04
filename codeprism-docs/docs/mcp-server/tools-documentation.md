@@ -1,7 +1,7 @@
 ---
 title: Tools Documentation
 description: Complete documentation for Model Context Protocol (MCP) and CodePrism tool usage
-sidebar_position: 3
+sidebar_position: 4
 ---
 
 # Model Context Protocol (MCP) - Complete Documentation

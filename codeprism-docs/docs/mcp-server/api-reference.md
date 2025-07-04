@@ -1,7 +1,7 @@
 ---
 title: API Reference
 description: Complete API reference for all 23 production-ready CodePrism tools and capabilities
-sidebar_position: 2
+sidebar_position: 3
 ---
 
 # CodePrism API Reference

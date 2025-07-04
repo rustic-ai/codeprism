@@ -163,4 +163,4 @@ CodePrism integrates with AI assistants through standard MCP configuration:
 
 ---
 
-**Next Steps**: See the [Getting Started Guide](../getting-started/installation) to begin using CodePrism, or explore the [Current Status](current-status) for detailed tool capabilities. 
+**Next Steps**: See the [Getting Started Guide](../mcp-server/getting-started/installation) to begin using CodePrism, or explore the [Current Status](current-status) for detailed tool capabilities. 

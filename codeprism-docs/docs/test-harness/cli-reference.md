@@ -496,6 +496,6 @@ moth test my-server.yaml --filter "specific_test" --fail-fast
 ---
 
 **See Also:**
-- [Quick Start Guide](getting-started/quick-start.md) - Get started quickly
+- [Quick Start Guide](getting-started/quick-start) - Get started quickly
 - [Configuration Reference](configuration-reference.md) - Complete YAML specification
 - [Troubleshooting Guide](troubleshooting.md) - Common issues and solutions 

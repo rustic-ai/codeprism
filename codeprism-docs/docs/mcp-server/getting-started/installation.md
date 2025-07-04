@@ -1,7 +1,7 @@
 ---
 title: Installation Guide
 description: Complete setup instructions for CodePrism across different platforms and environments
-sidebar_position: 2
+sidebar_position: 1
 ---
 
 # Installation Guide
@@ -257,7 +257,7 @@ export OPENSSL_DIR=/usr/include/openssl
 
 If you encounter issues:
 
-1. Check the [troubleshooting guide](../test-harness/troubleshooting)
+1. Check the [troubleshooting guide](../../test-harness/troubleshooting)
 2. Review the [GitHub issues](https://github.com/rustic-ai/codeprism/issues)
 3. Join our [community discussions](https://github.com/rustic-ai/codeprism/discussions)
 
@@ -265,11 +265,11 @@ If you encounter issues:
 
 After installation:
 
-1. **[Learn the basics](../intro)** - Get familiar with CodePrism commands
-2. **[Explore the architecture](../architecture/overview)** - Understand how CodePrism works
-3. **[Check current status](../architecture/current-status)** - See what features are available
-4. **[Configure your AI assistant](../mcp-server/overview)** - Set up MCP integration
+1. **[Learn the basics](../../intro)** - Get familiar with CodePrism commands
+2. **[Explore the architecture](../../architecture/overview)** - Understand how CodePrism works
+3. **[Check current status](../../architecture/current-status)** - See what features are available
+4. **[Configure your AI assistant](../overview)** - Set up MCP integration
 
 ---
 
-**Installation complete?** Continue with the [API Reference](../mcp-server/api-reference) to explore CodePrism's capabilities! 
+**Installation complete?** Continue with the [API Reference](../api-reference) to explore CodePrism's capabilities! 

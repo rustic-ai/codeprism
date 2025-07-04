@@ -1,6 +1,6 @@
 {
-  "label": "Test Harness",
-  "position": 6,
+  "label": "Mandrel Test Harness",
+  "position": 3,
   "link": {
     "type": "generated-index",
     "title": "Mandrel MCP Test Harness",

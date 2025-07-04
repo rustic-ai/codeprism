@@ -1,8 +1,14 @@
-# CodeCodePrism MCP Server - Future Roadmap
+---
+title: Future Roadmap
+description: Development roadmap and future enhancement plans for CodePrism
+sidebar_position: 3
+---
+
+# CodePrism MCP Server - Future Roadmap
 
 ## Current Status
 
-**✅ Production Ready**: The CodeCodePrism MCP server is fully functional with 18 production-ready tools covering all core code analysis needs.
+**✅ Production Ready**: The CodePrism MCP server is fully functional with 23 production-ready tools covering all core code analysis needs.
 
 ## Potential Future Enhancements
 
@@ -91,7 +97,7 @@
 
 ## Contributing
 
-The current 18-tool implementation provides comprehensive code analysis capabilities. Future enhancements will be driven by:
+The current 23-tool implementation provides comprehensive code analysis capabilities. Future enhancements will be driven by:
 
 - **User feedback** and specific use case requirements
 - **Community contributions** and feature requests  
@@ -137,9 +143,9 @@ Each new tool category can be developed independently while leveraging the exist
 
 ## Conclusion
 
-The CodeCodePrism MCP server is **production-ready** for immediate use. Future enhancements will focus on expanding analysis capabilities based on real-world usage patterns and community feedback.
+The CodePrism MCP server is **production-ready** for immediate use. Future enhancements will focus on expanding analysis capabilities based on real-world usage patterns and community feedback.
 
-The current 18 tools provide a solid foundation for:
+The current 23 tools provide a solid foundation for:
 - ✅ **Code exploration and navigation**
 - ✅ **Architecture understanding**  
 - ✅ **Dependency analysis**

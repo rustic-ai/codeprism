@@ -1,3 +1,9 @@
+---
+title: API Reference
+description: Complete API reference for all 23 production-ready CodePrism tools and capabilities
+sidebar_position: 2
+---
+
 # CodePrism API Reference
 
 ## Available Tools
@@ -126,8 +132,8 @@ All tools return responses in the standardized MCP format:
 
 ## Additional Resources
 
-- **[Complete API Documentation](API_Reference)**: Detailed API specifications and examples
-- **[Parser Development Tools Guide](./PARSER_DEVELOPMENT_TOOLS.md)**: Comprehensive guide for parser debugging and development
-- **[Current Status](./CURRENT_STATUS.md)**: Latest implementation status and achievements
+- **[Parser Development Tools Guide](../parsers/development-tools)**: Comprehensive guide for parser debugging and development
+- **[Current Status](../architecture/current-status)**: Latest implementation status and achievements
+- **[MCP Server Overview](overview)**: MCP server implementation details
 
 **Total Test Coverage**: 425 tests across all crates with 100% tool success rate.

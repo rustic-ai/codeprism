@@ -1,5 +1,12 @@
+---
+title: Tools Documentation
+description: Complete documentation for Model Context Protocol (MCP) and CodePrism tool usage
+sidebar_position: 3
+---
+
 # Model Context Protocol (MCP) - Complete Documentation
-*Downloaded from https://modelcontextprotocol.io/llms-full.txt*
+
+This comprehensive guide covers the Model Context Protocol specification and CodePrism's implementation of 23 production-ready MCP tools.
 
 ## Example Clients
 

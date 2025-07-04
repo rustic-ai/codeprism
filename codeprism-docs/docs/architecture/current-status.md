@@ -1,3 +1,9 @@
+---
+title: Current Status
+description: Current feature status and capabilities of CodePrism code intelligence system
+sidebar_position: 2
+---
+
 # CodePrism - Current Status
 
 ## Overview

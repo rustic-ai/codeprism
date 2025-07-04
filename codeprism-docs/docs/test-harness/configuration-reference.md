@@ -1348,7 +1348,7 @@ mcp-test-harness validate --schema-only --config my-config.yaml
 
 - [User Guide](user-guide.md) - Complete user manual
 - [Production Deployment](production-deployment.md) - Enterprise deployment guide
-- [Contributing Guide](../Contributing) - Contributing to the project
+- [Contributing Guide](../development/contributing) - Contributing to the project
 - [Troubleshooting Guide](troubleshooting.md) - Common issues and solutions
 
 **Last Updated**: 2025-01-07  

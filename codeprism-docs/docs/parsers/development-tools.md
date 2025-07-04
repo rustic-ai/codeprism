@@ -1,3 +1,9 @@
+---
+title: Development Tools
+description: Comprehensive debugging and development utilities for CodePrism parser development
+sidebar_position: 2
+---
+
 # Parser Development Tools Documentation
 
 The `codeprism-dev-tools` crate provides a comprehensive suite of debugging and development utilities specifically designed for CodePrism parser development. These tools enable efficient AST development, validation, performance optimization, and debugging.

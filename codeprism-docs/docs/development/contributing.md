@@ -1,8 +1,14 @@
-# Contributing to CodeCodePrism 🤖
+---
+title: Contributing Guide
+description: How to contribute to CodePrism, the first 100% AI-generated open source project
+sidebar_position: 1
+---
+
+# Contributing to CodePrism 🤖
 
 > **Welcome to the first 100% AI-generated open source project!**
 
-Thank you for your interest in contributing to CodeCodePrism! This project is unique - it's entirely generated and maintained by AI agents, with no human-written code accepted. But there are many exciting ways to contribute without writing a single line of code!
+Thank you for your interest in contributing to CodePrism! This project is unique - it's entirely generated and maintained by AI agents, with no human-written code accepted. But there are many exciting ways to contribute without writing a single line of code!
 
 ## 🚨 Important: No Code Contributions
 

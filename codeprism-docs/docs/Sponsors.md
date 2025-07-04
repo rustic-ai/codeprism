@@ -1,3 +1,9 @@
+---
+title: Sponsors & Support
+description: Support CodePrism development and become part of the AI-generated open source revolution
+sidebar_position: 10
+---
+
 # 💝 Sponsors
 
 We're grateful for the support of our sponsors who make CodePrism possible.

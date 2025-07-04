@@ -1,4 +1,10 @@
-# Git Branch Strategy for CodeCodePrism 🌿
+---
+title: Branch Strategy
+description: Git branch strategy and development workflow for AI-driven CodePrism development
+sidebar_position: 4
+---
+
+# Git Branch Strategy for CodePrism 🌿
 
 > **A unique branching strategy for the world's first 100% AI-generated open source project**
 

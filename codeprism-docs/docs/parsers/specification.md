@@ -1,3 +1,9 @@
+---
+title: Parser Specification
+description: Universal Abstract Syntax Tree (U-AST) format specification and parser implementation requirements
+sidebar_position: 3
+---
+
 # CodePrism Parser Specification
 
 **Version:** 1.0  

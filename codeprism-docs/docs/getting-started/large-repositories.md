@@ -1,6 +1,12 @@
+---
+title: Large Repositories Guide
+description: Handle large repositories with CodePrism including memory management, filtering options, and performance optimization
+sidebar_position: 2
+---
+
 # Large Repository Handling Guide
 
-This guide explains how to handle large repositories with the CodeCodePrism MCP server, including memory management, filtering options, and performance optimization.
+This guide explains how to handle large repositories with the CodePrism MCP server, including memory management, filtering options, and performance optimization.
 
 ## New Improved Defaults ✨
 

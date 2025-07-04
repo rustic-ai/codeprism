@@ -1,3 +1,9 @@
+---
+title: Developer Guide
+description: Comprehensive development environment setup and guidelines for CodePrism contributors
+sidebar_position: 2
+---
+
 # Developer Guide
 
 This guide covers the development workflow, architecture, and best practices for contributing to CodeCodePrism.

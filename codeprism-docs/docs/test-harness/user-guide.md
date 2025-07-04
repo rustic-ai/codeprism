@@ -1029,9 +1029,9 @@ pipeline {
 
 - [Configuration Reference](configuration-reference.md) - Complete configuration documentation
 - [Production Deployment](production-deployment.md) - Enterprise deployment guide
-- [Contributing Guide](../Contributing) - Contributing to the project
+- [Contributing Guide](../development/contributing) - Contributing to the project
 - [Troubleshooting Guide](troubleshooting) - Common issues and solutions
-- [API Reference](../API_Reference) - Complete API documentation
+- [API Reference](../mcp-server/api-reference) - Complete API documentation
 
 **Last Updated**: 2025-01-07  
 **Version**: 1.0.0 

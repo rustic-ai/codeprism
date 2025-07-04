@@ -1,8 +1,14 @@
+---
+title: Rust Implementation
+description: Rust parser implementation plan for CodePrism self-analysis capabilities
+sidebar_position: 4
+---
+
 # Rust Parser Implementation Plan
 
 ## Overview
 
-The Rust parser implementation enables codeprism to analyze its own source code, providing the ultimate "dogfooding" capability. This parser will handle Rust's unique features like ownership, traits, macros, and complex type system.
+The Rust parser implementation enables CodePrism to analyze its own source code, providing the ultimate "dogfooding" capability. This parser will handle Rust's unique features like ownership, traits, macros, and complex type system.
 
 ## 🎯 Primary Goal: Self-Analysis
 

@@ -136,15 +136,15 @@ const config: Config = {
           items: [
             {
               label: 'Getting Started',
-              to: '/docs/GETTING_STARTED',
+              to: '/docs/getting-started/installation',
             },
             {
               label: 'Architecture',
-              to: '/docs/Architecture',
+              to: '/docs/architecture/overview',
             },
             {
               label: 'API Reference',
-              to: '/docs/API_Reference',
+              to: '/docs/mcp-server/api-reference',
             },
           ],
         },
@@ -161,7 +161,7 @@ const config: Config = {
             },
             {
               label: 'Contributing',
-              to: '/docs/Contributing',
+              to: '/docs/development/contributing',
             },
           ],
         },

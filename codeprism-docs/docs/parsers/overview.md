@@ -1,6 +1,12 @@
+---
+title: Parser Overview
+description: Language parser implementation guide for CodePrism's multi-language support framework
+sidebar_position: 1
+---
+
 # Language Parser Implementation Guide
 
-This guide explains how to implement language parsers for CodeCodePrism, using the JavaScript/TypeScript parser as a reference implementation.
+This guide explains how to implement language parsers for CodePrism, using the JavaScript/TypeScript parser as a reference implementation.
 
 ## Table of Contents
 
@@ -15,7 +21,7 @@ This guide explains how to implement language parsers for CodeCodePrism, using t
 
 ## Overview
 
-Language parsers in CodeCodePrism convert language-specific syntax trees (CST) from Tree-Sitter into the Universal AST representation. Each parser is implemented as a separate crate following a consistent pattern.
+Language parsers in CodePrism convert language-specific syntax trees (CST) from Tree-Sitter into the Universal AST representation. Each parser is implemented as a separate crate following a consistent pattern.
 
 ### Key Responsibilities
 

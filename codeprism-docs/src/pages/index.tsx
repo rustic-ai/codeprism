@@ -24,17 +24,17 @@ function HomepageHeader() {
         <div className={styles.buttons}>
           <Link
             className="button button--primary button--lg"
-            to="/docs/GETTING_STARTED">
+            to="/docs/getting-started/installation">
             Get Started
           </Link>
           <Link
             className="button button--secondary button--lg"
-            to="/docs/Architecture">
+            to="/docs/architecture/overview">
             Learn Architecture
           </Link>
           <Link
             className="button button--outline button--lg"
-            to="/docs/API_Reference">
+            to="/docs/mcp-server/api-reference">
             API Reference
           </Link>
           <Link

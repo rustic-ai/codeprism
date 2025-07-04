@@ -1,4 +1,10 @@
-# Development Best Practices for CodeCodePrism 🎯
+---
+title: Development Practices
+description: Engineering practices and standards for CodePrism development
+sidebar_position: 3
+---
+
+# Development Best Practices for CodePrism 🎯
 
 ## 🤖 AI-Generated Excellence Standards
 

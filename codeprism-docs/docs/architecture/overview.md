@@ -1,3 +1,9 @@
+---
+title: Architecture Overview
+description: High-level architecture and design principles of CodePrism code intelligence server
+sidebar_position: 1
+---
+
 # CodePrism Architecture
 
 This document describes the high-level architecture and design principles of CodePrism, a production-ready code intelligence server implementing the Model Context Protocol (MCP).
@@ -157,4 +163,4 @@ CodePrism integrates with AI assistants through standard MCP configuration:
 
 ---
 
-**Next Steps**: See the [Getting Started Guide](./GETTING_STARTED.md) to begin using CodePrism, or explore the [Current Status](./CURRENT_STATUS.md) for detailed tool capabilities. 
+**Next Steps**: See the [Getting Started Guide](../getting-started/installation) to begin using CodePrism, or explore the [Current Status](current-status) for detailed tool capabilities. 

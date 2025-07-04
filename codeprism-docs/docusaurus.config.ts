@@ -5,7 +5,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
 const config: Config = {
-  title: 'CodePrism - AI-Powered Code Intelligence MCP Server',
+  title: 'CodePrism - AI-Built Code Intelligence MCP Server',
   tagline: 'Production-ready code intelligence for AI assistants. Sponsored by Dragonscale Industries Inc.',
   favicon: 'img/favicon.ico',
 
@@ -82,7 +82,7 @@ const config: Config = {
     metadata: [
       // Open Graph meta tags
       {name: 'og:type', content: 'website'},
-      {name: 'og:title', content: 'CodePrism - AI-Powered Code Intelligence MCP Server'},
+      {name: 'og:title', content: 'CodePrism - AI-Built Code Intelligence MCP Server'},
       {name: 'og:description', content: 'Production-ready code intelligence server implementing the Model Context Protocol (MCP) for AI assistants. Graph-based analysis, multi-language support, real-time insights. Sponsored by Dragonscale Industries Inc.'},
       {name: 'og:image', content: 'https://cdn.prod.website-files.com/65577aeb720145c27d810263/66296bc4e8282c4a362065f5_logo.svg'},
       {name: 'og:image:alt', content: 'Dragonscale Industries Inc - Primary Sponsor of CodePrism'},
@@ -91,7 +91,7 @@ const config: Config = {
       
       // Twitter Card meta tags
       {name: 'twitter:card', content: 'summary_large_image'},
-      {name: 'twitter:title', content: 'CodePrism - AI-Powered Code Intelligence'},
+      {name: 'twitter:title', content: 'CodePrism - AI-Built Code Intelligence'},
       {name: 'twitter:description', content: '🤖 100% AI-Generated code intelligence MCP server with graph-based analysis. Sponsored by Dragonscale Industries Inc. 18 production-ready tools for AI assistants.'},
       {name: 'twitter:image', content: 'https://cdn.prod.website-files.com/65577aeb720145c27d810263/66296bc4e8282c4a362065f5_logo.svg'},
       {name: 'twitter:image:alt', content: 'Dragonscale Industries Inc Logo - CodePrism Sponsor'},

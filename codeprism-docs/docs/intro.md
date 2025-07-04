@@ -1,6 +1,6 @@
 ---
 title: Welcome to CodePrism
-description: AI-powered code intelligence server implementing the Model Context Protocol (MCP)
+description: AI-built code intelligence server implementing the Model Context Protocol (MCP)
 sidebar_position: 1
 ---
 

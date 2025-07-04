@@ -66,8 +66,8 @@ function HomepageStats() {
           </div>
           <div className="col col--3">
             <div className={styles.stat}>
-              <h3>AI-Powered</h3>
-              <p>Intelligent code analysis and semantic search capabilities</p>
+              <h3>AI-Built</h3>
+              <p>100% AI-generated codebase with intelligent analysis capabilities</p>
             </div>
           </div>
           <div className="col col--3">

@@ -3,8 +3,6 @@
   "position": 3,
   "link": {
     "type": "generated-index",
-    "title": "Mandrel MCP Test Harness",
-    "description": "Comprehensive testing framework for Model Context Protocol (MCP) servers with enterprise-grade capabilities.",
-    "slug": "/test-harness"
+    "description": "Comprehensive testing framework for MCP servers"
   }
 } 

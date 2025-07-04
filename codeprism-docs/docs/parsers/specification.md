@@ -924,5 +924,5 @@ All parser implementations must pass the acceptance criteria defined in this spe
 
 - [Language Parser Implementation Guide](overview)
 - [Tree-sitter Documentation](https://tree-sitter.github.io/tree-sitter/)
-- [CodePrism Architecture Documentation](../architecture/overview)
+- [CodePrism Architecture Documentation](../mcp-server/architecture/overview)
 - [Performance Benchmarking Guide](../development/developer-guide) 

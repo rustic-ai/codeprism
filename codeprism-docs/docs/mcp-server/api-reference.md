@@ -133,7 +133,7 @@ All tools return responses in the standardized MCP format:
 ## Additional Resources
 
 - **[Parser Development Tools Guide](../parsers/development-tools)**: Comprehensive guide for parser debugging and development
-- **[Current Status](../architecture/current-status)**: Latest implementation status and achievements
+- **[Current Status](architecture/current-status)**: Latest implementation status and achievements
 - **[MCP Server Overview](overview)**: MCP server implementation details
 
 **Total Test Coverage**: 425 tests across all crates with 100% tool success rate.

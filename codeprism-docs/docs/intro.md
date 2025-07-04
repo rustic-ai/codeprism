@@ -37,9 +37,9 @@ Ready to explore CodePrism? Choose your path:
 3. **[API Reference](mcp-server/api-reference)** - Explore available tools and capabilities
 
 ### 🏗️ **For Understanding the Architecture** 
-1. **[Architecture Overview](architecture/overview)** - Technical design and components
-2. **[Current Status](architecture/current-status)** - Feature status and capabilities
-3. **[Roadmap](architecture/roadmap)** - Future development plans
+1. **[Architecture Overview](mcp-server/architecture/overview)** - Technical design and components
+2. **[Current Status](mcp-server/architecture/current-status)** - Feature status and capabilities
+3. **[Roadmap](mcp-server/architecture/roadmap)** - Future development plans
 
 ### 🔬 **For Parser Development**
 1. **[Parser Overview](parsers/overview)** - Multi-language parser framework
@@ -82,10 +82,10 @@ Ready to explore CodePrism? Choose your path:
 |---------|---------|------------|
 | 🔧 **[CodePrism MCP Server](mcp-server/)** | Use CodePrism with AI assistants | [Installation](mcp-server/getting-started/installation) |
 | 🧪 **[Mandrel Test Harness](test-harness/)** | Test MCP server implementations | [Quick Start](test-harness/getting-started/quick-start) |
-| 🏗️ **[Architecture](architecture/)** | Understand system design | [Overview](architecture/overview) |
 | 🔬 **[Parser Framework](parsers/)** | Extend language support | [Overview](parsers/overview) |
 | 👥 **[Development](development/)** | Contribute to the project | [Contributing](development/contributing) |
+| 💝 **[Sponsors & Support](Sponsors)** | Support the project | [Become a Sponsor](Sponsors#-become-a-sponsor) |
 
 ---
 
-**Ready to dive in?** Start with the [Installation Guide](mcp-server/getting-started/installation) to set up CodePrism, or explore the [Architecture Overview](architecture/overview) to understand how it works.
+**Ready to dive in?** Start with the [Installation Guide](mcp-server/getting-started/installation) to set up CodePrism, or explore the [Architecture Overview](mcp-server/architecture/overview) to understand how it works.

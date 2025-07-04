@@ -1,12 +1,14 @@
 ---
 title: Developer Guide
-description: Comprehensive development environment setup and guidelines for CodePrism contributors
+description: Complete guide for setting up development environment and contributing to CodePrism
 sidebar_position: 2
 ---
 
-# Developer Guide
+# Developer Setup Guide
 
-This guide covers the development workflow, architecture, and best practices for contributing to CodeCodePrism.
+This guide helps you set up a development environment for CodePrism and understand the codebase structure.
+
+> **Getting Started First?** Check the [Architecture Overview](../mcp-server/architecture/overview) to understand the system design.
 
 ## Table of Contents
 
@@ -709,6 +711,6 @@ echo "All checks passed!"
 ## Next Steps
 
 1. Read the API Documentation (coming soon)
-2. Review the [Architecture Guide](../architecture/overview)
+2. Review the [Architecture Guide](../mcp-server/architecture/overview)
 3. Try implementing a simple language parser
 4. Contribute to existing parsers or core functionality 

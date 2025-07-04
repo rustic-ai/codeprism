@@ -8,7 +8,7 @@ sidebar_position: 1
 
 This document provides detailed technical architecture and design principles of CodePrism's graph-based code intelligence system.
 
-> **Looking for a general overview?** See the [Introduction](../intro) or [MCP Server Overview](../mcp-server/overview) for user-focused information.
+> **Looking for a general overview?** See the [Introduction](../../intro) or [MCP Server Overview](../overview) for user-focused information.
 
 ## Core Design Philosophy
 

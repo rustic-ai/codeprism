@@ -266,8 +266,8 @@ If you encounter issues:
 After installation:
 
 1. **[Learn the basics](../../intro)** - Get familiar with CodePrism commands
-2. **[Explore the architecture](../../architecture/overview)** - Understand how CodePrism works
-3. **[Check current status](../../architecture/current-status)** - See what features are available
+2. **[Explore the architecture](../architecture/overview)** - Understand how CodePrism works
+3. **[Check current status](../architecture/current-status)** - See what features are available
 4. **[Configure your AI assistant](../overview)** - Set up MCP integration
 
 ---

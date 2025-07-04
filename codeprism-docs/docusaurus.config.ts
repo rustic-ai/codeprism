@@ -140,7 +140,7 @@ const config: Config = {
             },
             {
               label: 'Architecture',
-              to: '/docs/architecture/overview',
+              to: '/docs/mcp-server/architecture/overview',
             },
             {
               label: 'API Reference',
@@ -185,7 +185,7 @@ const config: Config = {
               href: 'https://github.com/rustic-ai/codeprism/blob/main/LICENSE-MIT',
             },
             {
-              label: '🏆 Sponsors',
+              label: '💝 Sponsors',
               to: '/docs/Sponsors',
             },
           ],

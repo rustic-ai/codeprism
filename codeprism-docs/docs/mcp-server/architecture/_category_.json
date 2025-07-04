@@ -1,0 +1,8 @@
+{
+  "label": "🏗️ Architecture",
+  "position": 5,
+  "link": {
+    "type": "generated-index",
+    "description": "Technical architecture and design documentation for CodePrism MCP Server"
+  }
+} 

@@ -8,7 +8,7 @@ sidebar_position: 1
 
 CodePrism provides a **production-ready MCP server** that enables AI assistants to understand and navigate codebases through the Model Context Protocol. This page covers the MCP-specific implementation, tools, and integration details.
 
-> **New to CodePrism?** See the [Introduction](../intro) for a general overview, or check the [Architecture](../architecture/overview) for technical design details.
+> **New to CodePrism?** See the [Introduction](../intro) for a general overview, or check the [Architecture](architecture/overview) for technical design details.
 
 ## MCP Integration Features
 

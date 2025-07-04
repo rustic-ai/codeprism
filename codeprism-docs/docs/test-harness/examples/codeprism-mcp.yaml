@@ -1,0 +1,91 @@
+# CodePrism MCP Server Test Configuration
+# 
+# This configuration tests the CodePrism MCP server which provides code analysis,
+# parsing, and intelligence capabilities for multiple programming languages.
+#
+# Usage: moth test codeprism-mcp.yaml
+
+name: "CodePrism MCP Server"
+version: "1.0.0"
+description: "Test specification for CodePrism MCP server capabilities"
+
+capabilities:
+  tools: true
+  resources: false
+  prompts: false
+  sampling: false
+  logging: false
+
+server:
+  command: "cargo"
+  args: ["run", "--bin", "codeprism-mcp", "--", "stdio"]
+  env:
+    RUST_LOG: "info"
+    CODEPRISM_CACHE_SIZE: "1000"
+  transport: "stdio"
+  startup_timeout_seconds: 45
+  shutdown_timeout_seconds: 15
+
+tools:
+  - name: "repository_stats"
+    description: "Test repository statistics functionality"
+    tests:
+      - name: "get_repo_stats"
+        description: "Get basic repository statistics"
+        input:
+          path: "."
+        expected:
+          error: false
+          fields:
+            - path: "$.total_files"
+              field_type: "integer"
+              required: true
+            - path: "$.total_lines"
+              field_type: "integer"
+              required: true
+            - path: "$.languages"
+              field_type: "object"
+              required: true
+
+  - name: "analyze_complexity"
+    description: "Test code complexity analysis"
+    tests:
+      - name: "basic_complexity"
+        description: "Analyze code complexity metrics"
+        input:
+          path: "."
+          include_tests: false
+        expected:
+          error: false
+          fields:
+            - path: "$.average_complexity"
+              field_type: "number"
+              required: true
+            - path: "$.complexity_distribution"
+              field_type: "object"
+              required: true
+
+  - name: "search_symbols"
+    description: "Test symbol search functionality"
+    tests:
+      - name: "find_main_function"
+        description: "Search for main function symbols"
+        input:
+          query: "main"
+          symbol_types: ["function", "method"]
+          limit: 10
+        expected:
+          error: false
+          fields:
+            - path: "$.symbols"
+              field_type: "array"
+              required: true
+            - path: "$.total_count"
+              field_type: "integer"
+              required: true
+
+test_config:
+  timeout_seconds: 120
+  max_concurrency: 2
+  fail_fast: false
+

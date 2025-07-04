@@ -3,403 +3,89 @@
 # This configuration tests the CodePrism MCP server which provides code analysis,
 # parsing, and intelligence capabilities for multiple programming languages.
 #
-# Usage: mcp-test-harness test --config codeprism-mcp.yaml
+# Usage: moth test codeprism-mcp.yaml
 
-global:
-  max_global_concurrency: 4
-  global_timeout_seconds: 300
-  fail_fast: false
-  default_project_path: "test-projects/rust-test-project"
-  
-  retry:
-    max_retries: 2
-    retry_delay_ms: 1000
-    exponential_backoff: true
-    retry_on_patterns:
-      - "parse error"
-      - "temporary failure"
+name: "CodePrism MCP Server"
+version: "1.0.0"
+description: "Test specification for CodePrism MCP server capabilities"
+
+capabilities:
+  tools: true
+  resources: false
+  prompts: false
+  sampling: false
+  logging: false
 
 server:
-  transport: "stdio"
-  start_command: "cargo"
+  command: "cargo"
   args: ["run", "--bin", "codeprism-mcp", "--", "stdio"]
-  working_dir: "."
-  
   env:
     RUST_LOG: "info"
     CODEPRISM_CACHE_SIZE: "1000"
-  
+  transport: "stdio"
   startup_timeout_seconds: 45
   shutdown_timeout_seconds: 15
 
-environment:
-  variables:
-    TEST_MODE: "true"
-    ANALYSIS_DEPTH: "full"
-  
-  setup_commands:
-    - "mkdir -p test-data/analysis-output"
-    - "echo 'Test setup completed'"
-  
-  teardown_commands:
-    - "rm -rf test-data/analysis-output"
-
-test_suites:
-  # Core Protocol Compliance
-  - name: "protocol_compliance"
-    description: "Test MCP protocol compliance and initialization"
-    
-    test_cases:
-      - id: "initialize"
-        description: "Test MCP server initialization"
-        tool_name: "initialize"
-        input_params:
-          protocolVersion: "2024-11-05"
-          capabilities:
-            experimental: {}
-        
+tools:
+  - name: "repository_stats"
+    description: "Test repository statistics functionality"
+    tests:
+      - name: "get_repo_stats"
+        description: "Get basic repository statistics"
+        input:
+          path: "."
         expected:
-          patterns:
-            - key: "protocolVersion"
-              validation: { type: "equals", value: "2024-11-05" }
+          error: false
+          fields:
+            - path: "$.total_files"
+              field_type: "integer"
               required: true
-            - key: "capabilities"
-              validation: { type: "object" }
+            - path: "$.total_lines"
+              field_type: "integer"
               required: true
-            - key: "serverInfo.name"
-              validation: { type: "equals", value: "codeprism-mcp" }
+            - path: "$.languages"
+              field_type: "object"
               required: true
-        
-        performance:
-          max_execution_time_ms: 10000
 
-      - id: "list_tools"
-        description: "List available code analysis tools"
-        tool_name: "tools/list"
-        input_params: {}
-        
-        expected:
-          patterns:
-            - key: "tools"
-              validation: { type: "array" }
-              required: true
-          
-          custom_scripts:
-            - script: |
-                import json
-                import sys
-                
-                response = json.loads(sys.argv[1])
-                tools = response.get('tools', [])
-                tool_names = [tool['name'] for tool in tools]
-                
-                expected_tools = [
-                    'analyze_complexity',
-                    'find_references', 
-                    'search_symbols',
-                    'repository_stats',
-                    'search_content'
-                ]
-                
-                missing_tools = [tool for tool in expected_tools if tool not in tool_names]
-                if missing_tools:
-                    print(f"Missing tools: {missing_tools}")
-                    sys.exit(1)
-                
-                print(f"Found all {len(expected_tools)} expected tools")
-              language: "python"
-
-  # Core Analysis Tools
-  - name: "core_analysis"
-    description: "Test core code analysis functionality"
-    
-    test_cases:
-      - id: "repository_stats"
-        description: "Get repository statistics"
-        tool_name: "repository_stats"
-        input_params:
-          path: "test-projects/rust-test-project"
-        
-        expected:
-          patterns:
-            - key: "total_files"
-              validation: { type: "integer" }
-              required: true
-            - key: "total_lines"
-              validation: { type: "greater_than", value: 0 }
-              required: true
-            - key: "languages"
-              validation: { type: "object" }
-              required: true
-            - key: "languages.Rust"
-              validation: { type: "greater_than", value: 0 }
-              required: true
-        
-        performance:
-          max_execution_time_ms: 15000
-          max_memory_usage_mb: 256
-
-      - id: "analyze_complexity"
+  - name: "analyze_complexity"
+    description: "Test code complexity analysis"
+    tests:
+      - name: "basic_complexity"
         description: "Analyze code complexity metrics"
-        tool_name: "analyze_complexity"
-        input_params:
-          path: "test-projects/rust-test-project"
+        input:
+          path: "."
           include_tests: false
-        
         expected:
-          patterns:
-            - key: "average_complexity"
-              validation: { type: "range", min: 0.0, max: 100.0 }
+          error: false
+          fields:
+            - path: "$.average_complexity"
+              field_type: "number"
               required: true
-            - key: "complexity_distribution"
-              validation: { type: "object" }
+            - path: "$.complexity_distribution"
+              field_type: "object"
               required: true
-            - key: "high_complexity_files"
-              validation: { type: "array" }
-              required: true
-          
-          custom_scripts:
-            - script: |
-                import json
-                import sys
-                
-                response = json.loads(sys.argv[1])
-                avg_complexity = response.get('average_complexity', 0)
-                
-                if avg_complexity < 1.0:
-                    print("Average complexity seems too low")
-                    sys.exit(1)
-                
-                if avg_complexity > 50.0:
-                    print("Average complexity seems too high")
-                    sys.exit(1)
-                
-                print(f"Complexity analysis looks reasonable: {avg_complexity}")
-              language: "python"
 
-      - id: "search_symbols"
-        description: "Search for symbols in codebase"
-        tool_name: "search_symbols"
-        input_params:
+  - name: "search_symbols"
+    description: "Test symbol search functionality"
+    tests:
+      - name: "find_main_function"
+        description: "Search for main function symbols"
+        input:
           query: "main"
           symbol_types: ["function", "method"]
           limit: 10
-        
         expected:
-          patterns:
-            - key: "symbols"
-              validation: { type: "array" }
+          error: false
+          fields:
+            - path: "$.symbols"
+              field_type: "array"
               required: true
-            - key: "total_count"
-              validation: { type: "integer" }
-              required: true
-          
-          custom_scripts:
-            - script: |
-                import json
-                import sys
-                
-                response = json.loads(sys.argv[1])
-                symbols = response.get('symbols', [])
-                
-                # Should find at least one 'main' function
-                main_functions = [s for s in symbols if 'main' in s.get('name', '').lower()]
-                
-                if not main_functions:
-                    print("No main functions found")
-                    sys.exit(1)
-                
-                print(f"Found {len(main_functions)} main functions")
-              language: "python"
-
-  # Search and Content Analysis
-  - name: "search_capabilities"
-    description: "Test search and content analysis features"
-    
-    test_cases:
-      - id: "search_content"
-        description: "Search content across codebase"
-        tool_name: "search_content"
-        input_params:
-          query: "fn main"
-          include_comments: false
-          case_sensitive: false
-        
-        expected:
-          patterns:
-            - key: "matches"
-              validation: { type: "array" }
-              required: true
-            - key: "total_matches"
-              validation: { type: "integer" }
-              required: true
-          
-          custom_scripts:
-            - script: |
-                import json
-                import sys
-                
-                response = json.loads(sys.argv[1])
-                matches = response.get('matches', [])
-                
-                # Validate match structure
-                for match in matches[:3]:  # Check first 3 matches
-                    required_fields = ['file_path', 'line_number', 'content']
-                    missing_fields = [f for f in required_fields if f not in match]
-                    
-                    if missing_fields:
-                        print(f"Match missing fields: {missing_fields}")
-                        sys.exit(1)
-                
-                print(f"Content search returned {len(matches)} matches")
-              language: "python"
-
-      - id: "find_references"
-        description: "Find references to a symbol"
-        tool_name: "find_references"
-        input_params:
-          symbol: "main"
-          include_declarations: true
-        
-        expected:
-          patterns:
-            - key: "references"
-              validation: { type: "array" }
-              required: true
-            - key: "symbol_info"
-              validation: { type: "object" }
+            - path: "$.total_count"
+              field_type: "integer"
               required: true
 
-  # Advanced Analysis
-  - name: "advanced_analysis"
-    description: "Test advanced analysis capabilities"
-    
-    test_cases:
-      - id: "find_duplicates"
-        description: "Find duplicate code patterns"
-        tool_name: "find_duplicates"
-        input_params:
-          min_lines: 5
-          similarity_threshold: 0.8
-        
-        expected:
-          patterns:
-            - key: "duplicate_groups"
-              validation: { type: "array" }
-              required: true
-            - key: "summary"
-              validation: { type: "object" }
-              required: true
-        
-        performance:
-          max_execution_time_ms: 30000
+test_config:
+  timeout_seconds: 120
+  max_concurrency: 2
+  fail_fast: false
 
-      - id: "analyze_dependencies"
-        description: "Analyze dependency structure"
-        tool_name: "analyze_dependencies"
-        input_params:
-          include_external: true
-          max_depth: 3
-        
-        expected:
-          patterns:
-            - key: "dependencies"
-              validation: { type: "object" }
-              required: true
-            - key: "dependency_graph"
-              validation: { type: "array" }
-              required: true
-
-  # Performance and Stress Testing
-  - name: "performance_testing"
-    description: "Test performance with larger codebases"
-    
-    test_cases:
-      - id: "large_repository_analysis"
-        description: "Analyze larger repository efficiently"
-        tool_name: "repository_stats"
-        input_params:
-          path: "test-projects/rust-test-project"
-          include_git_info: true
-        
-        performance:
-          max_execution_time_ms: 20000
-          max_memory_usage_mb: 512
-        
-        expected:
-          patterns:
-            - key: "total_files"
-              validation: { type: "greater_than", value: 1 }
-              required: true
-
-      - id: "concurrent_analysis"
-        description: "Test concurrent analysis requests"
-        tool_name: "search_content"
-        input_params:
-          query: "use"
-          limit: 100
-        
-        performance:
-          max_execution_time_ms: 15000
-        
-        expected:
-          patterns:
-            - key: "matches"
-              validation: { type: "array" }
-              required: true
-
-  # Error Handling and Edge Cases
-  - name: "error_handling"
-    description: "Test error handling and edge cases"
-    
-    test_cases:
-      - id: "invalid_path"
-        description: "Handle invalid file paths gracefully"
-        tool_name: "repository_stats"
-        input_params:
-          path: "/nonexistent/path/to/project"
-        
-        expected:
-          error_expected: true
-          patterns:
-            - key: "error.code"
-              validation: { type: "one_of", values: ["PATH_NOT_FOUND", "INVALID_PATH"] }
-              required: true
-            - key: "error.message"
-              validation: { type: "string_length", min: 10 }
-              required: true
-
-      - id: "malformed_query"
-        description: "Handle malformed search queries"
-        tool_name: "search_content"
-        input_params:
-          query: ""
-          limit: -1
-        
-        expected:
-          error_expected: true
-          patterns:
-            - key: "error.code"
-              validation: { type: "one_of", values: ["INVALID_QUERY", "INVALID_PARAMETERS"] }
-              required: true
-
-# Comprehensive reporting
-reporting:
-  output_dir: "test-reports/codeprism"
-  formats: ["html", "json", "junit"]
-  include_debug_info: true
-  include_server_logs: true
-  
-  html:
-    include_charts: true
-    chart_types: ["response_time", "success_rate", "memory_usage"]
-  
-  json:
-    pretty_print: true
-    include_raw_responses: false
-
-# Performance baseline (optional)
-performance:
-  establish_baseline: false
-  baseline_file: "baselines/codeprism-baseline.json"
-  regression_threshold: 20  # 20% performance regression threshold 

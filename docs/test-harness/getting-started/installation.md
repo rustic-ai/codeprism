@@ -1,449 +1,406 @@
-# Installation Guide
+# Installation Guide - Mandrel MCP Test Harness
 
-Complete installation instructions for the MCP Test Harness on all supported platforms.
+Complete installation instructions for the Mandrel MCP Test Harness across different platforms and use cases.
 
-## 📋 System Requirements
+## 🚀 Quick Install (Recommended)
 
-### Minimum Requirements
-- **Operating System**: Linux, macOS, or Windows 10+
-- **Memory**: 2GB RAM available
-- **Disk Space**: 500MB free space
-- **Network**: Internet access for downloading dependencies
+### Prerequisites
 
-### Recommended Requirements
-- **Operating System**: Linux (Ubuntu 20.04+) or macOS 12+
-- **Memory**: 4GB RAM available
-- **Disk Space**: 2GB free space
-- **CPU**: Multi-core processor for parallel testing
+- **Rust 1.70 or later** - [Install from rustup.rs](https://rustup.rs/)
+- **Git** - For cloning the repository
 
-### Dependencies
-- **Rust**: Version 1.70+ (automatically installed via rustup)
-- **Git**: For cloning the repository
-- **Docker** (optional): For containerized testing
-- **Python 3.8+** (optional): For custom validation scripts
-
-## 🚀 Quick Installation
-
-### Option 1: Install from Pre-built Binary (Recommended)
-
-```bash
-# Download the latest release
-curl -L https://github.com/rustic-ai/codeprism/releases/latest/download/mcp-test-harness-linux.tar.gz | tar xz
-
-# Move to system PATH
-sudo mv mcp-test-harness /usr/local/bin/
-
-# Verify installation
-mcp-test-harness --version
-```
-
-### Option 2: Install via Cargo
-
-```bash
-# Install directly from crates.io
-cargo install mcp-test-harness
-
-# Or install from GitHub
-cargo install --git https://github.com/rustic-ai/codeprism.git mcp-test-harness
-```
-
-### Option 3: Build from Source
+### From Source (Stable)
 
 ```bash
 # Clone the repository
 git clone https://github.com/rustic-ai/codeprism.git
 cd codeprism
 
-# Build the test harness
-cargo build --release --bin mcp-test-harness
+# Install moth binary globally
+cargo install --path crates/mandrel-mcp-th
 
-# Install to system PATH
-cargo install --path crates/mcp-test-harness
+# Verify installation
+moth --version
 ```
 
-## 🐧 Linux Installation
+This installs the `moth` binary to your Cargo bin directory (usually `~/.cargo/bin/`), which should be in your PATH.
 
-### Ubuntu/Debian
+## 📦 Platform-Specific Installation
+
+### Linux (Ubuntu/Debian)
 
 ```bash
-# Update package list
-sudo apt update
-
-# Install dependencies
-sudo apt install -y curl build-essential pkg-config libssl-dev
-
-# Install Rust
+# Install Rust if not already installed
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 source ~/.cargo/env
 
-# Install MCP Test Harness
-cargo install mcp-test-harness
+# Install build dependencies
+sudo apt update
+sudo apt install -y build-essential pkg-config libssl-dev
 
-# Add to PATH (if not already added)
+# Clone and install
+git clone https://github.com/rustic-ai/codeprism.git
+cd codeprism
+cargo install --path crates/mandrel-mcp-th
+
+# Add cargo bin to PATH if not already done
 echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> ~/.bashrc
 source ~/.bashrc
+
+# Verify
+moth --version
 ```
 
-### CentOS/RHEL/Fedora
+### Linux (RHEL/CentOS/Fedora)
 
 ```bash
-# Install dependencies
-sudo dnf install -y curl gcc gcc-c++ openssl-devel
-
-# Or for older versions (CentOS 7)
-# sudo yum install -y curl gcc gcc-c++ openssl-devel
-
 # Install Rust
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 source ~/.cargo/env
 
-# Install MCP Test Harness
-cargo install mcp-test-harness
+# Install build dependencies
+sudo dnf install -y gcc openssl-devel pkgconf-pkg-config
+
+# Clone and install
+git clone https://github.com/rustic-ai/codeprism.git
+cd codeprism
+cargo install --path crates/mandrel-mcp-th
+
+# Verify
+moth --version
 ```
 
-### Arch Linux
+### macOS
 
 ```bash
-# Install dependencies
-sudo pacman -S rust cargo
+# Install Rust if not already installed
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source ~/.cargo/env
 
-# Install MCP Test Harness
-cargo install mcp-test-harness
-```
-
-## 🍎 macOS Installation
-
-### Using Homebrew (Recommended)
-
-```bash
-# Install Homebrew if not already installed
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-# Install Rust
-brew install rust
-
-# Install MCP Test Harness
-cargo install mcp-test-harness
-```
-
-### Manual Installation
-
-```bash
-# Install Xcode command line tools
+# Install Xcode command line tools if needed
 xcode-select --install
 
-# Install Rust
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-source ~/.cargo/env
+# Clone and install
+git clone https://github.com/rustic-ai/codeprism.git
+cd codeprism
+cargo install --path crates/mandrel-mcp-th
 
-# Install MCP Test Harness
-cargo install mcp-test-harness
+# Verify
+moth --version
 ```
 
-## 🪟 Windows Installation
-
-### Option 1: Using PowerShell (Recommended)
+### Windows
 
 ```powershell
-# Install Rust
-Invoke-WebRequest -Uri "https://win.rustup.rs/x86_64" -OutFile "rustup-init.exe"
-.\rustup-init.exe -y
-refreshenv
+# Install Rust from https://rustup.rs/ or use winget
+winget install Rustlang.Rustup
 
-# Install MCP Test Harness
-cargo install mcp-test-harness
+# Install Git if not already installed
+winget install Git.Git
+
+# Clone and install
+git clone https://github.com/rustic-ai/codeprism.git
+cd codeprism
+cargo install --path crates/mandrel-mcp-th
+
+# Verify (restart terminal first)
+moth --version
 ```
 
-### Option 2: Using Windows Subsystem for Linux (WSL)
+## 🔧 Development Installation
 
-```bash
-# Install WSL2 and Ubuntu
-wsl --install
+For contributors or users who want to build from source with development features:
 
-# Follow Ubuntu installation instructions above
-```
-
-### Option 3: Using Visual Studio
-
-1. Install Visual Studio Community with C++ build tools
-2. Install Rust using the installer from https://rustup.rs/
-3. Open Command Prompt or PowerShell
-4. Run: `cargo install mcp-test-harness`
-
-## 🐳 Docker Installation
-
-### Pull Pre-built Image
-
-```bash
-# Pull the latest image
-docker pull ghcr.io/rustic-ai/mcp-test-harness:latest
-
-# Create an alias for easy usage
-echo 'alias mcp-test-harness="docker run --rm -v $(pwd):/workspace ghcr.io/rustic-ai/mcp-test-harness:latest"' >> ~/.bashrc
-source ~/.bashrc
-```
-
-### Build Your Own Image
+### Full Development Setup
 
 ```bash
 # Clone repository
 git clone https://github.com/rustic-ai/codeprism.git
 cd codeprism
 
-# Build Docker image
-docker build -t mcp-test-harness -f docker/Dockerfile .
-
-# Run container
-docker run --rm -v $(pwd):/workspace mcp-test-harness --help
-```
-
-### Docker Compose Setup
-
-```yaml
-# docker-compose.yml
-version: '3.8'
-services:
-  mcp-test-harness:
-    image: ghcr.io/rustic-ai/mcp-test-harness:latest
-    volumes:
-      - ./config:/app/config
-      - ./test-results:/app/results
-    environment:
-      - RUST_LOG=info
-    command: test --config /app/config/test-harness.yaml
-```
-
-## ☁️ Cloud Installation
-
-### AWS EC2
-
-```bash
-# Launch EC2 instance (Amazon Linux 2)
-# SSH into instance
-
-# Install dependencies
-sudo yum update -y
-sudo yum install -y gcc gcc-c++
-
-# Install Rust
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-source ~/.cargo/env
-
-# Install MCP Test Harness
-cargo install mcp-test-harness
-
-# Configure firewall (if testing HTTP/WebSocket servers)
-sudo firewall-cmd --add-port=3000-3100/tcp --permanent
-sudo firewall-cmd --reload
-```
-
-### Google Cloud Platform
-
-```bash
-# Create VM instance
-gcloud compute instances create mcp-test-harness \
-  --image-family=ubuntu-2004-lts \
-  --image-project=ubuntu-os-cloud \
-  --machine-type=e2-medium
-
-# SSH into instance
-gcloud compute ssh mcp-test-harness
-
-# Follow Ubuntu installation instructions
-```
-
-### Azure
-
-```bash
-# Create VM
-az vm create \
-  --resource-group myResourceGroup \
-  --name mcp-test-harness \
-  --image UbuntuLTS \
-  --admin-username azureuser \
-  --generate-ssh-keys
-
-# SSH into VM
-az vm run-command invoke \
-  --resource-group myResourceGroup \
-  --name mcp-test-harness \
-  --command-id RunShellScript \
-  --scripts "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"
-```
-
-## 🔧 Development Installation
-
-For contributors and developers who want to work on the MCP Test Harness itself:
-
-```bash
-# Clone with all submodules
-git clone --recursive https://github.com/rustic-ai/codeprism.git
-cd codeprism
-
 # Install development dependencies
-cargo install cargo-watch cargo-tarpaulin
+rustup component add clippy rustfmt
 
 # Build in development mode
-cargo build --workspace
+cd crates/mandrel-mcp-th
+cargo build
 
-# Run tests
-cargo test --workspace
+# Run tests to verify installation
+cargo test
 
-# Install in development mode (with debugging symbols)
-cargo install --path crates/mcp-test-harness --debug
+# Build optimized release version
+cargo build --release
+
+# Binary location: ../../target/release/moth
+../../target/release/moth --version
 ```
 
-## ✅ Verification
+### Editable Installation
 
-After installation, verify everything is working correctly:
+For development where you frequently modify the code:
+
+```bash
+# In the mandrel-mcp-th directory
+cd crates/mandrel-mcp-th
+
+# Create a symlink to the binary (Linux/macOS)
+mkdir -p ~/.local/bin
+ln -sf $(pwd)/../../target/release/moth ~/.local/bin/moth
+
+# Add to PATH if needed
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+
+# Now rebuild will automatically update the binary
+cargo build --release
+```
+
+## 🐳 Docker Installation
+
+### Using Pre-built Image (Future)
+
+*Note: Docker images are planned for future releases*
+
+```bash
+# Pull the official image (when available)
+docker pull codeprism/mandrel-mcp-th:latest
+
+# Run tests with Docker
+docker run --rm -v $(pwd):/workspace codeprism/mandrel-mcp-th moth test /workspace/spec.yaml
+```
+
+### Building Docker Image
+
+```bash
+# In the project root
+docker build -f crates/mandrel-mcp-th/Dockerfile -t mandrel-mcp-th .
+
+# Run with Docker
+docker run --rm -v $(pwd):/workspace mandrel-mcp-th moth test /workspace/spec.yaml
+```
+
+Sample Dockerfile (create as `crates/mandrel-mcp-th/Dockerfile`):
+
+```dockerfile
+FROM rust:1.70 as builder
+
+WORKDIR /app
+COPY . .
+RUN cargo build --release --bin moth
+
+FROM debian:bookworm-slim
+RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
+COPY --from=builder /app/target/release/moth /usr/local/bin/moth
+
+WORKDIR /workspace
+ENTRYPOINT ["moth"]
+```
+
+## 📋 Verification
+
+### Basic Installation Test
 
 ```bash
 # Check version
-mcp-test-harness --version
+moth --version
 
-# Check help
-mcp-test-harness --help
+# Validate help output
+moth --help
 
-# Run self-test
-mcp-test-harness validate --help
-
-# Create a minimal test configuration
-cat > test-installation.yaml << EOF
-global:
-  max_global_concurrency: 1
-  global_timeout_seconds: 30
-
+# Test with a minimal specification
+cat > test-spec.yaml << 'EOF'
+name: "Test Server"
+version: "1.0.0"
+capabilities:
+  tools: false
+  resources: false
+  prompts: false
+  sampling: false
+  logging: false
 server:
+  command: "echo"
+  args: ["test"]
   transport: "stdio"
-  start_command: "echo"
-  args: ["Hello, MCP Test Harness!"]
-
-test_suites:
-  - name: "installation_test"
-    test_cases:
-      - id: "echo_test"
-        tool_name: "echo"
-        input_params: {}
-        expected:
-          allow_any_response: true
 EOF
 
-# Run installation test
-mcp-test-harness test --config test-installation.yaml --dry-run
+# Validate the specification
+moth validate test-spec.yaml
+
+# Clean up
+rm test-spec.yaml
 ```
 
 Expected output:
 ```
-✅ Configuration validation passed
-✅ Server connectivity test passed
-✅ Installation verification successful
+✅ Specification validation successful
+  Name: Test Server
+  Version: 1.0.0
+  Tools: 0, Resources: 0, Prompts: 0
+  Server: echo test
 ```
 
-## 🔄 Updating
-
-### Update via Cargo
+### Advanced Verification
 
 ```bash
-# Update to latest version
-cargo install mcp-test-harness --force
+# Test all commands
+moth --help
+moth test --help
+moth validate --help
+moth list --help
+moth version
 
-# Update all Rust packages
-cargo install-update --all
+# Test with example specifications
+cd docs/test-harness/examples
+moth validate codeprism-mcp.yaml
+moth list codeprism-mcp.yaml --detailed
 ```
 
-### Update Docker Image
-
-```bash
-# Pull latest image
-docker pull ghcr.io/rustic-ai/mcp-test-harness:latest
-
-# Remove old image (optional)
-docker image prune
-```
-
-## 🗑️ Uninstallation
-
-### Remove Cargo Installation
-
-```bash
-# Remove binary
-cargo uninstall mcp-test-harness
-
-# Remove Rust (if no longer needed)
-rustup self uninstall
-```
-
-### Remove Docker Installation
-
-```bash
-# Remove images
-docker rmi ghcr.io/rustic-ai/mcp-test-harness:latest
-
-# Remove containers
-docker container prune
-```
-
-## 🐛 Troubleshooting Installation
+## 🚨 Troubleshooting Installation
 
 ### Common Issues
 
-#### "cargo: command not found"
+#### "moth: command not found"
+
+**Problem**: The binary is not in your PATH.
+
+**Solutions**:
 ```bash
-# Ensure Rust is installed and in PATH
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-source ~/.cargo/env
+# Check if cargo bin is in PATH
+echo $PATH | grep -q "$HOME/.cargo/bin" && echo "Cargo bin in PATH" || echo "Cargo bin NOT in PATH"
+
+# Add cargo bin to PATH
+echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+
+# Or use the full path
+~/.cargo/bin/moth --version
 ```
 
-#### "linking with `cc` failed" on Linux
+#### Compilation Errors
+
+**Problem**: Build dependencies missing.
+
+**Linux Solutions**:
 ```bash
-# Install build tools
-sudo apt install build-essential  # Ubuntu/Debian
-sudo dnf install gcc gcc-c++      # Fedora/CentOS
+# Ubuntu/Debian
+sudo apt install build-essential pkg-config libssl-dev
+
+# RHEL/CentOS/Fedora
+sudo dnf install gcc openssl-devel pkgconf-pkg-config
 ```
 
-#### "failed to run custom build command for `openssl-sys`"
+**macOS Solutions**:
 ```bash
-# Install OpenSSL development headers
-sudo apt install libssl-dev pkg-config  # Ubuntu/Debian
-sudo dnf install openssl-devel          # Fedora/CentOS
+# Install Xcode command line tools
+xcode-select --install
+
+# Update Rust toolchain
+rustup update
 ```
 
-#### Permission denied on macOS
+#### Permission Errors
+
+**Problem**: Cannot write to installation directory.
+
+**Solutions**:
 ```bash
-# Fix permissions
-sudo chown -R $(whoami) ~/.cargo
+# Install to user directory instead
+cargo install --path crates/mandrel-mcp-th --root ~/.local
+
+# Add local bin to PATH
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
 ```
 
-#### Slow compilation
-```bash
-# Use parallel compilation
-export CARGO_BUILD_JOBS=$(nproc)
+#### Rust Version Issues
 
-# Use alternative registry
-export CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
+**Problem**: Rust version too old.
+
+**Solutions**:
+```bash
+# Update Rust toolchain
+rustup update
+
+# Check Rust version
+rustc --version
+
+# Should be 1.70 or later
 ```
 
 ### Getting Help
 
-If you encounter issues not covered here:
+If you encounter installation issues:
 
-1. Check the [Troubleshooting Guide](../troubleshooting.md)
-2. Search existing [GitHub Issues](https://github.com/rustic-ai/codeprism/issues)
-3. Create a new issue with:
-   - Your operating system and version
-   - Rust version (`rustc --version`)
-   - Complete error message
-   - Steps to reproduce
+1. **Check Prerequisites**: Ensure Rust 1.70+ and Git are installed
+2. **Update Everything**: Update Rust, Git, and system packages
+3. **Check Documentation**: Review platform-specific instructions
+4. **Search Issues**: Check [GitHub Issues](https://github.com/rustic-ai/codeprism/issues)
+5. **Create Issue**: If problem persists, create a detailed issue report
 
-## 📚 Next Steps
+## 🔄 Updating
+
+### Update from Source
+
+```bash
+# Navigate to cloned repository
+cd codeprism
+
+# Pull latest changes
+git pull origin main
+
+# Rebuild and reinstall
+cargo install --path crates/mandrel-mcp-th
+
+# Verify new version
+moth --version
+```
+
+### Clean Reinstall
+
+```bash
+# Remove existing installation
+cargo uninstall mandrel-mcp-th
+
+# Fresh install
+cargo install --path crates/mandrel-mcp-th
+```
+
+## 🏢 Enterprise Installation
+
+### System-wide Installation
+
+For organization-wide deployment:
+
+```bash
+# Install to system location (requires sudo)
+sudo cargo install --path crates/mandrel-mcp-th --root /usr/local
+
+# Binary will be at /usr/local/bin/moth
+which moth
+```
+
+### Package Manager Integration
+
+For future package manager support:
+
+```bash
+# Homebrew (macOS) - planned
+brew install rustic-ai/tap/mandrel-mcp-th
+
+# APT (Ubuntu/Debian) - planned
+sudo apt install mandrel-mcp-th
+
+# Winget (Windows) - planned
+winget install RusticAI.MandrelMcpTestHarness
+```
+
+## 🎯 Next Steps
 
 After successful installation:
 
-1. Read the [First Test Guide](first-test.md) to run your first test
-2. Learn about [Basic Configuration](basic-configuration.md)
-3. Explore the [User Guide](../user-guide.md) for comprehensive usage instructions
-4. Check out [Example Configurations](../examples/) for real-world setups
+1. **[Quick Start Guide](quick-start.md)** - Run your first test in 5 minutes
+2. **[CLI Reference](../cli-reference.md)** - Complete command documentation
+3. **[Configuration Guide](../configuration-reference.md)** - Learn YAML specification format
+4. **[Examples](../examples/)** - Real-world test specifications
 
 ---
 
-**Installation complete!** 🎉 You're ready to start testing MCP servers. 
+**Need additional help?** Check our [troubleshooting guide](../troubleshooting.md) or [open an issue](https://github.com/rustic-ai/codeprism/issues) on GitHub. 

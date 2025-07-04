@@ -20,20 +20,24 @@ The project includes the **moth** binary (MOdel context protocol Test Harness) f
 ### Installation
 
 ```bash
+# Install from source (in project root)
 cargo install --path crates/mandrel-mcp-th
+
+# Verify installation
+moth --version
 ```
 
 ### Basic Usage
 
 ```bash
 # Run tests from a specification file
-moth test filesystem-server.yaml
+moth test my-server.yaml
 
 # Validate a test specification
-moth validate filesystem-server.yaml
+moth validate my-server.yaml
 
 # List available tests
-moth list filesystem-server.yaml --detailed
+moth list my-server.yaml --detailed
 
 # Show version information
 moth version
@@ -167,6 +171,18 @@ cargo test -- --nocapture
 cargo test test_name
 ```
 
+## 📚 Documentation
+
+For complete documentation, see:
+
+- **[Quick Start Guide](../../docs/test-harness/getting-started/quick-start.md)** - Get up and running in 5 minutes
+- **[Installation Guide](../../docs/test-harness/getting-started/installation.md)** - Complete installation instructions for all platforms
+- **[CLI Reference](../../docs/test-harness/cli-reference.md)** - Complete command-line documentation
+- **[Configuration Reference](../../docs/test-harness/configuration-reference.md)** - Complete YAML specification format
+- **[User Guide](../../docs/test-harness/user-guide.md)** - Comprehensive testing guide
+- **[Examples](../../docs/test-harness/examples/)** - Real-world test specifications
+- **[Troubleshooting](../../docs/test-harness/troubleshooting.md)** - Common issues and solutions
+
 ## Contributing
 
 1. Fork the repository
@@ -175,6 +191,8 @@ cargo test test_name
 4. Add tests for new functionality
 5. Ensure all tests pass
 6. Submit a pull request
+
+See our [Contributing Guide](../../docs/test-harness/contributing.md) for detailed development instructions.
 
 ## License
 

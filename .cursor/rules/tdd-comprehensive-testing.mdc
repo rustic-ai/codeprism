@@ -1,0 +1,234 @@
+---
+alwaysApply: true
+description: Enforces comprehensive test-driven development practices based on lessons learned from testing gaps and failures
+---
+
+# Comprehensive Test-Driven Development Rules
+
+## Critical TDD Failures to Avoid
+
+**NEVER do "TDD Theater"** - Tests that look like they test but don't actually validate functionality.
+
+### ❌ TDD Theater Examples (AVOID)
+```rust
+// ❌ BAD: Pseudo-test that proves nothing
+#[tokio::test]
+async fn test_analyze_code_quality_returns_real_analysis() {
+    let test_content = r#"fn example() { ... }"#;
+    assert!(test_content.contains("example")); // Tests string, not functionality!
+}
+
+// ❌ BAD: Test that doesn't call the actual function
+#[tokio::test] 
+async fn test_tool_exists() {
+    let server = create_server();
+    // Missing: Actually calling the tool and validating output
+    assert!(server.is_ok());
+}
+```
+
+### ✅ Proper TDD Examples (FOLLOW)
+```rust
+// ✅ GOOD: Test that actually calls and validates functionality
+#[tokio::test]
+async fn test_analyze_code_quality_comprehensive() {
+    let server = create_test_server().await;
+    
+    // Create actual test file with quality issues
+    let test_file = create_test_file_with_known_issues().await;
+    
+    // ACTUALLY CALL THE TOOL
+    let params = json!({
+        "target": test_file.path(),
+        "quality_types": ["all"],
+        "detailed_analysis": true
+    });
+    
+    let result = server.call_tool("analyze_code_quality", params).await;
+    
+    // VALIDATE REAL FUNCTIONALITY
+    assert!(result.is_ok());
+    let analysis = result.unwrap();
+    assert_eq!(analysis.is_error, Some(false));
+    
+    // Verify specific analysis content
+    let content = &analysis.content[0].text;
+    assert!(content.contains("quality_metrics"));
+    assert!(content.contains("overall_score"));
+    assert!(content.contains("code_smells"));
+}
+```
+
+## Mandatory TDD Workflow
+
+### 1. STUDY EXISTING PATTERNS FIRST
+Before implementing ANY feature:
+- Study existing test patterns in related modules
+- Identify comprehensive test coverage requirements  
+- Plan test scenarios based on proven patterns
+- Reference: [codeprism-mcp tests](mdc:crates/codeprism-mcp/src/tools_legacy.rs) for comprehensive examples
+
+### 2. COMPREHENSIVE TEST PLANNING
+For every feature, write tests covering:
+
+**Success Cases:**
+- Basic functionality with valid inputs
+- Complex scenarios with realistic data
+- Integration with dependent systems
+
+**Error Cases:**
+- Invalid parameters
+- Missing required inputs
+- System failures and timeouts
+- Resource exhaustion scenarios
+
+**Edge Cases:**
+- Boundary conditions
+- Empty inputs
+- Very large inputs
+- Concurrent access scenarios
+
+**Performance Cases:**
+- Response time requirements
+- Memory usage limits
+- Throughput under load
+
+### 3. TEST QUALITY STANDARDS
+
+**Every test MUST:**
+- Actually call the function under test
+- Use realistic input data
+- Validate meaningful outputs
+- Include descriptive failure messages
+- Exercise the actual code path being tested
+
+**Test Naming Convention:**
+```rust
+#[tokio::test]
+async fn test_{component}_{scenario}_{expected_outcome}() {
+    // Examples:
+    // test_analyze_code_quality_with_valid_file_returns_analysis()
+    // test_search_symbols_with_invalid_pattern_returns_error()
+    // test_trace_path_with_circular_dependency_detects_cycle()
+}
+```
+
+### 4. COVERAGE REQUIREMENTS
+
+**For Tool Implementation:**
+- ✅ Individual tool tests (one per tool)
+- ✅ Parameter validation tests  
+- ✅ Error handling tests
+- ✅ Edge case tests
+- ✅ Integration tests
+- ✅ Performance tests
+
+**Minimum Coverage Targets:**
+- Unit Tests: 90%+ of functions
+- Integration Tests: 80%+ of workflows  
+- Error Tests: 100% of error paths
+- Edge Cases: 75%+ of boundary conditions
+
+### 5. RED-GREEN-REFACTOR IMPLEMENTATION
+
+**RED Phase:** Write comprehensive failing tests
+```rust
+// Write tests for ALL scenarios before any implementation
+#[tokio::test] async fn test_tool_success_case() { /* ... */ }
+#[tokio::test] async fn test_tool_error_case() { /* ... */ }  
+#[tokio::test] async fn test_tool_edge_case() { /* ... */ }
+#[tokio::test] async fn test_tool_performance() { /* ... */ }
+```
+
+**GREEN Phase:** Implement functionality to pass ALL tests
+```rust
+// Implement complete functionality, not minimal stubs
+pub async fn analyze_code_quality(params: Params) -> Result<Analysis> {
+    // Real implementation that passes all test scenarios
+}
+```
+
+**REFACTOR Phase:** Optimize while maintaining ALL test coverage
+```rust
+// Refactor for performance/clarity while ensuring all tests still pass
+cargo test --all-features  // Must pass 100%
+```
+
+## Enforcement Checks
+
+**Before any commit:**
+```bash
+# 1. All tests must pass
+cargo test --all-features
+
+# 2. Check test coverage
+cargo tarpaulin --out xml && python scripts/check_coverage.py --min 90
+
+# 3. Verify no "testing theater" patterns
+grep -r "assert.*contains" tests/ && echo "❌ Potential testing theater found"
+
+# 4. Validate actual function calls in tests
+grep -r "#\[tokio::test\]" -A 20 tests/ | grep "call_tool\|\..*(" || echo "❌ Tests may not call actual functions"
+```
+
+## Test Organization Patterns
+
+### Individual Tool Testing
+```rust
+// REQUIRED: Every tool needs individual validation
+#[tokio::test]
+async fn test_provide_guidance_tool() { /* comprehensive test */ }
+
+#[tokio::test] 
+async fn test_optimize_code_tool() { /* comprehensive test */ }
+
+#[tokio::test]
+async fn test_analyze_dependencies_tool() { /* comprehensive test */ }
+// ... All 26 tools
+```
+
+### Error Scenario Testing  
+```rust
+// REQUIRED: Every tool needs error validation
+#[tokio::test]
+async fn test_tool_with_invalid_parameters() { /* error test */ }
+
+#[tokio::test]
+async fn test_tool_with_missing_file() { /* error test */ }
+
+#[tokio::test] 
+async fn test_tool_with_timeout() { /* error test */ }
+```
+
+### Integration Testing
+```rust
+// REQUIRED: End-to-end workflow validation
+#[tokio::test]
+async fn test_full_mcp_workflow() { /* complete workflow */ }
+
+#[tokio::test]
+async fn test_concurrent_tool_execution() { /* stress test */ }
+```
+
+## Quality Gates
+
+**BLOCK COMMITS if:**
+- Test coverage < 90%
+- Any test uses "testing theater" patterns
+- Missing error case tests
+- Missing edge case tests  
+- Tests don't actually call functions under test
+
+**REQUIRE for any new feature:**
+- Comprehensive test plan documented
+- All test scenarios implemented
+- Evidence of studying existing test patterns
+- Performance characteristics validated
+
+## References
+
+- Study comprehensive testing: [codeprism-mcp server tests](mdc:crates/codeprism-mcp/src/server.rs) lines 579-1132
+- Tool testing patterns: [codeprism-mcp tools tests](mdc:crates/codeprism-mcp/src/tools_legacy.rs) lines 4539-6291
+- Integration examples: [mcp integration tests](mdc:tests/test_mcp_test_harness_end_to_end.rs)
+
+**Remember: Real TDD means comprehensive testing that proves functionality works correctly, not mechanical RED-GREEN-REFACTOR with superficial tests.**

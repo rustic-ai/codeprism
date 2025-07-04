@@ -1,0 +1,196 @@
+---
+globs: **/test*.rs,**/tests/**/*.rs,**/*_test.rs
+description: Validates test quality and prevents testing theater anti-patterns in Rust test files
+---
+
+# Test Quality Validation Rules
+
+## Mandatory Test Quality Checks
+
+### ❌ Prohibited "Testing Theater" Patterns
+
+**NEVER write tests that:**
+```rust
+// ❌ BAD: Only test string content without functionality
+assert!(content.contains("some_string"));
+
+// ❌ BAD: Test compilation without execution
+assert!(server.is_ok()); // Server exists but tool never called
+
+// ❌ BAD: Meaningless assertions
+assert!(true); // Always passes
+assert_eq!(result.len(), result.len()); // Tautology
+
+// ❌ BAD: Test setup without actual testing
+let server = create_server();
+// Test ends here - no actual validation!
+
+// ❌ BAD: Indirect testing without calling target function
+let data = create_test_data();
+assert!(data.contains("expected")); // Tests data, not function
+```
+
+### ✅ Required Test Quality Standards
+
+**Every test MUST:**
+
+1. **Actually call the function under test**
+```rust
+// ✅ REQUIRED: Direct function invocation
+let result = server.call_tool("analyze_code_quality", params).await;
+let analysis = tool_manager.analyze_dependencies(&server, args).await;
+```
+
+2. **Use realistic test data**
+```rust
+// ✅ REQUIRED: Real file content, not mock strings
+let test_file = create_temp_file_with_rust_code(r#"
+    fn complex_function() {
+        // Actual code that would be analyzed
+        if condition { ... }
+    }
+"#).await;
+```
+
+3. **Validate meaningful outputs**
+```rust
+// ✅ REQUIRED: Check actual analysis results
+assert_eq!(result.is_error, Some(false));
+assert!(content.contains("quality_metrics"));
+assert!(content.contains("overall_score"));
+
+// ✅ REQUIRED: Validate specific behavior
+let metrics = parse_analysis_metrics(&content);
+assert!(metrics.complexity_score > 0);
+assert!(metrics.recommendations.len() > 0);
+```
+
+4. **Include descriptive failure messages**
+```rust
+// ✅ REQUIRED: Clear failure context
+assert!(
+    result.is_ok(),
+    "Tool execution failed: {:?}", result.err()
+);
+assert!(
+    content.contains("analysis_complete"),
+    "Analysis output incomplete: {}", content
+);
+```
+
+### Test Structure Requirements
+
+**Standard Test Template:**
+```rust
+#[tokio::test]
+async fn test_{component}_{scenario}_{expected_outcome}() {
+    // 1. SETUP: Create realistic test environment
+    let server = create_test_server().await;
+    let test_file = create_test_file_with_known_patterns().await;
+    
+    // 2. EXECUTE: Actually call the function under test
+    let params = create_valid_parameters(&test_file);
+    let result = server.call_tool("tool_name", params).await;
+    
+    // 3. VALIDATE: Check meaningful outputs
+    assert!(result.is_ok(), "Tool execution should succeed");
+    let analysis = result.unwrap();
+    
+    // 4. VERIFY: Validate specific behavior
+    assert_eq!(analysis.is_error, Some(false));
+    validate_analysis_content(&analysis.content);
+    
+    // 5. CLEANUP: Remove test files if needed
+    cleanup_test_file(test_file).await;
+}
+```
+
+### Error Test Requirements
+
+**Every tool needs error validation:**
+```rust
+#[tokio::test]
+async fn test_{tool}_with_invalid_params_returns_error() {
+    let server = create_test_server().await;
+    
+    // Test missing required parameters
+    let result = server.call_tool("tool_name", json!({})).await;
+    assert!(result.is_err() || result.unwrap().is_error == Some(true));
+    
+    // Test invalid file path
+    let result = server.call_tool("tool_name", json!({
+        "target": "/nonexistent/file.rs"
+    })).await;
+    assert!(result.is_err() || result.unwrap().is_error == Some(true));
+}
+```
+
+### Edge Case Requirements
+
+**Test boundary conditions:**
+```rust
+#[tokio::test]
+async fn test_{tool}_edge_cases() {
+    let server = create_test_server().await;
+    
+    // Empty file
+    let empty_file = create_empty_file().await;
+    let result = server.call_tool("tool_name", params).await;
+    // Should handle gracefully
+    
+    // Very large file
+    let large_file = create_large_file(1_000_000).await;
+    let result = server.call_tool("tool_name", params).await;
+    // Should complete within reasonable time
+    
+    // Binary file
+    let binary_file = create_binary_file().await;
+    let result = server.call_tool("tool_name", params).await;
+    // Should detect and handle appropriately
+}
+```
+
+## Quality Validation Commands
+
+**Pre-commit validation:**
+```bash
+# Check for testing theater patterns
+grep -r "assert.*contains" tests/ --include="*.rs" | grep -v "// ✅" && echo "❌ Testing theater detected"
+
+# Verify tests call actual functions
+grep -r "#\[tokio::test\]" -A 15 tests/ --include="*.rs" | grep -E "(call_tool|\.await)" || echo "❌ Tests may not call functions"
+
+# Check for meaningless assertions  
+grep -r "assert!(true)" tests/ --include="*.rs" && echo "❌ Meaningless assertions found"
+
+# Validate test naming
+grep -r "fn test_" tests/ --include="*.rs" | grep -v "test_.*_.*_" && echo "❌ Poor test naming found"
+```
+
+## Test Coverage Standards
+
+**Required for every tool:**
+- ✅ Success case with valid inputs
+- ✅ Error case with invalid inputs  
+- ✅ Edge case with boundary conditions
+- ✅ Integration test with real data
+- ✅ Performance test with realistic load
+
+**Validation checklist:**
+```rust
+// Each tool must have tests matching these patterns:
+#[tokio::test] async fn test_{tool}_success_case() { /* ... */ }
+#[tokio::test] async fn test_{tool}_error_case() { /* ... */ }  
+#[tokio::test] async fn test_{tool}_edge_case() { /* ... */ }
+#[tokio::test] async fn test_{tool}_integration() { /* ... */ }
+#[tokio::test] async fn test_{tool}_performance() { /* ... */ }
+```
+
+## References
+
+Study proper test patterns from:
+- [Comprehensive tool tests](mdc:crates/codeprism-mcp/src/tools_legacy.rs) lines 4539-6291
+- [Server integration tests](mdc:crates/codeprism-mcp/src/server.rs) lines 579-1132  
+- [End-to-end test examples](mdc:tests/test_mcp_test_harness_end_to_end.rs)
+
+**Remember: If your test doesn't fail when the implementation is broken, it's not testing anything meaningful.**

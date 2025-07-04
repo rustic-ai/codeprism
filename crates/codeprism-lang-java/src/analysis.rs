@@ -6430,7 +6430,7 @@ mod tests {
     #[test]
     fn test_calculate_overall_score_returns_real_calculation() {
         // Test verifies that calculate_overall_score returns a calculated value
-        // based on actual comprehensive analysis, not a hardcoded placeholder
+        // based on actual comprehensive analysis, not a hardcoded value
 
         let analyzer = JavaAnalyzer::new();
 
@@ -6492,7 +6492,7 @@ public class UserController {
 
         assert_ne!(score, 75, "Score should not be the hardcoded value of 75");
         assert!(
-            score >= 50 && score <= 100,
+            (50..=100).contains(&score),
             "Score should be in valid range 50-100, got {}",
             score
         );
@@ -6500,7 +6500,7 @@ public class UserController {
         // Additional validation: Empty code should get a different score
         let empty_score = analyzer.calculate_overall_score("");
         assert!(
-            empty_score >= 0 && empty_score <= 100,
+            (0..=100).contains(&empty_score),
             "Empty code score should be in valid range"
         );
         assert_ne!(
@@ -6561,12 +6561,12 @@ public class PoorExample {
 
         // Scores should be in valid range
         assert!(
-            good_score >= 0 && good_score <= 100,
+            (0..=100).contains(&good_score),
             "Good code score out of range: {}",
             good_score
         );
         assert!(
-            poor_score >= 0 && poor_score <= 100,
+            (0..=100).contains(&poor_score),
             "Poor code score out of range: {}",
             poor_score
         );

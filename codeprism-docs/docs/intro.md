@@ -16,8 +16,6 @@ CodePrism represents a groundbreaking AI-only development experiment where every
 We do not accept human-written code contributions to preserve the integrity of this experiment. However, documentation improvements and community feedback are welcome!
 :::
 
-This documentation will guide you through the features, architecture, and usage of CodePrism. Whether you're a developer looking to integrate CodePrism into your workflow or a contributor interested in our unique AI-only development model, you'll find everything you need to get started.
-
 ## 🌟 What Makes CodePrism Unique
 
 ### 🔗 Graph-Based Intelligence
@@ -27,37 +25,36 @@ Unlike traditional code analysis tools that work with flat syntax trees, CodePri
 As a Model Context Protocol server, CodePrism provides standardized interfaces for AI assistants to understand and interact with codebases, enabling sophisticated code intelligence workflows.
 
 ### ⚡ Production-Ready Performance
-- **23 Production Tools** for code navigation, analysis, and workflow orchestration
-- **Multi-Language Support** with native parsers for JavaScript, TypeScript, and Python
-- **Real-Time Updates** with incremental parsing and graph updates
-- **Comprehensive Testing** with 100% tool success rate
-
-## Core Components
-
-### Code Analysis Engine
-- **Universal AST**: Language-agnostic abstract syntax tree representation
-- **Symbol Resolution**: Cross-language symbol linking and dependency tracking  
-- **Semantic Analysis**: Understanding of code patterns, architecture, and relationships
-
-### Parser Framework
-- **Multi-Language Support**: Native parsers for JavaScript, TypeScript, and Python
-- **Extensible Architecture**: Easy addition of new language parsers
-- **Development Tools**: Comprehensive debugging and validation toolkit
-
-### MCP Server
-- **23 Production Tools**: Complete suite for code navigation, analysis, and workflow
-- **Real-Time Updates**: Incremental parsing and graph updates
-- **AI Assistant Integration**: Direct compatibility with Claude, Cursor, VS Code, and others
+Built for enterprise use with comprehensive testing, real-time updates, and multi-language support.
 
 ## 🚀 Getting Started
 
-Ready to explore CodePrism? Here are your next steps:
+Ready to explore CodePrism? Choose your path:
 
+### 🔧 **For Developers Using CodePrism**
 1. **[Installation Guide](mcp-server/getting-started/installation)** - Set up CodePrism in your environment
-2. **[Architecture Overview](architecture/overview)** - Understand the technical design
-3. **[Current Status](architecture/current-status)** - See what's available now
-4. **[API Reference](mcp-server/api-reference)** - Explore the available tools and capabilities
-5. **[Test Harness](test-harness/)** - Comprehensive testing framework for MCP servers
+2. **[MCP Server Overview](mcp-server/overview)** - Understand the MCP integration
+3. **[API Reference](mcp-server/api-reference)** - Explore available tools and capabilities
+
+### 🏗️ **For Understanding the Architecture** 
+1. **[Architecture Overview](architecture/overview)** - Technical design and components
+2. **[Current Status](architecture/current-status)** - Feature status and capabilities
+3. **[Roadmap](architecture/roadmap)** - Future development plans
+
+### 🔬 **For Parser Development**
+1. **[Parser Overview](parsers/overview)** - Multi-language parser framework
+2. **[Development Tools](parsers/development-tools)** - Debugging and validation toolkit
+3. **[Implementation Guide](parsers/specification)** - Technical parser specifications
+
+### 🧪 **For Testing MCP Servers**
+1. **[Test Harness Overview](test-harness/)** - Mandrel MCP Test Harness
+2. **[Quick Start](test-harness/getting-started/quick-start)** - Get testing in 5 minutes
+3. **[Production Deployment](test-harness/production-deployment)** - Enterprise testing setup
+
+### 👥 **For Contributing**
+1. **[Contributing Guide](development/contributing)** - How to contribute to the project
+2. **[Developer Guide](development/developer-guide)** - Development environment setup
+3. **[Branch Strategy](development/branch-strategy)** - Git workflow and branching
 
 ## 💡 Use Cases
 
@@ -79,35 +76,16 @@ Ready to explore CodePrism? Here are your next steps:
 - **Performance Optimization** - Identify bottlenecks and inefficiencies
 - **Onboarding** - Help new team members understand codebase structure
 
-## 📖 Documentation Sections
+## 📚 Quick Navigation
 
-### 🏁 Getting Started
-- **[Installation](mcp-server/getting-started/installation)** - Complete setup instructions
-- **[Large Repositories](mcp-server/getting-started/large-repositories)** - Working with big codebases
+| Section | Purpose | Start Here |
+|---------|---------|------------|
+| 🔧 **[CodePrism MCP Server](mcp-server/)** | Use CodePrism with AI assistants | [Installation](mcp-server/getting-started/installation) |
+| 🧪 **[Mandrel Test Harness](test-harness/)** | Test MCP server implementations | [Quick Start](test-harness/getting-started/quick-start) |
+| 🏗️ **[Architecture](architecture/)** | Understand system design | [Overview](architecture/overview) |
+| 🔬 **[Parser Framework](parsers/)** | Extend language support | [Overview](parsers/overview) |
+| 👥 **[Development](development/)** | Contribute to the project | [Contributing](development/contributing) |
 
-### 🏗️ Architecture & Status
-- **[Architecture Overview](architecture/overview)** - Technical design and components
-- **[Current Status](architecture/current-status)** - Feature status and capabilities
-- **[Roadmap](architecture/roadmap)** - Future development plans
+---
 
-### 🔌 MCP Server
-- **[Server Overview](mcp-server/overview)** - MCP server implementation details
-- **[API Reference](mcp-server/api-reference)** - Complete tools and capabilities
-- **[Tools Documentation](mcp-server/tools-documentation)** - Detailed tool usage
-
-### 🔧 Parser Framework
-- **[Parser Overview](parsers/overview)** - Language parser architecture
-- **[Development Tools](parsers/development-tools)** - Debugging and validation toolkit
-- **[Parser Specification](parsers/specification)** - Technical specifications
-- **[Language Implementations](parsers/overview)** - Python, Rust, and other parsers
-
-### 👥 Development & Contributing
-- **[Contributing Guide](development/contributing)** - How to contribute to the project
-- **[Developer Guide](development/developer-guide)** - Development environment setup
-- **[Practices](development/practices)** - Development practices and standards
-- **[Branch Strategy](development/branch-strategy)** - Git workflow and branching
-
-### 🧪 Testing Framework
-- **[Test Harness](test-harness/)** - Mandrel MCP Test Harness documentation
-- **[Quick Start](test-harness/getting-started/quick-start)** - Get testing in 5 minutes
-- **[Production Deployment](test-harness/production-deployment)** - Enterprise testing setup
+**Ready to dive in?** Start with the [Installation Guide](mcp-server/getting-started/installation) to set up CodePrism, or explore the [Architecture Overview](architecture/overview) to understand how it works.

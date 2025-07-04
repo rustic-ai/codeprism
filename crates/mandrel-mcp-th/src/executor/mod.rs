@@ -251,6 +251,23 @@ impl TestRunner {
         let mut results = Vec::new();
 
         for test in tests {
+            // Check for shutdown signal before each test
+            if crate::is_shutdown_requested() {
+                warn!("Shutdown signal received, stopping test execution gracefully");
+
+                // Mark remaining tests as skipped
+                for remaining_test in tests.iter().skip(results.len()) {
+                    let skipped_result = TestResult::skipped(
+                        remaining_test.name.clone(),
+                        suite_name.to_string(),
+                        "Interrupted by shutdown signal".to_string(),
+                    );
+                    self.progress_tracker.record_result(&skipped_result);
+                    results.push(skipped_result);
+                }
+                break;
+            }
+
             // Check if test should be executed (filtering)
             if !self.should_execute_test(test) {
                 let skipped_result = TestResult::skipped(

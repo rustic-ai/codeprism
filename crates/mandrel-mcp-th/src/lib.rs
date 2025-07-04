@@ -75,6 +75,20 @@ pub const DEFAULT_TIMEOUT_SECS: u64 = 30;
 /// Maximum concurrent test executions by default
 pub const DEFAULT_MAX_CONCURRENCY: usize = 4;
 
+/// Global flag for graceful shutdown
+static SHUTDOWN_REQUESTED: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+
+/// Check if shutdown has been requested
+pub fn is_shutdown_requested() -> bool {
+    SHUTDOWN_REQUESTED.load(std::sync::atomic::Ordering::Relaxed)
+}
+
+/// Request shutdown (used by signal handlers)
+pub fn request_shutdown() {
+    SHUTDOWN_REQUESTED.store(true, std::sync::atomic::Ordering::Relaxed);
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -93,5 +107,18 @@ mod tests {
         assert_eq!(MCP_PROTOCOL_VERSION, "2025-06-18");
         assert_eq!(DEFAULT_TIMEOUT_SECS, 30);
         assert_eq!(DEFAULT_MAX_CONCURRENCY, 4);
+    }
+
+    #[test]
+    fn test_shutdown_functions() {
+        // Test shutdown flag functionality
+        assert!(!is_shutdown_requested());
+
+        request_shutdown();
+        assert!(is_shutdown_requested());
+
+        // Reset for other tests (this is a global state)
+        SHUTDOWN_REQUESTED.store(false, std::sync::atomic::Ordering::Relaxed);
+        assert!(!is_shutdown_requested());
     }
 }

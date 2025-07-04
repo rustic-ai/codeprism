@@ -53,7 +53,7 @@ moth validate my-server.yaml
 
 ### Getting Started
 - **[Quick Start Guide](getting-started/quick-start)** - Get up and running in 5 minutes
-- **[Installation Guide](../mcp-server/getting-started/installation)** - Complete installation instructions
+- **[Installation Guide](getting-started/installation)** - Complete installation instructions
 
 ### Reference Documentation
 - **[CLI Reference](cli-reference)** - Complete command-line documentation
@@ -126,19 +126,19 @@ graph TB
 ## 🎓 Learning Path
 
 ### Beginner (New to MCP Test Harness)
-1. [Installation Guide](../mcp-server/getting-started/installation) - Set up your environment
+1. [Installation Guide](getting-started/installation) - Set up your environment
 2. [Quick Start Tutorial](getting-started/quick-start) - Run your first test
 3. [User Guide](user-guide) - Master the command-line interface
 
 ### Intermediate (Regular User)
 1. [Configuration Reference](configuration-reference) - Advanced configuration patterns
 2. [Performance Tuning](performance-tuning) - Optimize test execution
-3. [Production Deployment](production-deployment) - Enterprise deployment
+3. [Examples](examples/codeprism-mcp.yaml) - Real-world test specifications
 
 ### Advanced (Power User/Developer)
-1. [Troubleshooting Guide](troubleshooting) - Debug complex issues
-2. [Production Deployment](production-deployment) - Enterprise deployment
-3. [Performance Tuning](performance-tuning) - Optimize for scale
+1. [Production Deployment](production-deployment) - Enterprise deployment
+2. [Troubleshooting Guide](troubleshooting) - Debug complex issues
+3. [CLI Reference](cli-reference) - Advanced command-line usage
 
 ## 🆘 Getting Help
 

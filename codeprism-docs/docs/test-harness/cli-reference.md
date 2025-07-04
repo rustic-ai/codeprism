@@ -1,7 +1,7 @@
 ---
 title: CLI Reference
 description: Complete command-line reference for the moth binary
-sidebar_position: 3
+sidebar_position: 4
 ---
 
 # CLI Reference - Mandrel MCP Test Harness

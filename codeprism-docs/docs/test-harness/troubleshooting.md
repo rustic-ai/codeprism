@@ -12,17 +12,17 @@ Comprehensive guide for diagnosing and resolving common issues with the MCP Test
 
 This guide covers common problems, error messages, debugging techniques, and solutions to help you quickly resolve issues with the MCP Test Harness.
 
+> **New to the Test Harness?** Check the [Installation Guide](getting-started/installation) for setup instructions, or see the [Quick Start Guide](getting-started/quick-start) for basic usage.
+
 ## 🚨 Quick Diagnosis
 
 ### Is your issue in this category?
 
-- **🔧 [Installation & Setup](#installation--setup-issues)** - Problems installing or setting up the test harness
 - **⚙️ [Configuration](#configuration-issues)** - YAML syntax, missing fields, invalid values
 - **🖥️ [Server Connection](#server-connection-issues)** - Cannot connect to or start MCP server
 - **🧪 [Test Execution](#test-execution-issues)** - Tests failing, timeouts, validation errors
 - **📊 [Performance](#performance-issues)** - Slow execution, memory issues, resource limits
 - **🔐 [Security](#security-issues)** - Authentication, authorization, compliance problems
-- **📈 [Monitoring](#monitoring-issues)** - Metrics collection, alerting, reporting problems
 
 ### Emergency Checklist
 
@@ -34,104 +34,6 @@ If tests are completely failing, check these first:
 4. **File paths**: Do all referenced files and directories exist?
 5. **Permissions**: Does the test harness have necessary file/network permissions?
 6. **Resource availability**: Is there enough memory/disk/network capacity?
-
-## 🔧 Installation & Setup Issues
-
-### Issue: Command Not Found
-
-**Symptoms:**
-```bash
-$ mcp-test-harness --version
--bash: mcp-test-harness: command not found
-```
-
-**Solutions:**
-
-1. **Verify Installation**:
-```bash
-# Check if binary exists
-which mcp-test-harness
-ls -la /usr/local/bin/mcp-test-harness
-
-# If not found, reinstall
-curl -L https://github.com/rustic-ai/codeprism/releases/latest/download/mcp-test-harness-linux-x86_64.tar.gz | tar xz
-sudo mv mcp-test-harness /usr/local/bin/
-sudo chmod +x /usr/local/bin/mcp-test-harness
-```
-
-2. **Check PATH**:
-```bash
-# Add to PATH if needed
-echo 'export PATH="/usr/local/bin:$PATH"' >> ~/.bashrc
-source ~/.bashrc
-```
-
-3. **Use Full Path**:
-```bash
-# Use absolute path
-/usr/local/bin/mcp-test-harness --version
-```
-
-### Issue: Permission Denied
-
-**Symptoms:**
-```bash
-$ mcp-test-harness test --config my-config.yaml
-Permission denied (os error 13)
-```
-
-**Solutions:**
-
-1. **Fix Binary Permissions**:
-```bash
-sudo chmod +x /usr/local/bin/mcp-test-harness
-```
-
-2. **Check File Permissions**:
-```bash
-# Check config file permissions
-ls -la my-config.yaml
-chmod 644 my-config.yaml
-
-# Check directory permissions
-ls -la test-projects/
-chmod 755 test-projects/
-```
-
-3. **Run with Proper User**:
-```bash
-# Ensure you're running as the correct user
-whoami
-# If needed, switch user or use sudo appropriately
-```
-
-### Issue: Missing Dependencies
-
-**Symptoms:**
-```bash
-$ mcp-test-harness test --config my-config.yaml
-error while loading shared libraries: libssl.so.1.1: cannot open shared object file
-```
-
-**Solutions:**
-
-1. **Install System Dependencies**:
-```bash
-# Ubuntu/Debian
-sudo apt-get update
-sudo apt-get install -y libssl-dev pkg-config build-essential
-
-# CentOS/RHEL
-sudo yum install -y openssl-devel pkgconfig gcc
-
-# macOS
-brew install openssl pkg-config
-```
-
-2. **Update Library Cache**:
-```bash
-sudo ldconfig
-```
 
 ## ⚙️ Configuration Issues
 

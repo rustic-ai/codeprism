@@ -1,12 +1,14 @@
-# MCP Test Harness - Product Document
+# Mandrel MCP Test Harness - Product Document
 
 ## Product Overview
 
-The **MCP Test Harness** is a comprehensive testing framework designed to validate Model Context Protocol (MCP) server implementations for protocol compliance, functional correctness, and capability verification. It serves as a universal testing tool that can validate any MCP server implementation against the official MCP specification.
+The **Mandrel MCP Test Harness** is a comprehensive testing framework designed to validate Model Context Protocol (MCP) server implementations for protocol compliance, functional correctness, and capability verification. It serves as a universal testing tool that can validate any MCP server implementation against the official MCP specification.
+
+The framework includes the **moth** binary (MOdel context protocol Test Harness) for command-line operations and testing workflows.
 
 ### Purpose and Vision
 
-The MCP Test Harness addresses the critical need for standardized testing of MCP servers in the rapidly evolving AI ecosystem. As MCP becomes the standard protocol for AI model-context communication, ensuring server implementations are compliant, reliable, and functional becomes paramount.
+The Mandrel MCP Test Harness addresses the critical need for standardized testing of MCP servers in the rapidly evolving AI ecosystem. As MCP becomes the standard protocol for AI model-context communication, ensuring server implementations are compliant, reliable, and functional becomes paramount.
 
 **Core Mission**: Provide a robust, automated testing framework that enables developers to confidently deploy MCP servers with verified protocol compliance and functional correctness.
 
@@ -48,7 +50,7 @@ The MCP Test Harness addresses the critical need for standardized testing of MCP
 
 ### System Components
 
-The MCP Test Harness follows a modular architecture with clear separation of concerns:
+The Mandrel MCP Test Harness follows a modular architecture with clear separation of concerns:
 
 ```
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
@@ -75,9 +77,9 @@ The MCP Test Harness follows a modular architecture with clear separation of con
 
 ### Deployment Options
 
-The MCP Test Harness is available in multiple deployment configurations:
+The Mandrel MCP Test Harness is available in multiple deployment configurations:
 
-- **Standalone CLI**: Complete command-line tool for direct usage
+- **Standalone CLI**: Complete command-line tool (**moth** binary) for direct usage
 - **Library Integration**: Rust library for embedding in other applications
 - **Container Deployment**: Docker images for containerized testing environments
 - **CI/CD Integration**: GitHub Actions workflows and pipeline templates

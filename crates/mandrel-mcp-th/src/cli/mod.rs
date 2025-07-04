@@ -1,4 +1,4 @@
-//! Command-line interface for MOTH test harness
+//! Command-line interface for Mandrel MCP Test Harness
 
 use clap::{Parser, Subcommand, ValueEnum};
 use std::path::PathBuf;
@@ -7,7 +7,7 @@ pub mod commands;
 
 #[derive(Parser, Debug)]
 #[command(name = "moth")]
-#[command(about = "MOTH - MOdel context protocol Test Harness")]
+#[command(about = "Mandrel MCP Test Harness - moth binary for command-line testing")]
 #[command(version)]
 pub struct Cli {
     #[command(subcommand)]

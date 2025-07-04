@@ -1,9 +1,11 @@
-# MOTH - MOdel context protocol Test Harness
+# Mandrel MCP Test Harness
 
 [![Rust](https://img.shields.io/badge/rust-1.70%2B-orange.svg)](https://www.rust-lang.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-MOTH is a modern, comprehensive testing framework for MCP (Model Context Protocol) servers built on the official Rust SDK. It provides validation, compliance testing, and detailed reporting for MCP server implementations.
+**Mandrel** is a modern, comprehensive testing framework for MCP (Model Context Protocol) servers built on the official Rust SDK. It provides validation, compliance testing, and detailed reporting for MCP server implementations.
+
+The project includes the **moth** binary (MOdel context protocol Test Harness) for command-line testing operations.
 
 ## Features
 
@@ -124,14 +126,14 @@ Options:
 
 ## Library Usage
 
-MOTH can also be used as a library in your Rust projects:
+Mandrel can also be used as a library in your Rust projects:
 
 ```rust
 use mandrel_mcp_th::{cli::Commands, error::Result};
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Use MOTH programmatically
+    // Use Mandrel programmatically
     // Implementation details coming soon...
     Ok(())
 }

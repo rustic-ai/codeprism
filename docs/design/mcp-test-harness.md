@@ -1,4 +1,4 @@
-# MCP Test Harness Design Document
+# Mandrel MCP Test Harness Design Document
 
 ## Problem Statement
 
@@ -11,6 +11,8 @@ We need a simple, focused MCP test harness that acts as an MCP client to validat
 ### High-Level Approach
 
 A focused MCP test harness that operates as a **MCP client** connecting to servers under test via stdio transport, validating their capabilities and testing their functionality against expected specifications.
+
+The framework provides the **moth** binary (MOdel context protocol Test Harness) for command-line testing operations.
 
 ### Component Architecture
 

@@ -1,6 +1,8 @@
-# MCP Test Harness - Complete Documentation
+# Mandrel MCP Test Harness - Complete Documentation
 
 A comprehensive testing framework for Model Context Protocol (MCP) servers with enterprise-grade capabilities.
+
+The **Mandrel** project provides the **moth** binary (MOdel context protocol Test Harness) for command-line testing operations.
 
 ## 📚 Documentation Index
 

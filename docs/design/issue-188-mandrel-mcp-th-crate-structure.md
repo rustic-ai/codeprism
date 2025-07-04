@@ -144,7 +144,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 ```rust
 #[derive(Parser)]
 #[command(name = "moth")]
-#[command(about = "MOTH - MOdel context protocol Test Harness")]
+#[command(about = "Mandrel MCP Test Harness - moth binary for command-line testing")]
 pub struct Cli {
     #[command(subcommand)]
     pub command: Commands,

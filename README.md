@@ -100,6 +100,31 @@ Dragonscale Industries Inc supports the development of cutting-edge AI-powered c
                     └─────────────────────────────────────────────────┘
 ```
 
+## 🧪 Mandrel MCP Test Harness
+
+**NEW**: CodePrism now includes the **Mandrel MCP Test Harness** - a comprehensive testing framework for MCP servers built on the official Rust SDK.
+
+### **moth** - MOdel context protocol Test Harness
+
+```bash
+# Install and run moth binary
+cargo install --path crates/mandrel-mcp-th
+
+# Test MCP servers with YAML specifications
+moth test filesystem-server.yaml
+
+# Validate test specifications
+moth validate filesystem-server.yaml
+```
+
+### Key Features
+- ✅ **SDK-First**: Built on official MCP Rust SDK for guaranteed protocol compliance
+- ✅ **Transport Agnostic**: Supports stdio, HTTP, and SSE transports
+- ✅ **Comprehensive Testing**: Protocol compliance, capability validation, and stress testing
+- ✅ **Rich Reporting**: HTML, JSON, and JUnit XML report formats
+
+**[Learn more about Mandrel →](docs/MANDREL_PROJECT_OVERVIEW.md)**
+
 ## 🚀 Quick Start
 
 ### Prerequisites

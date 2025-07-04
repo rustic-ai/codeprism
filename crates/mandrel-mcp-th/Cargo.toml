@@ -2,7 +2,7 @@
 name = "mandrel-mcp-th"
 version = "0.1.0"
 edition = "2021"
-description = "MOTH - MOdel context protocol Test Harness - A modern MCP testing framework built on the official Rust SDK"
+description = "Mandrel MCP Test Harness - A modern testing framework for MCP servers built on the official Rust SDK"
 authors = ["Prism Team"]
 license = "MIT"
 repository = "https://github.com/rustic-ai/codeprism"

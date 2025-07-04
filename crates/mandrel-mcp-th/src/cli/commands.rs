@@ -77,10 +77,11 @@ pub async fn handle_list(spec: PathBuf, detailed: bool) -> Result<()> {
 /// Handle the version command
 pub fn handle_version() -> Result<()> {
     println!(
-        "moth {} - MOTH (MOdel context protocol Test Harness)",
+        "moth {} - Mandrel MCP Test Harness",
         env!("CARGO_PKG_VERSION")
     );
-    println!("Built with rmcp SDK");
+    println!("MOdel context protocol Test Harness binary");
+    println!("Built with official rmcp SDK");
     println!("Repository: {}", env!("CARGO_PKG_REPOSITORY"));
     Ok(())
 }

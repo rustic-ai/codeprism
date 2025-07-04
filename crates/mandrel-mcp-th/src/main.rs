@@ -1,4 +1,4 @@
-//! MOTH - MOdel context protocol Test Harness
+//! Mandrel MCP Test Harness - moth binary
 //!
 //! A modern, comprehensive testing framework for MCP servers built on the official Rust SDK.
 
@@ -15,7 +15,7 @@ async fn main() -> Result<()> {
     // Initialize tracing
     init_tracing(cli.verbose)?;
 
-    tracing::info!("Starting MOTH - MOdel context protocol Test Harness");
+    tracing::info!("Starting moth binary - Mandrel MCP Test Harness");
     tracing::debug!("CLI arguments: {:?}", cli);
 
     // Execute the appropriate command
@@ -43,7 +43,7 @@ async fn main() -> Result<()> {
         }
     }
 
-    tracing::info!("MOTH execution completed successfully");
+    tracing::info!("Mandrel test harness execution completed successfully");
     Ok(())
 }
 

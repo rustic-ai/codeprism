@@ -12,6 +12,7 @@ members = [
     "crates/codeprism-dev-tools",
     "crates/codeprism-test-harness",
     "crates/mcp-test-harness",
+    "crates/mandrel-mcp-th",
 ]
 resolver = "2"
 

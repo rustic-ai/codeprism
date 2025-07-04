@@ -1,0 +1,50 @@
+[package]
+name = "mandrel-mcp-th"
+version = "0.1.0"
+edition = "2021"
+description = "MOTH - MOdel context protocol Test Harness - A modern MCP testing framework built on the official Rust SDK"
+authors = ["Prism Team"]
+license = "MIT"
+repository = "https://github.com/rustic-ai/codeprism"
+keywords = ["mcp", "testing", "protocol", "model-context-protocol"]
+categories = ["development-tools::testing", "command-line-utilities"]
+
+[[bin]]
+name = "moth"
+path = "src/main.rs"
+
+[dependencies]
+# Official MCP Rust SDK
+rmcp = { git = "https://github.com/modelcontextprotocol/rust-sdk", branch = "main", features = ["client", "transport-child-process"] }
+
+# Core async runtime
+tokio = { workspace = true, features = ["full"] }
+futures = "0.3"
+
+# CLI framework
+clap = { version = "4.0", features = ["derive", "env", "color"] }
+
+# Serialization and configuration
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+serde_yaml = "0.9"
+
+# Error handling
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+
+# Logging and tracing
+tracing = { workspace = true }
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Validation
+jsonpath_lib = "0.3"
+jsonschema = "0.18"
+
+# Utilities
+uuid = { version = "1.0", features = ["v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+
+[dev-dependencies]
+tokio-test = "0.4"
+tempfile = "3.0"

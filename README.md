@@ -6,8 +6,8 @@ A production-ready, high-performance code intelligence server implementing the M
 
 [![CI Status](https://github.com/rustic-ai/codeprism/workflows/CI/badge.svg)](https://github.com/rustic-ai/codeprism/actions)
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/License-MIT%20OR%20Apache--2.0-blue.svg)](https://opensource.org/licenses/)
-[![Crates.io](https://img.shields.io/crates/v/codeprism-mcp.svg)](https://crates.io/crates/codeprism-mcp)
-[![Downloads](https://img.shields.io/crates/d/codeprism-mcp.svg)](https://crates.io/crates/codeprism-mcp)
+[![Crates.io](https://img.shields.io/crates/v/codeprism-mcp-server.svg)](https://crates.io/crates/codeprism-mcp-server)
+[![Downloads](https://img.shields.io/crates/d/codeprism-mcp-server.svg)](https://crates.io/crates/codeprism-mcp-server)
 [![Sponsor](https://img.shields.io/badge/Sponsor-❤️-ea4aaa?style=flat&logo=github)](https://github.com/sponsors/dragonscale-ai)
 
 ## 🤖 The AI-Only Development Experiment
@@ -117,7 +117,7 @@ cd codeprism
 cargo build --release
 
 # Verify installation
-./target/release/codeprism-mcp --help
+./target/release/codeprism-mcp-server --help
 ```
 
 **⚠️ Development Note**: This project enforces strict implementation completeness standards via git pre-commit hooks. All commits must contain complete, functional implementations with zero placeholder code. The existing `.git/hooks/pre-commit` script automatically validates code quality and implementation completeness.
@@ -130,8 +130,9 @@ cargo build --release
 {
   "mcpServers": {
     codeprism": {
-      "command": "/path/to/codeprism/target/release/codeprism-mcp",
+      "command": "/path/to/codeprism/target/release/codeprism-mcp-server",
       "env": {
+        "CODEPRISM_PROFILE": "development",
         "REPOSITORY_PATH": "/path/to/your/repository"
       }
     }
@@ -145,8 +146,9 @@ cargo build --release
 {
   "mcpServers": {
     codeprism": {
-      "command": "/path/to/codeprism/target/release/codeprism-mcp",
+      "command": "/path/to/codeprism/target/release/codeprism-mcp-server",
       "env": {
+        "CODEPRISM_PROFILE": "development",
         "REPOSITORY_PATH": "."
       }
     }
@@ -156,9 +158,10 @@ cargo build --release
 
 **🔧 Manual Usage** - Direct stdio communication
 ```bash
-# Set repository path and run
+# Set configuration and run
+export CODEPRISM_PROFILE=development
 export REPOSITORY_PATH=/path/to/your/repository
-./target/release/codeprism-mcp
+./target/release/codeprism-mcp-server
 ```
 
 ## 🛠️ Available Tools
@@ -362,26 +365,26 @@ CodePrism uses fully automated releases via GitHub Actions:
 
 **Via Cargo (Recommended):**
 ```bash
-cargo install codeprism-mcp
+cargo install codeprism-mcp-server
 ```
 
 **Download Binary:**
 ```bash
 # Linux x86_64
-wget https://github.com/rustic-ai/codeprism/releases/latest/download/codeprism-mcp-linux-x86_64
-chmod +x codeprism-mcp-linux-x86_64
+wget https://github.com/rustic-ai/codeprism/releases/latest/download/codeprism-mcp-server-linux-x86_64
+chmod +x codeprism-mcp-server-linux-x86_64
 
 # macOS
-wget https://github.com/rustic-ai/codeprism/releases/latest/download/codeprism-mcp-macos-x86_64
+wget https://github.com/rustic-ai/codeprism/releases/latest/download/codeprism-mcp-server-macos-x86_64
 
 # Windows
-# Download from: https://github.com/rustic-ai/codeprism/releases/latest/download/codeprism-mcp-windows-x86_64.exe
+# Download from: https://github.com/rustic-ai/codeprism/releases/latest/download/codeprism-mcp-server-windows-x86_64.exe
 ```
 
 **Docker:**
 ```bash
 docker pull ghcr.io/rustic-ai/codeprism:latest
-docker run -v /path/to/repo:/workspace ghcr.io/rustic-ai/codeprism:latest
+docker run -e CODEPRISM_PROFILE=development -e REPOSITORY_PATH=/workspace -v /path/to/repo:/workspace ghcr.io/rustic-ai/codeprism:latest
 ```
 
 ## 🎭 Fun Ways to Engage

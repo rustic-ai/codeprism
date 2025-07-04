@@ -44,7 +44,7 @@ cd codeprism
 # Build the release binary
 cargo build --release
 
-# The binary will be at: ./target/release/codeprism-mcp
+# The binary will be at: ./target/release/codeprism-mcp-server
 ```
 
 ### Option B: Using Pre-built Binary (Coming Soon)
@@ -56,7 +56,7 @@ cargo build --release
 ### Verify Installation
 ```bash
 # Test the binary
-./target/release/codeprism-mcp --help
+./target/release/codeprism-mcp-server --help
 
 # Should show usage information and available options
 ```
@@ -87,9 +87,10 @@ Open the configuration file in your preferred editor and add:
 {
   "mcpServers": {
     codeprism": {
-      "command": "/path/to /codeprism/target/release/codeprism-mcp",
-      "args": ["/path/to/your/repository"],
+      "command": "/path/to/codeprism/target/release/codeprism-mcp-server",
       "env": {
+        "CODEPRISM_PROFILE": "development",
+        "REPOSITORY_PATH": "/path/to/your/repository",
         "RUST_LOG": "info"
       }
     }
@@ -107,16 +108,18 @@ Open the configuration file in your preferred editor and add:
 {
   "mcpServers": {
     "codeprism-main-project": {
-      "command": "/Users/username/code /codeprism/target/release/codeprism-mcp",
-      "args": ["/Users/username/code/my-project"],
+      "command": "/Users/username/code/codeprism/target/release/codeprism-mcp-server",
       "env": {
+        "CODEPRISM_PROFILE": "development",
+        "REPOSITORY_PATH": "/Users/username/code/my-project",
         "RUST_LOG": "info"
       }
     },
     "codeprism-client-app": {
-      "command": "/Users/username/code /codeprism/target/release/codeprism-mcp", 
-      "args": ["/Users/username/code/client-app"],
+      "command": "/Users/username/code/codeprism/target/release/codeprism-mcp-server", 
       "env": {
+        "CODEPRISM_PROFILE": "development",
+        "REPOSITORY_PATH": "/Users/username/code/client-app",
         "RUST_LOG": "warn"
       }
     }
@@ -158,9 +161,10 @@ Open the configuration file in your preferred editor and add:
 {
   "mcpServers": {
     codeprism": {
-      "command": "/path/to /codeprism/target/release/codeprism-mcp",
-      "args": ["."],
+      "command": "/path/to/codeprism/target/release/codeprism-mcp-server",
       "env": {
+        "CODEPRISM_PROFILE": "development",
+        "REPOSITORY_PATH": ".",
         "RUST_LOG": "info"
       }
     }
@@ -174,18 +178,20 @@ Open the configuration file in your preferred editor and add:
 {
   "mcpServers": {
     "codeprism-current": {
-      "command": "/Users/username/code /codeprism/target/release/codeprism-mcp",
-      "args": ["."],
+      "command": "/Users/username/code/codeprism/target/release/codeprism-mcp-server",
       "description": "Analyze current repository with codeprism",
       "env": {
+        "CODEPRISM_PROFILE": "development",
+        "REPOSITORY_PATH": ".",
         "RUST_LOG": "info"
       }
     },
     "codeprism-parent": {
-      "command": "/Users/username/code /codeprism/target/release/codeprism-mcp",
-      "args": [".."],
+      "command": "/Users/username/code/codeprism/target/release/codeprism-mcp-server",
       "description": "Analyze parent directory",
       "env": {
+        "CODEPRISM_PROFILE": "development",
+        "REPOSITORY_PATH": "..",
         "RUST_LOG": "warn"
       }
     }
@@ -237,9 +243,10 @@ Create `.vscode/mcp.json` in your workspace:
   "servers": {
     codeprism": {
       "type": "stdio",
-      "command": "/path/to /codeprism/target/release/codeprism-mcp",
-      "args": ["."],
+      "command": "/path/to/codeprism/target/release/codeprism-mcp-server",
       "env": {
+        "CODEPRISM_PROFILE": "development",
+        "REPOSITORY_PATH": ".",
         "RUST_LOG": "info"
       }
     }
@@ -257,9 +264,10 @@ In your VS Code `settings.json`:
     "servers": {
       "codeprism-global": {
         "type": "stdio", 
-        "command": "/Users/username/code /codeprism/target/release/codeprism-mcp",
-        "args": ["."],
+        "command": "/Users/username/code/codeprism/target/release/codeprism-mcp-server",
         "env": {
+          "CODEPRISM_PROFILE": "development",
+          "REPOSITORY_PATH": ".",
           "RUST_LOG": "info"
         }
       }
@@ -329,11 +337,13 @@ This repository has both Python and JavaScript. How do they interact?
 {
   "mcpServers": {
     codeprism": {
-      "command": "/path/to/codeprism-mcp",
-      "args": ["/path/to/repo"],
+      "command": "/path/to/codeprism-mcp-server",
       "env": {
-        "RUST_LOG": "warn",
-        "PRISM_MAX_FILES": "10000"
+        "CODEPRISM_PROFILE": "production",
+        "CODEPRISM_MEMORY_LIMIT_MB": "4096",
+        "CODEPRISM_BATCH_SIZE": "50",
+        "REPOSITORY_PATH": "/path/to/repo",
+        "RUST_LOG": "warn"
       }
     }
   }
@@ -345,9 +355,11 @@ This repository has both Python and JavaScript. How do they interact?
 {
   "mcpServers": {
     "codeprism-dev": {
-      "command": "/path/to/codeprism-mcp",
-      "args": ["/path/to/repo", "--verbose"],
+      "command": "/path/to/codeprism-mcp-server",
       "env": {
+        "CODEPRISM_PROFILE": "development",
+        "CODEPRISM_MEMORY_LIMIT_MB": "1024",
+        "REPOSITORY_PATH": "/path/to/repo",
         "RUST_LOG": "debug"
       }
     }
@@ -362,16 +374,25 @@ This repository has both Python and JavaScript. How do they interact?
 {
   "mcpServers": {
     "codeprism-frontend": {
-      "command": "/path/to/codeprism-mcp",
-      "args": ["/path/to/frontend-app"]
+      "command": "/path/to/codeprism-mcp-server",
+      "env": {
+        "CODEPRISM_PROFILE": "development",
+        "REPOSITORY_PATH": "/path/to/frontend-app"
+      }
     },
     "codeprism-backend": {
-      "command": "/path/to/codeprism-mcp", 
-      "args": ["/path/to/backend-api"]
+      "command": "/path/to/codeprism-mcp-server", 
+      "env": {
+        "CODEPRISM_PROFILE": "production",
+        "REPOSITORY_PATH": "/path/to/backend-api"
+      }
     },
     "codeprism-mobile": {
-      "command": "/path/to/codeprism-mcp",
-      "args": ["/path/to/mobile-app"]
+      "command": "/path/to/codeprism-mcp-server",
+      "env": {
+        "CODEPRISM_PROFILE": "development",
+        "REPOSITORY_PATH": "/path/to/mobile-app"
+      }
     }
   }
 }
@@ -385,10 +406,10 @@ This repository has both Python and JavaScript. How do they interact?
 
 ```bash
 # Make sure the binary is executable
-chmod +x /path/to /codeprism/target/release/codeprism-mcp
+chmod +x /path/to/codeprism/target/release/codeprism-mcp-server
 
 # Test the binary directly
-/path/to /codeprism/target/release/codeprism-mcp --help
+/path/to/codeprism/target/release/codeprism-mcp-server --help
 ```
 
 **2. "Repository not found" or "Permission denied"**
@@ -426,9 +447,10 @@ Enable detailed logging:
 {
   "mcpServers": {
     "codeprism-debug": {
-      "command": "/path/to/codeprism-mcp",
-      "args": ["/path/to/repo", "--verbose"],
+      "command": "/path/to/codeprism-mcp-server",
       "env": {
+        "CODEPRISM_PROFILE": "development",
+        "REPOSITORY_PATH": "/path/to/repo",
         "RUST_LOG": "debug",
         "PRISM_DEBUG": "1"
       }
@@ -462,17 +484,18 @@ tail -f ~/Library/Logs/Claude/mcp*.log
 
 **Test codeprism directly:**
 ```bash
-# Test with minimal arguments
-./target/release/codeprism-mcp /path/to/small/test/repo
+# Test with minimal configuration
+CODEPRISM_PROFILE=development REPOSITORY_PATH=/path/to/small/test/repo ./target/release/codeprism-mcp-server
 
 # Check for error messages
 ```
 
 **Common Solutions:**
 1. **Rebuild codeprism:** `cargo build --release`
-2. **Check permissions:** `chmod +x codeprism-mcp`
+2. **Check permissions:** `chmod +x codeprism-mcp-server`
 3. **Verify paths:** Use absolute paths in configuration
-4. **Restart client:** Completely quit and restart MCP client
+4. **Check environment:** Ensure CODEPRISM_PROFILE and REPOSITORY_PATH are set
+5. **Restart client:** Completely quit and restart MCP client
 
 ## 🎉 What's Next?
 

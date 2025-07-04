@@ -167,6 +167,21 @@ pub struct FieldValidation {
     pub max: Option<f64>,
 }
 
+/// Types of field validation that can be performed
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum FieldValidationType {
+    /// Check if field exists
+    Exists,
+    /// Check exact value equality
+    Equals,
+    /// Check field type (string, number, boolean, array, object)
+    Type,
+    /// Check pattern match (regex)
+    Pattern,
+    /// Check value range (for numbers)
+    Range,
+}
+
 /// Performance requirements
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct PerformanceRequirements {

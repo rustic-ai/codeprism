@@ -86,11 +86,10 @@ Open the configuration file in your preferred editor and add:
 ```json
 {
   "mcpServers": {
-    codeprism": {
+    "codeprism": {
       "command": "/path/to/codeprism/target/release/codeprism-mcp-server",
       "env": {
         "CODEPRISM_PROFILE": "development",
-        "REPOSITORY_PATH": "/path/to/your/repository",
         "RUST_LOG": "info"
       }
     }
@@ -99,33 +98,34 @@ Open the configuration file in your preferred editor and add:
 ```
 
 **Replace the paths:**
-- `/path/to /codeprism/target/release/codeprism-mcp` → Your actual codeprism binary path
-- `/path/to/your/repository` → Your project directory
+- `/path/to/codeprism/target/release/codeprism-mcp-server` → Your actual codeprism binary path
+
+> **📝 Note**: Repository paths are configured via MCP tools after the server starts. You don't need to set REPOSITORY_PATH in the environment.
 
 ### 3. Complete Setup Example
 
 ```json
 {
   "mcpServers": {
-    "codeprism-main-project": {
+    "codeprism-dev": {
       "command": "/Users/username/code/codeprism/target/release/codeprism-mcp-server",
       "env": {
         "CODEPRISM_PROFILE": "development",
-        "REPOSITORY_PATH": "/Users/username/code/my-project",
         "RUST_LOG": "info"
       }
     },
-    "codeprism-client-app": {
+    "codeprism-prod": {
       "command": "/Users/username/code/codeprism/target/release/codeprism-mcp-server", 
       "env": {
-        "CODEPRISM_PROFILE": "development",
-        "REPOSITORY_PATH": "/Users/username/code/client-app",
+        "CODEPRISM_PROFILE": "production",
         "RUST_LOG": "warn"
       }
     }
   }
 }
 ```
+
+> **💡 Pro Tip**: Each server instance can analyze different repositories as needed - you specify the repository path when using MCP tools.
 
 ### 4. Restart Claude Desktop
 
@@ -160,11 +160,10 @@ Open the configuration file in your preferred editor and add:
 ```json
 {
   "mcpServers": {
-    codeprism": {
+    "codeprism": {
       "command": "/path/to/codeprism/target/release/codeprism-mcp-server",
       "env": {
         "CODEPRISM_PROFILE": "development",
-        "REPOSITORY_PATH": ".",
         "RUST_LOG": "info"
       }
     }

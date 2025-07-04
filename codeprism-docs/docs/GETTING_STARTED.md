@@ -126,7 +126,7 @@ Open the configuration file in your preferred editor and add:
 ```json
 {
   "mcpServers": {
-    codeprism": {
+    "codeprism": {
       "command": "/path/to/codeprism/target/release/codeprism-mcp-server",
       "env": {
         "CODEPRISM_PROFILE": "development",
@@ -200,7 +200,7 @@ Open the configuration file in your preferred editor and add:
 ```json
 {
   "mcpServers": {
-    codeprism": {
+    "codeprism": {
       "command": "/path/to/codeprism/target/release/codeprism-mcp-server",
       "env": {
         "CODEPRISM_PROFILE": "development",
@@ -268,11 +268,11 @@ Open the configuration file in your preferred editor and add:
 
 1. Open Command Palette (`Cmd/Ctrl + Shift + P`)
 2. Run "MCP: Add Server"
-3. Choose "CLI Server - Node.js" 
+3. Choose "CLI Server - Stdio" 
 4. Fill in the details:
-   - **Server Name:** codeprism`
+   - **Server Name:** `codeprism`
    - **Command:** Full path to your codeprism-mcp-server binary
-   - **Args:** `["/path/to/your/repository"]`
+   - **Environment Variables:** Set `CODEPRISM_PROFILE=development` and `REPOSITORY_PATH=/path/to/your/repository`
 
 ### 3. Add MCP Server (Method 2: Configuration File)
 
@@ -281,7 +281,7 @@ Create `.vscode/mcp.json` in your workspace:
 ```json
 {
   "servers": {
-    codeprism": {
+    "codeprism": {
       "type": "stdio",
       "command": "/path/to/codeprism/target/release/codeprism-mcp-server",
       "env": {
@@ -376,7 +376,7 @@ This repository has both Python and JavaScript. How do they interact?
 ```json
 {
   "mcpServers": {
-    codeprism": {
+    "codeprism": {
       "command": "/path/to/codeprism-mcp-server",
       "env": {
         "CODEPRISM_PROFILE": "production",

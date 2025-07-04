@@ -124,16 +124,18 @@ cargo build --release
 
 ### MCP Client Integration
 
+> **📝 Note on Repository Setup**: The server starts without a specific repository. Once connected via MCP, use any analysis tool (like `repository_stats`) and the server will prompt you to specify the repository path, then automatically initialize and index it.
+
 **🏆 Claude Desktop** - Best overall MCP experience
 ```json
 // ~/.config/claude-desktop/claude_desktop_config.json
 {
   "mcpServers": {
-    codeprism": {
+    "codeprism": {
       "command": "/path/to/codeprism/target/release/codeprism-mcp-server",
       "env": {
         "CODEPRISM_PROFILE": "development",
-        "REPOSITORY_PATH": "/path/to/your/repository"
+        "RUST_LOG": "info"
       }
     }
   }
@@ -145,11 +147,11 @@ cargo build --release
 // .cursor/mcp.json
 {
   "mcpServers": {
-    codeprism": {
+    "codeprism": {
       "command": "/path/to/codeprism/target/release/codeprism-mcp-server",
       "env": {
         "CODEPRISM_PROFILE": "development",
-        "REPOSITORY_PATH": "."
+        "RUST_LOG": "info"
       }
     }
   }
@@ -160,7 +162,7 @@ cargo build --release
 ```bash
 # Set configuration and run
 export CODEPRISM_PROFILE=development
-export REPOSITORY_PATH=/path/to/your/repository
+export RUST_LOG=info
 ./target/release/codeprism-mcp-server
 ```
 
@@ -384,7 +386,7 @@ wget https://github.com/rustic-ai/codeprism/releases/latest/download/codeprism-m
 **Docker:**
 ```bash
 docker pull ghcr.io/rustic-ai/codeprism:latest
-docker run -e CODEPRISM_PROFILE=development -e REPOSITORY_PATH=/workspace -v /path/to/repo:/workspace ghcr.io/rustic-ai/codeprism:latest
+docker run -e CODEPRISM_PROFILE=development -e RUST_LOG=info -v /path/to/repo:/workspace ghcr.io/rustic-ai/codeprism:latest
 ```
 
 ## 🎭 Fun Ways to Engage

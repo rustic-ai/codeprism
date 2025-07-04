@@ -102,7 +102,7 @@ jobs:
       1. codeprism-core
       2. codeprism-bus, codeprism-storage, codeprism-analysis
       3. codeprism-lang-* packages
-      4. codeprism-mcp (main package)
+      4. codeprism-mcp-server (main package)
     
   docker-images:
     - Build multi-platform Docker images

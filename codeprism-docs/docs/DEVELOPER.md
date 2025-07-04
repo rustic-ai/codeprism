@@ -108,7 +108,7 @@ prism/
 │   ├── codeprism-lang-java/      # Java parser (planned)
 │   ├── codeprism-storage/        # Neo4j integration (planned)
 │   ├── codeprism-bus/            # Kafka integration (planned)
-│   ├── codeprism-mcp/            # MCP server (planned)
+│   ├── codeprism-mcp-server/     # MCP server implementation
 # (CLI and daemon components have been removed)
 │
 ├── docs/                     # Documentation

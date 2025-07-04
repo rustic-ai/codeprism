@@ -414,7 +414,7 @@ The Rust parser will automatically be available through the MCP server for:
 ### CLI Integration
 ```bash
 # Analyze codeprism itself
-codeprism-mcp /path/to /codeprism
+export REPOSITORY_PATH=/path/to/codeprism && ./target/release/codeprism-mcp-server
 
 # Focus on Rust files only
 prism analyze --language rust /path/to /codeprism

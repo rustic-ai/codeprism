@@ -75,7 +75,7 @@ Dragonscale Industries Inc supports the development of cutting-edge AI-powered c
 
 ```
 ┌─────────────────┐    MCP Protocol     ┌──────────────────┐
-│   AI Assistant  │◄──────────────────►│   codeprism-mcp      │
+│   AI Assistant  │◄──────────────────►│   codeprism-mcp-server │
 │  (Claude/Cursor)│   JSON-RPC 2.0     │     Server       │
 └─────────────────┘                     └──────────────────┘
                                                  │

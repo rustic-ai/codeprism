@@ -576,10 +576,11 @@ CodePrism is designed to work seamlessly with major MCP clients:
 {
   "mcpServers": {
     codeprism": {
-      "command": "codeprism-mcp",
-      "args": ["/path/to/repository"],
+      "command": "codeprism-mcp-server",
       "env": {
-        "PRISM_LOG_LEVEL": "info"
+        "CODEPRISM_PROFILE": "development",
+        "REPOSITORY_PATH": "/path/to/repository",
+        "RUST_LOG": "info"
       }
     }
   }
@@ -589,14 +590,15 @@ CodePrism is designed to work seamlessly with major MCP clients:
 #### With Cursor
 ```json
 {
-  "mcp": {
-    "servers": [
-      {
-        "name": codeprism",
-        "command": ["codeprism-mcp", "."],
-        "capabilities": ["tools", "resources", "prompts"]
+  "mcpServers": {
+    codeprism": {
+      "command": "codeprism-mcp-server",
+      "env": {
+        "CODEPRISM_PROFILE": "development",
+        "REPOSITORY_PATH": ".",
+        "RUST_LOG": "info"
       }
-    ]
+    }
   }
 }
 ```
@@ -619,8 +621,10 @@ CodePrism is designed to work seamlessly with major MCP clients:
 
 ### Repository Configuration
 ```bash
-# Start CodePrism MCP server with repository
-codeprism-mcp /path/to/repository
+# Set configuration and start CodePrism MCP server
+export CODEPRISM_PROFILE=development
+export REPOSITORY_PATH=/path/to/repository
+codeprism-mcp-server
 
 # The MCP server is designed to be launched by MCP clients
 # Not as a standalone command-line tool

@@ -39,7 +39,7 @@ Please provide as much detail as possible:
 - [ ] Other: ___________
 
 **Affected Component:**
-- [ ] codeprism-mcp server
+- [ ] codeprism-mcp-server
 - [ ] codeprism-core parser
 - [ ] Language parsers (JS/Python)
 - [ ] MCP protocol implementation

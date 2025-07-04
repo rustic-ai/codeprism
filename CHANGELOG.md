@@ -140,7 +140,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **codeprism-analysis**: Language-agnostic analysis tools
 - **codeprism-lang-python**: Python-specific parsing and analysis
 - **codeprism-lang-js**: JavaScript/TypeScript support
-- **codeprism-mcp**: MCP protocol implementation and server
+- **codeprism-mcp-server**: MCP protocol implementation and server (replaces legacy codeprism-mcp)
 - **codeprism-storage**: Data persistence layer
 - **codeprism-dev-tools**: Parser development utilities
 

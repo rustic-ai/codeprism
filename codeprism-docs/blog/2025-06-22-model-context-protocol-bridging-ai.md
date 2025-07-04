@@ -111,8 +111,9 @@ Claude Desktop was the first major AI assistant to implement MCP:
 {
   "mcpServers": {
     "codeprism": {
-      "command": "/path/to/codeprism-mcp",
+      "command": "/path/to/codeprism-mcp-server",
       "env": {
+        "CODEPRISM_PROFILE": "development",
         "REPOSITORY_PATH": "/path/to/your/project"
       }
     },
@@ -141,8 +142,9 @@ Cursor integrates MCP to enhance its code understanding:
 {
   "mcpServers": {
     "codeprism": {
-      "command": "/path/to/codeprism-mcp",
+      "command": "/path/to/codeprism-mcp-server",
       "env": {
+        "CODEPRISM_PROFILE": "development",
         "REPOSITORY_PATH": "."
       }
     }
@@ -212,8 +214,8 @@ async def main():
     # Connect to code analysis server
     await assistant.connect_to_server(
         "codeprism",
-        ["/path/to/codeprism-mcp"],
-        {"REPOSITORY_PATH": "/path/to/project"}
+        ["/path/to/codeprism-mcp-server"],
+        {"CODEPRISM_PROFILE": "development", "REPOSITORY_PATH": "/path/to/project"}
     )
     
     # Handle user query

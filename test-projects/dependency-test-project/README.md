@@ -55,7 +55,7 @@ This project tests all three dependency scanning modes:
 
 ### 1. **Minimal Mode** (Default)
 ```bash
-./target/release/codeprism-mcp test-projects/dependency-test-project
+export REPOSITORY_PATH=test-projects/dependency-test-project && ./target/release/codeprism-mcp-server
 ```
 - **Excludes**: All dependency directories (`venv/`, `.tox/`, etc.)
 - **Includes**: Only core project files (~15-25 files)
@@ -64,7 +64,7 @@ This project tests all three dependency scanning modes:
 
 ### 2. **Smart Mode** 
 ```bash
-./target/release/codeprism-mcp --smart-deps test-projects/dependency-test-project
+export CODEPRISM_DEPENDENCY_MODE=smart && export REPOSITORY_PATH=test-projects/dependency-test-project && ./target/release/codeprism-mcp-server
 ```
 - **Includes**: Dependency APIs (`__init__.py`, public interfaces)
 - **Excludes**: Internal implementation, tests, private modules  
@@ -73,7 +73,7 @@ This project tests all three dependency scanning modes:
 
 ### 3. **Complete Mode**
 ```bash
-./target/release/codeprism-mcp --include-deps test-projects/dependency-test-project
+export CODEPRISM_DEPENDENCY_MODE=include_all && export REPOSITORY_PATH=test-projects/dependency-test-project && ./target/release/codeprism-mcp-server
 ```
 - **Includes**: All dependencies including internal implementation
 - **Use case**: Complete code analysis, following all import chains
@@ -115,13 +115,13 @@ This project tests all three dependency scanning modes:
 ### Individual Mode Testing
 ```bash
 # Test minimal mode
-./target/release/codeprism-mcp test-projects/dependency-test-project
+export REPOSITORY_PATH=test-projects/dependency-test-project && ./target/release/codeprism-mcp-server
 
 # Test smart mode  
-./target/release/codeprism-mcp --smart-deps test-projects/dependency-test-project
+export CODEPRISM_DEPENDENCY_MODE=smart && export REPOSITORY_PATH=test-projects/dependency-test-project && ./target/release/codeprism-mcp-server
 
 # Test complete mode
-./target/release/codeprism-mcp --include-deps test-projects/dependency-test-project
+export CODEPRISM_DEPENDENCY_MODE=include_all && export REPOSITORY_PATH=test-projects/dependency-test-project && ./target/release/codeprism-mcp-server
 ```
 
 ### Python Test Suite

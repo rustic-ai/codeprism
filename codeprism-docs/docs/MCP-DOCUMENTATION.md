@@ -438,11 +438,12 @@ CodePrism implements 23 production-ready MCP tools. Here are example JSON-RPC re
 
 #### Environment Setup
 ```bash
-# Set repository path
+# Set configuration profile and repository path
+export CODEPRISM_PROFILE=development
 export REPOSITORY_PATH=/path/to/your/repository
 
 # Start CodePrism MCP server
-./target/release/codeprism-mcp
+./target/release/codeprism-mcp-server
 ```
 
 #### Client Configuration (Claude Desktop)
@@ -450,8 +451,9 @@ export REPOSITORY_PATH=/path/to/your/repository
 {
   "mcpServers": {
     "codeprism": {
-      "command": "./target/release/codeprism-mcp",
+      "command": "./target/release/codeprism-mcp-server",
       "env": {
+        "CODEPRISM_PROFILE": "development",
         "REPOSITORY_PATH": "/path/to/repository"
       }
     }

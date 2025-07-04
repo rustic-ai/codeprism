@@ -42,7 +42,7 @@ pub enum Error {
 
     /// YAML parsing errors
     #[error("YAML parsing error: {0}")]
-    Yaml(#[from] serde_yaml::Error),
+    Yaml(#[from] serde_yml::Error),
 }
 
 impl Error {
@@ -137,8 +137,8 @@ mod tests {
     }
 
     #[test]
-    fn test_error_from_serde_yaml() {
-        let yaml_err = serde_yaml::from_str::<serde_yaml::Value>("invalid: yaml: [").unwrap_err();
+    fn test_error_from_serde_yml() {
+        let yaml_err = serde_yml::from_str::<serde_yml::Value>("invalid: yaml: [").unwrap_err();
         let err = Error::from(yaml_err);
         assert!(matches!(err, Error::Yaml(_)));
     }

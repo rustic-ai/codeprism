@@ -1,7 +1,7 @@
 ---
 title: MCP Server Overview
 description: Model Context Protocol server implementation with graph-based code intelligence
-sidebar_position: 1
+sidebar_position: 3
 ---
 
 # CodePrism MCP Server Overview

@@ -1,7 +1,7 @@
 ---
 title: Contributing Guide
 description: How to contribute to CodePrism, the first 100% AI-generated open source project
-sidebar_position: 1
+sidebar_position: 7
 ---
 
 # Contributing to CodePrism 🤖

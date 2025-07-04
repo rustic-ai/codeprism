@@ -709,6 +709,6 @@ echo "All checks passed!"
 ## Next Steps
 
 1. Read the API Documentation (coming soon)
-2. Review the [Architecture Guide](./Architecture.md)
+2. Review the [Architecture Guide](../architecture/overview)
 3. Try implementing a simple language parser
 4. Contribute to existing parsers or core functionality 

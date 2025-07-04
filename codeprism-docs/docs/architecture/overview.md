@@ -1,7 +1,7 @@
 ---
 title: Architecture Overview
 description: High-level architecture and design principles of CodePrism code intelligence server
-sidebar_position: 1
+sidebar_position: 4
 ---
 
 # CodePrism Architecture

@@ -1,7 +1,7 @@
 ---
 title: Installation Guide
 description: Complete setup instructions for CodePrism across different platforms and environments
-sidebar_position: 1
+sidebar_position: 2
 ---
 
 # Installation Guide
@@ -265,11 +265,11 @@ If you encounter issues:
 
 After installation:
 
-1. **[Learn the basics](quick-start)** - Get familiar with CodePrism commands
+1. **[Learn the basics](../intro)** - Get familiar with CodePrism commands
 2. **[Explore the architecture](../architecture/overview)** - Understand how CodePrism works
 3. **[Check current status](../architecture/current-status)** - See what features are available
 4. **[Configure your AI assistant](../mcp-server/overview)** - Set up MCP integration
 
 ---
 
-**Installation complete?** Continue with our [Quick Start Guide](quick-start) to begin using CodePrism! 
+**Installation complete?** Continue with the [API Reference](../mcp-server/api-reference) to explore CodePrism's capabilities! 

@@ -138,4 +138,4 @@ Complete debugging and development environment:
 
 ---
 
-**Ready to get started?** See the [Getting Started Guide](./GETTING_STARTED.md) for installation and setup instructions, or explore the [API Reference](./API_Reference.md) for detailed tool documentation. 
+**Ready to get started?** See the [Getting Started Guide](../getting-started/installation) for installation and setup instructions, or explore the [API Reference](../mcp-server/api-reference) for detailed tool documentation. 

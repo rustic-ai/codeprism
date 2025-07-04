@@ -1,7 +1,7 @@
 ---
 title: Mandrel MCP Test Harness
 description: Comprehensive testing framework for Model Context Protocol (MCP) servers
-sidebar_position: 1
+sidebar_position: 6
 ---
 
 # Mandrel MCP Test Harness

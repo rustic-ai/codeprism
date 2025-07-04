@@ -1,7 +1,7 @@
 ---
 title: Sponsors & Support
 description: Support CodePrism development and become part of the AI-generated open source revolution
-sidebar_position: 10
+sidebar_position: 8
 ---
 
 # 💝 Sponsors

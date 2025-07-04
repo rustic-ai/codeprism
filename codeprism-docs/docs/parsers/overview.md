@@ -1,7 +1,7 @@
 ---
 title: Parser Overview
 description: Language parser implementation guide for CodePrism's multi-language support framework
-sidebar_position: 1
+sidebar_position: 5
 ---
 
 # Language Parser Implementation Guide

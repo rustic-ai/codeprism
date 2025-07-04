@@ -1,0 +1,10 @@
+{
+  "label": "Parser Framework",
+  "position": 5,
+  "link": {
+    "type": "generated-index",
+    "title": "CodePrism Parser Framework",
+    "description": "Multi-language parser framework with development tools and implementation guides for extending CodePrism language support.",
+    "slug": "/parsers"
+  }
+} 

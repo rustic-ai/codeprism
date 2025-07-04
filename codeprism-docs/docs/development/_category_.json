@@ -1,0 +1,10 @@
+{
+  "label": "Development",
+  "position": 7,
+  "link": {
+    "type": "generated-index",
+    "title": "Development & Contributing",
+    "description": "Contributing guidelines, development practices, and technical workflows for CodePrism development.",
+    "slug": "/development"
+  }
+} 

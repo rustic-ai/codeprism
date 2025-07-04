@@ -1,0 +1,10 @@
+{
+  "label": "MCP Server",
+  "position": 3,
+  "link": {
+    "type": "generated-index",
+    "title": "CodePrism MCP Server",
+    "description": "Model Context Protocol server implementation with 23 production-ready tools for code intelligence and analysis.",
+    "slug": "/mcp-server"
+  }
+} 

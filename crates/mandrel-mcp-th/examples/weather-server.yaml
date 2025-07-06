@@ -1,0 +1,551 @@
+# Weather MCP Server Test Specification
+# Comprehensive testing for weather MCP server with National Weather Service API integration
+# following the MCP 2025-06-18 specification with external API testing and geographic coverage
+
+name: "Weather MCP Server"
+version: "1.2.1"
+description: "MCP server providing weather forecasts and alerts via US National Weather Service API"
+
+# Weather server capabilities
+capabilities:
+  tools: true           # Weather forecast and alert tools
+  resources: false      # No static resources provided
+  prompts: false        # No prompt templates
+  sampling: false       # No sampling support
+  logging: true         # Detailed API request logging
+  experimental:         # Enhanced weather features
+    geographic_boundaries: true
+    api_resilience: true
+    performance_monitoring: true
+
+# Server configuration for Python weather server
+server:
+  transport: stdio
+  command: "python"
+  args: ["-m", "weather_mcp_server"]
+  working_directory: "."
+  environment:
+    USER_AGENT: "WeatherMCP/1.0 (test@example.com)"
+    NWS_API_BASE: "https://api.weather.gov"
+    REQUEST_TIMEOUT: "30"
+    RATE_LIMIT_DELAY: "1"
+  startup_timeout: 10
+  shutdown_timeout: 5
+
+# Core weather tools testing
+tools:
+  # === PRIMARY WEATHER FORECAST TOOL ===
+  - name: "get_weather_forecast"
+    description: "Get weather forecast for a location using NWS API 2-step process"
+    test_cases:
+      # 1. Basic Coordinate Forecast (Major Cities)
+      - name: "coordinate_forecast_major_cities"
+        description: "Test forecast retrieval for major US cities using coordinates"
+        parameters:
+          latitude: 40.7128
+          longitude: -74.0060
+          location_name: "New York City, NY"
+        expected_response:
+          is_error: false
+          content:
+            - type: "text"
+              schema_validation:
+                forecast_periods: 
+                  type: "array"
+                  min_items: 7
+                  max_items: 14
+                temperature:
+                  type: "object"
+                  required: ["high", "low", "units"]
+                weather_conditions:
+                  type: "string"
+                  pattern: ".*"
+                precipitation:
+                  type: "object"
+                  required: ["probability", "amount"]
+                wind:
+                  type: "object"
+                  required: ["speed", "direction", "units"]
+        performance_requirements:
+          max_duration_ms: 2000
+          api_calls_expected: 2  # Grid lookup + forecast retrieval
+
+      # 2. State Code Location Testing
+      - name: "state_code_forecast_testing"
+        description: "Test forecast for various US states by representative coordinates"
+        parameters:
+          test_locations: [
+            {state: "CA", coords: [34.0522, -118.2437], name: "Los Angeles"},
+            {state: "TX", coords: [31.9686, -99.9018], name: "Central Texas"},
+            {state: "FL", coords: [27.7663, -82.6404], name: "Tampa Bay"},
+            {state: "IL", coords: [41.8781, -87.6298], name: "Chicago"},
+            {state: "WA", coords: [47.6062, -122.3321], name: "Seattle"}
+          ]
+        expected_response:
+          is_error: false
+          content:
+            - type: "text"
+              validation_checks:
+                - "location_specific_data"
+                - "regional_weather_patterns"
+                - "timezone_awareness"
+                - "state_boundary_accuracy"
+
+      # 3. Edge Case Geographic Testing (Alaska/Hawaii)
+      - name: "alaska_hawaii_forecast_testing"
+        description: "Test forecast for non-contiguous US states with special handling"
+        parameters:
+          alaska_coords: [61.2181, -149.9003]  # Anchorage, AK
+          hawaii_coords: [21.3099, -157.8581]  # Honolulu, HI
+        expected_response:
+          is_error: false
+          content:
+            - type: "text"
+              special_validation:
+                alaska_timezone: "AKST"
+                hawaii_timezone: "HST"
+                marine_weather_inclusion: true
+                extended_daylight_handling: true
+
+      # 4. Invalid Coordinate Handling
+      - name: "invalid_coordinates_error_handling"
+        description: "Test proper error handling for invalid coordinate inputs"
+        parameters:
+          invalid_coords: [
+            [91.0, -181.0],    # Out of range lat/lng
+            [45.0, 200.0],     # Invalid longitude
+            [-95.0, -120.0],   # Invalid latitude
+            ["abc", "def"]     # Non-numeric coordinates
+          ]
+        expected_response:
+          is_error: true
+          error_classification: "INVALID_COORDINATES"
+          content:
+            - type: "text"
+              error_details:
+                valid_latitude_range: "[-90, 90]"
+                valid_longitude_range: "[-180, 180]"
+                error_code: "COORDINATE_VALIDATION_FAILED"
+
+      # 5. API Timeout Simulation
+      - name: "api_timeout_error_handling"
+        description: "Test handling of NWS API timeout scenarios"
+        parameters:
+          latitude: 39.7456
+          longitude: -97.0892
+          force_timeout: true
+          timeout_duration: 5  # Force 5-second timeout
+        expected_response:
+          is_error: true
+          error_classification: "API_TIMEOUT"
+          content:
+            - type: "text"
+              timeout_handling:
+                retry_attempted: true
+                fallback_data: false
+                error_message: "NWS API request timed out after 30 seconds"
+
+      # 6. Offshore and Territorial Testing
+      - name: "offshore_territorial_forecast"
+        description: "Test weather for US territories and offshore locations"
+        parameters:
+          test_territories: [
+            {name: "Puerto Rico", coords: [18.2208, -66.5901]},
+            {name: "US Virgin Islands", coords: [18.3358, -64.8963]},
+            {name: "Guam", coords: [13.4443, 144.7937]},
+            {name: "American Samoa", coords: [-14.2710, -170.1322]}
+          ]
+        expected_response:
+          is_error: false
+          content:
+            - type: "text"
+              territorial_validation:
+                marine_forecasts: true
+                tropical_weather_alerts: true
+                territorial_office_mapping: true
+
+      # 7. Performance Benchmarks
+      - name: "forecast_performance_benchmarks"
+        description: "Validate API response times meet performance requirements"
+        parameters:
+          benchmark_locations: [
+            [40.7128, -74.0060],  # NYC
+            [34.0522, -118.2437], # LA  
+            [41.8781, -87.6298],  # Chicago
+            [29.7604, -95.3698],  # Houston
+            [33.4484, -112.0740]  # Phoenix
+          ]
+          concurrent_requests: 5
+        expected_response:
+          is_error: false
+          performance_validation:
+            grid_lookup_max_ms: 500
+            forecast_retrieval_max_ms: 1000
+            end_to_end_max_ms: 2000
+            success_rate_min_percent: 95
+
+  # === WEATHER ALERTS SYSTEM ===
+  - name: "get_weather_alerts"
+    description: "Get active weather alerts for specified geographic areas"
+    test_cases:
+      # 1. State-Based Alert Retrieval
+      - name: "state_alerts_comprehensive"
+        description: "Test alert retrieval for various US states"
+        parameters:
+          test_states: ["CA", "TX", "FL", "KS", "OK", "IL", "NY", "WA"]
+          alert_types: ["all"]
+          include_expired: false
+        expected_response:
+          is_error: false
+          content:
+            - type: "text"
+              alert_structure:
+                alert_count: {type: "integer", minimum: 0}
+                alerts:
+                  type: "array"
+                  items:
+                    alert_type: {enum: ["watch", "warning", "advisory", "statement"]}
+                    severity: {enum: ["minor", "moderate", "severe", "extreme"]}
+                    urgency: {enum: ["immediate", "expected", "future"]}
+                    effective_time: {type: "string", format: "iso8601"}
+                    expiration_time: {type: "string", format: "iso8601"}
+                    affected_areas: {type: "array"}
+
+      # 2. Coordinate-Based Alert Testing
+      - name: "coordinate_alerts_precision"
+        description: "Test alert retrieval for specific coordinate locations"
+        parameters:
+          alert_coordinates: [
+            [39.0458, -76.6413],   # Baltimore (frequent weather alerts)
+            [29.4241, -98.4936],   # San Antonio (tornado alley)
+            [25.7617, -80.1918],   # Miami (hurricane zone)
+            [40.2732, -86.1349]    # Indiana (severe weather corridor)
+          ]
+          radius_miles: 50
+        expected_response:
+          is_error: false
+          content:
+            - type: "text"
+              coordinate_precision:
+                location_accuracy: "within_50_miles"
+                alert_relevance: "high"
+                coordinate_to_zone_mapping: "accurate"
+
+      # 3. Severity Filtering and Classification
+      - name: "alert_severity_filtering"
+        description: "Test alert filtering by severity levels"
+        parameters:
+          test_location: [39.7456, -97.0892]  # Central US
+          severity_filters: ["minor", "moderate", "severe", "extreme"]
+          urgency_filters: ["immediate", "expected", "future"]
+        expected_response:
+          is_error: false
+          content:
+            - type: "text"
+              severity_validation:
+                proper_classification: true
+                severity_hierarchy: ["minor", "moderate", "severe", "extreme"]
+                urgency_correlation: true
+                emergency_alert_priority: true
+
+      # 4. No Active Alerts Scenario
+      - name: "no_active_alerts_handling"
+        description: "Test proper response when no alerts are active for a region"
+        parameters:
+          low_activity_location: [44.9778, -93.2650]  # Minneapolis (typically calm)
+          alert_types: ["all"]
+        expected_response:
+          is_error: false
+          content:
+            - type: "text"
+              no_alerts_response:
+                alert_count: 0
+                message: "No active weather alerts for the specified location"
+                last_updated: {type: "string", format: "iso8601"}
+                monitoring_status: "active"
+
+      # 5. Multiple Alert Types Testing
+      - name: "multiple_alert_types_integration"
+        description: "Test handling of multiple simultaneous alert types"
+        parameters:
+          high_activity_location: [35.2271, -101.8313]  # Texas Panhandle (tornado alley)
+          alert_categories: ["tornado", "severe_thunderstorm", "flash_flood", "heat"]
+        expected_response:
+          is_error: false
+          content:
+            - type: "text"
+              multi_alert_handling:
+                alert_prioritization: true
+                overlapping_areas: true
+                combined_messaging: true
+                emergency_coordination: true
+
+      # 6. Expired Alerts Handling
+      - name: "expired_alerts_management"
+        description: "Test proper handling and filtering of expired alerts"
+        parameters:
+          test_location: [41.2524, -95.9980]  # Omaha, NE
+          include_expired: true
+          time_window_hours: 24
+        expected_response:
+          is_error: false
+          content:
+            - type: "text"
+              expired_alert_management:
+                active_vs_expired_separation: true
+                expiration_time_validation: true
+                historical_context: true
+
+      # 7. Emergency Alert Priority Testing
+      - name: "emergency_alert_priority_system"
+        description: "Test handling of high-priority emergency weather alerts"
+        parameters:
+          emergency_prone_locations: [
+            [25.7617, -80.1918],   # Miami (hurricanes)
+            [36.1627, -86.7816],   # Nashville (tornadoes)
+            [34.0522, -118.2437],  # LA (wildfires/earthquakes)
+            [61.2181, -149.9003]   # Anchorage (extreme weather)
+          ]
+          priority_levels: ["extreme", "severe"]
+        expected_response:
+          is_error: false
+          content:
+            - type: "text"
+              emergency_prioritization:
+                life_threatening_alerts: true
+                immediate_action_required: true
+                evacuation_recommendations: true
+                emergency_contact_info: true
+
+# Network resilience and error handling testing
+error_handling:
+  # API Connection Failures
+  - name: "nws_api_connection_failure"
+    description: "Simulate NWS API server unavailability"
+    test_scenario: "api_server_down"
+    expected_behavior:
+      graceful_degradation: true
+      error_message: "Unable to connect to National Weather Service API"
+      retry_attempts: 3
+      fallback_data: false
+
+  # Rate Limiting Scenarios
+  - name: "api_rate_limit_handling"
+    description: "Test handling of NWS API rate limiting (429 responses)"
+    test_scenario: "rate_limit_exceeded"
+    expected_behavior:
+      rate_limit_detection: true
+      automatic_retry_with_delay: true
+      exponential_backoff: true
+      max_retry_attempts: 5
+
+  # Malformed API Response
+  - name: "malformed_api_response_handling"
+    description: "Test handling of invalid JSON responses from NWS API"
+    test_scenario: "invalid_json_response"
+    expected_behavior:
+      json_validation: true
+      error_classification: "API_RESPONSE_INVALID"
+      fallback_behavior: "return_error_to_user"
+
+  # Network Timeout Scenarios
+  - name: "network_timeout_comprehensive"
+    description: "Test various network timeout scenarios"
+    timeout_scenarios:
+      - dns_resolution_timeout: 5
+      - connection_timeout: 10
+      - read_timeout: 30
+    expected_behavior:
+      timeout_detection: true
+      proper_error_classification: true
+      resource_cleanup: true
+
+# Geographic boundary testing
+geographic_coverage:
+  # US State Boundary Testing
+  - name: "state_boundary_comprehensive"
+    description: "Test weather data accuracy at state boundaries"
+    boundary_tests:
+      - state_pairs: [["NY", "NJ"], ["CA", "NV"], ["TX", "OK"], ["FL", "GA"]]
+        test_coordinates: "border_regions"
+        validation: "office_assignment_accuracy"
+
+  # Coordinate Boundary Limits
+  - name: "coordinate_boundary_limits"
+    description: "Test extreme coordinate boundaries for US coverage"
+    boundary_coordinates:
+      northernmost: [71.4, -156.8]    # Point Barrow, Alaska
+      southernmost: [18.9, -155.7]    # Big Island, Hawaii
+      easternmost: [44.8, -66.9]      # Maine coast
+      westernmost: [21.3, -158.0]     # Hawaii west
+    expected_behavior:
+      valid_responses: true
+      appropriate_offices: true
+      coverage_confirmation: true
+
+# Performance and load testing
+performance_testing:
+  # Concurrent Request Handling
+  - name: "concurrent_forecast_requests"
+    description: "Test handling of multiple simultaneous forecast requests"
+    test_parameters:
+      concurrent_requests: 10
+      request_locations: "distributed_us_cities"
+      duration_seconds: 60
+    performance_targets:
+      success_rate_min: 95
+      average_response_time_max_ms: 2500
+      max_response_time_max_ms: 5000
+
+  # Geographic Distribution Load
+  - name: "geographic_distribution_load"
+    description: "Test performance across geographically distributed requests"
+    test_parameters:
+      request_distribution:
+        west_coast: 30
+        east_coast: 30
+        central_us: 25
+        alaska_hawaii: 10
+        territories: 5
+    performance_validation:
+      regional_performance_consistency: true
+      office_load_balancing: true
+      response_time_geographic_variance: "within_acceptable_limits"
+
+# Data validation and schema testing
+data_validation:
+  # Weather Data Schema Validation
+  - name: "weather_data_schema_comprehensive"
+    description: "Validate weather response data structure and content"
+    schema_requirements:
+      forecast_periods:
+        type: "array"
+        min_items: 1
+        max_items: 14
+        required_fields: ["temperature", "weather", "wind", "precipitation"]
+      temperature_data:
+        high: {type: "number", range: [-50, 130]}
+        low: {type: "number", range: [-60, 120]}
+        units: {enum: ["F", "C"]}
+      wind_data:
+        speed: {type: "number", min: 0, max: 200}
+        direction: {type: "string", pattern: "[NEWS]|[NEWS][NEWS][NEWS]?"}
+        units: {enum: ["mph", "kph", "knots"]}
+
+  # Alert Data Schema Validation
+  - name: "alert_data_schema_comprehensive"
+    description: "Validate weather alert response structure and CAP compliance"
+    schema_requirements:
+      cap_compliance: true
+      required_fields: ["alert_type", "severity", "urgency", "areas", "effective", "expires"]
+      severity_values: ["minor", "moderate", "severe", "extreme"]
+      urgency_values: ["immediate", "expected", "future"]
+      area_format: "NWS_zone_codes"
+
+# API integration compliance
+api_compliance:
+  # NWS API Usage Guidelines
+  - name: "nws_api_usage_compliance"
+    description: "Ensure compliance with NWS API usage guidelines"
+    compliance_checks:
+      user_agent_required: true
+      rate_limit_respect: true
+      data_attribution: "National Weather Service"
+      caching_appropriate: true
+      no_abuse_patterns: true
+
+  # Request Header Validation
+  - name: "request_header_validation"
+    description: "Test proper HTTP header configuration for NWS API"
+    required_headers:
+      user_agent: "WeatherMCP/1.0 (test@example.com)"
+      accept: "application/json"
+      accept_encoding: "gzip, deflate"
+    optional_headers:
+      cache_control: "max-age=300"
+
+# Security and responsible usage
+security_testing:
+  # Input Sanitization
+  - name: "input_sanitization_comprehensive"
+    description: "Test input validation and sanitization for security"
+    security_tests:
+      coordinate_injection: "prevent_sql_injection_patterns"
+      location_name_validation: "prevent_xss_attempts"
+      parameter_bounds_checking: "prevent_buffer_overflow"
+
+  # Data Privacy and Compliance
+  - name: "data_privacy_compliance"
+    description: "Ensure proper handling of location data and privacy"
+    privacy_requirements:
+      location_data_encryption: true
+      request_logging_anonymization: true
+      third_party_data_sharing: false
+      gdpr_compliance: true
+
+# Integration scenarios
+integration_scenarios:
+  # Real-World Usage Patterns
+  - name: "morning_weather_check_simulation"
+    description: "Simulate typical morning weather check patterns"
+    usage_pattern:
+      time_period: "6AM-9AM_EST"
+      request_volume: "high"
+      locations: "major_metropolitan_areas"
+      alert_monitoring: "active"
+
+  - name: "severe_weather_monitoring"
+    description: "Simulate severe weather event monitoring"
+    usage_pattern:
+      alert_frequency: "every_5_minutes"
+      geographic_focus: "tornado_alley"
+      alert_types: ["tornado", "severe_thunderstorm"]
+      duration: "3_hours"
+
+  - name: "travel_planning_scenario"
+    description: "Simulate multi-location weather comparison for travel"
+    usage_pattern:
+      location_count: 5
+      forecast_period: "7_days"
+      route_based: true
+      transportation_weather_factors: true
+
+# Success criteria and validation
+success_criteria:
+  functional_requirements:
+    - weather_forecast_accuracy: "95%"
+    - alert_delivery_timeliness: "within_5_minutes"
+    - geographic_coverage: "all_50_states_plus_territories"
+    - error_handling_completeness: "100%"
+
+  performance_requirements:
+    - api_response_time: "95th_percentile_under_2000ms"
+    - system_availability: "99.5%"
+    - concurrent_user_support: "50_users"
+    - rate_limit_compliance: "100%"
+
+  quality_requirements:
+    - data_accuracy: "matches_nws_official_data"
+    - schema_compliance: "100%"
+    - security_validation: "all_tests_pass"
+    - documentation_completeness: "comprehensive"
+
+# Documentation and examples
+documentation:
+  api_integration_examples:
+    - basic_forecast_request
+    - alert_monitoring_setup
+    - error_handling_patterns
+    - performance_optimization
+
+  geographic_coverage_reference:
+    - state_coordinate_mappings
+    - nws_office_coverage_areas
+    - territorial_weather_services
+    - boundary_condition_handling
+
+  troubleshooting_guide:
+    - common_api_errors
+    - network_connectivity_issues
+    - rate_limiting_solutions
+    - geographic_boundary_problems 

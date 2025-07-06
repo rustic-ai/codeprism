@@ -1,0 +1,943 @@
+# Filesystem MCP Server Test Specification
+# Comprehensive testing for MCP filesystem server with security, performance,
+# and edge case validation following the MCP 2025-06-18 specification
+
+name: "Filesystem MCP Server"
+version: "1.5.2"
+description: "MCP server providing secure file system operations with sandboxing"
+
+# Server capabilities declaration
+capabilities:
+  tools: true           # Core filesystem tools
+  resources: true       # File URI resources  
+  prompts: false        # No prompt templates
+  sampling: false       # No sampling support
+  logging: true         # Error and operation logging
+  experimental:         # Extended features
+    symlink_support: true
+    compression: true
+    file_watching: true
+
+# Server startup configuration  
+server:
+  command: "npx"
+  args: ["@modelcontextprotocol/server-filesystem", "/tmp/mcp-test-sandbox"]
+  env:
+    MAX_FILE_SIZE: "10485760"     # 10MB limit
+    ALLOWED_EXTENSIONS: ".txt,.json,.md,.log,.csv,.py,.js,.rs"
+    LOG_LEVEL: "warn"
+    ENABLE_SYMLINKS: "false"      # Security setting
+  transport: "stdio"
+  startup_timeout_seconds: 15
+  shutdown_timeout_seconds: 8
+
+# Comprehensive filesystem tool testing
+tools:
+  # ========================================================================
+  # READ_FILE Tool - 8 comprehensive test scenarios
+  # ========================================================================
+  - name: "read_file"
+    description: "Read file contents with comprehensive validation"
+    tests:
+      - name: "read_existing_text_file"
+        description: "Successfully read a standard text file"
+        input:
+          path: "/tmp/mcp-test-sandbox/test.txt"
+        expected:
+          error: false
+          fields:
+            - path: "$.content"
+              field_type: "string"
+              required: true
+            - path: "$.size"
+              field_type: "integer"
+              required: false
+        tags: ["filesystem", "read", "success"]
+
+      - name: "read_nonexistent_file"
+        description: "Handle file not found error gracefully"
+        input:
+          path: "/tmp/mcp-test-sandbox/nonexistent.txt"
+        expected:
+          error: true
+          error_code: 404
+          error_message_contains: "not found"
+          fields:
+            - path: "$.error.code"
+              value: "FILE_NOT_FOUND"
+              required: true
+        tags: ["filesystem", "read", "error"]
+
+      - name: "read_file_no_permission"
+        description: "Handle permission denied errors"
+        input:
+          path: "/tmp/mcp-test-sandbox/restricted.txt"
+        expected:
+          error: true
+          error_code: 403
+          error_message_contains: "permission denied"
+          fields:
+            - path: "$.error.code"
+              value: "PERMISSION_DENIED"
+              required: true
+        tags: ["filesystem", "read", "error", "permissions"]
+
+      - name: "prevent_path_traversal_attack"
+        description: "Ensure path traversal attacks are blocked"
+        input:
+          path: "../../../etc/passwd"
+        expected:
+          error: true
+          error_code: 403
+          error_message_contains: "path not allowed"
+          fields:
+            - path: "$.error.code"
+              value: "SANDBOX_VIOLATION"
+              required: true
+        tags: ["security", "path_traversal", "sandbox"]
+
+      - name: "read_empty_file"
+        description: "Handle empty files correctly"
+        input:
+          path: "/tmp/mcp-test-sandbox/empty.txt"
+        expected:
+          error: false
+          fields:
+            - path: "$.content"
+              value: ""
+              required: true
+            - path: "$.size"
+              value: 0
+              required: false
+        tags: ["filesystem", "read", "edge_case"]
+
+      - name: "read_binary_file_rejection"
+        description: "Reject binary files appropriately"
+        input:
+          path: "/tmp/mcp-test-sandbox/binary.bin"
+        expected:
+          error: true
+          error_message_contains: "binary file"
+          fields:
+            - path: "$.error.code"
+              value: "UNSUPPORTED_FILE_TYPE"
+              required: true
+        tags: ["filesystem", "read", "validation"]
+
+      - name: "read_large_file_performance"
+        description: "Verify large file reading performance"
+        input:
+          path: "/tmp/mcp-test-sandbox/large_test_file.txt"  # 5MB test file
+        expected:
+          error: false
+          fields:
+            - path: "$.content"
+              field_type: "string"
+              required: true
+        performance:
+          max_duration_ms: 3000    # Should complete within 3 seconds
+          max_memory_mb: 50        # Memory usage cap
+        tags: ["performance", "large_files"]
+
+      - name: "read_file_with_unicode"
+        description: "Handle Unicode content correctly"
+        input:
+          path: "/tmp/mcp-test-sandbox/unicode.txt"
+        expected:
+          error: false
+          fields:
+            - path: "$.content"
+              field_type: "string"
+              required: true
+        tags: ["filesystem", "read", "unicode", "encoding"]
+
+  # ========================================================================
+  # WRITE_FILE Tool - 9 comprehensive test scenarios  
+  # ========================================================================
+  - name: "write_file"
+    description: "Write file contents with comprehensive validation"
+    tests:
+      - name: "write_new_file"
+        description: "Successfully create and write a new file"
+        input:
+          path: "/tmp/mcp-test-sandbox/new_file.txt"
+          content: "Hello, MCP World!"
+        expected:
+          error: false
+          fields:
+            - path: "$.success"
+              value: true
+              required: true
+            - path: "$.bytes_written"
+              field_type: "integer"
+              required: false
+        tags: ["filesystem", "write", "success"]
+
+      - name: "overwrite_existing_file"
+        description: "Overwrite an existing file"
+        input:
+          path: "/tmp/mcp-test-sandbox/existing.txt"
+          content: "Updated content"
+        expected:
+          error: false
+          fields:
+            - path: "$.success"
+              value: true
+              required: true
+        tags: ["filesystem", "write", "overwrite"]
+
+      - name: "write_to_readonly_location"
+        description: "Handle permission denied on write"
+        input:
+          path: "/tmp/mcp-test-sandbox/readonly/file.txt"
+          content: "This should fail"
+        expected:
+          error: true
+          error_code: 403
+          error_message_contains: "permission denied"
+          fields:
+            - path: "$.error.code"
+              value: "PERMISSION_DENIED"
+              required: true
+        tags: ["filesystem", "write", "error", "permissions"]
+
+      - name: "write_outside_sandbox"
+        description: "Prevent writing outside sandbox"
+        input:
+          path: "/etc/hosts"
+          content: "malicious content"
+        expected:
+          error: true
+          error_code: 403
+          error_message_contains: "path not allowed"
+          fields:
+            - path: "$.error.code"
+              value: "SANDBOX_VIOLATION"
+              required: true
+        tags: ["security", "sandbox", "path_validation"]
+
+      - name: "write_empty_content"
+        description: "Handle empty content correctly"
+        input:
+          path: "/tmp/mcp-test-sandbox/empty_write.txt"
+          content: ""
+        expected:
+          error: false
+          fields:
+            - path: "$.success"
+              value: true
+              required: true
+            - path: "$.bytes_written"
+              value: 0
+              required: false
+        tags: ["filesystem", "write", "edge_case"]
+
+      - name: "write_large_content"
+        description: "Handle large content within limits"
+        input:
+          path: "/tmp/mcp-test-sandbox/large_write.txt"
+          content: "x"  # Would be expanded to 1MB in actual test
+        expected:
+          error: false
+          fields:
+            - path: "$.success"
+              value: true
+              required: true
+        performance:
+          max_duration_ms: 2000
+        tags: ["performance", "large_files"]
+
+      - name: "write_content_too_large"
+        description: "Reject content exceeding size limits"
+        input:
+          path: "/tmp/mcp-test-sandbox/oversized.txt"
+          content: "OVERSIZED_CONTENT"  # Would be 20MB in actual test
+        expected:
+          error: true
+          error_message_contains: "file too large"
+          fields:
+            - path: "$.error.code"
+              value: "FILE_SIZE_EXCEEDED"
+              required: true
+        tags: ["filesystem", "write", "validation", "limits"]
+
+      - name: "write_unsupported_extension"
+        description: "Reject unsupported file extensions"
+        input:
+          path: "/tmp/mcp-test-sandbox/malware.exe"
+          content: "executable content"
+        expected:
+          error: true
+          error_message_contains: "file type not allowed"
+          fields:
+            - path: "$.error.code"
+              value: "UNSUPPORTED_FILE_TYPE"
+              required: true
+        tags: ["security", "validation", "file_types"]
+
+      - name: "write_unicode_content"
+        description: "Handle Unicode content correctly"
+        input:
+          path: "/tmp/mcp-test-sandbox/unicode_write.txt"
+          content: "Hello 世界! 🌍"
+        expected:
+          error: false
+          fields:
+            - path: "$.success"
+              value: true
+              required: true
+        tags: ["filesystem", "write", "unicode", "encoding"]
+
+  # ========================================================================
+  # LIST_DIRECTORY Tool - 7 comprehensive test scenarios
+  # ========================================================================
+  - name: "list_directory"
+    description: "List directory contents with comprehensive options"
+    tests:
+      - name: "list_basic_directory"
+        description: "List contents of a basic directory"
+        input:
+          path: "/tmp/mcp-test-sandbox"
+        expected:
+          error: false
+          fields:
+            - path: "$.files"
+              field_type: "array"
+              required: true
+            - path: "$.files[0].name"
+              field_type: "string"
+              required: true
+            - path: "$.files[0].type"
+              field_type: "string"
+              required: true
+        tags: ["filesystem", "list", "success"]
+
+      - name: "list_directory_recursive"
+        description: "List directory contents recursively"
+        input:
+          path: "/tmp/mcp-test-sandbox"
+          recursive: true
+        expected:
+          error: false
+          fields:
+            - path: "$.files"
+              field_type: "array"
+              required: true
+        performance:
+          max_duration_ms: 1000
+        tags: ["filesystem", "list", "recursive"]
+
+      - name: "list_nonexistent_directory"
+        description: "Handle directory not found error"
+        input:
+          path: "/tmp/mcp-test-sandbox/nonexistent"
+        expected:
+          error: true
+          error_code: 404
+          error_message_contains: "not found"
+          fields:
+            - path: "$.error.code"
+              value: "DIRECTORY_NOT_FOUND"
+              required: true
+        tags: ["filesystem", "list", "error"]
+
+      - name: "list_directory_no_permission"
+        description: "Handle permission denied errors"
+        input:
+          path: "/tmp/mcp-test-sandbox/restricted"
+        expected:
+          error: true
+          error_code: 403
+          error_message_contains: "permission denied"
+          fields:
+            - path: "$.error.code"
+              value: "PERMISSION_DENIED"
+              required: true
+        tags: ["filesystem", "list", "error", "permissions"]
+
+      - name: "list_empty_directory"
+        description: "Handle empty directories correctly"
+        input:
+          path: "/tmp/mcp-test-sandbox/empty_dir"
+        expected:
+          error: false
+          fields:
+            - path: "$.files"
+              value: []
+              required: true
+        tags: ["filesystem", "list", "edge_case"]
+
+      - name: "list_with_filtering"
+        description: "Filter directory contents by pattern"
+        input:
+          path: "/tmp/mcp-test-sandbox"
+          pattern: "*.txt"
+        expected:
+          error: false
+          fields:
+            - path: "$.files"
+              field_type: "array"
+              required: true
+        tags: ["filesystem", "list", "filtering"]
+
+      - name: "list_large_directory_performance"
+        description: "Performance test with many files"
+        input:
+          path: "/tmp/mcp-test-sandbox/large_dir"  # 1000+ files
+        expected:
+          error: false
+          fields:
+            - path: "$.files"
+              field_type: "array"
+              required: true
+        performance:
+          max_duration_ms: 2000
+          max_memory_mb: 100
+        tags: ["performance", "large_directories"]
+
+  # ========================================================================
+  # CREATE_DIRECTORY Tool - 6 comprehensive test scenarios
+  # ========================================================================
+  - name: "create_directory"
+    description: "Create directories with comprehensive validation"
+    tests:
+      - name: "create_single_directory"
+        description: "Create a single new directory"
+        input:
+          path: "/tmp/mcp-test-sandbox/new_dir"
+        expected:
+          error: false
+          fields:
+            - path: "$.success"
+              value: true
+              required: true
+        tags: ["filesystem", "create", "success"]
+
+      - name: "create_nested_directories"
+        description: "Create nested directory structure"
+        input:
+          path: "/tmp/mcp-test-sandbox/level1/level2/level3"
+          recursive: true
+        expected:
+          error: false
+          fields:
+            - path: "$.success"
+              value: true
+              required: true
+        tags: ["filesystem", "create", "nested"]
+
+      - name: "create_existing_directory"
+        description: "Handle attempt to create existing directory"
+        input:
+          path: "/tmp/mcp-test-sandbox/existing_dir"
+        expected:
+          error: true
+          error_code: 409
+          error_message_contains: "already exists"
+          fields:
+            - path: "$.error.code"
+              value: "DIRECTORY_EXISTS"
+              required: true
+        tags: ["filesystem", "create", "error"]
+
+      - name: "create_directory_no_permission"
+        description: "Handle permission denied on create"
+        input:
+          path: "/tmp/mcp-test-sandbox/readonly/new_dir"
+        expected:
+          error: true
+          error_code: 403
+          error_message_contains: "permission denied"
+          fields:
+            - path: "$.error.code"
+              value: "PERMISSION_DENIED"
+              required: true
+        tags: ["filesystem", "create", "error", "permissions"]
+
+      - name: "create_directory_outside_sandbox"
+        description: "Prevent creating directories outside sandbox"
+        input:
+          path: "/tmp/malicious_dir"
+        expected:
+          error: true
+          error_code: 403
+          error_message_contains: "path not allowed"
+          fields:
+            - path: "$.error.code"
+              value: "SANDBOX_VIOLATION"
+              required: true
+        tags: ["security", "sandbox", "path_validation"]
+
+      - name: "create_deep_nesting"
+        description: "Handle very deep directory nesting"
+        input:
+          path: "/tmp/mcp-test-sandbox/a/b/c/d/e/f/g/h/i/j"
+          recursive: true
+        expected:
+          error: false
+          fields:
+            - path: "$.success"
+              value: true
+              required: true
+        tags: ["filesystem", "create", "edge_case", "deep_nesting"]
+
+  # ========================================================================
+  # DELETE_FILE Tool - 8 comprehensive test scenarios
+  # ========================================================================
+  - name: "delete_file"
+    description: "Delete files and directories with comprehensive validation"
+    tests:
+      - name: "delete_existing_file"
+        description: "Successfully delete an existing file"
+        input:
+          path: "/tmp/mcp-test-sandbox/to_delete.txt"
+        expected:
+          error: false
+          fields:
+            - path: "$.success"
+              value: true
+              required: true
+        tags: ["filesystem", "delete", "success"]
+
+      - name: "delete_empty_directory"
+        description: "Delete an empty directory"
+        input:
+          path: "/tmp/mcp-test-sandbox/empty_to_delete"
+        expected:
+          error: false
+          fields:
+            - path: "$.success"
+              value: true
+              required: true
+        tags: ["filesystem", "delete", "directory"]
+
+      - name: "delete_nonexistent_file"
+        description: "Handle deletion of nonexistent file"
+        input:
+          path: "/tmp/mcp-test-sandbox/nonexistent_delete.txt"
+        expected:
+          error: true
+          error_code: 404
+          error_message_contains: "not found"
+          fields:
+            - path: "$.error.code"
+              value: "FILE_NOT_FOUND"
+              required: true
+        tags: ["filesystem", "delete", "error"]
+
+      - name: "delete_file_no_permission"
+        description: "Handle permission denied on delete"
+        input:
+          path: "/tmp/mcp-test-sandbox/readonly/protected.txt"
+        expected:
+          error: true
+          error_code: 403
+          error_message_contains: "permission denied"
+          fields:
+            - path: "$.error.code"
+              value: "PERMISSION_DENIED"
+              required: true
+        tags: ["filesystem", "delete", "error", "permissions"]
+
+      - name: "delete_directory_with_contents"
+        description: "Delete directory containing files"
+        input:
+          path: "/tmp/mcp-test-sandbox/dir_with_files"
+          recursive: true
+        expected:
+          error: false
+          fields:
+            - path: "$.success"
+              value: true
+              required: true
+        performance:
+          max_duration_ms: 2000
+        tags: ["filesystem", "delete", "recursive"]
+
+      - name: "delete_outside_sandbox"
+        description: "Prevent deletion outside sandbox"
+        input:
+          path: "/etc/important_file"
+        expected:
+          error: true
+          error_code: 403
+          error_message_contains: "path not allowed"
+          fields:
+            - path: "$.error.code"
+              value: "SANDBOX_VIOLATION"
+              required: true
+        tags: ["security", "sandbox", "path_validation"]
+
+      - name: "delete_symlink_safely"
+        description: "Handle symlink deletion safely"
+        input:
+          path: "/tmp/mcp-test-sandbox/test_symlink"
+        expected:
+          error: false
+          fields:
+            - path: "$.success"
+              value: true
+              required: true
+        tags: ["filesystem", "delete", "symlinks"]
+
+      - name: "delete_large_directory_performance"
+        description: "Performance test for large directory deletion"
+        input:
+          path: "/tmp/mcp-test-sandbox/large_delete_dir"
+          recursive: true
+        expected:
+          error: false
+          fields:
+            - path: "$.success"
+              value: true
+              required: true
+        performance:
+          max_duration_ms: 5000
+        tags: ["performance", "large_directories"]
+
+  # ========================================================================
+  # MOVE_FILE Tool - 7 comprehensive test scenarios
+  # ========================================================================
+  - name: "move_file"
+    description: "Move and rename files with comprehensive validation"
+    tests:
+      - name: "rename_file_same_directory"
+        description: "Rename file within same directory"
+        input:
+          source: "/tmp/mcp-test-sandbox/old_name.txt"
+          destination: "/tmp/mcp-test-sandbox/new_name.txt"
+        expected:
+          error: false
+          fields:
+            - path: "$.success"
+              value: true
+              required: true
+        tags: ["filesystem", "move", "rename"]
+
+      - name: "move_file_different_directory"
+        description: "Move file to different directory"
+        input:
+          source: "/tmp/mcp-test-sandbox/source.txt"
+          destination: "/tmp/mcp-test-sandbox/subdir/destination.txt"
+        expected:
+          error: false
+          fields:
+            - path: "$.success"
+              value: true
+              required: true
+        tags: ["filesystem", "move", "success"]
+
+      - name: "move_nonexistent_file"
+        description: "Handle moving nonexistent file"
+        input:
+          source: "/tmp/mcp-test-sandbox/nonexistent.txt"
+          destination: "/tmp/mcp-test-sandbox/dest.txt"
+        expected:
+          error: true
+          error_code: 404
+          error_message_contains: "not found"
+          fields:
+            - path: "$.error.code"
+              value: "FILE_NOT_FOUND"
+              required: true
+        tags: ["filesystem", "move", "error"]
+
+      - name: "move_file_no_permission"
+        description: "Handle permission denied on move"
+        input:
+          source: "/tmp/mcp-test-sandbox/readonly/source.txt"
+          destination: "/tmp/mcp-test-sandbox/dest.txt"
+        expected:
+          error: true
+          error_code: 403
+          error_message_contains: "permission denied"
+          fields:
+            - path: "$.error.code"
+              value: "PERMISSION_DENIED"
+              required: true
+        tags: ["filesystem", "move", "error", "permissions"]
+
+      - name: "move_with_overwrite"
+        description: "Move file with destination overwrite"
+        input:
+          source: "/tmp/mcp-test-sandbox/source_overwrite.txt"
+          destination: "/tmp/mcp-test-sandbox/existing_dest.txt"
+          overwrite: true
+        expected:
+          error: false
+          fields:
+            - path: "$.success"
+              value: true
+              required: true
+        tags: ["filesystem", "move", "overwrite"]
+
+      - name: "move_outside_sandbox"
+        description: "Prevent moving outside sandbox"
+        input:
+          source: "/tmp/mcp-test-sandbox/source.txt"
+          destination: "/tmp/malicious_dest.txt"
+        expected:
+          error: true
+          error_code: 403
+          error_message_contains: "path not allowed"
+          fields:
+            - path: "$.error.code"
+              value: "SANDBOX_VIOLATION"
+              required: true
+        tags: ["security", "sandbox", "path_validation"]
+
+      - name: "move_large_file_performance"
+        description: "Performance test for large file move"
+        input:
+          source: "/tmp/mcp-test-sandbox/large_source.txt"
+          destination: "/tmp/mcp-test-sandbox/large_dest.txt"
+        expected:
+          error: false
+          fields:
+            - path: "$.success"
+              value: true
+              required: true
+        performance:
+          max_duration_ms: 3000
+        tags: ["performance", "large_files"]
+
+  # ========================================================================
+  # GET_FILE_INFO Tool - 5 comprehensive test scenarios
+  # ========================================================================
+  - name: "get_file_info"
+    description: "Retrieve file metadata with comprehensive validation"
+    tests:
+      - name: "get_file_info_regular_file"
+        description: "Get metadata for regular file"
+        input:
+          path: "/tmp/mcp-test-sandbox/info_test.txt"
+        expected:
+          error: false
+          fields:
+            - path: "$.name"
+              field_type: "string"
+              required: true
+            - path: "$.size"
+              field_type: "integer"
+              required: true
+            - path: "$.type"
+              value: "file"
+              required: true
+            - path: "$.modified"
+              field_type: "string"
+              required: true
+            - path: "$.permissions"
+              field_type: "string"
+              required: false
+        tags: ["filesystem", "info", "success"]
+
+      - name: "get_directory_info"
+        description: "Get metadata for directory"
+        input:
+          path: "/tmp/mcp-test-sandbox/info_dir"
+        expected:
+          error: false
+          fields:
+            - path: "$.name"
+              field_type: "string"
+              required: true
+            - path: "$.type"
+              value: "directory"
+              required: true
+            - path: "$.modified"
+              field_type: "string"
+              required: true
+        tags: ["filesystem", "info", "directory"]
+
+      - name: "get_info_nonexistent_file"
+        description: "Handle info request for nonexistent file"
+        input:
+          path: "/tmp/mcp-test-sandbox/nonexistent_info.txt"
+        expected:
+          error: true
+          error_code: 404
+          error_message_contains: "not found"
+          fields:
+            - path: "$.error.code"
+              value: "FILE_NOT_FOUND"
+              required: true
+        tags: ["filesystem", "info", "error"]
+
+      - name: "get_info_no_permission"
+        description: "Handle permission denied on file info"
+        input:
+          path: "/tmp/mcp-test-sandbox/restricted/hidden.txt"
+        expected:
+          error: true
+          error_code: 403
+          error_message_contains: "permission denied"
+          fields:
+            - path: "$.error.code"
+              value: "PERMISSION_DENIED"
+              required: true
+        tags: ["filesystem", "info", "error", "permissions"]
+
+      - name: "get_info_with_extended_attributes"
+        description: "Get file info with extended metadata"
+        input:
+          path: "/tmp/mcp-test-sandbox/extended_info.txt"
+          include_extended: true
+        expected:
+          error: false
+          fields:
+            - path: "$.name"
+              field_type: "string"
+              required: true
+            - path: "$.size"
+              field_type: "integer"
+              required: true
+            - path: "$.checksum"
+              field_type: "string"
+              required: false
+            - path: "$.mime_type"
+              field_type: "string"
+              required: false
+        tags: ["filesystem", "info", "extended", "metadata"]
+
+# ========================================================================
+# RESOURCE URI TESTING - 6 comprehensive test scenarios
+# ========================================================================
+resources:
+  - name: "file_content"
+    uri_template: "file://{path}"
+    mime_type: "text/plain"
+    description: "Access file content through resource URIs"
+    tests:
+      - name: "read_file_via_resource"
+        description: "Access file content through resource URI"
+        input:
+          path: "/tmp/mcp-test-sandbox/resource_test.txt"
+        expected:
+          error: false
+          fields:
+            - path: "$.contents[0].uri"
+              value: "file:///tmp/mcp-test-sandbox/resource_test.txt"
+              required: true
+            - path: "$.contents[0].text"
+              field_type: "string"
+              required: true
+            - path: "$.contents[0].mimeType"
+              value: "text/plain"
+              required: false
+        tags: ["resources", "file_access", "success"]
+
+      - name: "read_nonexistent_via_resource"
+        description: "Handle nonexistent file through resource URI"
+        input:
+          path: "/tmp/mcp-test-sandbox/nonexistent_resource.txt"
+        expected:
+          error: true
+          error_code: 404
+          error_message_contains: "not found"
+          fields:
+            - path: "$.error.code"
+              value: "RESOURCE_NOT_FOUND"
+              required: true
+        tags: ["resources", "file_access", "error"]
+
+      - name: "resource_path_traversal_prevention"
+        description: "Prevent path traversal through resource URIs"
+        input:
+          path: "../../../etc/passwd"
+        expected:
+          error: true
+          error_code: 403
+          error_message_contains: "path not allowed"
+          fields:
+            - path: "$.error.code"
+              value: "SANDBOX_VIOLATION"
+              required: true
+        tags: ["security", "resources", "path_traversal"]
+
+      - name: "resource_binary_file_handling"
+        description: "Handle binary files through resource URIs"
+        input:
+          path: "/tmp/mcp-test-sandbox/binary_resource.bin"
+        expected:
+          error: true
+          error_message_contains: "binary file"
+          fields:
+            - path: "$.error.code"
+              value: "UNSUPPORTED_MIME_TYPE"
+              required: true
+        tags: ["resources", "validation", "binary"]
+
+      - name: "resource_large_file_performance"
+        description: "Performance test for large file resources"
+        input:
+          path: "/tmp/mcp-test-sandbox/large_resource.txt"
+        expected:
+          error: false
+          fields:
+            - path: "$.contents[0].text"
+              field_type: "string"
+              required: true
+        performance:
+          max_duration_ms: 4000
+          max_memory_mb: 75
+        tags: ["performance", "resources", "large_files"]
+
+      - name: "resource_metadata_validation"
+        description: "Validate resource metadata completeness"
+        input:
+          path: "/tmp/mcp-test-sandbox/metadata_test.txt"
+        expected:
+          error: false
+          fields:
+            - path: "$.contents[0].uri"
+              field_type: "string"
+              required: true
+            - path: "$.contents[0].name"
+              field_type: "string"
+              required: false
+            - path: "$.contents[0].description"
+              field_type: "string"
+              required: false
+            - path: "$.contents[0].mimeType"
+              field_type: "string"
+              required: false
+        tags: ["resources", "metadata", "validation"]
+
+# ========================================================================
+# TEST CONFIGURATION
+# ========================================================================
+test_config:
+  timeout_seconds: 45
+  max_concurrency: 3
+  fail_fast: false
+  retry:
+    max_retries: 2
+    retry_delay_ms: 1000
+    exponential_backoff: true
+
+# ========================================================================
+# METADATA AND DOCUMENTATION
+# ========================================================================
+metadata:
+  author: "Mandrel MCP Test Harness"
+  license: "MIT"
+  mcp_version: "2025-06-18"
+  test_categories:
+    - "filesystem"
+    - "security"
+    - "performance"
+    - "resources"
+    - "validation"
+  security_features:
+    - "path_traversal_prevention"
+    - "sandbox_enforcement"
+    - "permission_validation"
+    - "file_type_restrictions"
+  performance_benchmarks:
+    - "large_file_operations"
+    - "directory_listing_performance"
+    - "concurrent_access_limits"
+  documentation:
+    specification: "https://modelcontextprotocol.io/docs/specification"
+    server_repo: "https://github.com/modelcontextprotocol/servers"
+    test_guide: "docs/test-harness/filesystem-testing.md" 

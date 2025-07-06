@@ -17,6 +17,19 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::Duration;
 
+// Re-export validation components
+pub mod custom;
+pub mod engine;
+pub mod jsonpath;
+pub mod protocol;
+pub mod schema;
+
+pub use custom::{CustomValidator, ValidationContext};
+pub use engine::McpValidationEngine;
+pub use jsonpath::{JsonPathEvaluator, JsonPathRule, PathConstraint};
+pub use protocol::{ProtocolCategory, ProtocolIssue, ProtocolRequirements, ProtocolValidator};
+pub use schema::{SchemaValidator, SchemaViolation};
+
 /// Comprehensive validation engine for MCP responses
 pub struct ValidationEngine {
     jsonpath_cache: HashMap<String, String>, // Store compiled JSONPath expressions as strings for now
@@ -143,6 +156,112 @@ pub enum ValidationError {
 
     #[error("Cache overflow: maximum cache size {max_size} exceeded")]
     CacheOverflow { max_size: usize },
+}
+
+/// Main validation result containing comprehensive diagnostics
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct McpValidationResult {
+    pub is_valid: bool,
+    pub errors: Vec<ValidationError>,
+    pub warnings: Vec<ValidationWarning>,
+    pub field_results: HashMap<String, FieldValidationResult>,
+    pub schema_violations: Vec<SchemaViolation>,
+    pub protocol_issues: Vec<ProtocolIssue>,
+    pub custom_results: Vec<CustomValidationResult>,
+}
+
+/// Validation warning for non-critical issues
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ValidationWarning {
+    pub field: String,
+    pub message: String,
+    pub suggestion: Option<String>,
+    pub severity: ValidationSeverity,
+}
+
+/// Comprehensive validation specification
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ValidationSpec {
+    pub schema: Option<serde_json::Value>,
+    pub jsonpath_rules: Vec<JsonPathRule>,
+    pub protocol_requirements: ProtocolRequirements,
+    pub custom_rules: Vec<CustomRule>,
+    pub strict_mode: bool,
+}
+
+/// Custom validation rule definition
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CustomRule {
+    pub name: String,
+    pub description: String,
+    pub expression: String,
+    pub severity: ValidationSeverity,
+    pub enabled: bool,
+}
+
+/// Result from custom validation
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CustomValidationResult {
+    pub rule_name: String,
+    pub is_valid: bool,
+    pub errors: Vec<ValidationError>,
+    pub warnings: Vec<ValidationWarning>,
+}
+
+/// Validation severity levels
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ValidationSeverity {
+    Error,
+    Warning,
+    Info,
+}
+
+/// Validation error categories
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ValidationCategory {
+    JsonPath,
+    Schema,
+    Protocol,
+    Custom,
+    Structure,
+    Type,
+    Value,
+}
+
+/// JSON type enumeration for validation
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum JsonType {
+    Object,
+    Array,
+    String,
+    Number,
+    Boolean,
+    Null,
+}
+
+/// Main validation engine error types
+#[derive(Debug, thiserror::Error)]
+pub enum ValidationEngineError {
+    #[error("JSONPath evaluation failed: {0}")]
+    JsonPathError(String),
+
+    #[error("Schema validation failed: {0}")]
+    SchemaError(String),
+
+    #[error("Protocol validation failed: {0}")]
+    ProtocolError(String),
+
+    #[error("Custom validator error: {0}")]
+    CustomValidatorError(String),
+
+    #[error("Validation specification error: {0}")]
+    SpecificationError(String),
+
+    #[error("IO error: {0}")]
+    IoError(#[from] std::io::Error),
+
+    #[error("JSON parsing error: {0}")]
+    JsonError(#[from] serde_json::Error),
 }
 
 impl Default for ValidationConfig {
@@ -471,6 +590,79 @@ impl ValidationEngine {
     pub fn cache_stats(&self) -> (usize, usize) {
         // Return (hits, misses) - simplified implementation
         (0, self.jsonpath_cache.len())
+    }
+}
+
+impl Default for McpValidationResult {
+    fn default() -> Self {
+        Self {
+            is_valid: true,
+            errors: Vec::new(),
+            warnings: Vec::new(),
+            field_results: HashMap::new(),
+            schema_violations: Vec::new(),
+            protocol_issues: Vec::new(),
+            custom_results: Vec::new(),
+        }
+    }
+}
+
+impl McpValidationResult {
+    /// Create a new validation result
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Add an error to the validation result
+    pub fn add_error(&mut self, error: ValidationError) {
+        self.is_valid = false;
+        self.errors.push(error);
+    }
+
+    /// Add a warning to the validation result
+    pub fn add_warning(&mut self, warning: ValidationWarning) {
+        self.warnings.push(warning);
+    }
+
+    /// Add a field validation result
+    pub fn add_field_result(&mut self, field_path: String, result: FieldValidationResult) {
+        if !result.is_valid {
+            self.is_valid = false;
+        }
+        self.field_results.insert(field_path, result);
+    }
+
+    /// Add schema violations
+    pub fn add_schema_violations(&mut self, violations: Vec<SchemaViolation>) {
+        if !violations.is_empty() {
+            self.is_valid = false;
+        }
+        self.schema_violations.extend(violations);
+    }
+
+    /// Add protocol issues
+    pub fn add_protocol_issues(&mut self, issues: Vec<ProtocolIssue>) {
+        if issues
+            .iter()
+            .any(|issue| issue.severity == ValidationSeverity::Error)
+        {
+            self.is_valid = false;
+        }
+        self.protocol_issues.extend(issues);
+    }
+
+    /// Merge another validation result into this one
+    pub fn merge(&mut self, other: McpValidationResult) {
+        if !other.is_valid {
+            self.is_valid = false;
+        }
+
+        self.errors.extend(other.errors);
+        self.warnings.extend(other.warnings);
+        self.field_results.extend(other.field_results);
+        self.schema_violations.extend(other.schema_violations);
+        self.protocol_issues.extend(other.protocol_issues);
+        self.custom_results.extend(other.custom_results);
     }
 }
 
@@ -931,5 +1123,96 @@ mod tests {
         assert!(!result.is_valid);
         // Should stop on first error, so shouldn't have processed all validations
         assert!(result.field_results.len() < expected.fields.len());
+    }
+
+    #[test]
+    fn test_mcp_validation_result_creation() {
+        let result = McpValidationResult::new();
+        assert!(result.is_valid);
+        assert!(result.errors.is_empty());
+        assert!(result.warnings.is_empty());
+        assert!(result.field_results.is_empty());
+    }
+
+    #[test]
+    fn test_validation_result_add_error() {
+        let mut result = McpValidationResult::new();
+
+        let error = ValidationError::FieldError {
+            field: "test_field".to_string(),
+            expected: "expected_value".to_string(),
+            actual: "actual_value".to_string(),
+        };
+
+        result.add_error(error);
+
+        assert!(!result.is_valid);
+        assert_eq!(result.errors.len(), 1);
+        if let ValidationError::FieldError { field, .. } = &result.errors[0] {
+            assert_eq!(field, "test_field");
+        } else {
+            panic!("Expected FieldError variant");
+        }
+    }
+
+    #[test]
+    fn test_validation_result_add_warning() {
+        let mut result = McpValidationResult::new();
+
+        let warning = ValidationWarning {
+            field: "test_field".to_string(),
+            message: "Test warning message".to_string(),
+            suggestion: Some("Consider fixing this".to_string()),
+            severity: ValidationSeverity::Warning,
+        };
+
+        result.add_warning(warning);
+
+        assert!(result.is_valid); // Warnings don't invalidate result
+        assert_eq!(result.warnings.len(), 1);
+        assert_eq!(result.warnings[0].field, "test_field");
+    }
+
+    #[test]
+    fn test_validation_spec_deserialization() {
+        let spec_json = r#"
+        {
+            "schema": null,
+            "jsonpath_rules": [],
+            "protocol_requirements": {
+                "method": "tools/call",
+                "required_fields": ["result"],
+                "optional_fields": [],
+                "expected_error_codes": [],
+                "capability_requirements": []
+            },
+            "custom_rules": [],
+            "strict_mode": false
+        }"#;
+
+        let spec: ValidationSpec = serde_json::from_str(spec_json).unwrap();
+        assert_eq!(spec.protocol_requirements.method, "tools/call");
+        assert_eq!(spec.protocol_requirements.required_fields.len(), 1);
+        assert!(!spec.strict_mode);
+    }
+
+    #[test]
+    fn test_validation_error_creation() {
+        let error = ValidationError::MissingFieldError {
+            field: "result.content".to_string(),
+        };
+
+        if let ValidationError::MissingFieldError { field } = &error {
+            assert_eq!(field, "result.content");
+        } else {
+            panic!("Expected MissingFieldError variant");
+        }
+    }
+
+    #[test]
+    fn test_validation_severity_ordering() {
+        // This test ensures severity levels can be compared properly
+        assert!(ValidationSeverity::Error != ValidationSeverity::Warning);
+        assert!(ValidationSeverity::Warning != ValidationSeverity::Info);
     }
 }

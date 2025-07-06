@@ -57,6 +57,8 @@ pub mod cli;
 pub mod error;
 pub mod executor;
 pub mod reporting;
+pub mod spec;
+pub mod validation;
 
 // Re-export commonly used types
 pub use error::{Error, Result};

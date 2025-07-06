@@ -1,0 +1,27 @@
+[package]
+name = "codeprism-utils"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Lightweight utilities for CodePrism ecosystem - file monitoring, error handling, and common tools"
+
+[dependencies]
+# Minimal dependencies for utilities
+anyhow.workspace = true
+thiserror.workspace = true
+tokio = { workspace = true, features = ["sync", "time"] }
+serde = { workspace = true, features = ["derive"] }
+
+# File watching - only dependency needed for FileWatcher
+notify.workspace = true
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["test-util", "macros"] }
+tempfile.workspace = true
+
+[features]
+default = ["file-watcher"]
+file-watcher = [] 

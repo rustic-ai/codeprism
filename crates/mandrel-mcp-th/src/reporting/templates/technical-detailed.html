@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Technical Test Report</title>
+    <style>
+        body { font-family: 'Courier New', monospace; margin: 0; background: #1e1e1e; color: #d4d4d4; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        .header { background: #2d2d30; padding: 20px; border-radius: 5px; margin-bottom: 20px; border-left: 4px solid #007acc; }
+        .section { background: #252526; margin: 20px 0; border-radius: 5px; overflow: hidden; }
+        .section-header { background: #2d2d30; padding: 15px; font-weight: bold; color: #007acc; border-bottom: 1px solid #3e3e42; }
+        .section-content { padding: 20px; }
+        .code-block { background: #1e1e1e; padding: 15px; border-radius: 3px; border-left: 3px solid #007acc; margin: 10px 0; overflow-x: auto; }
+        .test-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; }
+        .test-card { background: #2d2d30; padding: 15px; border-radius: 5px; border-left: 4px solid #6a6a6a; }
+        .test-passed { border-left-color: #4caf50; }
+        .test-failed { border-left-color: #f44336; }
+        .test-skipped { border-left-color: #ff9800; }
+        .metadata-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }
+        .metadata-item { background: #2d2d30; padding: 15px; border-radius: 5px; }
+        .metric { display: inline-block; margin: 5px 10px; }
+        .metric-value { color: #4fc3f7; font-weight: bold; }
+        pre { margin: 0; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 Technical Test Report</h1>
+            <p>Report ID: <span class="metric-value">{{ report_id }}</span> | Generated: {{ generated_at | date(format="%Y-%m-%d %H:%M:%S UTC") }}</p>
+        </div>
+
+        <!-- System Information -->
+        <div class="section">
+            <div class="section-header">System Information</div>
+            <div class="section-content">
+                <div class="metadata-grid">
+                    <div class="metadata-item">
+                        <h3>Environment</h3>
+                        <p>OS: {{ environment.os }} ({{ environment.arch }})</p>
+                        <p>Hostname: {{ environment.hostname }}</p>
+                        <p>Rust Version: {{ environment.rust_version }}</p>
+                    </div>
+                    <div class="metadata-item">
+                        <h3>Server Configuration</h3>
+                        <p>Server: {{ server_config.server_name }} v{{ server_config.server_version }}</p>
+                        <p>MCP Version: {{ server_config.mcp_version }}</p>
+                        {% for key, value in server_config.configuration %}
+                        <p>{{ key }}: {{ value }}</p>
+                        {% endfor %}
+                    </div>
+                    <div class="metadata-item">
+                        <h3>Test Run Metrics</h3>
+                        <div class="metric">Total: <span class="metric-value">{{ summary.total_tests }}</span></div>
+                        <div class="metric">Passed: <span class="metric-value">{{ summary.passed }}</span></div>
+                        <div class="metric">Failed: <span class="metric-value">{{ summary.failed }}</span></div>
+                        <div class="metric">Skipped: <span class="metric-value">{{ summary.skipped }}</span></div>
+                        <div class="metric">Success Rate: <span class="metric-value">{{ summary.success_rate | format_percentage }}</span></div>
+                        <div class="metric">Duration: <span class="metric-value">{{ summary.total_duration | format_duration }}</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Analysis -->
+        <div class="section">
+            <div class="section-header">Performance Analysis</div>
+            <div class="section-content">
+                <div class="code-block">
+                    <pre>Average Response Time: {{ performance_metrics.average_response_time | format_duration }}
+95th Percentile:       {{ performance_metrics.p95_response_time | format_duration }}
+Throughput:            {{ performance_metrics.throughput | round }} req/s
+Peak Memory:           {{ performance_metrics.memory_usage.peak_memory_mb }} MB
+Average Memory:        {{ performance_metrics.memory_usage.average_memory_mb }} MB
+Memory Growth:         {{ performance_metrics.memory_usage.memory_growth_mb }} MB</pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test Results -->
+        <div class="section">
+            <div class="section-header">Test Results ({{ test_results | length }} tests)</div>
+            <div class="section-content">
+                <div class="test-grid">
+                    {% for test in test_results %}
+                    <div class="test-card test-{{ test.status | lower }}">
+                        <h4>{{ test.test_name }}</h4>
+                        <p><strong>Suite:</strong> {{ test.suite_name }}</p>
+                        <p><strong>Status:</strong> {{ test.status | status_icon }} {{ test.status }}</p>
+                        <p><strong>Duration:</strong> {{ test.duration | format_duration }}</p>
+                        <p><strong>Response Time:</strong> {{ test.performance.response_time_ms }}ms</p>
+                        {% if test.performance.retry_attempts > 0 %}
+                        <p><strong>Retries:</strong> {{ test.performance.retry_attempts }}</p>
+                        {% endif %}
+                        {% if test.error_message %}
+                        <div class="code-block">
+                            <strong>Error:</strong>
+                            <pre>{{ test.error_message }}</pre>
+                        </div>
+                        {% endif %}
+                        {% if test.response_data %}
+                        <details>
+                            <summary>Response Data</summary>
+                            <div class="code-block">
+                                <pre>{{ test.response_data | tojson(indent=2) }}</pre>
+                            </div>
+                        </details>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Custom Fields -->
+        {% if custom_fields %}
+        <div class="section">
+            <div class="section-header">Additional Information</div>
+            <div class="section-content">
+                <div class="code-block">
+                    <pre>{% for key, value in custom_fields %}{{ key }}: {{ value }}
+{% endfor %}</pre>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html> 

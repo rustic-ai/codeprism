@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "crates/codeprism-core",
+    "crates/codeprism-utils",
     "crates/codeprism-lang-rust",
     "crates/codeprism-lang-python",
     "crates/codeprism-lang-js", 

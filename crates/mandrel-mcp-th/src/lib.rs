@@ -47,12 +47,9 @@
 //! ```
 
 pub mod cli;
-pub mod client;
 pub mod error;
 pub mod executor;
 pub mod reporting;
-pub mod spec;
-pub mod validation;
 
 // Re-export commonly used types
 pub use error::{Error, Result};
@@ -87,6 +84,38 @@ pub fn is_shutdown_requested() -> bool {
 /// Request shutdown (used by signal handlers)
 pub fn request_shutdown() {
     SHUTDOWN_REQUESTED.store(true, std::sync::atomic::Ordering::Relaxed);
+}
+
+/// Check if the version has been patched with a patch
+/// If patched, the version will have a `-dev` suffix
+#[cfg(debug_assertions)]
+pub fn is_dev_version() -> bool {
+    VERSION.contains("-dev") || VERSION.contains("dev") || cfg!(debug_assertions)
+}
+
+#[cfg(not(debug_assertions))]
+pub fn is_dev_version() -> bool {
+    false
+}
+
+/// Returns the user agent string for HTTP requests
+pub fn user_agent() -> String {
+    format!("mandrel-mcp-th/{}", VERSION)
+}
+
+/// Configuration for logging
+pub fn init_logging(level: &str) -> Result<()> {
+    let level = match level {
+        "trace" => tracing::Level::TRACE,
+        "debug" => tracing::Level::DEBUG,
+        "info" => tracing::Level::INFO,
+        "warn" => tracing::Level::WARN,
+        "error" => tracing::Level::ERROR,
+        _ => tracing::Level::INFO,
+    };
+
+    tracing_subscriber::fmt().with_max_level(level).init();
+    Ok(())
 }
 
 #[cfg(test)]

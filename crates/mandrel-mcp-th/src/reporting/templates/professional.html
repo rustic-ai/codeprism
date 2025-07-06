@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if branding.company_name %}{{ branding.company_name }} - {% endif %}Test Report</title>
+    <style>
+        :root {
+            --primary-color: {{ branding.primary_color | default(value="#0066cc") }};
+            --secondary-color: {{ branding.secondary_color | default(value="#6699ff") }};
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --light-gray: #f8f9fa;
+            --border-color: #dee2e6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .logo {
+            float: right;
+            max-height: 60px;
+            max-width: 200px;
+        }
+
+        .metadata {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .metadata-item {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary-color);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .metadata-item h3 {
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border-top: 4px solid;
+        }
+
+        .card.success { border-top-color: var(--success-color); }
+        .card.warning { border-top-color: var(--warning-color); }
+        .card.danger { border-top-color: var(--danger-color); }
+        .card.info { border-top-color: var(--primary-color); }
+
+        .card-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .card.success .card-number { color: var(--success-color); }
+        .card.warning .card-number { color: var(--warning-color); }
+        .card.danger .card-number { color: var(--danger-color); }
+        .card.info .card-number { color: var(--primary-color); }
+
+        .section {
+            background: white;
+            margin-bottom: 2rem;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-header {
+            background: var(--light-gray);
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .section-content {
+            padding: 1.5rem;
+        }
+
+        .test-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .test-table th,
+        .test-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .test-table th {
+            background: var(--light-gray);
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .test-table tr:hover {
+            background: var(--light-gray);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .status-passed {
+            background: rgba(40, 167, 69, 0.1);
+            color: var(--success-color);
+        }
+
+        .status-failed {
+            background: rgba(220, 53, 69, 0.1);
+            color: var(--danger-color);
+        }
+
+        .status-skipped {
+            background: rgba(255, 193, 7, 0.1);
+            color: var(--warning-color);
+        }
+
+        .performance-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+
+        .performance-item {
+            text-align: center;
+            padding: 1rem;
+            background: var(--light-gray);
+            border-radius: 8px;
+        }
+
+        .performance-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        {% if branding.css_overrides %}
+        {{ branding.css_overrides | safe }}
+        {% endif %}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            {% if branding.logo_path %}
+            <img src="{{ branding.logo_path }}" alt="Logo" class="logo">
+            {% endif %}
+            <h1>{% if branding.company_name %}{{ branding.company_name }}{% else %}MCP{% endif %} Test Report</h1>
+            <div class="subtitle">Generated on {{ generated_at | date(format="%Y-%m-%d %H:%M:%S UTC") }}</div>
+        </div>
+
+        <!-- Metadata -->
+        <div class="metadata">
+            <div class="metadata-item">
+                <h3>Report Information</h3>
+                <p><strong>Report ID:</strong> {{ report_id }}</p>
+                <p><strong>Version:</strong> {{ version }}</p>
+                {% for key, value in custom_fields %}
+                <p><strong>{{ key | title }}:</strong> {{ value }}</p>
+                {% endfor %}
+            </div>
+            <div class="metadata-item">
+                <h3>Environment</h3>
+                <p><strong>OS:</strong> {{ environment.os }} ({{ environment.arch }})</p>
+                <p><strong>Hostname:</strong> {{ environment.hostname }}</p>
+                <p><strong>Rust Version:</strong> {{ environment.rust_version }}</p>
+            </div>
+            <div class="metadata-item">
+                <h3>Server Configuration</h3>
+                <p><strong>Server:</strong> {{ server_config.server_name }} v{{ server_config.server_version }}</p>
+                <p><strong>MCP Version:</strong> {{ server_config.mcp_version }}</p>
+            </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="summary-cards">
+            <div class="card info">
+                <div class="card-number">{{ summary.total_tests }}</div>
+                <div>Total Tests</div>
+            </div>
+            <div class="card success">
+                <div class="card-number">{{ summary.passed }}</div>
+                <div>Passed</div>
+            </div>
+            <div class="card danger">
+                <div class="card-number">{{ summary.failed }}</div>
+                <div>Failed</div>
+            </div>
+            <div class="card warning">
+                <div class="card-number">{{ summary.skipped }}</div>
+                <div>Skipped</div>
+            </div>
+            <div class="card info">
+                <div class="card-number">{{ summary.success_rate | format_percentage }}</div>
+                <div>Success Rate</div>
+            </div>
+            <div class="card info">
+                <div class="card-number">{{ summary.total_duration | format_duration }}</div>
+                <div>Total Duration</div>
+            </div>
+        </div>
+
+        <!-- Performance Metrics -->
+        <div class="section">
+            <div class="section-header">Performance Metrics</div>
+            <div class="section-content">
+                <div class="performance-grid">
+                    <div class="performance-item">
+                        <div class="performance-value">{{ performance_metrics.average_response_time | format_duration }}</div>
+                        <div>Average Response Time</div>
+                    </div>
+                    <div class="performance-item">
+                        <div class="performance-value">{{ performance_metrics.p95_response_time | format_duration }}</div>
+                        <div>95th Percentile</div>
+                    </div>
+                    <div class="performance-item">
+                        <div class="performance-value">{{ performance_metrics.memory_usage.peak_memory_mb }}MB</div>
+                        <div>Peak Memory</div>
+                    </div>
+                    <div class="performance-item">
+                        <div class="performance-value">{{ performance_metrics.throughput | round }}req/s</div>
+                        <div>Throughput</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test Results -->
+        <div class="section">
+            <div class="section-header">Test Results</div>
+            <div class="section-content">
+                <table class="test-table">
+                    <thead>
+                        <tr>
+                            <th>Status</th>
+                            <th>Test Name</th>
+                            <th>Suite</th>
+                            <th>Duration</th>
+                            <th>Error Message</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for test in test_results %}
+                        <tr>
+                            <td>
+                                {% if test.status == "Passed" %}
+                                <span class="status-badge status-passed">{{ test.status | status_icon }} Passed</span>
+                                {% elif test.status == "Failed" %}
+                                <span class="status-badge status-failed">{{ test.status | status_icon }} Failed</span>
+                                {% else %}
+                                <span class="status-badge status-skipped">{{ test.status | status_icon }} {{ test.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ test.test_name }}</td>
+                            <td>{{ test.suite_name }}</td>
+                            <td>{{ test.duration | format_duration }}</td>
+                            <td>
+                                {% if test.error_message %}
+                                <code style="background: #f8f9fa; padding: 0.2rem 0.4rem; border-radius: 3px; font-size: 0.85rem;">
+                                    {{ test.error_message | truncate(length=100) }}
+                                </code>
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>Generated by Mandrel MCP Test Harness v{{ version }}</p>
+            <p>Report ID: {{ report_id }}</p>
+        </div>
+    </div>
+</body>
+</html> 

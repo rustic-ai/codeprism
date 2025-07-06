@@ -2,15 +2,15 @@
 name = "mandrel-mcp-th"
 version = "0.1.0"
 edition = "2021"
-description = "Mandrel MCP Test Harness - A modern testing framework for MCP servers built on the official Rust SDK"
-authors = ["Prism Team"]
+authors = ["AI Assistant"]
+description = "Mandrel MCP Test Harness - Professional testing and reporting for MCP servers"
 license = "MIT"
-repository = "https://github.com/rustic-ai/codeprism"
+repository = "https://github.com/user/dragonscale"
 keywords = ["mcp", "testing", "protocol", "model-context-protocol"]
 categories = ["development-tools::testing", "command-line-utilities"]
 
 [[bin]]
-name = "moth"
+name = "mandrel-mcp-th"
 path = "src/main.rs"
 
 [dependencies]
@@ -18,19 +18,19 @@ path = "src/main.rs"
 rmcp = { git = "https://github.com/modelcontextprotocol/rust-sdk", branch = "main", features = ["client", "transport-child-process"] }
 
 # Core async runtime
-tokio = { workspace = true, features = ["full"] }
+tokio = { version = "1.0", features = ["full"] }
 futures = "0.3"
 
 # CLI framework
-clap = { version = "4.0", features = ["derive", "env", "color"] }
+clap = { version = "4.4", features = ["derive", "env"] }
 
 # Serialization and configuration
-serde = { workspace = true, features = ["derive"] }
-serde_json = { workspace = true }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
 serde_yml = "0.0.12"
 
 # Error handling
-anyhow = { workspace = true }
+anyhow = "1.0"
 thiserror = { workspace = true }
 
 # Logging and tracing
@@ -45,6 +45,24 @@ jsonschema = "0.18"
 uuid = { version = "1.0", features = ["v4"] }
 chrono = { version = "0.4", features = ["serde"] }
 
+# Reporting and templating
+quick-junit = "0.5"
+tera = "1.19"
+pulldown-cmark = "0.10"
+
+dirs = "5.0"
+notify = "6.1"
+
+# Lightweight CodePrism utilities for file monitoring
+codeprism-utils = { path = "../codeprism-utils" }
+
+# Advanced configuration dependencies
+regex = "1.10"              # For validation patterns
+html5ever = "0.26"          # HTML validation
+
 [dev-dependencies]
 tokio-test = "0.4"
-tempfile = "3.0"
+tempfile = "3.8"
+assert_cmd = "2.0"
+predicates = "3.0"
+rstest = "0.18"

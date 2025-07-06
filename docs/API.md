@@ -279,7 +279,12 @@ pub struct ParseResult {
 }
 ```
 
-### File Watcher
+### File Watching
+
+```rust
+use codeprism_utils::{FileWatcher, ChangeKind};
+use std::path::Path;
+```
 
 #### `FileWatcher`
 
@@ -1156,7 +1161,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### File Watching
 
 ```rust
-use codeprism::{FileWatcher, ChangeKind};
+use codeprism_utils::{FileWatcher, ChangeKind};
 use std::path::Path;
 
 #[tokio::main]

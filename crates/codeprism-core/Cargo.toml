@@ -33,7 +33,7 @@ regex.workspace = true
 rand.workspace = true
 
 # File watching
-notify.workspace = true
+codeprism-utils = { path = "../codeprism-utils" }
 
 # Repository scanning
 walkdir = "2.4"

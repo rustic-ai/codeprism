@@ -20,9 +20,9 @@ pub mod pipeline;
 pub mod repository;
 pub mod resilience;
 pub mod scanner;
-pub mod watcher;
 
 pub use ast::{Edge, EdgeKind, Language, Node, NodeId, NodeKind, Span};
+pub use codeprism_utils::{ChangeEvent, ChangeKind, FileWatcher};
 pub use content::search::{ContentSearchManager, SearchQueryBuilder};
 pub use content::{
     CommentContext, ConfigFormat, ContentChunk, ContentNode, ContentStats, ContentType,
@@ -54,7 +54,6 @@ pub use scanner::{
     DependencyMode, DiscoveredFile, NoOpProgressReporter, ProgressReporter, RepositoryScanner,
     ScanResult,
 };
-pub use watcher::{ChangeEvent, ChangeKind, FileWatcher};
 
 /// Re-export commonly used types
 pub mod prelude {
@@ -95,5 +94,5 @@ pub mod prelude {
         DependencyMode, DiscoveredFile, NoOpProgressReporter, ProgressReporter, RepositoryScanner,
         ScanResult,
     };
-    pub use crate::watcher::{ChangeEvent, ChangeKind, FileWatcher};
+    pub use codeprism_utils::{ChangeEvent, ChangeKind, FileWatcher};
 }

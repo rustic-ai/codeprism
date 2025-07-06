@@ -36,11 +36,18 @@
 //!
 //! let cli = Cli::parse();
 //! match cli.command {
-//!     Commands::Test { spec, .. } => {
+//!     Commands::Run(run_args) => {
 //!         // Test execution logic
-//!         println!("Running tests from: {}", spec.display());
+//!         println!("Running tests from: {}", run_args.config.display());
 //!     }
-//!     _ => {}
+//!     Commands::Report(report_args) => {
+//!         // Report generation logic
+//!         println!("Generating reports from: {}", report_args.input.display());
+//!     }
+//!     Commands::Validate(validate_args) => {
+//!         // Configuration validation
+//!         println!("Validating config: {}", validate_args.config.display());
+//!     }
 //! }
 //! # Ok(())
 //! # }

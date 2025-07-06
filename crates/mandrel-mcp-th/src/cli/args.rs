@@ -12,6 +12,10 @@ pub struct Cli {
 
     #[arg(long, short = 'v', action = clap::ArgAction::Count)]
     pub verbose: u8,
+
+    /// Suppress non-essential output
+    #[arg(long, short = 'q')]
+    pub quiet: bool,
 }
 
 #[derive(Subcommand, Debug)]
@@ -65,11 +69,11 @@ pub struct ReportArgs {
     pub fail_on_errors: bool,
 
     /// Include performance metrics in reports
-    #[arg(long, default_value = "true")]
+    #[arg(long, action = clap::ArgAction::Set, default_value = "true")]
     pub include_performance: bool,
 
     /// Include validation details in reports
-    #[arg(long, default_value = "true")]
+    #[arg(long, action = clap::ArgAction::Set, default_value = "true")]
     pub include_validation: bool,
 }
 

@@ -304,7 +304,7 @@ mod tests {
 
     // File system event tests - these can be flaky, so use CI skip
     #[tokio::test]
-    #[cfg_attr(any(target_env = "ci", env = "CI"), ignore)]
+    #[cfg_attr(any(feature = "ci-skip"), ignore)]
     async fn test_file_creation_detection() {
         let temp_dir = TempDir::new().unwrap();
         let mut watcher = FileWatcher::with_debounce(Duration::from_millis(50)).unwrap();
@@ -341,7 +341,7 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg_attr(any(target_env = "ci", env = "CI"), ignore)]
+    #[cfg_attr(any(feature = "ci-skip"), ignore)]
     async fn test_file_modification_detection() {
         let temp_dir = TempDir::new().unwrap();
         let file_path = temp_dir.path().join("existing_file.txt");

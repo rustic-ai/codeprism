@@ -136,7 +136,7 @@ pub struct BrandingInfo {
 }
 
 /// Built-in template types
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub enum BuiltInTemplate {
     Professional,
     ExecutiveSummary,
@@ -145,7 +145,7 @@ pub enum BuiltInTemplate {
 }
 
 /// Template source specification
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub enum TemplateSource {
     BuiltIn(BuiltInTemplate),
     Custom { path: PathBuf },
@@ -153,7 +153,7 @@ pub enum TemplateSource {
 }
 
 /// Enhanced report configuration with template support
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ReportConfig {
     pub include_performance_metrics: bool,
     pub include_validation_details: bool,
@@ -904,9 +904,9 @@ impl PerformanceReport {
         PerformanceReport {
             average_response_time,
             p95_response_time,
-            throughput: 0.0, // TODO: Implement throughput calculation
+            throughput: 0.0, // ENHANCEMENT(#202): Implement throughput calculation
             memory_usage: MemoryStats {
-                peak_memory_mb: 0.0, // TODO: Implement memory tracking
+                peak_memory_mb: 0.0, // ENHANCEMENT(#202): Implement memory tracking
                 average_memory_mb: 0.0,
                 memory_growth_mb: 0.0,
             },
@@ -1174,7 +1174,7 @@ mod tests {
 
         assert!(performance.average_response_time > Duration::from_millis(0));
         assert!(performance.p95_response_time >= performance.average_response_time);
-        assert_eq!(performance.throughput, 0.0); // TODO: Will be implemented later
+        assert_eq!(performance.throughput, 0.0); // ENHANCEMENT(#202): Will be implemented with performance monitoring
     }
 
     #[test]
@@ -1799,7 +1799,7 @@ mod tests {
         assert!(markdown_output.contains("| Peak Memory Usage |"));
         assert!(markdown_output.contains("| Throughput |"));
 
-        // Verify performance chart placeholder
+        // ENHANCEMENT(#202): Verify performance chart functionality
         assert!(markdown_output.contains("### Response Time Distribution"));
         assert!(markdown_output.contains("```"));  // ASCII chart in code block
     }

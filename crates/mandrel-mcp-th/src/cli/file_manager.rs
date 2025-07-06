@@ -1,7 +1,7 @@
 use super::{OrganizationStrategy, ReportFormat, TemplateName, TimestampFormat};
 use crate::error::Result;
 use chrono::{Datelike, Utc};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 pub struct FileManager {
     base_directory: PathBuf,
@@ -84,7 +84,7 @@ impl FileManager {
         }
     }
 
-    pub fn ensure_directory_exists(&self, path: &PathBuf) -> Result<()> {
+    pub fn ensure_directory_exists(&self, path: &Path) -> Result<()> {
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent)?;
         }

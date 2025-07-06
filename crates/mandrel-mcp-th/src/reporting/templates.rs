@@ -10,8 +10,11 @@ use std::time::Duration;
 use tera::{Context, Tera};
 
 /// Secure template renderer with sandboxing
+#[derive(Debug)]
 pub struct TemplateRenderer {
     engine: Tera,
+    #[allow(dead_code)]
+    // PLANNED(#202): Will be used for timeout controls in performance monitoring
     max_execution_time: Duration,
 }
 

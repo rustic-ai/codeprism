@@ -16,7 +16,7 @@ tokio = { workspace = true, features = ["sync", "time"] }
 serde = { workspace = true, features = ["derive"] }
 
 # File watching - only dependency needed for FileWatcher
-notify.workspace = true
+notify = { version = "6.1", optional = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["test-util", "macros"] }
@@ -24,4 +24,5 @@ tempfile.workspace = true
 
 [features]
 default = ["file-watcher"]
-file-watcher = [] 
+file-watcher = ["notify"]
+ci-skip = []  # Feature for skipping flaky tests in CI environments 

@@ -55,6 +55,7 @@
 
 pub mod cli;
 pub mod error;
+pub mod error_handling;
 pub mod executor;
 pub mod reporting;
 pub mod spec;

@@ -48,7 +48,7 @@ jsonpath_lib = "0.3"
 jsonschema = "0.18"
 
 # Utilities
-uuid = { version = "1.0", features = ["v4"] }
+uuid = { version = "1.0", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 
 # Reporting and templating

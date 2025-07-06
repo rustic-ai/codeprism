@@ -1060,6 +1060,30 @@ mod tests {
     // CI/CD Integration Tests
     #[test]
     fn test_ci_system_detection() {
+        // Store original environment state for proper cleanup
+        let _original_env: Vec<_> = std::env::vars().collect();
+
+        // Clean up any CI-related environment variables first
+        let ci_vars = [
+            "GITHUB_ACTIONS",
+            "GITHUB_WORKFLOW",
+            "GITHUB_WORKSPACE",
+            "RUNNER_TEMP",
+            "JENKINS_URL",
+            "BUILD_NUMBER",
+            "GITLAB_CI",
+            "CI_JOB_ID",
+            "CI_PIPELINE_ID",
+            "CIRCLECI",
+            "TRAVIS",
+            "BUILDKITE",
+            "TEAMCITY_VERSION",
+        ];
+
+        for var in &ci_vars {
+            std::env::remove_var(var);
+        }
+
         let detector = EnvironmentDetector::new();
 
         // Test GitHub Actions detection
@@ -1106,10 +1130,36 @@ mod tests {
         // Clean up
         std::env::remove_var("GITLAB_CI");
         std::env::remove_var("CI_JOB_ID");
+
+        // Final cleanup - remove all CI variables to ensure clean state
+        for var in &ci_vars {
+            std::env::remove_var(var);
+        }
     }
 
     #[test]
     fn test_ci_specific_configuration() {
+        // Clean up any CI-related environment variables first to ensure clean state
+        let ci_vars = [
+            "GITHUB_ACTIONS",
+            "GITHUB_WORKFLOW",
+            "GITHUB_WORKSPACE",
+            "RUNNER_TEMP",
+            "JENKINS_URL",
+            "BUILD_NUMBER",
+            "GITLAB_CI",
+            "CI_JOB_ID",
+            "CI_PIPELINE_ID",
+            "CIRCLECI",
+            "TRAVIS",
+            "BUILDKITE",
+            "TEAMCITY_VERSION",
+        ];
+
+        for var in &ci_vars {
+            std::env::remove_var(var);
+        }
+
         let detector = EnvironmentDetector::new();
 
         // Set GitHub Actions environment
@@ -1132,14 +1182,21 @@ mod tests {
         );
         assert!(ci_config.fail_on_errors, "Should fail on errors in CI");
 
-        // Clean up
-        std::env::remove_var("GITHUB_ACTIONS");
-        std::env::remove_var("GITHUB_WORKSPACE");
-        std::env::remove_var("RUNNER_TEMP");
+        // Clean up - remove all CI variables to ensure clean state for other tests
+        for var in &ci_vars {
+            std::env::remove_var(var);
+        }
     }
 
     #[test]
     fn test_environment_variable_integration() {
+        // Clean up environment variables first to ensure clean state
+        let test_vars = ["BUILD_VERSION", "TEAM_NAME", "ENVIRONMENT"];
+
+        for var in &test_vars {
+            std::env::remove_var(var);
+        }
+
         let detector = EnvironmentDetector::new();
 
         // Set various environment variables
@@ -1161,10 +1218,10 @@ mod tests {
         );
         assert_eq!(env_vars.get("TEAM_NAME"), Some(&"QA Team".to_string()));
 
-        // Clean up
-        std::env::remove_var("BUILD_VERSION");
-        std::env::remove_var("TEAM_NAME");
-        std::env::remove_var("ENVIRONMENT");
+        // Clean up - ensure all test variables are removed
+        for var in &test_vars {
+            std::env::remove_var(var);
+        }
     }
 }
 

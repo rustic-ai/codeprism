@@ -52,13 +52,13 @@ impl BrandingConfig {
     pub fn validate(&self) -> Result<()> {
         // Validate color formats if provided
         if let Some(color) = &self.primary_color {
-            if !color.is_empty() && !color.chars().all(|c| c.is_ascii_alphanumeric()) {
+            if !color.is_empty() && !Self::is_valid_color_format(color) {
                 return Err(crate::error::Error::config("Invalid primary color format"));
             }
         }
 
         if let Some(color) = &self.secondary_color {
-            if !color.is_empty() && !color.chars().all(|c| c.is_ascii_alphanumeric()) {
+            if !color.is_empty() && !Self::is_valid_color_format(color) {
                 return Err(crate::error::Error::config(
                     "Invalid secondary color format",
                 ));
@@ -79,6 +79,36 @@ impl BrandingConfig {
         }
 
         Ok(())
+    }
+
+    /// Validate color format (hex codes like #ffffff or ffffff, or named colors)
+    fn is_valid_color_format(color: &str) -> bool {
+        // Handle hex colors with or without #
+        let hex_part = color.strip_prefix('#').unwrap_or(color);
+
+        // Valid hex color: 3 or 6 hex characters
+        if hex_part.len() == 3 || hex_part.len() == 6 {
+            return hex_part.chars().all(|c| c.is_ascii_hexdigit());
+        }
+
+        // Also allow common named colors
+        matches!(
+            color.to_lowercase().as_str(),
+            "red"
+                | "green"
+                | "blue"
+                | "black"
+                | "white"
+                | "gray"
+                | "grey"
+                | "yellow"
+                | "orange"
+                | "purple"
+                | "pink"
+                | "brown"
+                | "cyan"
+                | "magenta"
+        )
     }
 }
 

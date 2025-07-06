@@ -357,7 +357,7 @@ moth --version
 
 ```bash
 # Remove existing installation
-cargo uninstall mandrel-mcp-th
+cargo uninstall moth
 
 # Fresh install
 cargo install --path crates/mandrel-mcp-th
@@ -383,13 +383,13 @@ For future package manager support:
 
 ```bash
 # Homebrew (macOS) - planned
-brew install rustic-ai/tap/mandrel-mcp-th
+brew install rustic-ai/tap/moth
 
 # APT (Ubuntu/Debian) - planned
-sudo apt install mandrel-mcp-th
+sudo apt install moth
 
 # Winget (Windows) - planned
-winget install RusticAI.MandrelMcpTestHarness
+winget install RusticAI.Moth
 ```
 
 ## 🎯 Next Steps

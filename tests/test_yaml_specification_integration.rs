@@ -2,7 +2,7 @@
 //!
 //! These tests validate that the three comprehensive test specifications
 //! (filesystem-server.yaml, everything-server.yaml, weather-server.yaml)
-//! work correctly with the mandrel-mcp-th binary.
+//! work correctly with the moth binary.
 
 use anyhow::Result;
 use std::path::PathBuf;
@@ -87,7 +87,7 @@ impl YamlSpecificationTester {
         println!("   YAML: {}", yaml_path.display());
         println!("   Output: {}", output_dir.display());
 
-        // Run the mandrel-mcp-th binary with timeout
+        // Run the moth binary with timeout
         let test_timeout = Duration::from_secs(expected_behavior.timeout_seconds);
         
         let command_future = tokio::task::spawn_blocking({

@@ -35,6 +35,7 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+serde_yml = "0.0.12"
 chrono = { version = "0.4", features = ["serde"] }
 
 # Tree-sitter and language support

@@ -1,0 +1,867 @@
+# Everything MCP Server Test Specification
+# Comprehensive testing for MCP "everything" server covering all protocol capabilities
+# following the MCP 2025-06-18 specification with sampling, logging, and experimental features
+
+name: "Everything MCP Server"
+version: "2025.7.1"
+description: "Reference implementation MCP server exercising all protocol features"
+
+# Complete MCP capabilities supported by everything server
+capabilities:
+  tools: true           # All 8 server tools  
+  resources: true       # 100 test resources with pagination
+  prompts: true         # 3 prompt templates with arguments
+  sampling: true        # LLM sampling integration
+  logging: true         # Random log messages every 15 seconds
+  experimental:         # Extended experimental features
+    progress_notifications: true
+    resource_subscriptions: true
+    annotation_system: true
+    multi_transport: true
+
+# Server startup configuration supporting multiple transports
+server:
+  command: "npx" 
+  args: ["-y", "@modelcontextprotocol/server-everything"]
+  env:
+    NODE_ENV: "test"
+    LOG_LEVEL: "info"
+    ENABLE_PROGRESS: "true"
+    SAMPLE_INTERVAL: "15000"    # Log message interval
+    RESOURCE_UPDATE_INTERVAL: "5000"  # Resource subscription updates
+  transport: "stdio"              # Primary transport, also supports SSE and HTTP
+  startup_timeout_seconds: 30
+  shutdown_timeout_seconds: 15
+
+# ==========================================
+# COMPREHENSIVE TOOL TESTING (8 Tools)
+# ==========================================
+
+tools:
+  # ----------------------------------------
+  # Text Processing Tools
+  # ----------------------------------------
+  - name: "echo"
+    description: "Simple echo tool to verify basic tool functionality"
+    tests:
+      - name: "basic_echo"
+        description: "Test basic echo functionality with simple message"
+        input:
+          message: "Hello, MCP World!"
+        expected:
+          error: false
+          fields:
+            - path: "$[0].type"
+              value: "text"
+              required: true
+            - path: "$[0].text"
+              value: "Hello, MCP World!"
+              required: true
+        performance:
+          max_duration_ms: 100
+        tags: ["text", "basic", "echo"]
+
+      - name: "echo_empty_message"
+        description: "Test echo with empty message"
+        input:
+          message: ""
+        expected:
+          error: false
+          fields:
+            - path: "$[0].text"
+              value: ""
+              required: true
+        tags: ["text", "edge-case", "empty"]
+
+      - name: "echo_large_text"
+        description: "Test echo with large text payload"
+        input:
+          message: ${{ "Large text: " + "A".repeat(10000) }}
+        expected:
+          error: false
+          fields:
+            - path: "$[0].text"
+              field_type: "string"
+              min_length: 10000
+              required: true
+        performance:
+          max_duration_ms: 200
+        tags: ["text", "performance", "large-payload"]
+
+      - name: "echo_unicode_support" 
+        description: "Test echo with Unicode characters"
+        input:
+          message: "🚀 Testing Unicode: 你好世界 🌍 Emoji support! 🎉"
+        expected:
+          error: false
+          fields:
+            - path: "$[0].text"
+              contains: "🚀"
+              required: true
+        tags: ["text", "unicode", "international"]
+
+  # ----------------------------------------
+  # Mathematical Tools
+  # ----------------------------------------  
+  - name: "add"
+    description: "Mathematical addition tool for numeric operations"
+    tests:
+      - name: "integer_addition"
+        description: "Test basic integer addition"
+        input:
+          a: 42
+          b: 58
+        expected:
+          error: false
+          fields:
+            - path: "$[0].text"
+              contains: "100"
+              required: true
+        performance:
+          max_duration_ms: 50
+        tags: ["math", "integer", "basic"]
+
+      - name: "decimal_precision"
+        description: "Test addition with decimal numbers"
+        input:
+          a: 3.14159
+          b: 2.71828
+        expected:
+          error: false
+          fields:
+            - path: "$[0].text"
+              field_type: "string"
+              required: true
+        tags: ["math", "decimal", "precision"]
+
+      - name: "large_numbers"
+        description: "Test addition with large numbers"
+        input:
+          a: 9007199254740991  # JavaScript MAX_SAFE_INTEGER
+          b: 1
+        expected:
+          error: false
+          fields:
+            - path: "$[0].text"
+              field_type: "string"
+              required: true
+        tags: ["math", "large-numbers", "limits"]
+
+      - name: "negative_numbers"
+        description: "Test addition with negative numbers"
+        input:
+          a: -50
+          b: 30
+        expected:
+          error: false
+          fields:
+            - path: "$[0].text"
+              contains: "-20"
+              required: true
+        tags: ["math", "negative", "edge-case"]
+
+      - name: "add_missing_parameter"
+        description: "Test error handling when parameter is missing"
+        input:
+          a: 10
+          # Missing 'b' parameter
+        expected:
+          error: true
+          error_code: -32602
+          error_message_contains: "Invalid params"
+        tags: ["math", "error", "validation"]
+
+  # ----------------------------------------
+  # Progress & Timing Tools
+  # ----------------------------------------
+  - name: "longRunningOperation"
+    description: "Tool demonstrating progress notifications and long operations"
+    tests:
+      - name: "default_operation"
+        description: "Test default long-running operation (10 seconds, 5 steps)"
+        input: {}
+        expected:
+          error: false
+          fields:
+            - path: "$[0].text"
+              contains: "completed"
+              required: true
+        performance:
+          max_duration_ms: 12000  # Allow extra time for 10-second operation
+          expect_progress_notifications: true
+        tags: ["progress", "default", "timing"]
+
+      - name: "custom_duration"
+        description: "Test custom duration operation"
+        input:
+          duration: 3
+          steps: 3
+        expected:
+          error: false
+          fields:
+            - path: "$[0].text"
+              contains: "3 seconds"
+              required: true
+        performance:
+          max_duration_ms: 5000
+          expect_progress_notifications: true
+        tags: ["progress", "custom", "timing"]
+
+      - name: "progress_notifications"
+        description: "Verify progress notifications are sent during operation"
+        input:
+          duration: 2
+          steps: 4
+        expected:
+          error: false
+          progress_expected: true
+          min_progress_updates: 3
+        performance:
+          max_duration_ms: 4000
+        tags: ["progress", "notifications", "realtime"]
+
+      - name: "zero_duration_edge_case"
+        description: "Test operation with zero duration"
+        input:
+          duration: 0
+          steps: 1
+        expected:
+          error: false
+          fields:
+            - path: "$[0].text"
+              field_type: "string"
+              required: true
+        performance:
+          max_duration_ms: 1000
+        tags: ["progress", "edge-case", "zero"]
+
+  # ----------------------------------------
+  # LLM Integration Tools
+  # ----------------------------------------
+  - name: "sampleLLM"
+    description: "Tool demonstrating MCP sampling capability with LLM integration"
+    tests:
+      - name: "basic_sampling"
+        description: "Test basic LLM sampling with simple prompt"
+        input:
+          prompt: "Say hello in a friendly way"
+          maxTokens: 50
+        expected:
+          error: false
+          fields:
+            - path: "$[0].text"
+              field_type: "string"
+              min_length: 5
+              required: true
+        performance:
+          max_duration_ms: 30000  # LLM calls can be slow
+        tags: ["llm", "sampling", "basic"]
+
+      - name: "token_limits"
+        description: "Test LLM sampling with token limits"
+        input:
+          prompt: "Write a very long story about space exploration"
+          maxTokens: 10
+        expected:
+          error: false
+          fields:
+            - path: "$[0].text"
+              field_type: "string"
+              max_length: 100  # Should be limited by maxTokens
+              required: true
+        tags: ["llm", "token-limits", "constraints"]
+
+      - name: "complex_prompt"
+        description: "Test LLM sampling with complex prompt"
+        input:
+          prompt: "Analyze the following data and provide insights: [1,2,3,4,5]"
+          maxTokens: 100
+        expected:
+          error: false
+          fields:
+            - path: "$[0].text"
+              field_type: "string"
+              required: true
+        tags: ["llm", "complex", "analysis"]
+
+      - name: "empty_prompt_error"
+        description: "Test error handling with empty prompt"
+        input:
+          prompt: ""
+          maxTokens: 50
+        expected:
+          error: true
+          error_message_contains: "prompt"
+        tags: ["llm", "error", "validation"]
+
+  # ----------------------------------------
+  # Media Tools
+  # ----------------------------------------
+  - name: "getTinyImage"
+    description: "Tool returning a small test image in base64 format"
+    tests:
+      - name: "image_generation"
+        description: "Test basic image generation"
+        input: {}
+        expected:
+          error: false
+          fields:
+            - path: "$[0].type"
+              value: "image"
+              required: true
+            - path: "$[0].data"
+              field_type: "string"
+              pattern: "^data:image/png;base64,"
+              required: true
+        performance:
+          max_duration_ms: 500
+        tags: ["media", "image", "base64"]
+
+      - name: "base64_validation"
+        description: "Validate base64 encoding of returned image"
+        input: {}
+        expected:
+          error: false
+          fields:
+            - path: "$[0].data"
+              field_type: "string"
+              min_length: 100  # Base64 encoded PNG should be substantial
+              required: true
+        tags: ["media", "validation", "encoding"]
+
+      - name: "image_format_verification"
+        description: "Verify PNG format in image data"
+        input: {}
+        expected:
+          error: false
+          fields:
+            - path: "$[0].data"
+              contains: "iVBORw0KGgo"  # PNG header in base64
+              required: true
+        tags: ["media", "format", "png"]
+
+  # ----------------------------------------  
+  # System Tools
+  # ----------------------------------------
+  - name: "printEnv"
+    description: "Tool that prints environment variables for debugging"
+    tests:
+      - name: "env_access"
+        description: "Test basic environment variable access"
+        input: {}
+        expected:
+          error: false
+          fields:
+            - path: "$[0].text"
+              field_type: "string"
+              min_length: 10
+              required: true
+        performance:
+          max_duration_ms: 200
+        tags: ["system", "environment", "debug"]
+
+      - name: "env_data_format"
+        description: "Verify environment data is in JSON format"
+        input: {}
+        expected:
+          error: false
+          fields:
+            - path: "$[0].text"
+              contains: "NODE_ENV"
+              required: true
+        tags: ["system", "json", "format"]
+
+      - name: "security_validation"
+        description: "Ensure no sensitive data is exposed"
+        input: {}
+        expected:
+          error: false
+          # Note: Should not contain actual sensitive environment variables
+          security_constraints:
+            - no_passwords: true
+            - no_api_keys: true
+        tags: ["system", "security", "validation"]
+
+  # ----------------------------------------
+  # Annotation Tools  
+  # ----------------------------------------
+  - name: "annotatedMessage"
+    description: "Tool demonstrating MCP annotation system with metadata"
+    tests:
+      - name: "error_annotations"
+        description: "Test error message with high priority annotations"
+        input:
+          messageType: "error"
+          includeImage: false
+        expected:
+          error: false
+          fields:
+            - path: "$[0].annotations.priority"
+              value: 1.0
+              required: true
+            - path: "$[0].annotations.audience"
+              contains: "user"
+              required: true
+            - path: "$[0].annotations.audience"
+              contains: "assistant"
+              required: true
+        tags: ["annotations", "error", "priority"]
+
+      - name: "success_annotations"
+        description: "Test success message with medium priority annotations"
+        input:
+          messageType: "success"
+          includeImage: false
+        expected:
+          error: false
+          fields:
+            - path: "$[0].annotations.priority"
+              value: 0.7
+              required: true
+            - path: "$[0].annotations.audience"
+              contains: "user"
+              required: true
+        tags: ["annotations", "success", "priority"]
+
+      - name: "debug_annotations"
+        description: "Test debug message with low priority annotations"
+        input:
+          messageType: "debug"
+          includeImage: false
+        expected:
+          error: false
+          fields:
+            - path: "$[0].annotations.priority"
+              value: 0.3
+              required: true
+            - path: "$[0].annotations.audience"
+              contains: "assistant"
+              required: true
+        tags: ["annotations", "debug", "priority"]
+
+      - name: "image_inclusion"
+        description: "Test message with image inclusion"
+        input:
+          messageType: "success"
+          includeImage: true
+        expected:
+          error: false
+          fields:
+            - path: "$[1].type"
+              value: "image"
+              required: true
+            - path: "$[1].annotations.priority"
+              value: 0.5
+              required: true
+        tags: ["annotations", "image", "media"]
+
+      - name: "invalid_message_type"
+        description: "Test error handling with invalid message type"
+        input:
+          messageType: "invalid"
+          includeImage: false
+        expected:
+          error: true
+          error_message_contains: "messageType"
+        tags: ["annotations", "error", "validation"]
+
+  # ----------------------------------------
+  # Resource Integration Tools
+  # ----------------------------------------  
+  - name: "getResourceReference"
+    description: "Tool that returns resource references for MCP client usage"
+    tests:
+      - name: "valid_resource_reference"
+        description: "Test valid resource reference generation"
+        input:
+          resourceId: 42
+        expected:
+          error: false
+          fields:
+            - path: "$[1].type"
+              value: "resource"
+              required: true
+            - path: "$[1].resource.uri"
+              value: "test://static/resource/42"
+              required: true
+        performance:
+          max_duration_ms: 200
+        tags: ["resources", "reference", "uri"]
+
+      - name: "boundary_resource_ids"
+        description: "Test boundary resource IDs (1 and 100)"
+        input:
+          resourceId: 1
+        expected:
+          error: false
+          fields:
+            - path: "$[1].resource.uri"
+              value: "test://static/resource/1"
+              required: true
+        tags: ["resources", "boundary", "edge-case"]
+
+      - name: "max_resource_id"
+        description: "Test maximum valid resource ID"
+        input:
+          resourceId: 100
+        expected:
+          error: false
+          fields:
+            - path: "$[1].resource.uri"
+              value: "test://static/resource/100"
+              required: true
+        tags: ["resources", "boundary", "maximum"]
+
+      - name: "invalid_resource_id_low"
+        description: "Test error with resource ID below range"
+        input:
+          resourceId: 0
+        expected:
+          error: true
+          error_code: -32602
+          error_message_contains: "resourceId must be between 1 and 100"
+        tags: ["resources", "error", "validation"]
+
+      - name: "invalid_resource_id_high"
+        description: "Test error with resource ID above range"
+        input:
+          resourceId: 101
+        expected:
+          error: true
+          error_code: -32602
+          error_message_contains: "resourceId must be between 1 and 100"
+        tags: ["resources", "error", "validation"]
+
+# ==========================================
+# RESOURCE SYSTEM TESTING (100 Resources)
+# ==========================================
+
+resources:
+  - uri_template: "test://static/resource/{id}"
+    name: "Everything Server Test Resources"
+    description: "100 test resources demonstrating pagination and subscriptions"
+    mime_type: "text/plain"
+    tests:
+      - name: "resource_list_first_page"
+        description: "Test first page of resources (pagination)"
+        input:
+          cursor: null
+        expected:
+          error: false
+          fields:
+            - path: "$.resources"
+              field_type: "array"
+              array_length: 10  # Default page size
+              required: true
+            - path: "$.nextCursor"
+              field_type: "string"
+              required: true
+        performance:
+          max_duration_ms: 500
+        tags: ["resources", "pagination", "list"]
+
+      - name: "resource_list_second_page"
+        description: "Test pagination with cursor"
+        input:
+          cursor: "page2"
+        expected:
+          error: false
+          fields:
+            - path: "$.resources"
+              field_type: "array"
+              min_length: 1
+              required: true
+        tags: ["resources", "pagination", "cursor"]
+
+      - name: "read_even_numbered_resource"
+        description: "Test reading even-numbered resource (plaintext)"
+        input:
+          uri: "test://static/resource/2"
+        expected:
+          error: false
+          fields:
+            - path: "$.contents[0].mimeType"
+              value: "text/plain"
+              required: true
+            - path: "$.contents[0].text"
+              field_type: "string"
+              contains: "Resource 2"
+              required: true
+        tags: ["resources", "read", "plaintext", "even"]
+
+      - name: "read_odd_numbered_resource"
+        description: "Test reading odd-numbered resource (binary blob)"
+        input:
+          uri: "test://static/resource/3"
+        expected:
+          error: false
+          fields:
+            - path: "$.contents[0].mimeType"
+              value: "application/octet-stream"
+              required: true
+            - path: "$.contents[0].blob"
+              field_type: "string"  # Base64 encoded binary
+              pattern: "^[A-Za-z0-9+/]+=*$"
+              required: true
+        tags: ["resources", "read", "binary", "odd"]
+
+      - name: "resource_subscription_test"
+        description: "Test resource subscription and updates"
+        input:
+          uri: "test://static/resource/1"
+          subscribe: true
+        expected:
+          error: false
+          subscription_expected: true
+          update_interval_seconds: 5
+        tags: ["resources", "subscription", "realtime"]
+
+      - name: "resource_not_found"
+        description: "Test error handling for non-existent resource"
+        input:
+          uri: "test://static/resource/101"
+        expected:
+          error: true
+          error_code: -32602
+          error_message_contains: "Resource not found"
+        tags: ["resources", "error", "not-found"]
+
+      - name: "invalid_resource_uri"
+        description: "Test error handling for malformed URI"
+        input:
+          uri: "invalid://malformed/uri"
+        expected:
+          error: true
+          error_code: -32602
+          error_message_contains: "Invalid URI"
+        tags: ["resources", "error", "validation"]
+
+      - name: "large_resource_set_performance"
+        description: "Test performance with large resource listing"
+        input:
+          limit: 100  # Request all resources
+        expected:
+          error: false
+          fields:
+            - path: "$.resources"
+              field_type: "array"
+              min_length: 90  # Should get most/all resources
+              required: true
+        performance:
+          max_duration_ms: 2000
+        tags: ["resources", "performance", "large-set"]
+
+# ==========================================
+# PROMPT TEMPLATE SYSTEM (3 Prompts)
+# ==========================================
+
+prompts:
+  - name: "simple_prompt"
+    description: "Basic prompt without arguments"
+    tests:
+      - name: "no_arguments_required"
+        description: "Test simple prompt with no arguments"
+        input: {}
+        expected:
+          error: false
+          fields:
+            - path: "$.messages"
+              field_type: "array"
+              min_length: 1
+              required: true
+            - path: "$.messages[0].role"
+              value: "user"
+              required: true
+        performance:
+          max_duration_ms: 500
+        tags: ["prompts", "simple", "no-args"]
+
+      - name: "response_format_validation"
+        description: "Validate prompt response format"
+        input: {}
+        expected:
+          error: false
+          fields:
+            - path: "$.messages[0].content"
+              field_type: "string"
+              min_length: 10
+              required: true
+        tags: ["prompts", "format", "validation"]
+
+  - name: "complex_prompt"
+    description: "Advanced prompt with required and optional arguments"
+    tests:
+      - name: "required_arguments_only"
+        description: "Test prompt with only required arguments"
+        input:
+          temperature: 0.7
+        expected:
+          error: false
+          fields:
+            - path: "$.messages"
+              field_type: "array"
+              min_length: 1
+              required: true
+        tags: ["prompts", "complex", "required"]
+
+      - name: "all_arguments_provided"
+        description: "Test prompt with all arguments"
+        input:
+          temperature: 0.8
+          style: "creative"
+        expected:
+          error: false
+          fields:
+            - path: "$.messages"
+              field_type: "array"
+              min_length: 2  # Should include more content with style
+              required: true
+        tags: ["prompts", "complex", "all-args"]
+
+      - name: "invalid_temperature_range"
+        description: "Test error with temperature out of range"
+        input:
+          temperature: 2.0  # Invalid - should be 0-1
+        expected:
+          error: true
+          error_code: -32602
+          error_message_contains: "temperature"
+        tags: ["prompts", "error", "validation"]
+
+      - name: "missing_required_argument"
+        description: "Test error when required argument is missing"
+        input:
+          style: "formal"
+          # Missing temperature
+        expected:
+          error: true
+          error_code: -32602
+          error_message_contains: "temperature"
+        tags: ["prompts", "error", "required"]
+
+      - name: "style_variations"
+        description: "Test different style options"
+        input:
+          temperature: 0.5
+          style: "formal"
+        expected:
+          error: false
+          fields:
+            - path: "$.messages[0].content"
+              contains: "formal"
+              required: true
+        tags: ["prompts", "style", "variation"]
+
+  - name: "resource_prompt"
+    description: "Prompt that embeds resource references"
+    tests:
+      - name: "valid_resource_embedding"
+        description: "Test prompt with valid resource embedding"
+        input:
+          resourceId: 25
+        expected:
+          error: false
+          fields:
+            - path: "$.messages"
+              field_type: "array"
+              min_length: 1
+              required: true
+            - path: "$.messages[0].content.type"
+              value: "resource"
+              required: true
+        tags: ["prompts", "resources", "embedding"]
+
+      - name: "resource_content_inclusion"
+        description: "Verify resource content is included in prompt"
+        input:
+          resourceId: 50
+        expected:
+          error: false
+          fields:
+            - path: "$.messages[0].content.resource.uri"
+              value: "test://static/resource/50"
+              required: true
+        tags: ["prompts", "resources", "content"]
+
+      - name: "invalid_resource_id_in_prompt"
+        description: "Test error with invalid resource ID"
+        input:
+          resourceId: 200
+        expected:
+          error: true
+          error_code: -32602
+          error_message_contains: "resourceId must be between 1 and 100"
+        tags: ["prompts", "error", "validation"]
+
+# ==========================================
+# ADVANCED PROTOCOL FEATURES
+# ==========================================
+
+# Test configuration for advanced features
+test_config:
+  timeout_seconds: 60
+  max_concurrency: 5
+  fail_fast: false
+  retry:
+    max_retries: 2
+    retry_delay_ms: 1000
+    exponential_backoff: true
+  
+  # Progress notification testing
+  progress_notifications:
+    enabled: true
+    timeout_seconds: 30
+    min_updates_expected: 2
+  
+  # Logging testing
+  logging_tests:
+    enabled: true
+    log_collection_duration_seconds: 20
+    expected_log_levels: ["info", "warn", "error", "debug"]
+    min_log_messages_expected: 1
+  
+  # Subscription testing
+  subscription_tests:
+    enabled: true
+    update_timeout_seconds: 10
+    min_updates_expected: 1
+  
+  # Transport protocol testing
+  transport_tests:
+    stdio: 
+      enabled: true
+      startup_timeout: 30
+    sse:
+      enabled: false  # Can be enabled for full transport testing
+      url: "http://localhost:3000/sse"
+    http:
+      enabled: false  # Can be enabled for full transport testing  
+      url: "http://localhost:3000/mcp"
+
+# Metadata for comprehensive testing
+metadata:
+  author: "MCP Test Harness Team"
+  documentation: "https://spec.modelcontextprotocol.io/"
+  license: "MIT"
+  tags: ["reference", "comprehensive", "everything", "sampling", "experimental"]
+  test_coverage:
+    tools: 8
+    resources: 100  
+    prompts: 3
+    scenarios: 45+
+    capabilities: ["tools", "resources", "prompts", "sampling", "logging"]
+  
+  # Performance benchmarks
+  benchmarks:
+    tool_response_time_ms: 100
+    resource_access_time_ms: 200
+    prompt_generation_time_ms: 1000
+    llm_sampling_time_ms: 30000
+    long_operation_time_ms: 12000
+  
+  # Quality metrics
+  quality_targets:
+    success_rate_percent: 95
+    error_handling_coverage_percent: 100
+    performance_test_coverage_percent: 80
+    security_test_coverage_percent: 90 

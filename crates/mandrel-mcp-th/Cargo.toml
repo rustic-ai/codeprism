@@ -10,7 +10,7 @@ keywords = ["mcp", "testing", "protocol", "model-context-protocol"]
 categories = ["development-tools::testing", "command-line-utilities"]
 
 [[bin]]
-name = "mandrel-mcp-test-harness"
+name = "moth"
 path = "src/main.rs"
 required-features = ["cli"]
 test = false

@@ -91,33 +91,33 @@ jobs:
           yq eval 'true' crates/mandrel-mcp-th/examples/weather-server.yaml > /dev/null
           echo "✅ weather-server.yaml syntax valid"
 
-      - name: Build mandrel-mcp-th binary
+      - name: Build moth binary
         run: |
-          echo "Building mandrel-mcp-th binary..."
-          cargo build --release --package mandrel-mcp-th --bin mandrel-mcp-th
+          echo "Building moth binary..."
+          cargo build --release --package mandrel-mcp-th --bin moth
           
           # Verify binary was built
-          if [ ! -f "target/release/mandrel-mcp-th" ]; then
-            echo "❌ mandrel-mcp-th binary not found after build"
+          if [ ! -f "target/release/moth" ]; then
+            echo "❌ moth binary not found after build"
             exit 1
           fi
           
-          echo "✅ mandrel-mcp-th binary built successfully"
+          echo "✅ moth binary built successfully"
           
           # Show binary info
-          ls -la target/release/mandrel-mcp-th
-          file target/release/mandrel-mcp-th
+          ls -la target/release/moth
+          file target/release/moth
 
       - name: Test binary basic functionality
         run: |
           echo "Testing binary basic functionality..."
           
           # Test --help flag
-          ./target/release/mandrel-mcp-th --help
+          ./target/release/moth --help
           echo "✅ --help command works"
           
           # Test --version flag  
-          ./target/release/mandrel-mcp-th --version
+          ./target/release/moth --version
           echo "✅ --version command works"
 
       - name: Run YAML specification integration tests
@@ -137,21 +137,21 @@ jobs:
           
           # Test filesystem-server specification
           echo "Testing filesystem-server.yaml..."
-          timeout 60s ./target/release/mandrel-mcp-th run \
+          timeout 60s ./target/release/moth run \
             --config crates/mandrel-mcp-th/examples/filesystem-server.yaml \
             --output ./test-output-filesystem \
             --quiet || echo "Filesystem test completed (expected to fail without server)"
           
           # Test everything-server specification
           echo "Testing everything-server.yaml..."
-          timeout 60s ./target/release/mandrel-mcp-th run \
+          timeout 60s ./target/release/moth run \
             --config crates/mandrel-mcp-th/examples/everything-server.yaml \
             --output ./test-output-everything \
             --quiet || echo "Everything test completed (expected to fail without server)"
           
           # Test weather-server specification
           echo "Testing weather-server.yaml..."
-          timeout 60s ./target/release/mandrel-mcp-th run \
+          timeout 60s ./target/release/moth run \
             --config crates/mandrel-mcp-th/examples/weather-server.yaml \
             --output ./test-output-weather \
             --quiet || echo "Weather test completed (expected to fail without server)"
@@ -205,7 +205,7 @@ jobs:
           name: yaml-integration-test-results
           path: |
             test-artifacts/
-            target/release/mandrel-mcp-th
+            target/release/moth
           retention-days: 30
 
       - name: Generate test report for GitHub
@@ -229,7 +229,7 @@ jobs:
           echo "- 🔧 **everything-server.yaml**: Complete MCP protocol test specification" >> $GITHUB_STEP_SUMMARY
           echo "- 🌤️ **weather-server.yaml**: Weather API integration test specification" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "*Note: Tests are expected to fail connection to mock servers, but should demonstrate proper error handling and specification parsing.*" >> $GITHUB_STEP_SUMMARY
+          echo "*Note: Tests are expected to fail connection to mock servers, but should demonstrate proper error handling and specification parsing by the moth binary.*" >> $GITHUB_STEP_SUMMARY
 
   # Quality gates specific to YAML integration tests
   yaml-integration-quality-gates:

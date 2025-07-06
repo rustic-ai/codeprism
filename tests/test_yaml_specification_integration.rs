@@ -21,7 +21,7 @@ impl YamlSpecificationTester {
     pub fn new() -> Result<Self> {
         let temp_dir = TempDir::new()?;
         
-        // Build the mandrel-mcp-th binary first
+        // Build the moth binary first
         let binary_path = Self::build_test_harness_binary()?;
         
         Ok(Self {
@@ -30,21 +30,21 @@ impl YamlSpecificationTester {
         })
     }
 
-    /// Build the mandrel-mcp-th binary for testing
+    /// Build the moth binary for testing
     fn build_test_harness_binary() -> Result<PathBuf> {
         // Build the binary using cargo
         let output = Command::new("cargo")
             .args([
                 "build", 
                 "--package", "mandrel-mcp-th",
-                "--bin", "mandrel-mcp-th",
+                "--bin", "moth",
                 "--release"
             ])
             .output()?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            anyhow::bail!("Failed to build mandrel-mcp-th binary: {}", stderr);
+            anyhow::bail!("Failed to build moth binary: {}", stderr);
         }
 
         // Determine binary path
@@ -52,13 +52,13 @@ impl YamlSpecificationTester {
             .unwrap_or_else(|_| "target".to_string());
         let binary_path = PathBuf::from(target_dir)
             .join("release")
-            .join("mandrel-mcp-th");
+            .join("moth");
 
         if !binary_path.exists() {
             anyhow::bail!("Built binary not found at: {}", binary_path.display());
         }
 
-        println!("✅ Built mandrel-mcp-th binary at: {}", binary_path.display());
+        println!("✅ Built moth binary at: {}", binary_path.display());
         Ok(binary_path)
     }
 
@@ -440,7 +440,7 @@ async fn test_binary_help_and_version() -> Result<()> {
 
     // Help should provide usage information
     let help_text = String::from_utf8_lossy(&help_output.stdout);
-    assert!(help_text.contains("mandrel-mcp-th"), 
+    assert!(help_text.contains("moth") || help_text.contains("mandrel-mcp-th"), 
            "Help should mention binary name");
     assert!(help_text.contains("run"), 
            "Help should mention 'run' command");

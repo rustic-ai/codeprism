@@ -59,6 +59,7 @@ pub mod error;
 pub mod error_handling;
 pub mod executor;
 pub mod reporting;
+pub mod runner;
 pub mod spec;
 pub mod validation;
 

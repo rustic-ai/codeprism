@@ -20,6 +20,10 @@ pub enum Error {
     #[error("Test specification error: {0}")]
     Spec(String),
 
+    /// Dependency resolution errors
+    #[error("Dependency resolution error: {0}")]
+    Dependency(String),
+
     /// Server connection errors
     #[error("Server connection error: {0}")]
     Connection(String),
@@ -56,6 +60,11 @@ impl Error {
         Self::Spec(msg.into())
     }
 
+    /// Create a dependency resolution error
+    pub fn dependency<S: Into<String>>(msg: S) -> Self {
+        Self::Dependency(msg.into())
+    }
+
     /// Create a server connection error
     pub fn connection<S: Into<String>>(msg: S) -> Self {
         Self::Connection(msg.into())
@@ -82,6 +91,7 @@ impl Error {
             Self::Mcp(_) => "protocol",
             Self::Config(_) => "configuration",
             Self::Spec(_) => "specification",
+            Self::Dependency(_) => "dependency",
             Self::Connection(_) => "connection",
             Self::Execution(_) => "execution",
             Self::Validation(_) => "validation",

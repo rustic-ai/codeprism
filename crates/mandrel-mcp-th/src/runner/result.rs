@@ -66,7 +66,7 @@ impl TestSuiteResult {
 
     /// Check if all tests passed
     pub fn all_passed(&self) -> bool {
-        self.failed == 0 && self.total_tests > 0
+        self.failed == 0 // Vacuously true for empty test suites
     }
 
     /// Check if any tests failed

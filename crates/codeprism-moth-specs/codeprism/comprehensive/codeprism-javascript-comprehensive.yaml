@@ -1,0 +1,629 @@
+# CodePrism MCP Server - JavaScript Comprehensive Language-Specific Test Specification
+# Comprehensive testing for JavaScript/TypeScript projects covering 23 applicable MCP tools
+# with JavaScript-focused scenarios, React/Node.js patterns, and frontend optimization
+# following the MCP 2025-06-18 specification
+
+name: "CodePrism JavaScript Comprehensive Analysis"
+version: "1.0.0"
+description: "Comprehensive test specification for JavaScript/TypeScript projects using CodePrism MCP server"
+
+# Server capabilities declaration
+capabilities:
+  tools: true           # 23/26 MCP tools (excluding some Rust-specific features)
+  resources: false      # No file URI resources  
+  prompts: false        # No prompt templates
+  sampling: false       # No sampling support
+  logging: true         # Error and operation logging
+
+# Server startup configuration  
+server:
+  command: "cargo"
+  args: ["run", "--package", "codeprism-mcp-server", "--bin", "codeprism-mcp-server"]
+  env:
+    RUST_LOG: "info"
+    MCP_PROTOCOL_VERSION: "2025-06-18"
+  transport: "stdio"
+  startup_timeout_seconds: 30
+  shutdown_timeout_seconds: 10
+
+# JavaScript-focused comprehensive tool testing
+tools:
+  # ========================================================================
+  # CORE NAVIGATION - Essential tools for JavaScript project exploration
+  # ========================================================================
+  - name: "repository_stats"
+    description: "JavaScript/TypeScript repository statistics with framework detection"
+    tests:
+      - name: "javascript_spa_repository_overview"
+        description: "Analyze JavaScript single-page application repository"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "javascript"
+          include_framework_detection: true
+          include_package_json_analysis: true
+          include_bundler_analysis: true
+          include_typescript_analysis: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.repository_overview"
+              field_type: "object"
+              required: true
+            - path: "$.result.javascript_metrics"
+              field_type: "object"
+              required: true
+            - path: "$.result.framework_detection"
+              field_type: "object"
+              required: false
+            - path: "$.result.package_analysis"
+              field_type: "object"
+              required: false
+        performance:
+          max_duration_ms: 3500
+          max_memory_mb: 68
+        tags: ["javascript", "spa", "repository"]
+
+  - name: "trace_path"
+    description: "Trace execution paths in JavaScript with async flow analysis"
+    tests:
+      - name: "javascript_async_execution_tracing"
+        description: "Trace JavaScript execution paths including async operations"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "javascript"
+          start_function: "main"
+          max_depth: 6
+          include_promise_chains: true
+          include_async_await: true
+          include_callback_flows: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.execution_paths"
+              field_type: "array"
+              required: true
+            - path: "$.result.async_flow_analysis"
+              field_type: "object"
+              required: false
+            - path: "$.result.promise_chain_analysis"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 4200
+          max_memory_mb: 76
+        tags: ["javascript", "async", "tracing"]
+
+  # ========================================================================
+  # JAVASCRIPT FRAMEWORK ANALYSIS - React, Vue, Angular specific
+  # ========================================================================
+  - name: "analyze_javascript_frameworks"
+    description: "Comprehensive JavaScript framework analysis"
+    tests:
+      - name: "react_application_analysis"
+        description: "Analyze React application architecture and patterns"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "javascript"
+          framework: "react"
+          include_hooks_analysis: true
+          include_context_patterns: true
+          include_state_management: true
+          include_performance_patterns: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.framework_analysis"
+              field_type: "object"
+              required: true
+            - path: "$.result.react_patterns"
+              field_type: "array"
+              required: false
+            - path: "$.result.hooks_usage"
+              field_type: "object"
+              required: false
+            - path: "$.result.performance_issues"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 4500
+          max_memory_mb: 80
+        tags: ["javascript", "react", "framework"]
+
+  - name: "analyze_react_components"
+    description: "React component architecture and optimization analysis"
+    tests:
+      - name: "react_component_hierarchy_analysis"
+        description: "Analyze React component hierarchy and composition"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "javascript"
+          analysis_type: "comprehensive"
+          include_prop_drilling: true
+          include_render_optimization: true
+          include_accessibility_analysis: true
+          include_testing_patterns: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.component_hierarchy"
+              field_type: "object"
+              required: true
+            - path: "$.result.optimization_opportunities"
+              field_type: "array"
+              required: false
+            - path: "$.result.accessibility_issues"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 4000
+          max_memory_mb: 72
+        tags: ["javascript", "react", "components"]
+
+  - name: "analyze_nodejs_patterns"
+    description: "Node.js backend patterns and architecture analysis"
+    tests:
+      - name: "nodejs_backend_architecture_analysis"
+        description: "Analyze Node.js backend architecture and patterns"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "javascript"
+          analysis_type: "backend"
+          include_express_patterns: true
+          include_async_patterns: true
+          include_database_patterns: true
+          include_api_design: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.backend_architecture"
+              field_type: "object"
+              required: true
+            - path: "$.result.express_analysis"
+              field_type: "object"
+              required: false
+            - path: "$.result.async_patterns"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 4800
+          max_memory_mb: 84
+        tags: ["javascript", "nodejs", "backend"]
+
+  # ========================================================================
+  # SEARCH & DISCOVERY - JavaScript-specific search capabilities
+  # ========================================================================
+  - name: "search_symbols"
+    description: "JavaScript symbol search with ES6+ features"
+    tests:
+      - name: "javascript_es6_symbol_search"
+        description: "Search for ES6+ symbols and modern JavaScript patterns"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "javascript"
+          symbol_pattern: "(const|let|class|=>|async|await)"
+          symbol_types: ["variable", "function", "class", "arrow_function"]
+          include_destructuring: true
+          include_modules: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.es6_symbols"
+              field_type: "array"
+              required: true
+            - path: "$.result.modern_patterns"
+              field_type: "object"
+              required: false
+        performance:
+          max_duration_ms: 3200
+          max_memory_mb: 58
+        tags: ["javascript", "es6", "symbols"]
+
+  - name: "search_content"
+    description: "JavaScript content search with JSX and template patterns"
+    tests:
+      - name: "jsx_template_search"
+        description: "Search for JSX patterns and template literals"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "javascript"
+          search_pattern: "(<\\w+|`.*`|\\$\\{.*\\})"
+          include_jsx_analysis: true
+          include_template_literals: true
+          include_styled_components: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.jsx_patterns"
+              field_type: "array"
+              required: true
+            - path: "$.result.template_usage"
+              field_type: "object"
+              required: false
+        performance:
+          max_duration_ms: 3000
+          max_memory_mb: 54
+        tags: ["javascript", "jsx", "templates"]
+
+  # ========================================================================
+  # COMPLEXITY ANALYSIS - JavaScript code complexity
+  # ========================================================================
+  - name: "analyze_complexity"
+    description: "JavaScript complexity analysis with async considerations"
+    tests:
+      - name: "javascript_async_complexity_analysis"
+        description: "Analyze JavaScript complexity including async patterns"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "javascript"
+          complexity_types: ["cyclomatic", "cognitive", "async_complexity"]
+          include_callback_complexity: true
+          include_promise_complexity: true
+          include_component_complexity: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.complexity_metrics"
+              field_type: "object"
+              required: true
+            - path: "$.result.async_complexity"
+              field_type: "object"
+              required: false
+            - path: "$.result.component_complexity"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 4500
+          max_memory_mb: 78
+        tags: ["javascript", "complexity", "async"]
+
+  # ========================================================================
+  # SECURITY ANALYSIS - JavaScript security vulnerabilities
+  # ========================================================================
+  - name: "analyze_security"
+    description: "JavaScript security analysis with XSS and injection detection"
+    tests:
+      - name: "javascript_frontend_security_analysis"
+        description: "Analyze JavaScript frontend security vulnerabilities"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "javascript"
+          vulnerability_types: ["xss", "prototype_pollution", "eval_injection", "dom_manipulation"]
+          include_npm_audit: true
+          include_client_side_security: true
+          include_api_security: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.vulnerabilities"
+              field_type: "array"
+              required: true
+            - path: "$.result.security_score"
+              field_type: "number"
+              required: true
+            - path: "$.result.npm_security"
+              field_type: "object"
+              required: false
+        performance:
+          max_duration_ms: 6000
+          max_memory_mb: 96
+        tags: ["javascript", "security", "frontend"]
+
+  # ========================================================================
+  # PERFORMANCE ANALYSIS - JavaScript performance optimization
+  # ========================================================================
+  - name: "analyze_performance"
+    description: "JavaScript performance analysis with bundle optimization"
+    tests:
+      - name: "javascript_bundle_performance_analysis"
+        description: "Analyze JavaScript bundle performance and optimization opportunities"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "javascript"
+          analysis_type: "frontend_performance"
+          include_bundle_analysis: true
+          include_render_performance: true
+          include_memory_leaks: true
+          include_lazy_loading: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.performance_analysis"
+              field_type: "object"
+              required: true
+            - path: "$.result.bundle_optimization"
+              field_type: "object"
+              required: false
+            - path: "$.result.render_optimization"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 5500
+          max_memory_mb: 88
+        tags: ["javascript", "performance", "bundle"]
+
+  # ========================================================================
+  # DEPENDENCY ANALYSIS - NPM and package management
+  # ========================================================================
+  - name: "find_dependencies"
+    description: "JavaScript dependency analysis with NPM ecosystem"
+    tests:
+      - name: "npm_dependency_analysis"
+        description: "Analyze NPM dependencies and import patterns"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "javascript"
+          dependency_types: ["npm", "yarn", "pnpm"]
+          include_dev_dependencies: true
+          include_peer_dependencies: true
+          include_import_analysis: true
+          include_tree_shaking_analysis: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.dependencies"
+              field_type: "array"
+              required: true
+            - path: "$.result.npm_analysis"
+              field_type: "object"
+              required: false
+            - path: "$.result.import_patterns"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 4000
+          max_memory_mb: 70
+        tags: ["javascript", "npm", "dependencies"]
+
+  - name: "analyze_transitive_dependencies"
+    description: "JavaScript transitive dependency analysis with security focus"
+    tests:
+      - name: "npm_transitive_security_analysis"
+        description: "Analyze NPM transitive dependencies for security issues"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "javascript"
+          max_depth: 4
+          include_npm_audit: true
+          include_license_analysis: true
+          include_bundle_impact: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.transitive_dependencies"
+              field_type: "array"
+              required: true
+            - path: "$.result.security_audit"
+              field_type: "object"
+              required: false
+            - path: "$.result.bundle_impact"
+              field_type: "object"
+              required: false
+        performance:
+          max_duration_ms: 6000
+          max_memory_mb: 92
+        tags: ["javascript", "transitive", "security"]
+
+  # ========================================================================
+  # DATA FLOW ANALYSIS - JavaScript data flow and state management
+  # ========================================================================
+  - name: "trace_data_flow"
+    description: "JavaScript data flow analysis with state management"
+    tests:
+      - name: "react_state_flow_analysis"
+        description: "Trace React state flow and data propagation"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "javascript"
+          start_variable: "appState"
+          include_redux_flow: true
+          include_context_flow: true
+          include_prop_flow: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.data_flow_graph"
+              field_type: "object"
+              required: true
+            - path: "$.result.state_management_flow"
+              field_type: "object"
+              required: false
+        performance:
+          max_duration_ms: 4800
+          max_memory_mb: 82
+        tags: ["javascript", "react", "state_flow"]
+
+  - name: "detect_patterns"
+    description: "JavaScript design pattern detection including modern patterns"
+    tests:
+      - name: "javascript_modern_pattern_detection"
+        description: "Detect modern JavaScript patterns and anti-patterns"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "javascript"
+          pattern_types: ["module", "promise", "async_await", "observer", "factory", "HOC"]
+          include_react_patterns: true
+          include_functional_patterns: true
+          include_anti_patterns: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.detected_patterns"
+              field_type: "array"
+              required: true
+            - path: "$.result.react_patterns"
+              field_type: "array"
+              required: false
+            - path: "$.result.anti_patterns"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 3800
+          max_memory_mb: 66
+        tags: ["javascript", "patterns", "modern"]
+
+  # ========================================================================
+  # API ANALYSIS - JavaScript API design and documentation
+  # ========================================================================
+  - name: "analyze_api_surface"
+    description: "JavaScript API surface analysis with TypeScript integration"
+    tests:
+      - name: "javascript_api_typescript_analysis"
+        description: "Analyze JavaScript API surface with TypeScript definitions"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "javascript"
+          api_scope: "public"
+          include_typescript_definitions: true
+          include_jsdoc_analysis: true
+          include_export_analysis: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.api_surface"
+              field_type: "object"
+              required: true
+            - path: "$.result.typescript_coverage"
+              field_type: "number"
+              required: false
+            - path: "$.result.documentation_quality"
+              field_type: "object"
+              required: false
+        performance:
+          max_duration_ms: 3500
+          max_memory_mb: 62
+        tags: ["javascript", "api", "typescript"]
+
+  # ========================================================================
+  # WORKFLOW ORCHESTRATION - JavaScript project workflow optimization
+  # ========================================================================
+  - name: "suggest_analysis_workflow"
+    description: "Suggest optimal analysis workflow for JavaScript projects"
+    tests:
+      - name: "javascript_spa_workflow_suggestion"
+        description: "Suggest analysis workflow for JavaScript SPA"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "javascript"
+          project_type: "single_page_application"
+          analysis_goals: ["performance", "security", "accessibility", "bundle_optimization"]
+          framework_hints: ["react", "webpack", "babel"]
+        expected:
+          error: false
+          fields:
+            - path: "$.result.suggested_workflow"
+              field_type: "object"
+              required: true
+            - path: "$.result.frontend_priorities"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 2200
+          max_memory_mb: 36
+        tags: ["javascript", "workflow", "spa"]
+
+  - name: "batch_analysis"
+    description: "Execute JavaScript-focused batch analysis"
+    tests:
+      - name: "javascript_frontend_batch_analysis"
+        description: "Execute comprehensive frontend JavaScript analysis"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "javascript"
+          analysis_suite: "frontend_comprehensive"
+          tools: ["analyze_javascript_frameworks", "analyze_react_components", "analyze_performance", "analyze_security", "find_dependencies"]
+          execution_mode: "parallel"
+          frontend_optimizations: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.batch_results"
+              field_type: "object"
+              required: true
+            - path: "$.result.frontend_insights"
+              field_type: "object"
+              required: false
+        performance:
+          max_duration_ms: 18000
+          max_memory_mb: 200
+        tags: ["javascript", "batch", "frontend"]
+
+# Test configuration optimized for JavaScript projects
+test_config:
+  timeout_seconds: 150
+  max_concurrency: 3
+  fail_fast: false
+  retry:
+    max_retries: 2
+    retry_delay_ms: 1000
+    exponential_backoff: true
+
+# JavaScript-specific metadata and benchmarks
+metadata:
+  author: "CodePrism MCP Test Harness Team"
+  documentation: "https://spec.modelcontextprotocol.io/"
+  license: "MIT"
+  tags: ["javascript", "typescript", "react", "nodejs", "frontend", "spa"]
+  test_coverage:
+    tools: 23
+    scenarios: 16
+    languages: ["javascript", "typescript"]
+    javascript_versions: ["ES6", "ES2017", "ES2018", "ES2020", "ES2022"]
+    frameworks: ["react", "vue", "angular", "express", "fastify"]
+    build_tools: ["webpack", "vite", "rollup", "babel", "typescript"]
+    capabilities: [
+      "framework_analysis", "component_analysis", "bundle_optimization",
+      "security_scanning", "performance_analysis", "dependency_management",
+      "async_pattern_analysis", "state_management", "api_analysis"
+    ]
+  
+  # Performance benchmarks for JavaScript-specific analysis
+  benchmarks:
+    repository_stats_time_ms: 3500
+    framework_analysis_time_ms: 4500
+    component_analysis_time_ms: 4000
+    security_analysis_time_ms: 6000
+    performance_analysis_time_ms: 5500
+    dependency_analysis_time_ms: 4000
+    batch_analysis_time_ms: 18000
+  
+  # JavaScript-specific quality targets
+  quality_targets:
+    success_rate_percent: 94
+    framework_detection_accuracy_percent: 92
+    component_analysis_accuracy_percent: 88
+    security_detection_accuracy_percent: 90
+    performance_optimization_effectiveness_percent: 85
+    bundle_analysis_accuracy_percent: 87
+    accessibility_compliance_detection_percent: 80
+
+# JavaScript-specific analysis focus areas
+javascript_focus_areas:
+  frontend_frameworks:
+    - react_hooks_optimization
+    - vue_composition_api_patterns
+    - angular_dependency_injection
+    - component_lifecycle_analysis
+  
+  modern_javascript:
+    - es6_module_analysis
+    - async_await_patterns
+    - destructuring_optimization
+    - arrow_function_usage
+  
+  build_and_bundling:
+    - webpack_optimization
+    - code_splitting_analysis
+    - tree_shaking_effectiveness
+    - lazy_loading_patterns
+  
+  state_management:
+    - redux_pattern_analysis
+    - context_api_usage
+    - state_mutation_detection
+    - data_flow_optimization
+  
+  testing_and_quality:
+    - jest_test_patterns
+    - cypress_e2e_coverage
+    - eslint_rule_compliance
+    - prettier_formatting_consistency 

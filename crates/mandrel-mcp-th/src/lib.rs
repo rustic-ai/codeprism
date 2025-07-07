@@ -54,6 +54,7 @@
 //! ```
 
 pub mod cli;
+pub mod client;
 pub mod error;
 pub mod error_handling;
 pub mod executor;

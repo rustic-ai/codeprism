@@ -14,6 +14,7 @@ members = [
     "crates/codeprism-test-harness",
     "crates/mcp-test-harness",
     "crates/mandrel-mcp-th",
+    "crates/codeprism-moth-specs",
 ]
 resolver = "2"
 

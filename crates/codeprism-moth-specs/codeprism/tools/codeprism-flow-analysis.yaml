@@ -1,0 +1,761 @@
+# CodePrism MCP Server - Flow Analysis Tools Test Specification
+# Comprehensive testing for data flow, pattern detection, and usage analysis tools
+# following the MCP 2025-06-18 specification
+
+name: "CodePrism Flow Analysis Tools"
+version: "1.0.0"
+description: "Test specification for CodePrism MCP server flow analysis and pattern detection tools"
+
+# Server capabilities declaration
+capabilities:
+  tools: true           # Flow analysis tools
+  resources: false      # No file URI resources  
+  prompts: false        # No prompt templates
+  sampling: false       # No sampling support
+  logging: true         # Error and operation logging
+
+# Server startup configuration  
+server:
+  command: "cargo"
+  args: ["run", "--package", "codeprism-mcp-server", "--bin", "codeprism-mcp-server"]
+  env:
+    RUST_LOG: "info"
+    MCP_PROTOCOL_VERSION: "2025-06-18"
+  transport: "stdio"
+  startup_timeout_seconds: 30
+  shutdown_timeout_seconds: 10
+
+# Flow analysis tools testing
+tools:
+  # ========================================================================
+  # DETECT_PATTERNS Tool - Code pattern detection and analysis
+  # ========================================================================
+  - name: "detect_patterns"
+    description: "Detect and analyze code patterns across different dimensions"
+    tests:
+      - name: "detect_python_design_patterns"
+        description: "Detect common design patterns in Python code"
+        input:
+          project_path: "test-projects/python-sample"
+          pattern_types: ["singleton", "factory", "observer", "decorator"]
+          language: "python"
+          file_patterns: ["*.py"]
+          confidence_threshold: 0.7
+        expected:
+          error: false
+          fields:
+            - path: "$.result.detected_patterns"
+              field_type: "array"
+              required: true
+            - path: "$.result.pattern_count"
+              field_type: "integer"
+              required: true
+            - path: "$.result.confidence_scores"
+              field_type: "object"
+              required: false
+            - path: "$.result.pattern_locations"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 5000
+          max_memory_mb: 80
+        tags: ["patterns", "python", "design_patterns"]
+
+      - name: "detect_rust_ownership_patterns"
+        description: "Detect Rust-specific ownership and borrowing patterns"
+        input:
+          project_path: "test-projects/rust-test-project"
+          pattern_types: ["borrow_checker", "lifetime", "ownership_transfer", "smart_pointers"]
+          language: "rust"
+          file_patterns: ["*.rs"]
+          include_unsafe_patterns: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.detected_patterns"
+              field_type: "array"
+              required: true
+            - path: "$.result.ownership_violations"
+              field_type: "array"
+              required: false
+            - path: "$.result.unsafe_patterns"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 4500
+          max_memory_mb: 72
+        tags: ["patterns", "rust", "ownership"]
+
+      - name: "detect_java_enterprise_patterns"
+        description: "Detect enterprise patterns in Java code"
+        input:
+          project_path: "test-projects/java-test-project"
+          pattern_types: ["mvc", "dependency_injection", "repository", "service_layer"]
+          language: "java"
+          file_patterns: ["*.java"]
+          include_annotations: true
+          framework_patterns: ["spring", "hibernate"]
+        expected:
+          error: false
+          fields:
+            - path: "$.result.detected_patterns"
+              field_type: "array"
+              required: true
+            - path: "$.result.framework_usage"
+              field_type: "object"
+              required: false
+        performance:
+          max_duration_ms: 5500
+          max_memory_mb: 88
+        tags: ["patterns", "java", "enterprise"]
+
+      - name: "detect_javascript_async_patterns"
+        description: "Detect asynchronous programming patterns in JavaScript"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          pattern_types: ["promise", "async_await", "callback", "event_driven"]
+          language: "javascript"
+          file_patterns: ["*.js", "*.ts"]
+          include_error_handling: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.detected_patterns"
+              field_type: "array"
+              required: true
+            - path: "$.result.async_complexity"
+              field_type: "number"
+              required: false
+        performance:
+          max_duration_ms: 3500
+          max_memory_mb: 64
+        tags: ["patterns", "javascript", "async"]
+
+      - name: "detect_security_patterns"
+        description: "Detect security-related patterns and anti-patterns"
+        input:
+          project_path: "test-projects/dependency-test-project"
+          pattern_types: ["sql_injection", "xss_vulnerability", "insecure_crypto", "auth_bypass"]
+          language: "*"
+          file_patterns: ["*.py", "*.js", "*.java"]
+          include_anti_patterns: true
+          severity_threshold: "medium"
+        expected:
+          error: false
+          fields:
+            - path: "$.result.security_issues"
+              field_type: "array"
+              required: true
+            - path: "$.result.vulnerability_count"
+              field_type: "integer"
+              required: true
+            - path: "$.result.severity_distribution"
+              field_type: "object"
+              required: false
+        performance:
+          max_duration_ms: 6000
+          max_memory_mb: 96
+        tags: ["patterns", "security", "vulnerabilities"]
+
+      - name: "detect_anti_patterns"
+        description: "Detect code anti-patterns and code smells"
+        input:
+          project_path: "test-projects/python-sample"
+          pattern_types: ["god_class", "long_parameter_list", "duplicate_code", "dead_code"]
+          language: "python"
+          file_patterns: ["*.py"]
+          include_refactoring_suggestions: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.anti_patterns"
+              field_type: "array"
+              required: true
+            - path: "$.result.code_smells"
+              field_type: "array"
+              required: false
+            - path: "$.result.refactoring_suggestions"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 4000
+          max_memory_mb: 68
+        tags: ["patterns", "anti_patterns", "code_smells"]
+
+      - name: "detect_cross_language_patterns"
+        description: "Detect patterns across multiple languages"
+        input:
+          project_path: "test-projects/dependency-test-project"
+          pattern_types: ["api_design", "data_flow", "error_handling", "testing"]
+          language: "*"
+          file_patterns: ["*.py", "*.js", "*.java", "*.rs"]
+          cross_language_analysis: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.detected_patterns"
+              field_type: "array"
+              required: true
+            - path: "$.result.pattern_consistency"
+              field_type: "object"
+              required: false
+        performance:
+          max_duration_ms: 7000
+          max_memory_mb: 120
+        tags: ["patterns", "cross_language", "consistency"]
+
+  # ========================================================================
+  # ANALYZE_TRANSITIVE_DEPENDENCIES Tool - Deep dependency analysis
+  # ========================================================================
+  - name: "analyze_transitive_dependencies"
+    description: "Analyze transitive dependencies and their impact"
+    tests:
+      - name: "analyze_python_transitive_deps"
+        description: "Analyze transitive dependencies in Python project"
+        input:
+          project_path: "test-projects/python-sample"
+          language: "python"
+          max_depth: 5
+          include_external_deps: true
+          include_circular_deps: true
+          analyze_version_conflicts: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.dependency_tree"
+              field_type: "object"
+              required: true
+            - path: "$.result.transitive_count"
+              field_type: "integer"
+              required: true
+            - path: "$.result.circular_dependencies"
+              field_type: "array"
+              required: false
+            - path: "$.result.version_conflicts"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 6000
+          max_memory_mb: 100
+        tags: ["dependencies", "python", "transitive"]
+
+      - name: "analyze_rust_crate_dependencies"
+        description: "Analyze Rust crate dependencies and features"
+        input:
+          project_path: "test-projects/rust-test-project"
+          language: "rust"
+          max_depth: 4
+          include_dev_dependencies: true
+          include_build_dependencies: true
+          analyze_features: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.dependency_tree"
+              field_type: "object"
+              required: true
+            - path: "$.result.crate_features"
+              field_type: "object"
+              required: false
+            - path: "$.result.dependency_graph"
+              field_type: "object"
+              required: false
+        performance:
+          max_duration_ms: 5000
+          max_memory_mb: 88
+        tags: ["dependencies", "rust", "crates"]
+
+      - name: "analyze_java_maven_dependencies"
+        description: "Analyze Java Maven dependency hierarchy"
+        input:
+          project_path: "test-projects/java-test-project"
+          language: "java"
+          max_depth: 6
+          include_scope_analysis: true
+          include_exclusions: true
+          check_security_vulnerabilities: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.dependency_tree"
+              field_type: "object"
+              required: true
+            - path: "$.result.scope_distribution"
+              field_type: "object"
+              required: false
+            - path: "$.result.security_alerts"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 7000
+          max_memory_mb: 112
+        tags: ["dependencies", "java", "maven"]
+
+      - name: "analyze_javascript_npm_dependencies"
+        description: "Analyze JavaScript NPM dependency tree"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "javascript"
+          max_depth: 8
+          include_dev_dependencies: true
+          include_peer_dependencies: true
+          analyze_bundle_impact: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.dependency_tree"
+              field_type: "object"
+              required: true
+            - path: "$.result.bundle_analysis"
+              field_type: "object"
+              required: false
+            - path: "$.result.peer_dependency_warnings"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 5500
+          max_memory_mb: 92
+        tags: ["dependencies", "javascript", "npm"]
+
+      - name: "detect_dependency_cycles"
+        description: "Detect and analyze circular dependencies"
+        input:
+          project_path: "test-projects/dependency-test-project"
+          language: "*"
+          max_depth: 10
+          focus_on_cycles: true
+          include_cycle_impact: true
+          suggest_cycle_breaking: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.circular_dependencies"
+              field_type: "array"
+              required: true
+            - path: "$.result.cycle_count"
+              field_type: "integer"
+              required: true
+            - path: "$.result.cycle_breaking_suggestions"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 8000
+          max_memory_mb: 128
+        tags: ["dependencies", "cycles", "circular"]
+
+      - name: "analyze_dependency_impact"
+        description: "Analyze the impact of dependency changes"
+        input:
+          project_path: "test-projects/python-sample"
+          language: "python"
+          target_dependency: "requests"
+          analyze_impact_radius: true
+          include_breaking_changes: true
+          simulate_removal: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.impact_analysis"
+              field_type: "object"
+              required: true
+            - path: "$.result.affected_modules"
+              field_type: "array"
+              required: false
+            - path: "$.result.breaking_change_risk"
+              field_type: "string"
+              required: false
+        performance:
+          max_duration_ms: 4500
+          max_memory_mb: 76
+        tags: ["dependencies", "impact", "analysis"]
+
+  # ========================================================================
+  # TRACE_DATA_FLOW Tool - Data flow tracing and analysis
+  # ========================================================================
+  - name: "trace_data_flow"
+    description: "Trace data flow through code execution paths"
+    tests:
+      - name: "trace_python_variable_flow"
+        description: "Trace variable data flow in Python functions"
+        input:
+          project_path: "test-projects/python-sample"
+          language: "python"
+          start_variable: "user_id"
+          start_function: "get_user"
+          trace_scope: "function"
+          include_transformations: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.flow_path"
+              field_type: "array"
+              required: true
+            - path: "$.result.transformations"
+              field_type: "array"
+              required: false
+            - path: "$.result.end_points"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 3500
+          max_memory_mb: 64
+        tags: ["data_flow", "python", "variables"]
+
+      - name: "trace_rust_ownership_flow"
+        description: "Trace ownership and borrowing flow in Rust"
+        input:
+          project_path: "test-projects/rust-test-project"
+          language: "rust"
+          start_variable: "config"
+          trace_scope: "module"
+          include_lifetime_analysis: true
+          include_borrow_checking: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.flow_path"
+              field_type: "array"
+              required: true
+            - path: "$.result.ownership_transfers"
+              field_type: "array"
+              required: false
+            - path: "$.result.borrow_conflicts"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 4000
+          max_memory_mb: 72
+        tags: ["data_flow", "rust", "ownership"]
+
+      - name: "trace_java_object_flow"
+        description: "Trace object flow through Java method calls"
+        input:
+          project_path: "test-projects/java-test-project"
+          language: "java"
+          start_object: "userRequest"
+          start_method: "processUser"
+          trace_scope: "class"
+          include_method_chaining: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.flow_path"
+              field_type: "array"
+              required: true
+            - path: "$.result.method_calls"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 3800
+          max_memory_mb: 68
+        tags: ["data_flow", "java", "objects"]
+
+      - name: "trace_javascript_promise_flow"
+        description: "Trace Promise and async data flow in JavaScript"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "javascript"
+          start_variable: "apiResponse"
+          trace_scope: "file"
+          include_async_flow: true
+          include_error_paths: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.flow_path"
+              field_type: "array"
+              required: true
+            - path: "$.result.async_transitions"
+              field_type: "array"
+              required: false
+            - path: "$.result.error_paths"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 3200
+          max_memory_mb: 60
+        tags: ["data_flow", "javascript", "async"]
+
+      - name: "trace_cross_function_flow"
+        description: "Trace data flow across multiple functions"
+        input:
+          project_path: "test-projects/dependency-test-project"
+          language: "python"
+          start_variable: "input_data"
+          start_function: "main"
+          trace_scope: "project"
+          max_depth: 5
+          include_side_effects: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.flow_path"
+              field_type: "array"
+              required: true
+            - path: "$.result.function_calls"
+              field_type: "array"
+              required: false
+            - path: "$.result.side_effects"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 5000
+          max_memory_mb: 88
+        tags: ["data_flow", "cross_function", "side_effects"]
+
+      - name: "trace_complex_data_structures"
+        description: "Trace flow of complex data structures"
+        input:
+          project_path: "test-projects/python-sample"
+          language: "python"
+          start_variable: "user_dict"
+          trace_scope: "module"
+          include_nested_access: true
+          include_mutations: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.flow_path"
+              field_type: "array"
+              required: true
+            - path: "$.result.structure_mutations"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 4200
+          max_memory_mb: 76
+        tags: ["data_flow", "complex_structures", "mutations"]
+
+  # ========================================================================
+  # FIND_UNUSED_CODE Tool - Unused code detection
+  # ========================================================================
+  - name: "find_unused_code"
+    description: "Find unused code, functions, variables, and imports"
+    tests:
+      - name: "find_unused_python_functions"
+        description: "Find unused functions in Python code"
+        input:
+          project_path: "test-projects/python-sample"
+          language: "python"
+          analysis_scope: "functions"
+          file_patterns: ["*.py"]
+          include_private_functions: true
+          exclude_test_files: false
+        expected:
+          error: false
+          fields:
+            - path: "$.result.unused_functions"
+              field_type: "array"
+              required: true
+            - path: "$.result.unused_count"
+              field_type: "integer"
+              required: true
+            - path: "$.result.usage_statistics"
+              field_type: "object"
+              required: false
+        performance:
+          max_duration_ms: 4000
+          max_memory_mb: 72
+        tags: ["unused", "python", "functions"]
+
+      - name: "find_unused_rust_items"
+        description: "Find unused items in Rust code"
+        input:
+          project_path: "test-projects/rust-test-project"
+          language: "rust"
+          analysis_scope: "all"
+          file_patterns: ["*.rs"]
+          include_dead_code: true
+          include_unused_imports: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.unused_items"
+              field_type: "array"
+              required: true
+            - path: "$.result.dead_code"
+              field_type: "array"
+              required: false
+            - path: "$.result.unused_imports"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 3500
+          max_memory_mb: 64
+        tags: ["unused", "rust", "dead_code"]
+
+      - name: "find_unused_java_classes"
+        description: "Find unused classes and methods in Java"
+        input:
+          project_path: "test-projects/java-test-project"
+          language: "java"
+          analysis_scope: "classes"
+          file_patterns: ["*.java"]
+          include_unused_methods: true
+          include_unused_fields: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.unused_classes"
+              field_type: "array"
+              required: true
+            - path: "$.result.unused_methods"
+              field_type: "array"
+              required: false
+            - path: "$.result.unused_fields"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 4500
+          max_memory_mb: 80
+        tags: ["unused", "java", "classes"]
+
+      - name: "find_unused_javascript_exports"
+        description: "Find unused exports and imports in JavaScript"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "javascript"
+          analysis_scope: "exports"
+          file_patterns: ["*.js", "*.ts"]
+          include_unused_imports: true
+          check_external_usage: false
+        expected:
+          error: false
+          fields:
+            - path: "$.result.unused_exports"
+              field_type: "array"
+              required: true
+            - path: "$.result.unused_imports"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 3800
+          max_memory_mb: 68
+        tags: ["unused", "javascript", "exports"]
+
+      - name: "find_unused_variables"
+        description: "Find unused variables and parameters"
+        input:
+          project_path: "test-projects/python-sample"
+          language: "python"
+          analysis_scope: "variables"
+          file_patterns: ["*.py"]
+          include_parameters: true
+          include_local_variables: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.unused_variables"
+              field_type: "array"
+              required: true
+            - path: "$.result.unused_parameters"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 3000
+          max_memory_mb: 56
+        tags: ["unused", "variables", "parameters"]
+
+      - name: "find_unused_comprehensive"
+        description: "Comprehensive unused code analysis"
+        input:
+          project_path: "test-projects/dependency-test-project"
+          language: "*"
+          analysis_scope: "comprehensive"
+          file_patterns: ["*.py", "*.js", "*.java"]
+          include_all_types: true
+          calculate_impact: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.unused_summary"
+              field_type: "object"
+              required: true
+            - path: "$.result.cleanup_suggestions"
+              field_type: "array"
+              required: false
+            - path: "$.result.impact_analysis"
+              field_type: "object"
+              required: false
+        performance:
+          max_duration_ms: 8000
+          max_memory_mb: 120
+        tags: ["unused", "comprehensive", "cleanup"]
+
+      - name: "find_unused_with_exclusions"
+        description: "Find unused code with exclusion patterns"
+        input:
+          project_path: "test-projects/java-test-project"
+          language: "java"
+          analysis_scope: "all"
+          file_patterns: ["*.java"]
+          exclude_patterns: ["*Test.java", "*Controller.java"]
+          exclude_annotations: ["@Test", "@Override"]
+        expected:
+          error: false
+          fields:
+            - path: "$.result.unused_items"
+              field_type: "array"
+              required: true
+            - path: "$.result.excluded_items"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 3500
+          max_memory_mb: 64
+        tags: ["unused", "exclusions", "filtering"]
+
+      - name: "find_no_unused_code"
+        description: "Handle projects with no unused code"
+        input:
+          project_path: "test-projects/rust-test-project"
+          language: "rust"
+          analysis_scope: "functions"
+          file_patterns: ["*.rs"]
+        expected:
+          error: false
+          fields:
+            - path: "$.result.unused_functions"
+              value: []
+              required: true
+            - path: "$.result.unused_count"
+              value: 0
+              required: true
+        tags: ["unused", "edge_case", "clean_code"]
+
+# Test configuration
+test_config:
+  timeout_seconds: 90
+  max_concurrency: 2
+  fail_fast: false
+  retry:
+    max_retries: 2
+    retry_delay_ms: 1000
+    exponential_backoff: true
+
+# Metadata for flow analysis testing
+metadata:
+  author: "CodePrism MCP Test Harness Team"
+  documentation: "https://spec.modelcontextprotocol.io/"
+  license: "MIT"
+  tags: ["flow", "patterns", "dependencies", "data_flow", "unused_code", "multi-language"]
+  test_coverage:
+    tools: 4
+    scenarios: 32
+    languages: ["python", "rust", "java", "javascript"]
+    capabilities: ["pattern_detection", "dependency_analysis", "data_flow_tracing", "unused_code_detection"]
+  
+  # Performance benchmarks for flow analysis tools
+  benchmarks:
+    detect_patterns_time_ms: 5000
+    analyze_transitive_dependencies_time_ms: 6000
+    trace_data_flow_time_ms: 4000
+    find_unused_code_time_ms: 4000
+  
+  # Quality targets
+  quality_targets:
+    success_rate_percent: 95
+    pattern_detection_accuracy_percent: 85
+    dependency_analysis_completeness_percent: 90
+    unused_code_detection_accuracy_percent: 80
+    performance_test_coverage_percent: 100 

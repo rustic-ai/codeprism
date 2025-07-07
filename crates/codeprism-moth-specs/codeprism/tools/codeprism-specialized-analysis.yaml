@@ -1,0 +1,865 @@
+# CodePrism MCP Server - Specialized Analysis Tools Test Specification
+# Comprehensive testing for specialized analysis tools including security, performance, and API analysis
+# following the MCP 2025-06-18 specification
+
+name: "CodePrism Specialized Analysis Tools"
+version: "1.0.0"
+description: "Test specification for CodePrism MCP server specialized analysis tools"
+
+# Server capabilities declaration
+capabilities:
+  tools: true           # Specialized analysis tools
+  resources: false      # No file URI resources  
+  prompts: false        # No prompt templates
+  sampling: false       # No sampling support
+  logging: true         # Error and operation logging
+
+# Server startup configuration  
+server:
+  command: "cargo"
+  args: ["run", "--package", "codeprism-mcp-server", "--bin", "codeprism-mcp-server"]
+  env:
+    RUST_LOG: "info"
+    MCP_PROTOCOL_VERSION: "2025-06-18"
+  transport: "stdio"
+  startup_timeout_seconds: 30
+  shutdown_timeout_seconds: 10
+
+# Specialized analysis tools testing
+tools:
+  # ========================================================================
+  # TRACE_INHERITANCE Tool - Inheritance hierarchy analysis
+  # ========================================================================
+  - name: "trace_inheritance"
+    description: "Trace and analyze inheritance hierarchies and relationships"
+    tests:
+      - name: "trace_python_class_inheritance"
+        description: "Trace Python class inheritance hierarchies"
+        input:
+          project_path: "test-projects/python-sample"
+          language: "python"
+          root_class: "BaseModel"
+          include_multiple_inheritance: true
+          include_mixin_classes: true
+          max_depth: 5
+        expected:
+          error: false
+          fields:
+            - path: "$.result.inheritance_tree"
+              field_type: "object"
+              required: true
+            - path: "$.result.derived_classes"
+              field_type: "array"
+              required: true
+            - path: "$.result.inheritance_depth"
+              field_type: "integer"
+              required: true
+            - path: "$.result.multiple_inheritance"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 3500
+          max_memory_mb: 64
+        tags: ["inheritance", "python", "hierarchy"]
+
+      - name: "trace_java_interface_implementation"
+        description: "Trace Java interface implementations and class hierarchies"
+        input:
+          project_path: "test-projects/java-test-project"
+          language: "java"
+          root_interface: "UserService"
+          include_interfaces: true
+          include_abstract_classes: true
+          analyze_method_overrides: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.inheritance_tree"
+              field_type: "object"
+              required: true
+            - path: "$.result.interface_implementations"
+              field_type: "array"
+              required: false
+            - path: "$.result.method_overrides"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 4000
+          max_memory_mb: 72
+        tags: ["inheritance", "java", "interfaces"]
+
+      - name: "trace_rust_trait_implementations"
+        description: "Trace Rust trait implementations and relationships"
+        input:
+          project_path: "test-projects/rust-test-project"
+          language: "rust"
+          root_trait: "Clone"
+          include_trait_bounds: true
+          include_generic_implementations: true
+          analyze_trait_objects: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.trait_implementations"
+              field_type: "array"
+              required: true
+            - path: "$.result.trait_bounds"
+              field_type: "array"
+              required: false
+            - path: "$.result.generic_implementations"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 3200
+          max_memory_mb: 60
+        tags: ["inheritance", "rust", "traits"]
+
+      - name: "trace_javascript_prototype_chain"
+        description: "Trace JavaScript prototype chains and class inheritance"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "javascript"
+          root_class: "Component"
+          include_prototype_chain: true
+          include_es6_classes: true
+          analyze_mixin_patterns: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.prototype_chain"
+              field_type: "array"
+              required: true
+            - path: "$.result.es6_inheritance"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 2800
+          max_memory_mb: 52
+        tags: ["inheritance", "javascript", "prototype"]
+
+      - name: "analyze_inheritance_complexity"
+        description: "Analyze inheritance complexity and design issues"
+        input:
+          project_path: "test-projects/dependency-test-project"
+          language: "*"
+          analysis_type: "complexity"
+          include_depth_analysis: true
+          include_coupling_analysis: true
+          detect_inheritance_smells: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.complexity_metrics"
+              field_type: "object"
+              required: true
+            - path: "$.result.inheritance_smells"
+              field_type: "array"
+              required: false
+            - path: "$.result.refactoring_suggestions"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 5000
+          max_memory_mb: 88
+        tags: ["inheritance", "complexity", "analysis"]
+
+      - name: "trace_diamond_inheritance"
+        description: "Detect and analyze diamond inheritance patterns"
+        input:
+          project_path: "test-projects/python-sample"
+          language: "python"
+          analysis_type: "diamond_detection"
+          include_resolution_order: true
+          analyze_method_conflicts: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.diamond_patterns"
+              field_type: "array"
+              required: true
+            - path: "$.result.method_resolution_order"
+              field_type: "array"
+              required: false
+            - path: "$.result.conflict_analysis"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 3800
+          max_memory_mb: 68
+        tags: ["inheritance", "diamond", "conflicts"]
+
+  # ========================================================================
+  # ANALYZE_DECORATORS Tool - Decorator and annotation analysis
+  # ========================================================================
+  - name: "analyze_decorators"
+    description: "Analyze decorators, annotations, and metadata patterns"
+    tests:
+      - name: "analyze_python_decorators"
+        description: "Analyze Python decorator usage and patterns"
+        input:
+          project_path: "test-projects/python-sample"
+          language: "python"
+          decorator_types: ["property", "staticmethod", "classmethod", "custom"]
+          include_decorator_chains: true
+          analyze_decorator_impact: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.decorator_usage"
+              field_type: "array"
+              required: true
+            - path: "$.result.decorator_chains"
+              field_type: "array"
+              required: false
+            - path: "$.result.custom_decorators"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 3000
+          max_memory_mb: 56
+        tags: ["decorators", "python", "patterns"]
+
+      - name: "analyze_java_annotations"
+        description: "Analyze Java annotation usage and frameworks"
+        input:
+          project_path: "test-projects/java-test-project"
+          language: "java"
+          annotation_types: ["@Override", "@Autowired", "@Component", "@Test"]
+          include_custom_annotations: true
+          analyze_framework_usage: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.annotation_usage"
+              field_type: "array"
+              required: true
+            - path: "$.result.framework_annotations"
+              field_type: "object"
+              required: false
+            - path: "$.result.custom_annotations"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 3500
+          max_memory_mb: 64
+        tags: ["decorators", "java", "annotations"]
+
+      - name: "analyze_rust_attributes"
+        description: "Analyze Rust attribute usage and derive macros"
+        input:
+          project_path: "test-projects/rust-test-project"
+          language: "rust"
+          attribute_types: ["derive", "cfg", "test", "allow"]
+          include_procedural_macros: true
+          analyze_attribute_interactions: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.attribute_usage"
+              field_type: "array"
+              required: true
+            - path: "$.result.derive_macros"
+              field_type: "array"
+              required: false
+            - path: "$.result.macro_interactions"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 2800
+          max_memory_mb: 48
+        tags: ["decorators", "rust", "attributes"]
+
+      - name: "analyze_javascript_decorators"
+        description: "Analyze JavaScript/TypeScript decorator proposals"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "javascript"
+          decorator_types: ["class", "method", "property", "parameter"]
+          include_experimental_decorators: true
+          analyze_framework_decorators: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.decorator_usage"
+              field_type: "array"
+              required: true
+            - path: "$.result.experimental_features"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 2500
+          max_memory_mb: 44
+        tags: ["decorators", "javascript", "experimental"]
+
+      - name: "analyze_decorator_performance"
+        description: "Analyze performance impact of decorators"
+        input:
+          project_path: "test-projects/python-sample"
+          language: "python"
+          analysis_type: "performance"
+          include_execution_overhead: true
+          analyze_memory_impact: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.performance_impact"
+              field_type: "object"
+              required: true
+            - path: "$.result.overhead_analysis"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 4000
+          max_memory_mb: 72
+        tags: ["decorators", "performance", "overhead"]
+
+  # ========================================================================
+  # ANALYZE_SECURITY Tool - Security vulnerability analysis
+  # ========================================================================
+  - name: "analyze_security"
+    description: "Analyze security vulnerabilities and potential threats"
+    tests:
+      - name: "analyze_python_security_issues"
+        description: "Analyze Python code for security vulnerabilities"
+        input:
+          project_path: "test-projects/python-sample"
+          language: "python"
+          vulnerability_types: ["sql_injection", "xss", "code_injection", "path_traversal"]
+          severity_threshold: "medium"
+          include_dependency_vulnerabilities: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.vulnerabilities"
+              field_type: "array"
+              required: true
+            - path: "$.result.security_score"
+              field_type: "number"
+              required: true
+            - path: "$.result.severity_distribution"
+              field_type: "object"
+              required: false
+            - path: "$.result.dependency_vulnerabilities"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 6000
+          max_memory_mb: 96
+        tags: ["security", "python", "vulnerabilities"]
+
+      - name: "analyze_java_security_patterns"
+        description: "Analyze Java security patterns and anti-patterns"
+        input:
+          project_path: "test-projects/java-test-project"
+          language: "java"
+          vulnerability_types: ["deserialization", "xml_injection", "ldap_injection", "weak_crypto"]
+          include_framework_security: true
+          analyze_authentication: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.vulnerabilities"
+              field_type: "array"
+              required: true
+            - path: "$.result.authentication_issues"
+              field_type: "array"
+              required: false
+            - path: "$.result.framework_security"
+              field_type: "object"
+              required: false
+        performance:
+          max_duration_ms: 5500
+          max_memory_mb: 88
+        tags: ["security", "java", "authentication"]
+
+      - name: "analyze_javascript_security_risks"
+        description: "Analyze JavaScript security risks and XSS vulnerabilities"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "javascript"
+          vulnerability_types: ["xss", "prototype_pollution", "eval_injection", "npm_vulnerabilities"]
+          include_client_side_security: true
+          analyze_third_party_libs: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.vulnerabilities"
+              field_type: "array"
+              required: true
+            - path: "$.result.client_side_risks"
+              field_type: "array"
+              required: false
+            - path: "$.result.third_party_vulnerabilities"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 4500
+          max_memory_mb: 80
+        tags: ["security", "javascript", "xss"]
+
+      - name: "analyze_rust_memory_safety"
+        description: "Analyze Rust code for memory safety and unsafe usage"
+        input:
+          project_path: "test-projects/rust-test-project"
+          language: "rust"
+          analysis_type: "memory_safety"
+          include_unsafe_blocks: true
+          analyze_ffi_safety: true
+          check_data_races: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.unsafe_usage"
+              field_type: "array"
+              required: true
+            - path: "$.result.memory_safety_score"
+              field_type: "number"
+              required: true
+            - path: "$.result.ffi_risks"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 3500
+          max_memory_mb: 64
+        tags: ["security", "rust", "memory_safety"]
+
+      - name: "analyze_cross_language_security"
+        description: "Comprehensive security analysis across languages"
+        input:
+          project_path: "test-projects/dependency-test-project"
+          language: "*"
+          vulnerability_types: ["injection", "authentication", "encryption", "access_control"]
+          include_configuration_security: true
+          generate_security_report: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.vulnerabilities"
+              field_type: "array"
+              required: true
+            - path: "$.result.security_metrics"
+              field_type: "object"
+              required: true
+            - path: "$.result.remediation_suggestions"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 8000
+          max_memory_mb: 128
+        tags: ["security", "cross_language", "comprehensive"]
+
+      - name: "analyze_secrets_and_credentials"
+        description: "Detect hardcoded secrets and credentials"
+        input:
+          project_path: "test-projects/dependency-test-project"
+          language: "*"
+          analysis_type: "secrets_detection"
+          secret_types: ["api_keys", "passwords", "tokens", "certificates"]
+          include_config_files: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.detected_secrets"
+              field_type: "array"
+              required: true
+            - path: "$.result.risk_assessment"
+              field_type: "object"
+              required: false
+        performance:
+          max_duration_ms: 4000
+          max_memory_mb: 72
+        tags: ["security", "secrets", "credentials"]
+
+  # ========================================================================
+  # ANALYZE_PERFORMANCE Tool - Performance analysis and optimization
+  # ========================================================================
+  - name: "analyze_performance"
+    description: "Analyze performance characteristics and bottlenecks"
+    tests:
+      - name: "analyze_python_performance_hotspots"
+        description: "Identify Python performance hotspots and bottlenecks"
+        input:
+          project_path: "test-projects/python-sample"
+          language: "python"
+          analysis_type: "hotspots"
+          include_algorithmic_complexity: true
+          include_memory_analysis: true
+          profile_critical_paths: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.performance_hotspots"
+              field_type: "array"
+              required: true
+            - path: "$.result.complexity_analysis"
+              field_type: "object"
+              required: true
+            - path: "$.result.memory_usage"
+              field_type: "object"
+              required: false
+            - path: "$.result.optimization_suggestions"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 5000
+          max_memory_mb: 88
+        tags: ["performance", "python", "hotspots"]
+
+      - name: "analyze_rust_performance_characteristics"
+        description: "Analyze Rust performance and zero-cost abstractions"
+        input:
+          project_path: "test-projects/rust-test-project"
+          language: "rust"
+          analysis_type: "characteristics"
+          include_allocation_analysis: true
+          include_borrow_checker_impact: true
+          analyze_optimization_opportunities: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.allocation_patterns"
+              field_type: "array"
+              required: true
+            - path: "$.result.zero_cost_violations"
+              field_type: "array"
+              required: false
+            - path: "$.result.optimization_opportunities"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 4500
+          max_memory_mb: 80
+        tags: ["performance", "rust", "optimization"]
+
+      - name: "analyze_java_performance_patterns"
+        description: "Analyze Java performance patterns and JVM optimization"
+        input:
+          project_path: "test-projects/java-test-project"
+          language: "java"
+          analysis_type: "patterns"
+          include_gc_impact: true
+          include_jit_optimization: true
+          analyze_collection_usage: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.performance_patterns"
+              field_type: "array"
+              required: true
+            - path: "$.result.gc_recommendations"
+              field_type: "array"
+              required: false
+            - path: "$.result.collection_analysis"
+              field_type: "object"
+              required: false
+        performance:
+          max_duration_ms: 5500
+          max_memory_mb: 92
+        tags: ["performance", "java", "jvm"]
+
+      - name: "analyze_javascript_performance_metrics"
+        description: "Analyze JavaScript performance and runtime optimization"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "javascript"
+          analysis_type: "metrics"
+          include_dom_performance: true
+          include_async_performance: true
+          analyze_bundle_impact: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.performance_metrics"
+              field_type: "object"
+              required: true
+            - path: "$.result.dom_bottlenecks"
+              field_type: "array"
+              required: false
+            - path: "$.result.async_analysis"
+              field_type: "object"
+              required: false
+        performance:
+          max_duration_ms: 4000
+          max_memory_mb: 76
+        tags: ["performance", "javascript", "runtime"]
+
+      - name: "analyze_algorithm_complexity"
+        description: "Analyze algorithmic complexity across functions"
+        input:
+          project_path: "test-projects/dependency-test-project"
+          language: "*"
+          analysis_type: "algorithmic"
+          include_time_complexity: true
+          include_space_complexity: true
+          identify_inefficient_algorithms: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.complexity_analysis"
+              field_type: "object"
+              required: true
+            - path: "$.result.inefficient_algorithms"
+              field_type: "array"
+              required: false
+            - path: "$.result.improvement_suggestions"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 6000
+          max_memory_mb: 100
+        tags: ["performance", "algorithms", "complexity"]
+
+      - name: "analyze_memory_usage_patterns"
+        description: "Analyze memory usage patterns and leaks"
+        input:
+          project_path: "test-projects/python-sample"
+          language: "python"
+          analysis_type: "memory"
+          include_leak_detection: true
+          include_allocation_patterns: true
+          track_object_lifecycle: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.memory_analysis"
+              field_type: "object"
+              required: true
+            - path: "$.result.potential_leaks"
+              field_type: "array"
+              required: false
+            - path: "$.result.allocation_hotspots"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 5500
+          max_memory_mb: 96
+        tags: ["performance", "memory", "leaks"]
+
+  # ========================================================================
+  # ANALYZE_API_SURFACE Tool - API design and surface analysis
+  # ========================================================================
+  - name: "analyze_api_surface"
+    description: "Analyze API design, surface area, and usability"
+    tests:
+      - name: "analyze_python_public_api"
+        description: "Analyze Python public API surface and design"
+        input:
+          project_path: "test-projects/python-sample"
+          language: "python"
+          api_scope: "public"
+          include_docstring_analysis: true
+          include_type_hints: true
+          analyze_api_consistency: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.public_api_surface"
+              field_type: "object"
+              required: true
+            - path: "$.result.api_functions"
+              field_type: "array"
+              required: true
+            - path: "$.result.documentation_coverage"
+              field_type: "number"
+              required: false
+            - path: "$.result.consistency_score"
+              field_type: "number"
+              required: false
+        performance:
+          max_duration_ms: 4000
+          max_memory_mb: 72
+        tags: ["api", "python", "public"]
+
+      - name: "analyze_rust_crate_api"
+        description: "Analyze Rust crate API design and ergonomics"
+        input:
+          project_path: "test-projects/rust-test-project"
+          language: "rust"
+          api_scope: "crate"
+          include_trait_design: true
+          include_error_handling: true
+          analyze_ergonomics: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.crate_api"
+              field_type: "object"
+              required: true
+            - path: "$.result.trait_analysis"
+              field_type: "array"
+              required: false
+            - path: "$.result.ergonomics_score"
+              field_type: "number"
+              required: false
+        performance:
+          max_duration_ms: 3800
+          max_memory_mb: 68
+        tags: ["api", "rust", "ergonomics"]
+
+      - name: "analyze_java_interface_design"
+        description: "Analyze Java interface design and contract clarity"
+        input:
+          project_path: "test-projects/java-test-project"
+          language: "java"
+          api_scope: "interfaces"
+          include_contract_analysis: true
+          include_exception_design: true
+          analyze_cohesion: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.interface_analysis"
+              field_type: "object"
+              required: true
+            - path: "$.result.contract_clarity"
+              field_type: "number"
+              required: false
+            - path: "$.result.exception_analysis"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 4200
+          max_memory_mb: 76
+        tags: ["api", "java", "interfaces"]
+
+      - name: "analyze_javascript_module_exports"
+        description: "Analyze JavaScript module exports and API design"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "javascript"
+          api_scope: "exports"
+          include_type_definitions: true
+          include_compatibility_analysis: true
+          analyze_tree_shaking: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.export_analysis"
+              field_type: "object"
+              required: true
+            - path: "$.result.type_coverage"
+              field_type: "number"
+              required: false
+            - path: "$.result.tree_shaking_impact"
+              field_type: "object"
+              required: false
+        performance:
+          max_duration_ms: 3500
+          max_memory_mb: 64
+        tags: ["api", "javascript", "exports"]
+
+      - name: "analyze_api_evolution"
+        description: "Analyze API evolution and breaking changes"
+        input:
+          project_path: "test-projects/dependency-test-project"
+          language: "*"
+          analysis_type: "evolution"
+          include_breaking_changes: true
+          include_deprecation_analysis: true
+          version_comparison: false
+        expected:
+          error: false
+          fields:
+            - path: "$.result.api_stability"
+              field_type: "object"
+              required: true
+            - path: "$.result.breaking_changes"
+              field_type: "array"
+              required: false
+            - path: "$.result.deprecation_warnings"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 5000
+          max_memory_mb: 88
+        tags: ["api", "evolution", "breaking_changes"]
+
+      - name: "analyze_api_usability"
+        description: "Analyze API usability and developer experience"
+        input:
+          project_path: "test-projects/python-sample"
+          language: "python"
+          analysis_type: "usability"
+          include_complexity_metrics: true
+          include_naming_analysis: true
+          analyze_parameter_design: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.usability_score"
+              field_type: "number"
+              required: true
+            - path: "$.result.complexity_metrics"
+              field_type: "object"
+              required: false
+            - path: "$.result.naming_consistency"
+              field_type: "number"
+              required: false
+        performance:
+          max_duration_ms: 4500
+          max_memory_mb: 80
+        tags: ["api", "usability", "experience"]
+
+      - name: "analyze_api_security_surface"
+        description: "Analyze API security surface and attack vectors"
+        input:
+          project_path: "test-projects/java-test-project"
+          language: "java"
+          analysis_type: "security"
+          include_input_validation: true
+          include_authentication_apis: true
+          analyze_privilege_escalation: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.security_surface"
+              field_type: "object"
+              required: true
+            - path: "$.result.attack_vectors"
+              field_type: "array"
+              required: false
+            - path: "$.result.security_recommendations"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 5500
+          max_memory_mb: 92
+        tags: ["api", "security", "attack_vectors"]
+
+# Test configuration
+test_config:
+  timeout_seconds: 120
+  max_concurrency: 2
+  fail_fast: false
+  retry:
+    max_retries: 2
+    retry_delay_ms: 1000
+    exponential_backoff: true
+
+# Metadata for specialized analysis testing
+metadata:
+  author: "CodePrism MCP Test Harness Team"
+  documentation: "https://spec.modelcontextprotocol.io/"
+  license: "MIT"
+  tags: ["specialized", "inheritance", "decorators", "security", "performance", "api", "multi-language"]
+  test_coverage:
+    tools: 5
+    scenarios: 35
+    languages: ["python", "rust", "java", "javascript"]
+    capabilities: ["inheritance_analysis", "decorator_analysis", "security_analysis", "performance_analysis", "api_analysis"]
+  
+  # Performance benchmarks for specialized tools
+  benchmarks:
+    trace_inheritance_time_ms: 4000
+    analyze_decorators_time_ms: 3000
+    analyze_security_time_ms: 6000
+    analyze_performance_time_ms: 5000
+    analyze_api_surface_time_ms: 4500
+  
+  # Quality targets
+  quality_targets:
+    success_rate_percent: 95
+    security_detection_accuracy_percent: 90
+    performance_analysis_accuracy_percent: 85
+    api_analysis_completeness_percent: 88
+    inheritance_analysis_accuracy_percent: 92 

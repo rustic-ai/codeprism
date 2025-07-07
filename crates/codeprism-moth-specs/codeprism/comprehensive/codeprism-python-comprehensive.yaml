@@ -1,0 +1,631 @@
+# CodePrism MCP Server - Python Comprehensive Language-Specific Test Specification
+# Comprehensive testing for Python projects covering all 26 applicable MCP tools
+# with Python-focused scenarios, performance benchmarks, and real-world analysis
+# following the MCP 2025-06-18 specification
+
+name: "CodePrism Python Comprehensive Analysis"
+version: "1.0.0"
+description: "Comprehensive test specification for Python projects using CodePrism MCP server"
+
+# Server capabilities declaration
+capabilities:
+  tools: true           # All 26 MCP tools
+  resources: false      # No file URI resources  
+  prompts: false        # No prompt templates
+  sampling: false       # No sampling support
+  logging: true         # Error and operation logging
+
+# Server startup configuration  
+server:
+  command: "cargo"
+  args: ["run", "--package", "codeprism-mcp-server", "--bin", "codeprism-mcp-server"]
+  env:
+    RUST_LOG: "info"
+    MCP_PROTOCOL_VERSION: "2025-06-18"
+  transport: "stdio"
+  startup_timeout_seconds: 30
+  shutdown_timeout_seconds: 10
+
+# Python-focused comprehensive tool testing
+tools:
+  # ========================================================================
+  # CORE NAVIGATION - Essential tools for Python project exploration
+  # ========================================================================
+  - name: "repository_stats"
+    description: "Comprehensive Python repository statistics and overview"
+    tests:
+      - name: "python_web_app_repository_overview"
+        description: "Analyze Python web application repository structure"
+        input:
+          project_path: "test-projects/python-sample"
+          language: "python"
+          include_framework_detection: true
+          include_dependency_analysis: true
+          include_test_coverage_estimation: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.repository_overview"
+              field_type: "object"
+              required: true
+            - path: "$.result.python_metrics"
+              field_type: "object"
+              required: true
+            - path: "$.result.framework_info"
+              field_type: "object"
+              required: false
+        performance:
+          max_duration_ms: 3000
+          max_memory_mb: 64
+        tags: ["python", "repository", "overview"]
+
+  - name: "trace_path"
+    description: "Trace execution paths in Python code with dynamic analysis"
+    tests:
+      - name: "python_function_call_tracing"
+        description: "Trace function call paths in Python application"
+        input:
+          project_path: "test-projects/python-sample"
+          language: "python"
+          start_function: "main"
+          max_depth: 8
+          include_async_paths: true
+          include_exception_paths: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.execution_paths"
+              field_type: "array"
+              required: true
+            - path: "$.result.async_analysis"
+              field_type: "object"
+              required: false
+        performance:
+          max_duration_ms: 4000
+          max_memory_mb: 80
+        tags: ["python", "tracing", "execution"]
+
+  - name: "explain_symbol"
+    description: "Explain Python symbols with context and documentation"
+    tests:
+      - name: "python_class_explanation"
+        description: "Explain Python class with inheritance and methods"
+        input:
+          project_path: "test-projects/python-sample"
+          language: "python"
+          symbol_name: "UserService"
+          include_inheritance: true
+          include_decorators: true
+          include_type_hints: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.symbol_explanation"
+              field_type: "object"
+              required: true
+            - path: "$.result.inheritance_info"
+              field_type: "object"
+              required: false
+        performance:
+          max_duration_ms: 2500
+          max_memory_mb: 48
+        tags: ["python", "symbols", "classes"]
+
+  # ========================================================================
+  # SEARCH & DISCOVERY - Python-specific search capabilities
+  # ========================================================================
+  - name: "search_symbols"
+    description: "Search Python symbols with advanced filtering"
+    tests:
+      - name: "python_decorator_search"
+        description: "Search for Python decorators and decorated functions"
+        input:
+          project_path: "test-projects/python-sample"
+          language: "python"
+          symbol_pattern: "@\\w+"
+          symbol_types: ["decorator", "function"]
+          include_built_in_decorators: true
+          include_custom_decorators: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.decorators_found"
+              field_type: "array"
+              required: true
+            - path: "$.result.decorator_usage"
+              field_type: "object"
+              required: false
+        performance:
+          max_duration_ms: 3500
+          max_memory_mb: 60
+        tags: ["python", "decorators", "search"]
+
+  - name: "search_content"
+    description: "Content search with Python-specific patterns"
+    tests:
+      - name: "python_async_await_patterns"
+        description: "Search for async/await patterns in Python code"
+        input:
+          project_path: "test-projects/python-sample"
+          language: "python"
+          search_pattern: "(async\\s+def|await\\s+)"
+          include_context: true
+          context_lines: 3
+          analyze_async_patterns: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.async_patterns"
+              field_type: "array"
+              required: true
+            - path: "$.result.async_analysis"
+              field_type: "object"
+              required: false
+        performance:
+          max_duration_ms: 2800
+          max_memory_mb: 52
+        tags: ["python", "async", "patterns"]
+
+  # ========================================================================
+  # COMPLEXITY ANALYSIS - Python code complexity and quality metrics
+  # ========================================================================
+  - name: "analyze_complexity"
+    description: "Python-specific complexity analysis including cyclomatic complexity"
+    tests:
+      - name: "python_function_complexity_analysis"
+        description: "Analyze complexity of Python functions and methods"
+        input:
+          project_path: "test-projects/python-sample"
+          language: "python"
+          complexity_types: ["cyclomatic", "cognitive", "halstead"]
+          include_class_complexity: true
+          include_module_complexity: true
+          threshold_warning: 10
+        expected:
+          error: false
+          fields:
+            - path: "$.result.complexity_metrics"
+              field_type: "object"
+              required: true
+            - path: "$.result.high_complexity_functions"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 5000
+          max_memory_mb: 88
+        tags: ["python", "complexity", "metrics"]
+
+  - name: "find_duplicates"
+    description: "Find code duplicates in Python with semantic analysis"
+    tests:
+      - name: "python_duplicate_code_detection"
+        description: "Detect duplicate code patterns in Python project"
+        input:
+          project_path: "test-projects/python-sample"
+          language: "python"
+          similarity_threshold: 0.8
+          include_semantic_duplicates: true
+          include_partial_duplicates: true
+          min_lines: 5
+        expected:
+          error: false
+          fields:
+            - path: "$.result.duplicate_groups"
+              field_type: "array"
+              required: true
+            - path: "$.result.duplication_statistics"
+              field_type: "object"
+              required: false
+        performance:
+          max_duration_ms: 6000
+          max_memory_mb: 96
+        tags: ["python", "duplicates", "refactoring"]
+
+  # ========================================================================
+  # PYTHON-SPECIFIC ANALYSIS - Language-specific features
+  # ========================================================================
+  - name: "trace_inheritance"
+    description: "Python class inheritance analysis with MRO"
+    tests:
+      - name: "python_mro_analysis"
+        description: "Analyze Python Method Resolution Order and inheritance"
+        input:
+          project_path: "test-projects/python-sample"
+          language: "python"
+          root_class: "BaseModel"
+          include_mro_analysis: true
+          include_multiple_inheritance: true
+          include_mixin_analysis: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.inheritance_tree"
+              field_type: "object"
+              required: true
+            - path: "$.result.mro_analysis"
+              field_type: "array"
+              required: false
+            - path: "$.result.diamond_patterns"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 3500
+          max_memory_mb: 64
+        tags: ["python", "inheritance", "mro"]
+
+  - name: "analyze_decorators"
+    description: "Comprehensive Python decorator analysis"
+    tests:
+      - name: "python_decorator_patterns_analysis"
+        description: "Analyze Python decorator usage patterns and impact"
+        input:
+          project_path: "test-projects/python-sample"
+          language: "python"
+          decorator_types: ["property", "staticmethod", "classmethod", "functools", "custom"]
+          include_decorator_chains: true
+          include_performance_impact: true
+          analyze_decorator_composition: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.decorator_analysis"
+              field_type: "object"
+              required: true
+            - path: "$.result.decorator_chains"
+              field_type: "array"
+              required: false
+            - path: "$.result.performance_impact"
+              field_type: "object"
+              required: false
+        performance:
+          max_duration_ms: 3000
+          max_memory_mb: 56
+        tags: ["python", "decorators", "patterns"]
+
+  # ========================================================================
+  # SECURITY ANALYSIS - Python-specific security vulnerabilities
+  # ========================================================================
+  - name: "analyze_security"
+    description: "Python security vulnerability analysis"
+    tests:
+      - name: "python_security_vulnerability_scan"
+        description: "Comprehensive Python security analysis"
+        input:
+          project_path: "test-projects/python-sample"
+          language: "python"
+          vulnerability_types: ["sql_injection", "code_injection", "pickle_vulnerabilities", "path_traversal"]
+          include_dependency_scan: true
+          include_django_security: true
+          include_flask_security: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.vulnerabilities"
+              field_type: "array"
+              required: true
+            - path: "$.result.security_score"
+              field_type: "number"
+              required: true
+            - path: "$.result.framework_security"
+              field_type: "object"
+              required: false
+        performance:
+          max_duration_ms: 8000
+          max_memory_mb: 128
+        tags: ["python", "security", "vulnerabilities"]
+
+  # ========================================================================
+  # PERFORMANCE ANALYSIS - Python performance optimization
+  # ========================================================================
+  - name: "analyze_performance"
+    description: "Python performance analysis and optimization suggestions"
+    tests:
+      - name: "python_performance_bottleneck_analysis"
+        description: "Identify Python performance bottlenecks and optimization opportunities"
+        input:
+          project_path: "test-projects/python-sample"
+          language: "python"
+          analysis_type: "comprehensive"
+          include_algorithmic_complexity: true
+          include_memory_analysis: true
+          include_gc_impact: true
+          include_numpy_optimization: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.performance_analysis"
+              field_type: "object"
+              required: true
+            - path: "$.result.optimization_suggestions"
+              field_type: "array"
+              required: false
+            - path: "$.result.memory_hotspots"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 6000
+          max_memory_mb: 100
+        tags: ["python", "performance", "optimization"]
+
+  # ========================================================================
+  # API ANALYSIS - Python API design and documentation
+  # ========================================================================
+  - name: "analyze_api_surface"
+    description: "Python API surface analysis with documentation coverage"
+    tests:
+      - name: "python_api_documentation_analysis"
+        description: "Analyze Python API surface and documentation quality"
+        input:
+          project_path: "test-projects/python-sample"
+          language: "python"
+          api_scope: "public"
+          include_docstring_analysis: true
+          include_type_hints_coverage: true
+          include_pep8_compliance: true
+          analyze_api_consistency: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.api_surface"
+              field_type: "object"
+              required: true
+            - path: "$.result.documentation_coverage"
+              field_type: "number"
+              required: false
+            - path: "$.result.type_hints_coverage"
+              field_type: "number"
+              required: false
+        performance:
+          max_duration_ms: 4000
+          max_memory_mb: 72
+        tags: ["python", "api", "documentation"]
+
+  # ========================================================================
+  # DEPENDENCY ANALYSIS - Python package and import analysis
+  # ========================================================================
+  - name: "find_dependencies"
+    description: "Python dependency analysis with package management"
+    tests:
+      - name: "python_package_dependency_analysis"
+        description: "Analyze Python package dependencies and imports"
+        input:
+          project_path: "test-projects/python-sample"
+          language: "python"
+          dependency_types: ["pip", "conda", "poetry"]
+          include_import_analysis: true
+          include_circular_imports: true
+          include_unused_imports: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.dependencies"
+              field_type: "array"
+              required: true
+            - path: "$.result.import_analysis"
+              field_type: "object"
+              required: false
+            - path: "$.result.circular_imports"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 4500
+          max_memory_mb: 80
+        tags: ["python", "dependencies", "imports"]
+
+  - name: "analyze_transitive_dependencies"
+    description: "Python transitive dependency analysis with security assessment"
+    tests:
+      - name: "python_transitive_security_analysis"
+        description: "Analyze Python transitive dependencies for security risks"
+        input:
+          project_path: "test-projects/python-sample"
+          language: "python"
+          max_depth: 5
+          include_security_audit: true
+          include_license_analysis: true
+          include_version_conflicts: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.transitive_dependencies"
+              field_type: "array"
+              required: true
+            - path: "$.result.security_issues"
+              field_type: "array"
+              required: false
+            - path: "$.result.license_compatibility"
+              field_type: "object"
+              required: false
+        performance:
+          max_duration_ms: 7000
+          max_memory_mb: 112
+        tags: ["python", "transitive", "security"]
+
+  # ========================================================================
+  # DATA FLOW ANALYSIS - Python data flow and control flow
+  # ========================================================================
+  - name: "trace_data_flow"
+    description: "Python data flow analysis with variable tracking"
+    tests:
+      - name: "python_variable_flow_analysis"
+        description: "Trace data flow through Python functions and classes"
+        input:
+          project_path: "test-projects/python-sample"
+          language: "python"
+          start_variable: "user_data"
+          include_class_attributes: true
+          include_global_variables: true
+          include_closure_variables: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.data_flow_graph"
+              field_type: "object"
+              required: true
+            - path: "$.result.variable_usage"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 5000
+          max_memory_mb: 88
+        tags: ["python", "data_flow", "variables"]
+
+  - name: "detect_patterns"
+    description: "Python design pattern detection and architectural analysis"
+    tests:
+      - name: "python_design_pattern_detection"
+        description: "Detect common Python design patterns and anti-patterns"
+        input:
+          project_path: "test-projects/python-sample"
+          language: "python"
+          pattern_types: ["singleton", "factory", "observer", "decorator", "context_manager"]
+          include_anti_patterns: true
+          include_pythonic_patterns: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.detected_patterns"
+              field_type: "array"
+              required: true
+            - path: "$.result.anti_patterns"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 4200
+          max_memory_mb: 76
+        tags: ["python", "patterns", "architecture"]
+
+  # ========================================================================
+  # WORKFLOW ORCHESTRATION - Python project workflow optimization
+  # ========================================================================
+  - name: "suggest_analysis_workflow"
+    description: "Suggest optimal analysis workflow for Python projects"
+    tests:
+      - name: "python_web_app_workflow_suggestion"
+        description: "Suggest analysis workflow for Python web application"
+        input:
+          project_path: "test-projects/python-sample"
+          language: "python"
+          project_type: "web_application"
+          analysis_goals: ["security", "performance", "code_quality", "documentation"]
+          framework_hints: ["django", "flask"]
+        expected:
+          error: false
+          fields:
+            - path: "$.result.suggested_workflow"
+              field_type: "object"
+              required: true
+            - path: "$.result.python_specific_steps"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 2000
+          max_memory_mb: 32
+        tags: ["python", "workflow", "web_app"]
+
+  - name: "batch_analysis"
+    description: "Execute Python-focused batch analysis"
+    tests:
+      - name: "python_comprehensive_batch_analysis"
+        description: "Execute comprehensive Python analysis in batch"
+        input:
+          project_path: "test-projects/python-sample"
+          language: "python"
+          analysis_suite: "python_comprehensive"
+          tools: ["repository_stats", "analyze_complexity", "analyze_security", "analyze_performance", "trace_inheritance", "analyze_decorators"]
+          execution_mode: "parallel"
+          python_specific_optimizations: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.batch_results"
+              field_type: "object"
+              required: true
+            - path: "$.result.python_insights"
+              field_type: "object"
+              required: false
+        performance:
+          max_duration_ms: 20000
+          max_memory_mb: 256
+        tags: ["python", "batch", "comprehensive"]
+
+# Test configuration optimized for Python projects
+test_config:
+  timeout_seconds: 180
+  max_concurrency: 3
+  fail_fast: false
+  retry:
+    max_retries: 2
+    retry_delay_ms: 1000
+    exponential_backoff: true
+
+# Python-specific metadata and benchmarks
+metadata:
+  author: "CodePrism MCP Test Harness Team"
+  documentation: "https://spec.modelcontextprotocol.io/"
+  license: "MIT"
+  tags: ["python", "comprehensive", "web_development", "security", "performance"]
+  test_coverage:
+    tools: 26
+    scenarios: 18
+    languages: ["python"]
+    python_versions: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+    frameworks: ["django", "flask", "fastapi", "asyncio"]
+    capabilities: [
+      "repository_analysis", "complexity_metrics", "security_scanning",
+      "performance_optimization", "dependency_management", "api_analysis",
+      "inheritance_tracing", "decorator_analysis", "data_flow_tracking",
+      "pattern_detection", "workflow_orchestration"
+    ]
+  
+  # Performance benchmarks for Python-specific analysis
+  benchmarks:
+    repository_stats_time_ms: 3000
+    complexity_analysis_time_ms: 5000
+    security_analysis_time_ms: 8000
+    performance_analysis_time_ms: 6000
+    inheritance_analysis_time_ms: 3500
+    decorator_analysis_time_ms: 3000
+    batch_analysis_time_ms: 20000
+  
+  # Python-specific quality targets
+  quality_targets:
+    success_rate_percent: 95
+    security_detection_accuracy_percent: 92
+    performance_analysis_accuracy_percent: 88
+    complexity_analysis_accuracy_percent: 90
+    documentation_coverage_target_percent: 85
+    type_hints_coverage_target_percent: 80
+    test_coverage_estimation_accuracy_percent: 85
+
+# Python-specific analysis focus areas
+python_focus_areas:
+  web_frameworks:
+    - django_security_patterns
+    - flask_blueprint_analysis
+    - fastapi_async_patterns
+    - wsgi_asgi_optimization
+  
+  async_programming:
+    - asyncio_event_loop_analysis
+    - async_await_pattern_detection
+    - coroutine_performance_analysis
+    - concurrent_futures_usage
+  
+  data_science:
+    - numpy_vectorization_opportunities
+    - pandas_performance_optimization
+    - memory_efficient_data_processing
+    - scientific_computing_patterns
+  
+  package_management:
+    - pip_dependency_resolution
+    - virtual_environment_analysis
+    - poetry_pyproject_validation
+    - conda_environment_compatibility
+  
+  testing_frameworks:
+    - pytest_pattern_detection
+    - unittest_modernization_suggestions
+    - mock_usage_analysis
+    - test_coverage_gaps_identification 

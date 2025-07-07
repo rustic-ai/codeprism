@@ -1,0 +1,535 @@
+# CodePrism MCP Server - Complexity Analysis Tools Test Specification
+# Comprehensive testing for code complexity analysis and duplicate detection tools
+# following the MCP 2025-06-18 specification
+
+name: "CodePrism Complexity Analysis Tools"
+version: "1.0.0"
+description: "Test specification for CodePrism MCP server complexity analysis and quality tools"
+
+# Server capabilities declaration
+capabilities:
+  tools: true           # Complexity analysis tools
+  resources: false      # No file URI resources  
+  prompts: false        # No prompt templates
+  sampling: false       # No sampling support
+  logging: true         # Error and operation logging
+
+# Server startup configuration  
+server:
+  command: "cargo"
+  args: ["run", "--package", "codeprism-mcp-server", "--bin", "codeprism-mcp-server"]
+  env:
+    RUST_LOG: "info"
+    MCP_PROTOCOL_VERSION: "2025-06-18"
+  transport: "stdio"
+  startup_timeout_seconds: 30
+  shutdown_timeout_seconds: 10
+
+# Complexity analysis tools testing
+tools:
+  # ========================================================================
+  # ANALYZE_COMPLEXITY Tool - Code complexity analysis
+  # ========================================================================
+  - name: "analyze_complexity"
+    description: "Analyze code complexity metrics across different dimensions"
+    tests:
+      - name: "analyze_python_cyclomatic_complexity"
+        description: "Analyze cyclomatic complexity in Python code"
+        input:
+          project_path: "test-projects/python-sample"
+          analysis_type: "cyclomatic"
+          language: "python"
+          file_patterns: ["*.py"]
+          complexity_threshold: 10
+          include_function_level: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.overall_complexity"
+              field_type: "number"
+              required: true
+            - path: "$.result.function_complexities"
+              field_type: "array"
+              required: true
+            - path: "$.result.high_complexity_functions"
+              field_type: "array"
+              required: false
+            - path: "$.result.complexity_distribution"
+              field_type: "object"
+              required: false
+        performance:
+          max_duration_ms: 4000
+          max_memory_mb: 72
+        tags: ["complexity", "python", "cyclomatic"]
+
+      - name: "analyze_rust_cognitive_complexity"
+        description: "Analyze cognitive complexity in Rust code"
+        input:
+          project_path: "test-projects/rust-test-project"
+          analysis_type: "cognitive"
+          language: "rust"
+          file_patterns: ["*.rs"]
+          complexity_threshold: 15
+          include_module_level: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.overall_complexity"
+              field_type: "number"
+              required: true
+            - path: "$.result.module_complexities"
+              field_type: "array"
+              required: false
+            - path: "$.result.complexity_hotspots"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 3500
+          max_memory_mb: 64
+        tags: ["complexity", "rust", "cognitive"]
+
+      - name: "analyze_java_maintainability_index"
+        description: "Calculate maintainability index for Java code"
+        input:
+          project_path: "test-projects/java-test-project"
+          analysis_type: "maintainability"
+          language: "java"
+          file_patterns: ["*.java"]
+          include_class_level: true
+          include_package_level: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.maintainability_index"
+              field_type: "number"
+              required: true
+            - path: "$.result.class_maintainability"
+              field_type: "array"
+              required: false
+            - path: "$.result.package_maintainability"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 4500
+          max_memory_mb: 80
+        tags: ["complexity", "java", "maintainability"]
+
+      - name: "analyze_javascript_halstead_metrics"
+        description: "Calculate Halstead complexity metrics for JavaScript"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          analysis_type: "halstead"
+          language: "javascript"
+          file_patterns: ["*.js", "*.ts"]
+          include_difficulty: true
+          include_effort: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.halstead_difficulty"
+              field_type: "number"
+              required: true
+            - path: "$.result.halstead_effort"
+              field_type: "number"
+              required: true
+            - path: "$.result.halstead_volume"
+              field_type: "number"
+              required: false
+        performance:
+          max_duration_ms: 3000
+          max_memory_mb: 56
+        tags: ["complexity", "javascript", "halstead"]
+
+      - name: "analyze_comprehensive_complexity"
+        description: "Comprehensive complexity analysis across all metrics"
+        input:
+          project_path: "test-projects/dependency-test-project"
+          analysis_type: "comprehensive"
+          language: "*"
+          file_patterns: ["*.py", "*.js", "*.java", "*.rs"]
+          include_all_metrics: true
+          generate_report: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.cyclomatic_complexity"
+              field_type: "number"
+              required: true
+            - path: "$.result.cognitive_complexity"
+              field_type: "number"
+              required: true
+            - path: "$.result.maintainability_index"
+              field_type: "number"
+              required: true
+            - path: "$.result.complexity_by_language"
+              field_type: "object"
+              required: false
+            - path: "$.result.complexity_trends"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 8000
+          max_memory_mb: 128
+        tags: ["complexity", "comprehensive", "cross_language"]
+
+      - name: "analyze_file_level_complexity"
+        description: "Analyze complexity at individual file level"
+        input:
+          project_path: "test-projects/python-sample"
+          analysis_type: "file_level"
+          language: "python"
+          target_file: "core/user_manager.py"
+          include_line_complexity: true
+          include_function_complexity: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.file_complexity"
+              field_type: "number"
+              required: true
+            - path: "$.result.line_complexities"
+              field_type: "array"
+              required: false
+            - path: "$.result.function_complexities"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 2000
+          max_memory_mb: 32
+        tags: ["complexity", "file_level", "detailed"]
+
+      - name: "analyze_complexity_trends"
+        description: "Analyze complexity trends and patterns"
+        input:
+          project_path: "test-projects/dependency-test-project"
+          analysis_type: "trends"
+          language: "python"
+          file_patterns: ["*.py"]
+          include_historical_data: false
+          complexity_threshold: 8
+        expected:
+          error: false
+          fields:
+            - path: "$.result.complexity_distribution"
+              field_type: "object"
+              required: true
+            - path: "$.result.hotspot_files"
+              field_type: "array"
+              required: false
+            - path: "$.result.improvement_suggestions"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 3500
+          max_memory_mb: 68
+        tags: ["complexity", "trends", "analysis"]
+
+      - name: "handle_empty_project_complexity"
+        description: "Handle complexity analysis for empty project"
+        input:
+          project_path: "test-projects/empty-project"
+          analysis_type: "cyclomatic"
+          language: "python"
+          file_patterns: ["*.py"]
+        expected:
+          error: false
+          fields:
+            - path: "$.result.overall_complexity"
+              value: 0
+              required: true
+            - path: "$.result.function_complexities"
+              value: []
+              required: true
+        tags: ["complexity", "edge_case", "empty"]
+
+  # ========================================================================
+  # FIND_DUPLICATES Tool - Duplicate code detection and analysis
+  # ========================================================================
+  - name: "find_duplicates"
+    description: "Find and analyze duplicate code patterns"
+    tests:
+      - name: "find_python_exact_duplicates"
+        description: "Find exact duplicate code blocks in Python"
+        input:
+          project_path: "test-projects/python-sample"
+          analysis_scope: "exact"
+          language: "python"
+          file_patterns: ["*.py"]
+          min_lines: 5
+          ignore_whitespace: true
+          ignore_comments: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.duplicate_groups"
+              field_type: "array"
+              required: true
+            - path: "$.result.total_duplicates"
+              field_type: "integer"
+              required: true
+            - path: "$.result.duplication_percentage"
+              field_type: "number"
+              required: true
+            - path: "$.result.duplicate_groups[0].instances"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 5000
+          max_memory_mb: 96
+        tags: ["duplicates", "python", "exact"]
+
+      - name: "find_rust_semantic_duplicates"
+        description: "Find semantically similar code in Rust"
+        input:
+          project_path: "test-projects/rust-test-project"
+          analysis_scope: "semantic"
+          language: "rust"
+          file_patterns: ["*.rs"]
+          similarity_threshold: 0.8
+          min_lines: 3
+          include_functions: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.duplicate_groups"
+              field_type: "array"
+              required: true
+            - path: "$.result.similarity_scores"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 4500
+          max_memory_mb: 88
+        tags: ["duplicates", "rust", "semantic"]
+
+      - name: "find_java_structural_duplicates"
+        description: "Find structurally similar code patterns in Java"
+        input:
+          project_path: "test-projects/java-test-project"
+          analysis_scope: "structural"
+          language: "java"
+          file_patterns: ["*.java"]
+          similarity_threshold: 0.7
+          include_methods: true
+          include_classes: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.duplicate_groups"
+              field_type: "array"
+              required: true
+            - path: "$.result.structural_patterns"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 4000
+          max_memory_mb: 84
+        tags: ["duplicates", "java", "structural"]
+
+      - name: "find_javascript_cross_file_duplicates"
+        description: "Find duplicates across multiple JavaScript files"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          analysis_scope: "cross_file"
+          language: "javascript"
+          file_patterns: ["*.js", "*.ts"]
+          min_lines: 4
+          include_imports: false
+          ignore_variable_names: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.duplicate_groups"
+              field_type: "array"
+              required: true
+            - path: "$.result.cross_file_duplicates"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 3500
+          max_memory_mb: 72
+        tags: ["duplicates", "javascript", "cross_file"]
+
+      - name: "find_duplicates_with_context"
+        description: "Find duplicates with surrounding context analysis"
+        input:
+          project_path: "test-projects/dependency-test-project"
+          analysis_scope: "contextual"
+          language: "*"
+          file_patterns: ["*.py", "*.js"]
+          min_lines: 6
+          include_context_lines: 2
+          analyze_usage_patterns: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.duplicate_groups"
+              field_type: "array"
+              required: true
+            - path: "$.result.context_analysis"
+              field_type: "object"
+              required: false
+            - path: "$.result.refactoring_suggestions"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 6000
+          max_memory_mb: 112
+        tags: ["duplicates", "contextual", "refactoring"]
+
+      - name: "find_duplicates_performance_test"
+        description: "Performance test for large codebase duplicate detection"
+        input:
+          project_path: "test-projects/dependency-test-project"
+          analysis_scope: "exact"
+          language: "*"
+          file_patterns: ["*.*"]
+          min_lines: 3
+          max_duplicates: 100
+        expected:
+          error: false
+          fields:
+            - path: "$.result.duplicate_groups"
+              field_type: "array"
+              required: true
+        performance:
+          max_duration_ms: 8000
+          max_memory_mb: 150
+        tags: ["duplicates", "performance", "large_codebase"]
+
+      - name: "find_function_level_duplicates"
+        description: "Find duplicate functions and methods"
+        input:
+          project_path: "test-projects/python-sample"
+          analysis_scope: "function_level"
+          language: "python"
+          file_patterns: ["*.py"]
+          similarity_threshold: 0.9
+          include_signatures: true
+          ignore_parameter_names: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.duplicate_functions"
+              field_type: "array"
+              required: true
+            - path: "$.result.signature_matches"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 3000
+          max_memory_mb: 64
+        tags: ["duplicates", "function_level", "signatures"]
+
+      - name: "find_no_duplicates"
+        description: "Handle projects with no duplicate code"
+        input:
+          project_path: "test-projects/rust-test-project"
+          analysis_scope: "exact"
+          language: "rust"
+          file_patterns: ["*.rs"]
+          min_lines: 10
+        expected:
+          error: false
+          fields:
+            - path: "$.result.duplicate_groups"
+              value: []
+              required: true
+            - path: "$.result.total_duplicates"
+              value: 0
+              required: true
+            - path: "$.result.duplication_percentage"
+              value: 0.0
+              required: true
+        tags: ["duplicates", "edge_case", "no_duplicates"]
+
+      - name: "find_duplicates_with_exclusions"
+        description: "Find duplicates while excluding certain patterns"
+        input:
+          project_path: "test-projects/java-test-project"
+          analysis_scope: "exact"
+          language: "java"
+          file_patterns: ["*.java"]
+          min_lines: 4
+          exclude_patterns: ["test/*", "generated/*"]
+          ignore_imports: true
+          ignore_package_declarations: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.duplicate_groups"
+              field_type: "array"
+              required: true
+            - path: "$.result.excluded_files"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 3500
+          max_memory_mb: 68
+        tags: ["duplicates", "exclusions", "filtering"]
+
+      - name: "analyze_duplication_impact"
+        description: "Analyze the impact and cost of duplicate code"
+        input:
+          project_path: "test-projects/dependency-test-project"
+          analysis_scope: "impact_analysis"
+          language: "*"
+          file_patterns: ["*.py", "*.js", "*.java"]
+          min_lines: 5
+          calculate_maintenance_cost: true
+          suggest_refactoring: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.duplicate_groups"
+              field_type: "array"
+              required: true
+            - path: "$.result.maintenance_impact"
+              field_type: "object"
+              required: false
+            - path: "$.result.refactoring_opportunities"
+              field_type: "array"
+              required: false
+            - path: "$.result.cost_analysis"
+              field_type: "object"
+              required: false
+        performance:
+          max_duration_ms: 7000
+          max_memory_mb: 120
+        tags: ["duplicates", "impact", "cost_analysis"]
+
+# Test configuration
+test_config:
+  timeout_seconds: 120
+  max_concurrency: 2
+  fail_fast: false
+  retry:
+    max_retries: 2
+    retry_delay_ms: 1000
+    exponential_backoff: true
+
+# Metadata for complexity analysis testing
+metadata:
+  author: "CodePrism MCP Test Harness Team"
+  documentation: "https://spec.modelcontextprotocol.io/"
+  license: "MIT"
+  tags: ["complexity", "duplicates", "quality", "analysis", "multi-language"]
+  test_coverage:
+    tools: 2
+    scenarios: 18
+    languages: ["python", "rust", "java", "javascript"]
+    capabilities: ["complexity_analysis", "duplicate_detection", "quality_metrics", "refactoring_suggestions"]
+  
+  # Performance benchmarks for complexity tools
+  benchmarks:
+    analyze_complexity_time_ms: 4000
+    find_duplicates_time_ms: 5000
+    comprehensive_analysis_time_ms: 8000
+    large_codebase_analysis_time_ms: 10000
+  
+  # Quality targets
+  quality_targets:
+    success_rate_percent: 95
+    complexity_accuracy_percent: 90
+    duplicate_detection_accuracy_percent: 85
+    performance_test_coverage_percent: 100 

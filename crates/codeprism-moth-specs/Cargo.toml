@@ -1,0 +1,23 @@
+[package]
+name = "codeprism-moth-specs"
+version = "0.1.0"
+edition = "2021"
+authors = ["CodePrism Team"]
+description = "Test specifications for CodePrism MCP server using Mandrel (Moth) test harness"
+license = "MIT"
+repository = "https://github.com/user/dragonscale"
+keywords = ["mcp", "testing", "specifications", "codeprism", "moth"]
+categories = ["development-tools::testing"]
+
+[dependencies]
+# Optional validation dependencies
+serde_yaml = { version = "0.9", optional = true }
+
+[dev-dependencies]
+# For testing
+serde = { version = "1.0", features = ["derive"] }
+jsonschema = "0.18"
+
+[features]
+default = []
+validation = ["serde_yaml"] 

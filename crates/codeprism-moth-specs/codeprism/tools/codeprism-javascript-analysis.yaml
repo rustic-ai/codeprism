@@ -1,0 +1,715 @@
+# CodePrism MCP Server - JavaScript-Specific Analysis Tools Test Specification
+# Comprehensive testing for JavaScript-specific analysis tools including framework analysis,
+# React component analysis, and Node.js patterns following the MCP 2025-06-18 specification
+
+name: "CodePrism JavaScript-Specific Analysis Tools"
+version: "1.0.0"
+description: "Test specification for CodePrism MCP server JavaScript-specific analysis tools"
+
+# Server capabilities declaration
+capabilities:
+  tools: true           # JavaScript-specific analysis tools
+  resources: false      # No file URI resources  
+  prompts: false        # No prompt templates
+  sampling: false       # No sampling support
+  logging: true         # Error and operation logging
+
+# Server startup configuration  
+server:
+  command: "cargo"
+  args: ["run", "--package", "codeprism-mcp-server", "--bin", "codeprism-mcp-server"]
+  env:
+    RUST_LOG: "info"
+    MCP_PROTOCOL_VERSION: "2025-06-18"
+  transport: "stdio"
+  startup_timeout_seconds: 30
+  shutdown_timeout_seconds: 10
+
+# JavaScript-specific analysis tools testing
+tools:
+  # ========================================================================
+  # ANALYZE_JAVASCRIPT_FRAMEWORKS Tool - Framework usage and patterns
+  # ========================================================================
+  - name: "analyze_javascript_frameworks"
+    description: "Analyze JavaScript framework usage patterns and best practices"
+    tests:
+      - name: "analyze_react_framework_usage"
+        description: "Analyze React framework usage patterns and structure"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "javascript"
+          framework: "react"
+          include_hooks_analysis: true
+          include_context_usage: true
+          include_state_management: true
+          analyze_component_patterns: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.framework_info"
+              field_type: "object"
+              required: true
+            - path: "$.result.hooks_usage"
+              field_type: "array"
+              required: false
+            - path: "$.result.context_patterns"
+              field_type: "array"
+              required: false
+            - path: "$.result.state_management"
+              field_type: "object"
+              required: false
+            - path: "$.result.best_practices_score"
+              field_type: "number"
+              required: false
+        performance:
+          max_duration_ms: 4000
+          max_memory_mb: 72
+        tags: ["javascript", "react", "framework"]
+
+      - name: "analyze_vue_framework_patterns"
+        description: "Analyze Vue.js framework patterns and composition API usage"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "javascript"
+          framework: "vue"
+          include_composition_api: true
+          include_reactivity_patterns: true
+          include_directive_usage: true
+          analyze_store_patterns: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.framework_info"
+              field_type: "object"
+              required: true
+            - path: "$.result.composition_api_usage"
+              field_type: "array"
+              required: false
+            - path: "$.result.reactivity_analysis"
+              field_type: "object"
+              required: false
+            - path: "$.result.directive_patterns"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 3800
+          max_memory_mb: 68
+        tags: ["javascript", "vue", "framework"]
+
+      - name: "analyze_angular_framework_architecture"
+        description: "Analyze Angular framework architecture and dependency injection"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "typescript"
+          framework: "angular"
+          include_dependency_injection: true
+          include_module_analysis: true
+          include_service_patterns: true
+          analyze_decorator_usage: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.framework_info"
+              field_type: "object"
+              required: true
+            - path: "$.result.dependency_injection"
+              field_type: "object"
+              required: false
+            - path: "$.result.module_structure"
+              field_type: "array"
+              required: false
+            - path: "$.result.service_analysis"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 4500
+          max_memory_mb: 80
+        tags: ["javascript", "angular", "typescript"]
+
+      - name: "analyze_multiple_frameworks"
+        description: "Detect and analyze multiple framework usage in a project"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "javascript"
+          framework: "auto_detect"
+          include_framework_conflicts: true
+          include_bundle_analysis: true
+          include_migration_patterns: true
+          detect_micro_frontends: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.detected_frameworks"
+              field_type: "array"
+              required: true
+            - path: "$.result.framework_conflicts"
+              field_type: "array"
+              required: false
+            - path: "$.result.bundle_impact"
+              field_type: "object"
+              required: false
+            - path: "$.result.micro_frontend_analysis"
+              field_type: "object"
+              required: false
+        performance:
+          max_duration_ms: 5000
+          max_memory_mb: 88
+        tags: ["javascript", "multi_framework", "detection"]
+
+      - name: "analyze_framework_performance_patterns"
+        description: "Analyze framework-specific performance patterns and anti-patterns"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "javascript"
+          framework: "react"
+          analysis_type: "performance"
+          include_render_optimization: true
+          include_memory_patterns: true
+          include_bundle_optimization: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.performance_patterns"
+              field_type: "array"
+              required: true
+            - path: "$.result.render_optimization"
+              field_type: "object"
+              required: false
+            - path: "$.result.memory_analysis"
+              field_type: "object"
+              required: false
+            - path: "$.result.optimization_suggestions"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 4200
+          max_memory_mb: 76
+        tags: ["javascript", "performance", "optimization"]
+
+      - name: "analyze_framework_security_patterns"
+        description: "Analyze framework-specific security patterns and vulnerabilities"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "javascript"
+          framework: "react"
+          analysis_type: "security"
+          include_xss_prevention: true
+          include_sanitization_patterns: true
+          include_csp_analysis: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.security_analysis"
+              field_type: "object"
+              required: true
+            - path: "$.result.xss_vulnerabilities"
+              field_type: "array"
+              required: false
+            - path: "$.result.sanitization_issues"
+              field_type: "array"
+              required: false
+            - path: "$.result.csp_recommendations"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 3500
+          max_memory_mb: 64
+        tags: ["javascript", "security", "framework"]
+
+  # ========================================================================
+  # ANALYZE_REACT_COMPONENTS Tool - React component analysis and patterns
+  # ========================================================================
+  - name: "analyze_react_components"
+    description: "Analyze React component structure, patterns, and best practices"
+    tests:
+      - name: "analyze_component_hierarchy"
+        description: "Analyze React component hierarchy and composition patterns"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "javascript"
+          analysis_type: "hierarchy"
+          include_component_tree: true
+          include_prop_drilling_analysis: true
+          include_composition_patterns: true
+          max_depth: 10
+        expected:
+          error: false
+          fields:
+            - path: "$.result.component_hierarchy"
+              field_type: "object"
+              required: true
+            - path: "$.result.component_count"
+              field_type: "integer"
+              required: true
+            - path: "$.result.prop_drilling_issues"
+              field_type: "array"
+              required: false
+            - path: "$.result.composition_score"
+              field_type: "number"
+              required: false
+        performance:
+          max_duration_ms: 3500
+          max_memory_mb: 64
+        tags: ["react", "components", "hierarchy"]
+
+      - name: "analyze_hooks_usage_patterns"
+        description: "Analyze React hooks usage patterns and custom hooks"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "javascript"
+          analysis_type: "hooks"
+          include_built_in_hooks: true
+          include_custom_hooks: true
+          include_hooks_dependencies: true
+          analyze_hooks_performance: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.hooks_analysis"
+              field_type: "object"
+              required: true
+            - path: "$.result.custom_hooks"
+              field_type: "array"
+              required: false
+            - path: "$.result.hooks_dependencies"
+              field_type: "array"
+              required: false
+            - path: "$.result.performance_issues"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 3200
+          max_memory_mb: 60
+        tags: ["react", "hooks", "patterns"]
+
+      - name: "analyze_component_lifecycle_patterns"
+        description: "Analyze React component lifecycle and effect patterns"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "javascript"
+          analysis_type: "lifecycle"
+          include_useEffect_patterns: true
+          include_cleanup_patterns: true
+          include_dependency_arrays: true
+          analyze_memory_leaks: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.lifecycle_analysis"
+              field_type: "object"
+              required: true
+            - path: "$.result.effect_patterns"
+              field_type: "array"
+              required: false
+            - path: "$.result.cleanup_issues"
+              field_type: "array"
+              required: false
+            - path: "$.result.memory_leak_risks"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 3800
+          max_memory_mb: 68
+        tags: ["react", "lifecycle", "effects"]
+
+      - name: "analyze_state_management_patterns"
+        description: "Analyze React state management patterns and data flow"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "javascript"
+          analysis_type: "state_management"
+          include_local_state: true
+          include_context_usage: true
+          include_external_state: true
+          analyze_state_mutations: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.state_analysis"
+              field_type: "object"
+              required: true
+            - path: "$.result.state_patterns"
+              field_type: "array"
+              required: false
+            - path: "$.result.context_usage"
+              field_type: "array"
+              required: false
+            - path: "$.result.mutation_issues"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 4000
+          max_memory_mb: 72
+        tags: ["react", "state", "management"]
+
+      - name: "analyze_component_performance_patterns"
+        description: "Analyze React component performance and optimization patterns"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "javascript"
+          analysis_type: "performance"
+          include_memoization_analysis: true
+          include_render_optimization: true
+          include_lazy_loading: true
+          analyze_unnecessary_renders: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.performance_analysis"
+              field_type: "object"
+              required: true
+            - path: "$.result.memoization_opportunities"
+              field_type: "array"
+              required: false
+            - path: "$.result.render_issues"
+              field_type: "array"
+              required: false
+            - path: "$.result.optimization_suggestions"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 4200
+          max_memory_mb: 76
+        tags: ["react", "performance", "optimization"]
+
+      - name: "analyze_component_testing_patterns"
+        description: "Analyze React component testing patterns and coverage"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "javascript"
+          analysis_type: "testing"
+          include_unit_tests: true
+          include_integration_tests: true
+          include_accessibility_tests: true
+          analyze_test_coverage: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.testing_analysis"
+              field_type: "object"
+              required: true
+            - path: "$.result.test_coverage"
+              field_type: "number"
+              required: false
+            - path: "$.result.testing_patterns"
+              field_type: "array"
+              required: false
+            - path: "$.result.testing_gaps"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 3600
+          max_memory_mb: 66
+        tags: ["react", "testing", "coverage"]
+
+      - name: "analyze_component_accessibility_patterns"
+        description: "Analyze React component accessibility patterns and compliance"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "javascript"
+          analysis_type: "accessibility"
+          include_aria_analysis: true
+          include_semantic_html: true
+          include_keyboard_navigation: true
+          check_wcag_compliance: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.accessibility_analysis"
+              field_type: "object"
+              required: true
+            - path: "$.result.aria_issues"
+              field_type: "array"
+              required: false
+            - path: "$.result.semantic_issues"
+              field_type: "array"
+              required: false
+            - path: "$.result.wcag_violations"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 3400
+          max_memory_mb: 62
+        tags: ["react", "accessibility", "wcag"]
+
+  # ========================================================================
+  # ANALYZE_NODEJS_PATTERNS Tool - Node.js backend patterns and architecture
+  # ========================================================================
+  - name: "analyze_nodejs_patterns"
+    description: "Analyze Node.js backend patterns, architecture, and best practices"
+    tests:
+      - name: "analyze_express_application_structure"
+        description: "Analyze Express.js application structure and patterns"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "javascript"
+          framework: "express"
+          include_middleware_analysis: true
+          include_routing_patterns: true
+          include_error_handling: true
+          analyze_security_middleware: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.application_structure"
+              field_type: "object"
+              required: true
+            - path: "$.result.middleware_chain"
+              field_type: "array"
+              required: false
+            - path: "$.result.routing_analysis"
+              field_type: "object"
+              required: false
+            - path: "$.result.security_analysis"
+              field_type: "object"
+              required: false
+        performance:
+          max_duration_ms: 4000
+          max_memory_mb: 72
+        tags: ["nodejs", "express", "backend"]
+
+      - name: "analyze_async_patterns"
+        description: "Analyze Node.js asynchronous patterns and error handling"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "javascript"
+          analysis_type: "async_patterns"
+          include_promise_chains: true
+          include_async_await: true
+          include_callback_patterns: true
+          analyze_error_propagation: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.async_analysis"
+              field_type: "object"
+              required: true
+            - path: "$.result.promise_patterns"
+              field_type: "array"
+              required: false
+            - path: "$.result.callback_issues"
+              field_type: "array"
+              required: false
+            - path: "$.result.error_handling_patterns"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 3500
+          max_memory_mb: 64
+        tags: ["nodejs", "async", "promises"]
+
+      - name: "analyze_database_patterns"
+        description: "Analyze Node.js database access patterns and ORM usage"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "javascript"
+          analysis_type: "database"
+          include_orm_patterns: true
+          include_query_optimization: true
+          include_connection_management: true
+          analyze_sql_injection_risks: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.database_analysis"
+              field_type: "object"
+              required: true
+            - path: "$.result.orm_usage"
+              field_type: "array"
+              required: false
+            - path: "$.result.query_patterns"
+              field_type: "array"
+              required: false
+            - path: "$.result.security_risks"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 4500
+          max_memory_mb: 80
+        tags: ["nodejs", "database", "orm"]
+
+      - name: "analyze_api_design_patterns"
+        description: "Analyze Node.js API design patterns and REST compliance"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "javascript"
+          analysis_type: "api_design"
+          include_rest_compliance: true
+          include_graphql_patterns: true
+          include_validation_patterns: true
+          analyze_response_consistency: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.api_analysis"
+              field_type: "object"
+              required: true
+            - path: "$.result.rest_compliance"
+              field_type: "object"
+              required: false
+            - path: "$.result.validation_patterns"
+              field_type: "array"
+              required: false
+            - path: "$.result.consistency_score"
+              field_type: "number"
+              required: false
+        performance:
+          max_duration_ms: 3800
+          max_memory_mb: 68
+        tags: ["nodejs", "api", "rest"]
+
+      - name: "analyze_microservices_patterns"
+        description: "Analyze Node.js microservices patterns and communication"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "javascript"
+          analysis_type: "microservices"
+          include_service_discovery: true
+          include_communication_patterns: true
+          include_circuit_breaker: true
+          analyze_service_boundaries: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.microservices_analysis"
+              field_type: "object"
+              required: true
+            - path: "$.result.service_boundaries"
+              field_type: "array"
+              required: false
+            - path: "$.result.communication_patterns"
+              field_type: "array"
+              required: false
+            - path: "$.result.resilience_patterns"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 5000
+          max_memory_mb: 88
+        tags: ["nodejs", "microservices", "architecture"]
+
+      - name: "analyze_performance_patterns"
+        description: "Analyze Node.js performance patterns and bottlenecks"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "javascript"
+          analysis_type: "performance"
+          include_event_loop_analysis: true
+          include_memory_usage: true
+          include_clustering_patterns: true
+          analyze_blocking_operations: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.performance_analysis"
+              field_type: "object"
+              required: true
+            - path: "$.result.event_loop_issues"
+              field_type: "array"
+              required: false
+            - path: "$.result.memory_patterns"
+              field_type: "object"
+              required: false
+            - path: "$.result.blocking_operations"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 4200
+          max_memory_mb: 76
+        tags: ["nodejs", "performance", "event_loop"]
+
+      - name: "analyze_security_patterns"
+        description: "Analyze Node.js security patterns and vulnerabilities"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "javascript"
+          analysis_type: "security"
+          include_authentication_patterns: true
+          include_authorization_patterns: true
+          include_input_validation: true
+          analyze_dependency_vulnerabilities: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.security_analysis"
+              field_type: "object"
+              required: true
+            - path: "$.result.auth_patterns"
+              field_type: "array"
+              required: false
+            - path: "$.result.validation_issues"
+              field_type: "array"
+              required: false
+            - path: "$.result.dependency_vulnerabilities"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 4800
+          max_memory_mb: 84
+        tags: ["nodejs", "security", "vulnerabilities"]
+
+      - name: "analyze_deployment_patterns"
+        description: "Analyze Node.js deployment patterns and containerization"
+        input:
+          project_path: "test-projects/js-dependency-test-project"
+          language: "javascript"
+          analysis_type: "deployment"
+          include_docker_analysis: true
+          include_environment_management: true
+          include_process_management: true
+          analyze_scalability_patterns: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.deployment_analysis"
+              field_type: "object"
+              required: true
+            - path: "$.result.docker_patterns"
+              field_type: "array"
+              required: false
+            - path: "$.result.environment_issues"
+              field_type: "array"
+              required: false
+            - path: "$.result.scalability_recommendations"
+              field_type: "array"
+              required: false
+        performance:
+          max_duration_ms: 3600
+          max_memory_mb: 66
+        tags: ["nodejs", "deployment", "docker"]
+
+# Test configuration
+test_config:
+  timeout_seconds: 120
+  max_concurrency: 2
+  fail_fast: false
+  retry:
+    max_retries: 2
+    retry_delay_ms: 1000
+    exponential_backoff: true
+
+# Metadata for JavaScript-specific analysis testing
+metadata:
+  author: "CodePrism MCP Test Harness Team"
+  documentation: "https://spec.modelcontextprotocol.io/"
+  license: "MIT"
+  tags: ["javascript", "react", "nodejs", "frameworks", "frontend", "backend"]
+  test_coverage:
+    tools: 3
+    scenarios: 22
+    languages: ["javascript", "typescript"]
+    capabilities: ["framework_analysis", "component_analysis", "nodejs_patterns", "performance_analysis", "security_analysis"]
+  
+  # Performance benchmarks for JavaScript-specific tools
+  benchmarks:
+    analyze_javascript_frameworks_time_ms: 4000
+    analyze_react_components_time_ms: 3500
+    analyze_nodejs_patterns_time_ms: 4200
+  
+  # Quality targets
+  quality_targets:
+    success_rate_percent: 95
+    framework_detection_accuracy_percent: 92
+    component_analysis_accuracy_percent: 88
+    nodejs_pattern_detection_percent: 90
+    performance_analysis_accuracy_percent: 85 

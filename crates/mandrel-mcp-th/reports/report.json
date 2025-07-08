@@ -1,0 +1,87 @@
+{
+  "suite_name": "Failing Test Suite",
+  "specification_file": "/tmp/.tmpeGEGKI/failing-test.yaml",
+  "execution_start": {
+    "secs_since_epoch": 1751957435,
+    "nanos_since_epoch": 375404612
+  },
+  "execution_end": {
+    "secs_since_epoch": 1751957435,
+    "nanos_since_epoch": 426810754
+  },
+  "total_duration": {
+    "secs": 0,
+    "nanos": 51406142
+  },
+  "total_tests": 1,
+  "passed": 0,
+  "failed": 1,
+  "skipped": 0,
+  "error_rate": 1.0,
+  "test_results": [
+    {
+      "test_name": "failing_test",
+      "success": false,
+      "duration": {
+        "secs": 0,
+        "nanos": 50000000
+      },
+      "error_message": "Mock test 'failing_test' failed",
+      "retry_attempts": 0,
+      "start_time": {
+        "secs_since_epoch": 1751957435,
+        "nanos_since_epoch": 375500727
+      },
+      "end_time": {
+        "secs_since_epoch": 1751957435,
+        "nanos_since_epoch": 425500727
+      },
+      "memory_usage_mb": null,
+      "metadata": {
+        "tags": [],
+        "category": null,
+        "priority": null,
+        "expected_duration": null,
+        "custom_properties": {}
+      }
+    }
+  ],
+  "suite_metrics": {
+    "total_memory_usage": 12,
+    "peak_memory_usage": 3,
+    "average_test_duration": {
+      "secs": 0,
+      "nanos": 51254719
+    },
+    "slowest_test": "failing_test",
+    "fastest_test": "failing_test",
+    "slowest_duration": {
+      "secs": 0,
+      "nanos": 51254719
+    },
+    "fastest_duration": {
+      "secs": 0,
+      "nanos": 51254719
+    },
+    "memory_efficiency_score": 99.9999997,
+    "execution_efficiency_score": 100.0
+  },
+  "execution_mode": "Sequential",
+  "dependency_resolution": {
+    "total_dependencies": 0,
+    "circular_dependencies": 0,
+    "circular_dependency_chains": [],
+    "resolution_duration": {
+      "secs": 0,
+      "nanos": 1000000
+    },
+    "execution_order": [
+      "failing_test"
+    ],
+    "dependency_groups": [
+      [
+        "failing_test"
+      ]
+    ]
+  }
+}

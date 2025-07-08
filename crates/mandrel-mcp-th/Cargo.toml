@@ -72,3 +72,8 @@ tempfile = "3.8"
 assert_cmd = "2.0"
 predicates = "3.0"
 rstest = "0.18"
+
+[[test]]
+name = "cli_run"
+path = "tests/cli_run.rs"
+required-features = ["cli"]

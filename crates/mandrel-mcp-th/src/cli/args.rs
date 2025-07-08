@@ -80,12 +80,20 @@ pub struct ReportArgs {
 #[derive(Args, Debug)]
 pub struct RunArgs {
     /// Test configuration file
-    #[arg(short = 'c', long)]
+    #[arg()]
     pub config: PathBuf,
 
     /// Output directory for generated reports
     #[arg(short = 'o', long, default_value = "./reports")]
-    pub output: PathBuf,
+    pub output: Option<PathBuf>,
+
+    /// Run tests in parallel
+    #[arg(long)]
+    pub parallel: bool,
+
+    /// Stop execution on first test failure
+    #[arg(long)]
+    pub fail_fast: bool,
 }
 
 #[derive(Args, Debug)]

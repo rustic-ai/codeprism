@@ -112,6 +112,22 @@ impl Default for ServerConfig {
     }
 }
 
+impl From<crate::spec::ServerConfig> for ServerConfig {
+    fn from(spec_config: crate::spec::ServerConfig) -> Self {
+        Self {
+            command: spec_config.command,
+            args: spec_config.args,
+            env: spec_config.env,
+            working_dir: spec_config.working_dir.map(PathBuf::from),
+            transport: Transport::Stdio, // NOTE: Hardcoded for now
+            startup_timeout: Duration::from_secs(spec_config.startup_timeout_seconds as u64),
+            shutdown_timeout: Duration::from_secs(spec_config.shutdown_timeout_seconds as u64),
+            operation_timeout: Duration::from_secs(30), // Default value
+            max_retries: 3,                             // Default value
+        }
+    }
+}
+
 impl McpClient {
     /// Create a new MCP client with the given configuration
     pub async fn new(config: ServerConfig) -> Result<Self> {

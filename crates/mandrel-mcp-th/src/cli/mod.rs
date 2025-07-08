@@ -1,10 +1,15 @@
 //! Command-line interface for Mandrel MCP Test Harness
 
+use crate::client::McpClient;
+use crate::executor::{ExecutorConfig, TestCaseExecutor};
 use crate::reporting::{BrandingInfo, ReportConfig, TemplateSource};
+use crate::runner::{RunnerConfig, TestSuiteResult, TestSuiteRunner};
+use crate::spec::SpecificationLoader;
 use clap::Parser;
 use codeprism_utils::{ChangeEvent, FileWatcher};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 pub mod args;
@@ -61,10 +66,50 @@ impl CliApp {
         Ok(0)
     }
 
-    async fn handle_run_command(&self, _args: &RunArgs) -> Result<i32> {
-        // PLANNED(#194): Implement test execution with report generation
-        println!("Test execution not yet implemented");
-        Ok(0)
+    async fn handle_run_command(&self, args: &RunArgs) -> Result<i32> {
+        // 1. Load the specification to get server config
+        let spec_loader = SpecificationLoader::new()?;
+        let spec = spec_loader.load_from_file(&args.config).await?;
+
+        // 2. Initialize the client and executor
+        // NOTE: This uses the ServerConfig from the loaded YAML spec
+        let client_config = spec.server.clone();
+        let client = McpClient::new(client_config.into()).await?;
+        let executor_config = ExecutorConfig::default();
+        let executor = TestCaseExecutor::new(Arc::new(Mutex::new(client)), executor_config);
+
+        // 3. Initialize the TestSuiteRunner
+        let runner_config = RunnerConfig::new()
+            .with_parallel_execution(args.parallel)
+            .with_fail_fast(args.fail_fast);
+        let mut runner = TestSuiteRunner::new(executor, runner_config);
+
+        // 4. Execute the test suite
+        let suite_result = runner.run_test_suite(&args.config).await?;
+
+        // 5. Generate a report (simplified for now)
+        if let Some(output_dir) = &args.output {
+            if !output_dir.exists() {
+                tokio::fs::create_dir_all(output_dir).await?;
+            }
+            let report_path = output_dir.join("report.json");
+            let report_json = serde_json::to_string_pretty(&suite_result)?;
+            tokio::fs::write(report_path, report_json).await?;
+        }
+
+        // 6. Display summary and return exit code
+        self.display_summary(&suite_result);
+        Ok(if suite_result.failed == 0 { 0 } else { 1 })
+    }
+
+    fn display_summary(&self, result: &TestSuiteResult) {
+        println!("\n✅ Test Suite Finished ✅");
+        println!("Suite: {}", result.suite_name);
+        println!(
+            "Total Tests: {}, Passed: {}, Failed: {}",
+            result.total_tests, result.passed, result.failed
+        );
+        println!("Duration: {:.2}s", result.total_duration.as_secs_f64());
     }
 
     async fn handle_validate_command(&self, _args: &ValidateArgs) -> Result<i32> {

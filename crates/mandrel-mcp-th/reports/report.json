@@ -1,26 +1,26 @@
 {
-  "suite_name": "CodePrism JavaScript Comprehensive Analysis",
-  "specification_file": "../../crates/codeprism-moth-specs/codeprism/comprehensive/codeprism-javascript-comprehensive.yaml",
+  "suite_name": "CodePrism Rust Comprehensive Analysis",
+  "specification_file": "../../crates/codeprism-moth-specs/codeprism/comprehensive/codeprism-rust-comprehensive.yaml",
   "execution_start": {
-    "secs_since_epoch": 1751961085,
-    "nanos_since_epoch": 895248161
+    "secs_since_epoch": 1751994127,
+    "nanos_since_epoch": 166343313
   },
   "execution_end": {
-    "secs_since_epoch": 1751961086,
-    "nanos_since_epoch": 770173239
+    "secs_since_epoch": 1751994128,
+    "nanos_since_epoch": 88800025
   },
   "total_duration": {
     "secs": 0,
-    "nanos": 874925078
+    "nanos": 922456712
   },
-  "total_tests": 17,
-  "passed": 17,
+  "total_tests": 18,
+  "passed": 18,
   "failed": 0,
   "skipped": 0,
   "error_rate": 0.0,
   "test_results": [
     {
-      "test_name": "javascript_api_typescript_analysis",
+      "test_name": "rust_derive_attribute_analysis",
       "success": true,
       "duration": {
         "secs": 0,
@@ -29,12 +29,12 @@
       "error_message": null,
       "retry_attempts": 0,
       "start_time": {
-        "secs_since_epoch": 1751961085,
-        "nanos_since_epoch": 897851337
+        "secs_since_epoch": 1751994127,
+        "nanos_since_epoch": 166968713
       },
       "end_time": {
-        "secs_since_epoch": 1751961085,
-        "nanos_since_epoch": 947851337
+        "secs_since_epoch": 1751994127,
+        "nanos_since_epoch": 216968713
       },
       "memory_usage_mb": null,
       "metadata": {
@@ -46,7 +46,7 @@
       }
     },
     {
-      "test_name": "javascript_spa_repository_overview",
+      "test_name": "rust_trait_implementation_duplicates",
       "success": true,
       "duration": {
         "secs": 0,
@@ -55,12 +55,12 @@
       "error_message": null,
       "retry_attempts": 0,
       "start_time": {
-        "secs_since_epoch": 1751961085,
-        "nanos_since_epoch": 949182258
+        "secs_since_epoch": 1751994127,
+        "nanos_since_epoch": 218164017
       },
       "end_time": {
-        "secs_since_epoch": 1751961085,
-        "nanos_since_epoch": 999182258
+        "secs_since_epoch": 1751994127,
+        "nanos_since_epoch": 268164017
       },
       "memory_usage_mb": null,
       "metadata": {
@@ -72,7 +72,7 @@
       }
     },
     {
-      "test_name": "react_state_flow_analysis",
+      "test_name": "rust_ownership_complexity_analysis",
       "success": true,
       "duration": {
         "secs": 0,
@@ -81,12 +81,12 @@
       "error_message": null,
       "retry_attempts": 0,
       "start_time": {
-        "secs_since_epoch": 1751961086,
-        "nanos_since_epoch": 585767
+        "secs_since_epoch": 1751994127,
+        "nanos_since_epoch": 269468763
       },
       "end_time": {
-        "secs_since_epoch": 1751961086,
-        "nanos_since_epoch": 50585767
+        "secs_since_epoch": 1751994127,
+        "nanos_since_epoch": 319468763
       },
       "memory_usage_mb": null,
       "metadata": {
@@ -98,7 +98,7 @@
       }
     },
     {
-      "test_name": "javascript_bundle_performance_analysis",
+      "test_name": "rust_macro_and_trait_search",
       "success": true,
       "duration": {
         "secs": 0,
@@ -107,12 +107,12 @@
       "error_message": null,
       "retry_attempts": 0,
       "start_time": {
-        "secs_since_epoch": 1751961086,
-        "nanos_since_epoch": 52067136
+        "secs_since_epoch": 1751994127,
+        "nanos_since_epoch": 320783342
       },
       "end_time": {
-        "secs_since_epoch": 1751961086,
-        "nanos_since_epoch": 102067136
+        "secs_since_epoch": 1751994127,
+        "nanos_since_epoch": 370783342
       },
       "memory_usage_mb": null,
       "metadata": {
@@ -124,7 +124,7 @@
       }
     },
     {
-      "test_name": "javascript_async_complexity_analysis",
+      "test_name": "rust_trait_explanation",
       "success": true,
       "duration": {
         "secs": 0,
@@ -133,12 +133,12 @@
       "error_message": null,
       "retry_attempts": 0,
       "start_time": {
-        "secs_since_epoch": 1751961086,
-        "nanos_since_epoch": 103500072
+        "secs_since_epoch": 1751994127,
+        "nanos_since_epoch": 372012747
       },
       "end_time": {
-        "secs_since_epoch": 1751961086,
-        "nanos_since_epoch": 153500072
+        "secs_since_epoch": 1751994127,
+        "nanos_since_epoch": 422012747
       },
       "memory_usage_mb": null,
       "metadata": {
@@ -150,7 +150,7 @@
       }
     },
     {
-      "test_name": "javascript_modern_pattern_detection",
+      "test_name": "rust_systems_batch_analysis",
       "success": true,
       "duration": {
         "secs": 0,
@@ -159,12 +159,12 @@
       "error_message": null,
       "retry_attempts": 0,
       "start_time": {
-        "secs_since_epoch": 1751961086,
-        "nanos_since_epoch": 154947983
+        "secs_since_epoch": 1751994127,
+        "nanos_since_epoch": 423232796
       },
       "end_time": {
-        "secs_since_epoch": 1751961086,
-        "nanos_since_epoch": 204947983
+        "secs_since_epoch": 1751994127,
+        "nanos_since_epoch": 473232796
       },
       "memory_usage_mb": null,
       "metadata": {
@@ -176,7 +176,7 @@
       }
     },
     {
-      "test_name": "javascript_frontend_security_analysis",
+      "test_name": "rust_library_workflow_suggestion",
       "success": true,
       "duration": {
         "secs": 0,
@@ -185,12 +185,12 @@
       "error_message": null,
       "retry_attempts": 0,
       "start_time": {
-        "secs_since_epoch": 1751961086,
-        "nanos_since_epoch": 206360212
+        "secs_since_epoch": 1751994127,
+        "nanos_since_epoch": 474487325
       },
       "end_time": {
-        "secs_since_epoch": 1751961086,
-        "nanos_since_epoch": 256360212
+        "secs_since_epoch": 1751994127,
+        "nanos_since_epoch": 524487325
       },
       "memory_usage_mb": null,
       "metadata": {
@@ -202,7 +202,7 @@
       }
     },
     {
-      "test_name": "javascript_frontend_batch_analysis",
+      "test_name": "rust_ownership_data_flow_analysis",
       "success": true,
       "duration": {
         "secs": 0,
@@ -211,12 +211,12 @@
       "error_message": null,
       "retry_attempts": 0,
       "start_time": {
-        "secs_since_epoch": 1751961086,
-        "nanos_since_epoch": 257841931
+        "secs_since_epoch": 1751994127,
+        "nanos_since_epoch": 525753599
       },
       "end_time": {
-        "secs_since_epoch": 1751961086,
-        "nanos_since_epoch": 307841931
+        "secs_since_epoch": 1751994127,
+        "nanos_since_epoch": 575753599
       },
       "memory_usage_mb": null,
       "metadata": {
@@ -228,7 +228,7 @@
       }
     },
     {
-      "test_name": "npm_dependency_analysis",
+      "test_name": "rust_ownership_flow_tracing",
       "success": true,
       "duration": {
         "secs": 0,
@@ -237,12 +237,12 @@
       "error_message": null,
       "retry_attempts": 0,
       "start_time": {
-        "secs_since_epoch": 1751961086,
-        "nanos_since_epoch": 309262935
+        "secs_since_epoch": 1751994127,
+        "nanos_since_epoch": 576998286
       },
       "end_time": {
-        "secs_since_epoch": 1751961086,
-        "nanos_since_epoch": 359262935
+        "secs_since_epoch": 1751994127,
+        "nanos_since_epoch": 626998286
       },
       "memory_usage_mb": null,
       "metadata": {
@@ -254,7 +254,7 @@
       }
     },
     {
-      "test_name": "javascript_async_execution_tracing",
+      "test_name": "rust_zero_cost_abstraction_analysis",
       "success": true,
       "duration": {
         "secs": 0,
@@ -263,12 +263,12 @@
       "error_message": null,
       "retry_attempts": 0,
       "start_time": {
-        "secs_since_epoch": 1751961086,
-        "nanos_since_epoch": 359692530
+        "secs_since_epoch": 1751994127,
+        "nanos_since_epoch": 628327350
       },
       "end_time": {
-        "secs_since_epoch": 1751961086,
-        "nanos_since_epoch": 409692530
+        "secs_since_epoch": 1751994127,
+        "nanos_since_epoch": 678327350
       },
       "memory_usage_mb": null,
       "metadata": {
@@ -280,7 +280,7 @@
       }
     },
     {
-      "test_name": "nodejs_backend_architecture_analysis",
+      "test_name": "rust_systems_pattern_detection",
       "success": true,
       "duration": {
         "secs": 0,
@@ -289,12 +289,12 @@
       "error_message": null,
       "retry_attempts": 0,
       "start_time": {
-        "secs_since_epoch": 1751961086,
-        "nanos_since_epoch": 411228552
+        "secs_since_epoch": 1751994127,
+        "nanos_since_epoch": 679627953
       },
       "end_time": {
-        "secs_since_epoch": 1751961086,
-        "nanos_since_epoch": 461228552
+        "secs_since_epoch": 1751994127,
+        "nanos_since_epoch": 729627953
       },
       "memory_usage_mb": null,
       "metadata": {
@@ -306,7 +306,7 @@
       }
     },
     {
-      "test_name": "react_component_hierarchy_analysis",
+      "test_name": "rust_transitive_security_analysis",
       "success": true,
       "duration": {
         "secs": 0,
@@ -315,12 +315,12 @@
       "error_message": null,
       "retry_attempts": 0,
       "start_time": {
-        "secs_since_epoch": 1751961086,
-        "nanos_since_epoch": 462566427
+        "secs_since_epoch": 1751994127,
+        "nanos_since_epoch": 730787294
       },
       "end_time": {
-        "secs_since_epoch": 1751961086,
-        "nanos_since_epoch": 512566427
+        "secs_since_epoch": 1751994127,
+        "nanos_since_epoch": 780787294
       },
       "memory_usage_mb": null,
       "metadata": {
@@ -332,7 +332,7 @@
       }
     },
     {
-      "test_name": "javascript_es6_symbol_search",
+      "test_name": "rust_memory_safety_analysis",
       "success": true,
       "duration": {
         "secs": 0,
@@ -341,12 +341,12 @@
       "error_message": null,
       "retry_attempts": 0,
       "start_time": {
-        "secs_since_epoch": 1751961086,
-        "nanos_since_epoch": 513951343
+        "secs_since_epoch": 1751994127,
+        "nanos_since_epoch": 782013104
       },
       "end_time": {
-        "secs_since_epoch": 1751961086,
-        "nanos_since_epoch": 563951343
+        "secs_since_epoch": 1751994127,
+        "nanos_since_epoch": 832013104
       },
       "memory_usage_mb": null,
       "metadata": {
@@ -358,7 +358,7 @@
       }
     },
     {
-      "test_name": "jsx_template_search",
+      "test_name": "rust_trait_hierarchy_analysis",
       "success": true,
       "duration": {
         "secs": 0,
@@ -367,12 +367,12 @@
       "error_message": null,
       "retry_attempts": 0,
       "start_time": {
-        "secs_since_epoch": 1751961086,
-        "nanos_since_epoch": 565412663
+        "secs_since_epoch": 1751994127,
+        "nanos_since_epoch": 833278488
       },
       "end_time": {
-        "secs_since_epoch": 1751961086,
-        "nanos_since_epoch": 615412663
+        "secs_since_epoch": 1751994127,
+        "nanos_since_epoch": 883278488
       },
       "memory_usage_mb": null,
       "metadata": {
@@ -384,7 +384,7 @@
       }
     },
     {
-      "test_name": "npm_transitive_security_analysis",
+      "test_name": "rust_crate_api_ergonomics_analysis",
       "success": true,
       "duration": {
         "secs": 0,
@@ -393,12 +393,12 @@
       "error_message": null,
       "retry_attempts": 0,
       "start_time": {
-        "secs_since_epoch": 1751961086,
-        "nanos_since_epoch": 616835896
+        "secs_since_epoch": 1751994127,
+        "nanos_since_epoch": 884632635
       },
       "end_time": {
-        "secs_since_epoch": 1751961086,
-        "nanos_since_epoch": 666835896
+        "secs_since_epoch": 1751994127,
+        "nanos_since_epoch": 934632635
       },
       "memory_usage_mb": null,
       "metadata": {
@@ -410,7 +410,7 @@
       }
     },
     {
-      "test_name": "react_application_analysis",
+      "test_name": "rust_unsafe_async_pattern_search",
       "success": true,
       "duration": {
         "secs": 0,
@@ -419,12 +419,12 @@
       "error_message": null,
       "retry_attempts": 0,
       "start_time": {
-        "secs_since_epoch": 1751961086,
-        "nanos_since_epoch": 668292649
+        "secs_since_epoch": 1751994127,
+        "nanos_since_epoch": 934930717
       },
       "end_time": {
-        "secs_since_epoch": 1751961086,
-        "nanos_since_epoch": 718292649
+        "secs_since_epoch": 1751994127,
+        "nanos_since_epoch": 984930717
       },
       "memory_usage_mb": null,
       "metadata": {
@@ -436,7 +436,7 @@
       }
     },
     {
-      "test_name": "javascript_spa_workflow_suggestion",
+      "test_name": "rust_crate_repository_overview",
       "success": true,
       "duration": {
         "secs": 0,
@@ -445,12 +445,38 @@
       "error_message": null,
       "retry_attempts": 0,
       "start_time": {
-        "secs_since_epoch": 1751961086,
-        "nanos_since_epoch": 718727316
+        "secs_since_epoch": 1751994127,
+        "nanos_since_epoch": 986111300
       },
       "end_time": {
-        "secs_since_epoch": 1751961086,
-        "nanos_since_epoch": 768727316
+        "secs_since_epoch": 1751994128,
+        "nanos_since_epoch": 36111300
+      },
+      "memory_usage_mb": null,
+      "metadata": {
+        "tags": [],
+        "category": null,
+        "priority": null,
+        "expected_duration": null,
+        "custom_properties": {}
+      }
+    },
+    {
+      "test_name": "rust_cargo_dependency_analysis",
+      "success": true,
+      "duration": {
+        "secs": 0,
+        "nanos": 50000000
+      },
+      "error_message": null,
+      "retry_attempts": 0,
+      "start_time": {
+        "secs_since_epoch": 1751994128,
+        "nanos_since_epoch": 37426765
+      },
+      "end_time": {
+        "secs_since_epoch": 1751994128,
+        "nanos_since_epoch": 87426765
       },
       "memory_usage_mb": null,
       "metadata": {
@@ -463,24 +489,24 @@
     }
   ],
   "suite_metrics": {
-    "total_memory_usage": 216,
-    "peak_memory_usage": 6,
+    "total_memory_usage": 152,
+    "peak_memory_usage": 4,
     "average_test_duration": {
       "secs": 0,
-      "nanos": 51224156
+      "nanos": 51151386
     },
-    "slowest_test": "javascript_async_execution_tracing",
-    "fastest_test": "react_application_analysis",
+    "slowest_test": "rust_cargo_dependency_analysis",
+    "fastest_test": "rust_crate_api_ergonomics_analysis",
     "slowest_duration": {
       "secs": 0,
-      "nanos": 51454858
+      "nanos": 51286370
     },
     "fastest_duration": {
       "secs": 0,
-      "nanos": 50333449
+      "nanos": 50231408
     },
-    "memory_efficiency_score": 99.99999996470588,
-    "execution_efficiency_score": 99.36637273467792
+    "memory_efficiency_score": 99.99999997777778,
+    "execution_efficiency_score": 99.5539439341878
   },
   "execution_mode": "Sequential",
   "dependency_resolution": {
@@ -492,43 +518,45 @@
       "nanos": 1000000
     },
     "execution_order": [
-      "javascript_api_typescript_analysis",
-      "javascript_spa_repository_overview",
-      "react_state_flow_analysis",
-      "javascript_bundle_performance_analysis",
-      "javascript_async_complexity_analysis",
-      "javascript_modern_pattern_detection",
-      "javascript_frontend_security_analysis",
-      "javascript_frontend_batch_analysis",
-      "npm_dependency_analysis",
-      "javascript_async_execution_tracing",
-      "nodejs_backend_architecture_analysis",
-      "react_component_hierarchy_analysis",
-      "javascript_es6_symbol_search",
-      "jsx_template_search",
-      "npm_transitive_security_analysis",
-      "react_application_analysis",
-      "javascript_spa_workflow_suggestion"
+      "rust_derive_attribute_analysis",
+      "rust_trait_implementation_duplicates",
+      "rust_ownership_complexity_analysis",
+      "rust_macro_and_trait_search",
+      "rust_trait_explanation",
+      "rust_systems_batch_analysis",
+      "rust_library_workflow_suggestion",
+      "rust_ownership_data_flow_analysis",
+      "rust_ownership_flow_tracing",
+      "rust_zero_cost_abstraction_analysis",
+      "rust_systems_pattern_detection",
+      "rust_transitive_security_analysis",
+      "rust_memory_safety_analysis",
+      "rust_trait_hierarchy_analysis",
+      "rust_crate_api_ergonomics_analysis",
+      "rust_unsafe_async_pattern_search",
+      "rust_crate_repository_overview",
+      "rust_cargo_dependency_analysis"
     ],
     "dependency_groups": [
       [
-        "javascript_spa_repository_overview",
-        "javascript_async_execution_tracing",
-        "react_application_analysis",
-        "react_component_hierarchy_analysis",
-        "nodejs_backend_architecture_analysis",
-        "javascript_es6_symbol_search",
-        "jsx_template_search",
-        "javascript_async_complexity_analysis",
-        "javascript_frontend_security_analysis",
-        "javascript_bundle_performance_analysis",
-        "npm_dependency_analysis",
-        "npm_transitive_security_analysis",
-        "react_state_flow_analysis",
-        "javascript_modern_pattern_detection",
-        "javascript_api_typescript_analysis",
-        "javascript_spa_workflow_suggestion",
-        "javascript_frontend_batch_analysis"
+        "rust_crate_repository_overview",
+        "rust_ownership_flow_tracing",
+        "rust_trait_explanation",
+        "rust_macro_and_trait_search",
+        "rust_unsafe_async_pattern_search",
+        "rust_ownership_complexity_analysis",
+        "rust_trait_implementation_duplicates",
+        "rust_trait_hierarchy_analysis",
+        "rust_derive_attribute_analysis",
+        "rust_memory_safety_analysis",
+        "rust_zero_cost_abstraction_analysis",
+        "rust_crate_api_ergonomics_analysis",
+        "rust_cargo_dependency_analysis",
+        "rust_transitive_security_analysis",
+        "rust_ownership_data_flow_analysis",
+        "rust_systems_pattern_detection",
+        "rust_library_workflow_suggestion",
+        "rust_systems_batch_analysis"
       ]
     ]
   }

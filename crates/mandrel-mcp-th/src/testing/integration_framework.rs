@@ -4,127 +4,121 @@
 //! with real MCP servers and the complete MOTH test harness.
 
 use std::path::PathBuf;
-use std::time::Duration;
-use std::collections::HashMap;
-use thiserror::Error;
+use tokio::process::Command;
 
-/// Main integration test framework for real server testing
+#[derive(Default)]
 pub struct IntegrationTestFramework {
-    pub test_data_dir: PathBuf,
-    pub reports_dir: PathBuf,
-    pub temp_dir: PathBuf,
-    pub moth_specs_dir: PathBuf,
+    test_data_dir: PathBuf,
 }
 
 impl IntegrationTestFramework {
     pub fn new() -> Self {
         Self {
             test_data_dir: PathBuf::from("tests/fixtures"),
-            reports_dir: PathBuf::from("target/test-reports"),
-            temp_dir: PathBuf::from("target/tmp"),
-            moth_specs_dir: PathBuf::from("crates/codeprism-moth-specs"),
         }
     }
-    
-    pub async fn setup(&mut self) -> Result<(), IntegrationTestError> {
-        // Setup test environment
-        Ok(())
+
+    /// Execute a tool test using the real mandrel-mcp-th CLI
+    pub async fn execute_tool_test(
+        &self,
+        tool_name: &str,
+    ) -> Result<String, Box<dyn std::error::Error>> {
+        // Create a temporary YAML configuration for the specific tool
+        let config_content = self.generate_tool_config(tool_name)?;
+
+        // Write config to temporary file
+        let temp_config = self
+            .test_data_dir
+            .join(format!("{}_config.yaml", tool_name));
+        std::fs::create_dir_all(&self.test_data_dir)?;
+        std::fs::write(&temp_config, config_content)?;
+
+        // Execute moth CLI with the generated config
+        self.execute_moth_cli(&["--quiet", "run", temp_config.to_str().unwrap()])
+            .await
     }
-    
-    pub async fn teardown(&mut self) -> Result<(), IntegrationTestError> {
-        // Cleanup test environment
-        Ok(())
-    }
-    
-    pub async fn run_cli_test(&self, spec_file: &str, args: &[&str]) -> Result<TestResult, IntegrationTestError> {
-        // Execute the MOTH CLI with real server and test specification
-        let start_time = std::time::Instant::now();
-        
-        // For now, return a success result - actual CLI execution will be implemented
-        // when the CLI component is ready
-        Ok(TestResult {
-            exit_code: 0,
-            stdout: format!("Executed MOTH test with spec: {}", spec_file),
-            stderr: String::new(),
-            execution_time: start_time.elapsed(),
-            generated_files: vec![
-                self.reports_dir.join("test_report.html"),
-                self.reports_dir.join("test_report.json"),
-            ],
-        })
-    }
-    
-    /// Get available CodePrism moth specifications
-    pub fn get_codeprism_specs(&self) -> Result<Vec<PathBuf>, IntegrationTestError> {
-        let comprehensive_dir = self.moth_specs_dir.join("codeprism/comprehensive");
-        let mut specs = Vec::new();
-        
-        if comprehensive_dir.exists() {
-            for entry in std::fs::read_dir(&comprehensive_dir)
-                .map_err(|e| IntegrationTestError::Setup(e.to_string()))? {
-                let entry = entry.map_err(|e| IntegrationTestError::Setup(e.to_string()))?;
-                let path = entry.path();
-                if path.extension().and_then(|s| s.to_str()) == Some("yaml") {
-                    specs.push(path);
-                }
-            }
+
+    /// Execute the moth CLI with given arguments
+    pub async fn execute_moth_cli(
+        &self,
+        _args: &[&str],
+    ) -> Result<String, Box<dyn std::error::Error>> {
+        // Build the binary first to ensure it's available
+        let output = Command::new("cargo")
+            .args(["build", "--release", "--bin", "moth"])
+            .output()
+            .await?;
+
+        if !output.status.success() {
+            return Err(format!(
+                "Failed to build moth binary: {}",
+                String::from_utf8_lossy(&output.stderr)
+            )
+            .into());
         }
-        
-        Ok(specs)
+
+        // Execute the built binary
+        let binary_path = std::env::current_dir()?.join("target/release/moth");
+
+        let output = Command::new(binary_path).args(_args).output().await?;
+
+        if output.status.success() {
+            Ok(String::from_utf8_lossy(&output.stdout).to_string())
+        } else {
+            Err(format!(
+                "moth CLI failed: {}",
+                String::from_utf8_lossy(&output.stderr)
+            )
+            .into())
+        }
     }
-    
-    /// Validate report generation
-    pub async fn validate_reports(&self, _expected_reports: &[ReportExpectation]) -> Result<(), IntegrationTestError> {
-        // Validate that expected reports were generated
-        // Implementation will verify report content and structure
-        Ok(())
+
+    /// Generate a YAML configuration for testing a specific tool
+    fn generate_tool_config(&self, tool_name: &str) -> Result<String, Box<dyn std::error::Error>> {
+        // Use a simple test project path instead of fixtures
+        let test_project = "test-projects/rust-test-project";
+
+        let config = format!(
+            r#"name: "Test {} Tool"
+version: "1.0.0"
+description: "Integration test for {} tool"
+
+capabilities:
+  tools: true
+  resources: false
+  prompts: false
+  sampling: false
+  logging: true
+
+server:
+  command: "cargo"
+  args: ["run", "--package", "codeprism-mcp-server", "--bin", "codeprism-mcp-server"]
+  env:
+    RUST_LOG: "info"
+    MCP_PROTOCOL_VERSION: "2025-06-18"
+  transport: "stdio"
+  startup_timeout_seconds: 30
+  shutdown_timeout_seconds: 10
+
+tools:
+  - name: "{}"
+    description: "Test {} tool functionality"
+    tests:
+      - name: "basic_{}_test"
+        description: "Basic functionality test for {}"
+        input:
+          project_path: "{}"
+          language: "rust"
+        expected:
+          error: false
+        performance:
+          max_duration_ms: 10000
+          max_memory_mb: 100
+        tags: ["integration", "tool_test"]
+"#,
+            tool_name, tool_name, tool_name, tool_name, tool_name, tool_name, test_project
+        );
+
+        Ok(config)
     }
 }
-
-/// Test result structure
-pub struct TestResult {
-    pub exit_code: i32,
-    pub stdout: String,
-    pub stderr: String,
-    pub execution_time: Duration,
-    pub generated_files: Vec<PathBuf>,
-}
-
-/// Report validation expectations
-pub struct ReportExpectation {
-    pub format: ReportFormat,
-    pub file_path: PathBuf,
-    pub expected_content: Vec<ContentExpectation>,
-}
-
-/// Report formats
-pub enum ReportFormat {
-    Html,
-    Json,
-    JunitXml,
-    Markdown,
-}
-
-/// Content validation expectations
-pub enum ContentExpectation {
-    ContainsText(String),
-    ElementCount(String, usize),
-    JsonPath(String, serde_json::Value),
-    FileSize(std::ops::Range<u64>),
-}
-
-/// Integration test errors
-#[derive(Error, Debug)]
-pub enum IntegrationTestError {
-    #[error("Setup error: {0}")]
-    Setup(String),
-    
-    #[error("Teardown error: {0}")]
-    Teardown(String),
-    
-    #[error("CLI execution error: {0}")]
-    CliExecution(String),
-    
-    #[error("Validation error: {0}")]
-    Validation(String),
-} 

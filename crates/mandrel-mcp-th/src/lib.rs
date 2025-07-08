@@ -63,6 +63,9 @@ pub mod runner;
 pub mod spec;
 pub mod validation;
 
+#[cfg(any(test, feature = "testing"))]
+pub mod testing;
+
 // Re-export commonly used types
 pub use error::{Error, Result};
 

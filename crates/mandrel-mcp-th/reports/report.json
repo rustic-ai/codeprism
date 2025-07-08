@@ -1,40 +1,456 @@
 {
-  "suite_name": "Failing Test Suite",
-  "specification_file": "/tmp/.tmpeGEGKI/failing-test.yaml",
+  "suite_name": "CodePrism JavaScript Comprehensive Analysis",
+  "specification_file": "../../crates/codeprism-moth-specs/codeprism/comprehensive/codeprism-javascript-comprehensive.yaml",
   "execution_start": {
-    "secs_since_epoch": 1751957435,
-    "nanos_since_epoch": 375404612
+    "secs_since_epoch": 1751961085,
+    "nanos_since_epoch": 895248161
   },
   "execution_end": {
-    "secs_since_epoch": 1751957435,
-    "nanos_since_epoch": 426810754
+    "secs_since_epoch": 1751961086,
+    "nanos_since_epoch": 770173239
   },
   "total_duration": {
     "secs": 0,
-    "nanos": 51406142
+    "nanos": 874925078
   },
-  "total_tests": 1,
-  "passed": 0,
-  "failed": 1,
+  "total_tests": 17,
+  "passed": 17,
+  "failed": 0,
   "skipped": 0,
-  "error_rate": 1.0,
+  "error_rate": 0.0,
   "test_results": [
     {
-      "test_name": "failing_test",
-      "success": false,
+      "test_name": "javascript_api_typescript_analysis",
+      "success": true,
       "duration": {
         "secs": 0,
         "nanos": 50000000
       },
-      "error_message": "Mock test 'failing_test' failed",
+      "error_message": null,
       "retry_attempts": 0,
       "start_time": {
-        "secs_since_epoch": 1751957435,
-        "nanos_since_epoch": 375500727
+        "secs_since_epoch": 1751961085,
+        "nanos_since_epoch": 897851337
       },
       "end_time": {
-        "secs_since_epoch": 1751957435,
-        "nanos_since_epoch": 425500727
+        "secs_since_epoch": 1751961085,
+        "nanos_since_epoch": 947851337
+      },
+      "memory_usage_mb": null,
+      "metadata": {
+        "tags": [],
+        "category": null,
+        "priority": null,
+        "expected_duration": null,
+        "custom_properties": {}
+      }
+    },
+    {
+      "test_name": "javascript_spa_repository_overview",
+      "success": true,
+      "duration": {
+        "secs": 0,
+        "nanos": 50000000
+      },
+      "error_message": null,
+      "retry_attempts": 0,
+      "start_time": {
+        "secs_since_epoch": 1751961085,
+        "nanos_since_epoch": 949182258
+      },
+      "end_time": {
+        "secs_since_epoch": 1751961085,
+        "nanos_since_epoch": 999182258
+      },
+      "memory_usage_mb": null,
+      "metadata": {
+        "tags": [],
+        "category": null,
+        "priority": null,
+        "expected_duration": null,
+        "custom_properties": {}
+      }
+    },
+    {
+      "test_name": "react_state_flow_analysis",
+      "success": true,
+      "duration": {
+        "secs": 0,
+        "nanos": 50000000
+      },
+      "error_message": null,
+      "retry_attempts": 0,
+      "start_time": {
+        "secs_since_epoch": 1751961086,
+        "nanos_since_epoch": 585767
+      },
+      "end_time": {
+        "secs_since_epoch": 1751961086,
+        "nanos_since_epoch": 50585767
+      },
+      "memory_usage_mb": null,
+      "metadata": {
+        "tags": [],
+        "category": null,
+        "priority": null,
+        "expected_duration": null,
+        "custom_properties": {}
+      }
+    },
+    {
+      "test_name": "javascript_bundle_performance_analysis",
+      "success": true,
+      "duration": {
+        "secs": 0,
+        "nanos": 50000000
+      },
+      "error_message": null,
+      "retry_attempts": 0,
+      "start_time": {
+        "secs_since_epoch": 1751961086,
+        "nanos_since_epoch": 52067136
+      },
+      "end_time": {
+        "secs_since_epoch": 1751961086,
+        "nanos_since_epoch": 102067136
+      },
+      "memory_usage_mb": null,
+      "metadata": {
+        "tags": [],
+        "category": null,
+        "priority": null,
+        "expected_duration": null,
+        "custom_properties": {}
+      }
+    },
+    {
+      "test_name": "javascript_async_complexity_analysis",
+      "success": true,
+      "duration": {
+        "secs": 0,
+        "nanos": 50000000
+      },
+      "error_message": null,
+      "retry_attempts": 0,
+      "start_time": {
+        "secs_since_epoch": 1751961086,
+        "nanos_since_epoch": 103500072
+      },
+      "end_time": {
+        "secs_since_epoch": 1751961086,
+        "nanos_since_epoch": 153500072
+      },
+      "memory_usage_mb": null,
+      "metadata": {
+        "tags": [],
+        "category": null,
+        "priority": null,
+        "expected_duration": null,
+        "custom_properties": {}
+      }
+    },
+    {
+      "test_name": "javascript_modern_pattern_detection",
+      "success": true,
+      "duration": {
+        "secs": 0,
+        "nanos": 50000000
+      },
+      "error_message": null,
+      "retry_attempts": 0,
+      "start_time": {
+        "secs_since_epoch": 1751961086,
+        "nanos_since_epoch": 154947983
+      },
+      "end_time": {
+        "secs_since_epoch": 1751961086,
+        "nanos_since_epoch": 204947983
+      },
+      "memory_usage_mb": null,
+      "metadata": {
+        "tags": [],
+        "category": null,
+        "priority": null,
+        "expected_duration": null,
+        "custom_properties": {}
+      }
+    },
+    {
+      "test_name": "javascript_frontend_security_analysis",
+      "success": true,
+      "duration": {
+        "secs": 0,
+        "nanos": 50000000
+      },
+      "error_message": null,
+      "retry_attempts": 0,
+      "start_time": {
+        "secs_since_epoch": 1751961086,
+        "nanos_since_epoch": 206360212
+      },
+      "end_time": {
+        "secs_since_epoch": 1751961086,
+        "nanos_since_epoch": 256360212
+      },
+      "memory_usage_mb": null,
+      "metadata": {
+        "tags": [],
+        "category": null,
+        "priority": null,
+        "expected_duration": null,
+        "custom_properties": {}
+      }
+    },
+    {
+      "test_name": "javascript_frontend_batch_analysis",
+      "success": true,
+      "duration": {
+        "secs": 0,
+        "nanos": 50000000
+      },
+      "error_message": null,
+      "retry_attempts": 0,
+      "start_time": {
+        "secs_since_epoch": 1751961086,
+        "nanos_since_epoch": 257841931
+      },
+      "end_time": {
+        "secs_since_epoch": 1751961086,
+        "nanos_since_epoch": 307841931
+      },
+      "memory_usage_mb": null,
+      "metadata": {
+        "tags": [],
+        "category": null,
+        "priority": null,
+        "expected_duration": null,
+        "custom_properties": {}
+      }
+    },
+    {
+      "test_name": "npm_dependency_analysis",
+      "success": true,
+      "duration": {
+        "secs": 0,
+        "nanos": 50000000
+      },
+      "error_message": null,
+      "retry_attempts": 0,
+      "start_time": {
+        "secs_since_epoch": 1751961086,
+        "nanos_since_epoch": 309262935
+      },
+      "end_time": {
+        "secs_since_epoch": 1751961086,
+        "nanos_since_epoch": 359262935
+      },
+      "memory_usage_mb": null,
+      "metadata": {
+        "tags": [],
+        "category": null,
+        "priority": null,
+        "expected_duration": null,
+        "custom_properties": {}
+      }
+    },
+    {
+      "test_name": "javascript_async_execution_tracing",
+      "success": true,
+      "duration": {
+        "secs": 0,
+        "nanos": 50000000
+      },
+      "error_message": null,
+      "retry_attempts": 0,
+      "start_time": {
+        "secs_since_epoch": 1751961086,
+        "nanos_since_epoch": 359692530
+      },
+      "end_time": {
+        "secs_since_epoch": 1751961086,
+        "nanos_since_epoch": 409692530
+      },
+      "memory_usage_mb": null,
+      "metadata": {
+        "tags": [],
+        "category": null,
+        "priority": null,
+        "expected_duration": null,
+        "custom_properties": {}
+      }
+    },
+    {
+      "test_name": "nodejs_backend_architecture_analysis",
+      "success": true,
+      "duration": {
+        "secs": 0,
+        "nanos": 50000000
+      },
+      "error_message": null,
+      "retry_attempts": 0,
+      "start_time": {
+        "secs_since_epoch": 1751961086,
+        "nanos_since_epoch": 411228552
+      },
+      "end_time": {
+        "secs_since_epoch": 1751961086,
+        "nanos_since_epoch": 461228552
+      },
+      "memory_usage_mb": null,
+      "metadata": {
+        "tags": [],
+        "category": null,
+        "priority": null,
+        "expected_duration": null,
+        "custom_properties": {}
+      }
+    },
+    {
+      "test_name": "react_component_hierarchy_analysis",
+      "success": true,
+      "duration": {
+        "secs": 0,
+        "nanos": 50000000
+      },
+      "error_message": null,
+      "retry_attempts": 0,
+      "start_time": {
+        "secs_since_epoch": 1751961086,
+        "nanos_since_epoch": 462566427
+      },
+      "end_time": {
+        "secs_since_epoch": 1751961086,
+        "nanos_since_epoch": 512566427
+      },
+      "memory_usage_mb": null,
+      "metadata": {
+        "tags": [],
+        "category": null,
+        "priority": null,
+        "expected_duration": null,
+        "custom_properties": {}
+      }
+    },
+    {
+      "test_name": "javascript_es6_symbol_search",
+      "success": true,
+      "duration": {
+        "secs": 0,
+        "nanos": 50000000
+      },
+      "error_message": null,
+      "retry_attempts": 0,
+      "start_time": {
+        "secs_since_epoch": 1751961086,
+        "nanos_since_epoch": 513951343
+      },
+      "end_time": {
+        "secs_since_epoch": 1751961086,
+        "nanos_since_epoch": 563951343
+      },
+      "memory_usage_mb": null,
+      "metadata": {
+        "tags": [],
+        "category": null,
+        "priority": null,
+        "expected_duration": null,
+        "custom_properties": {}
+      }
+    },
+    {
+      "test_name": "jsx_template_search",
+      "success": true,
+      "duration": {
+        "secs": 0,
+        "nanos": 50000000
+      },
+      "error_message": null,
+      "retry_attempts": 0,
+      "start_time": {
+        "secs_since_epoch": 1751961086,
+        "nanos_since_epoch": 565412663
+      },
+      "end_time": {
+        "secs_since_epoch": 1751961086,
+        "nanos_since_epoch": 615412663
+      },
+      "memory_usage_mb": null,
+      "metadata": {
+        "tags": [],
+        "category": null,
+        "priority": null,
+        "expected_duration": null,
+        "custom_properties": {}
+      }
+    },
+    {
+      "test_name": "npm_transitive_security_analysis",
+      "success": true,
+      "duration": {
+        "secs": 0,
+        "nanos": 50000000
+      },
+      "error_message": null,
+      "retry_attempts": 0,
+      "start_time": {
+        "secs_since_epoch": 1751961086,
+        "nanos_since_epoch": 616835896
+      },
+      "end_time": {
+        "secs_since_epoch": 1751961086,
+        "nanos_since_epoch": 666835896
+      },
+      "memory_usage_mb": null,
+      "metadata": {
+        "tags": [],
+        "category": null,
+        "priority": null,
+        "expected_duration": null,
+        "custom_properties": {}
+      }
+    },
+    {
+      "test_name": "react_application_analysis",
+      "success": true,
+      "duration": {
+        "secs": 0,
+        "nanos": 50000000
+      },
+      "error_message": null,
+      "retry_attempts": 0,
+      "start_time": {
+        "secs_since_epoch": 1751961086,
+        "nanos_since_epoch": 668292649
+      },
+      "end_time": {
+        "secs_since_epoch": 1751961086,
+        "nanos_since_epoch": 718292649
+      },
+      "memory_usage_mb": null,
+      "metadata": {
+        "tags": [],
+        "category": null,
+        "priority": null,
+        "expected_duration": null,
+        "custom_properties": {}
+      }
+    },
+    {
+      "test_name": "javascript_spa_workflow_suggestion",
+      "success": true,
+      "duration": {
+        "secs": 0,
+        "nanos": 50000000
+      },
+      "error_message": null,
+      "retry_attempts": 0,
+      "start_time": {
+        "secs_since_epoch": 1751961086,
+        "nanos_since_epoch": 718727316
+      },
+      "end_time": {
+        "secs_since_epoch": 1751961086,
+        "nanos_since_epoch": 768727316
       },
       "memory_usage_mb": null,
       "metadata": {
@@ -47,24 +463,24 @@
     }
   ],
   "suite_metrics": {
-    "total_memory_usage": 12,
-    "peak_memory_usage": 3,
+    "total_memory_usage": 216,
+    "peak_memory_usage": 6,
     "average_test_duration": {
       "secs": 0,
-      "nanos": 51254719
+      "nanos": 51224156
     },
-    "slowest_test": "failing_test",
-    "fastest_test": "failing_test",
+    "slowest_test": "javascript_async_execution_tracing",
+    "fastest_test": "react_application_analysis",
     "slowest_duration": {
       "secs": 0,
-      "nanos": 51254719
+      "nanos": 51454858
     },
     "fastest_duration": {
       "secs": 0,
-      "nanos": 51254719
+      "nanos": 50333449
     },
-    "memory_efficiency_score": 99.9999997,
-    "execution_efficiency_score": 100.0
+    "memory_efficiency_score": 99.99999996470588,
+    "execution_efficiency_score": 99.36637273467792
   },
   "execution_mode": "Sequential",
   "dependency_resolution": {
@@ -76,11 +492,43 @@
       "nanos": 1000000
     },
     "execution_order": [
-      "failing_test"
+      "javascript_api_typescript_analysis",
+      "javascript_spa_repository_overview",
+      "react_state_flow_analysis",
+      "javascript_bundle_performance_analysis",
+      "javascript_async_complexity_analysis",
+      "javascript_modern_pattern_detection",
+      "javascript_frontend_security_analysis",
+      "javascript_frontend_batch_analysis",
+      "npm_dependency_analysis",
+      "javascript_async_execution_tracing",
+      "nodejs_backend_architecture_analysis",
+      "react_component_hierarchy_analysis",
+      "javascript_es6_symbol_search",
+      "jsx_template_search",
+      "npm_transitive_security_analysis",
+      "react_application_analysis",
+      "javascript_spa_workflow_suggestion"
     ],
     "dependency_groups": [
       [
-        "failing_test"
+        "javascript_spa_repository_overview",
+        "javascript_async_execution_tracing",
+        "react_application_analysis",
+        "react_component_hierarchy_analysis",
+        "nodejs_backend_architecture_analysis",
+        "javascript_es6_symbol_search",
+        "jsx_template_search",
+        "javascript_async_complexity_analysis",
+        "javascript_frontend_security_analysis",
+        "javascript_bundle_performance_analysis",
+        "npm_dependency_analysis",
+        "npm_transitive_security_analysis",
+        "react_state_flow_analysis",
+        "javascript_modern_pattern_detection",
+        "javascript_api_typescript_analysis",
+        "javascript_spa_workflow_suggestion",
+        "javascript_frontend_batch_analysis"
       ]
     ]
   }

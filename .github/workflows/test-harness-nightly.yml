@@ -9,12 +9,12 @@ on:
       stress_testing:
         description: 'Enable stress testing'
         required: false
-        default: 'true'
+        default: true
         type: boolean
       performance_deep_analysis:
         description: 'Enable deep performance analysis'
         required: false
-        default: 'true'
+        default: true
         type: boolean
 
 env:
@@ -168,6 +168,118 @@ jobs:
               ;;
           esac
 
+      - name: CodePrism Comprehensive Nightly Testing
+        if: always()
+        run: |
+          echo "Running CodePrism comprehensive nightly testing..."
+          
+          # Build mandrel-mcp-th for nightly testing
+          cd crates/mandrel-mcp-th
+          cargo build --release --bin moth
+          
+          # Run CodePrism comprehensive tests for all languages
+          for spec in ../codeprism-moth-specs/codeprism/comprehensive/*.yaml; do
+            if [ -f "$spec" ]; then
+              spec_name=$(basename "$spec" .yaml)
+              echo "Running comprehensive test: $spec_name"
+              
+              timeout 300s ./target/release/moth run "$spec" \
+                --format json \
+                --performance-monitoring \
+                --output "nightly-$spec_name.json" \
+                --stress-testing || echo "Test completed or timed out: $spec_name"
+            fi
+          done
+          
+          # Generate nightly CodePrism summary
+          python3 - << 'PYTHON'
+          import json
+          import glob
+          import os
+          from datetime import datetime
+          
+          print("Generating CodePrism nightly testing summary...")
+          
+          summary = {
+              'timestamp': datetime.now().isoformat(),
+              'test_type': 'nightly_comprehensive',
+              'results': {},
+              'overall_stats': {
+                  'total_languages': 0,
+                  'total_tests': 0,
+                  'total_passed': 0,
+                  'total_failed': 0,
+                  'languages_passed': 0
+              }
+          }
+          
+          # Process results for each language
+          for result_file in glob.glob('nightly-codeprism-*-comprehensive.json'):
+              try:
+                  with open(result_file, 'r') as f:
+                      data = json.load(f)
+                  
+                  # Extract language from filename
+                  language = result_file.replace('nightly-codeprism-', '').replace('-comprehensive.json', '')
+                  
+                  # Process results
+                  total_tests = data.get('total_tests', 0)
+                  passed_tests = data.get('passed', 0)
+                  failed_tests = data.get('failed', 0)
+                  
+                  summary['results'][language] = {
+                      'total_tests': total_tests,
+                      'passed': passed_tests,
+                      'failed': failed_tests,
+                      'success_rate': (passed_tests / total_tests * 100) if total_tests > 0 else 0,
+                      'duration': data.get('total_duration', {}),
+                      'status': 'PASSED' if failed_tests == 0 else 'FAILED'
+                  }
+                  
+                  # Update overall stats
+                  summary['overall_stats']['total_languages'] += 1
+                  summary['overall_stats']['total_tests'] += total_tests
+                  summary['overall_stats']['total_passed'] += passed_tests
+                  summary['overall_stats']['total_failed'] += failed_tests
+                  
+                  if failed_tests == 0:
+                      summary['overall_stats']['languages_passed'] += 1
+                  
+                  print(f"✅ {language}: {passed_tests}/{total_tests} tests passed")
+                  
+              except Exception as e:
+                  print(f"❌ Could not process {result_file}: {e}")
+          
+          # Save summary
+          with open('nightly-codeprism-summary.json', 'w') as f:
+              json.dump(summary, f, indent=2)
+          
+          # Print overall results
+          total_languages = summary['overall_stats']['total_languages']
+          languages_passed = summary['overall_stats']['languages_passed']
+          total_tests = summary['overall_stats']['total_tests']
+          total_passed = summary['overall_stats']['total_passed']
+          
+          print(f"\n📊 CodePrism Nightly Summary:")
+          print(f"Languages Tested: {total_languages}")
+          print(f"Languages Passed: {languages_passed}")
+          print(f"Total Tests: {total_tests}")
+          print(f"Total Passed: {total_passed}")
+          
+          if total_languages > 0:
+              overall_success_rate = total_passed / total_tests * 100 if total_tests > 0 else 0
+              print(f"Overall Success Rate: {overall_success_rate:.1f}%")
+              
+              if languages_passed == total_languages:
+                  print("🎉 ALL LANGUAGES PASSED comprehensive nightly testing!")
+              else:
+                  print(f"⚠️  {total_languages - languages_passed} language(s) failed")
+          PYTHON
+          
+          cd ../..
+          
+          echo "✅ CodePrism comprehensive nightly testing completed"
+
       - name: Collect system metrics
         if: always()
         run: |
@@ -200,6 +312,8 @@ jobs:
           path: |
             crates/codeprism-test-harness/test-results/
             crates/codeprism-test-harness/stress-test-reports/
+            crates/mandrel-mcp-th/nightly-*.json
+            crates/mandrel-mcp-th/nightly-codeprism-summary.json
             system-metrics-${{ matrix.stress-category }}.md
           retention-days: 14
 

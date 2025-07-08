@@ -116,6 +116,144 @@ jobs:
             > ../../test-harness-performance.txt 2>&1
           cd ../..
 
+      - name: CodePrism Tool Benchmarking
+        id: codeprism-benchmarks
+        run: |
+          echo "Running CodePrism comprehensive tool benchmarking..."
+          
+          # Build mandrel-mcp-th optimized for benchmarking
+          RUSTFLAGS="-C target-cpu=native -C opt-level=3" \
+            cargo build --release --package mandrel-mcp-th --bin moth
+          
+          # Create benchmarking directory
+          mkdir -p codeprism-benchmarking
+          cd codeprism-benchmarking
+          
+          # Run comprehensive benchmarks for each language
+          for language in rust python java javascript; do
+            echo "Benchmarking CodePrism $language comprehensive..."
+            
+            # Determine iterations based on benchmark duration
+            case "${{ github.event.inputs.benchmark_duration || 'standard' }}" in
+              "quick")
+                ITERATIONS=3
+                ;;
+              "extended")
+                ITERATIONS=15
+                ;;
+              *)
+                ITERATIONS=10
+                ;;
+            esac
+            
+            SPEC_FILE="../crates/codeprism-moth-specs/codeprism/comprehensive/codeprism-$language-comprehensive.yaml"
+            
+            if [ -f "$SPEC_FILE" ]; then
+              echo "  Running $ITERATIONS iterations for $language..."
+              
+              # Run multiple iterations for statistical significance
+              for i in $(seq 1 $ITERATIONS); do
+                echo "    Iteration $i/$ITERATIONS"
+                
+                timeout 180s ../target/release/moth run \
+                  "$SPEC_FILE" \
+                  --format json \
+                  --performance-monitoring \
+                  --output "benchmark-$language-iteration-$i.json" \
+                  --benchmark-mode || echo "Iteration $i failed or timed out"
+              done
+              
+              # Aggregate results for this language
+              python3 - << PYTHON
+          import json
+          import glob
+          import statistics
+          from datetime import datetime
+          
+          language = "$language"
+          results = []
+          
+          # Load all iteration results
+          for result_file in glob.glob(f"benchmark-{language}-iteration-*.json"):
+              try:
+                  with open(result_file, 'r') as f:
+                      data = json.load(f)
+                  results.append(data)
+              except Exception as e:
+                  print(f"Could not load {result_file}: {e}")
+          
+          if results:
+              # Calculate aggregate statistics
+              total_tests = results[0].get('total_tests', 0)
+              
+              # Aggregate execution times
+              total_durations = []
+              for result in results:
+                  duration = result.get('total_duration', {})
+                  duration_ms = duration.get('secs', 0) * 1000 + duration.get('nanos', 0) / 1e6
+                  total_durations.append(duration_ms)
+              
+              # Individual test performance aggregation
+              test_performance = {}
+              for result in results:
+                  for test in result.get('test_results', []):
+                      test_name = test.get('test_name', '')
+                      duration = test.get('duration', {})
+                      duration_ms = duration.get('secs', 0) * 1000 + duration.get('nanos', 0) / 1e6
+                      
+                      if test_name not in test_performance:
+                          test_performance[test_name] = []
+                      test_performance[test_name].append(duration_ms)
+              
+              # Generate benchmark report
+              benchmark_report = {
+                  'language': language,
+                  'timestamp': datetime.now().isoformat(),
+                  'iterations': len(results),
+                  'total_tests': total_tests,
+                  'suite_performance': {
+                      'mean_duration_ms': statistics.mean(total_durations),
+                      'median_duration_ms': statistics.median(total_durations),
+                      'std_duration_ms': statistics.stdev(total_durations) if len(total_durations) > 1 else 0,
+                      'min_duration_ms': min(total_durations),
+                      'max_duration_ms': max(total_durations)
+                  },
+                  'individual_test_performance': {}
+              }
+              
+              # Process individual test statistics
+              for test_name, durations in test_performance.items():
+                  if durations:
+                      benchmark_report['individual_test_performance'][test_name] = {
+                          'mean_duration_ms': statistics.mean(durations),
+                          'median_duration_ms': statistics.median(durations),
+                          'std_duration_ms': statistics.stdev(durations) if len(durations) > 1 else 0,
+                          'min_duration_ms': min(durations),
+                          'max_duration_ms': max(durations),
+                          'samples': len(durations)
+                      }
+              
+              # Save benchmark report
+              with open(f'codeprism-benchmark-{language}.json', 'w') as f:
+                  json.dump(benchmark_report, f, indent=2)
+              
+              print(f"✅ CodePrism {language} benchmark completed: {len(results)} iterations")
+              print(f"   Average suite duration: {benchmark_report['suite_performance']['mean_duration_ms']:.1f}ms")
+              print(f"   Individual tests: {len(benchmark_report['individual_test_performance'])}")
+          else:
+              print(f"❌ No valid results for {language}")
+          PYTHON
+              
+            else
+              echo "  ⚠️  Specification not found: $SPEC_FILE"
+            fi
+          done
+          
+          # Move back to root
+          cd ..
+          
+          echo "✅ CodePrism benchmarking completed"
+
       - name: Analyze performance trends
         id: trend-analysis
         run: |
@@ -164,6 +302,40 @@ jobs:
                   })
           except Exception as e:
               print(f"Could not load MCP benchmarks: {e}")
+          
+          # Load CodePrism benchmarks
+          try:
+              for language in ['rust', 'python', 'java', 'javascript']:
+                  benchmark_file = f'codeprism-benchmarking/codeprism-benchmark-{language}.json'
+                  if os.path.exists(benchmark_file):
+                      with open(benchmark_file, 'r') as f:
+                          codeprism_results = json.load(f)
+                      
+                      # Add suite-level performance data
+                      suite_perf = codeprism_results.get('suite_performance', {})
+                      if suite_perf:
+                          performance_data.append({
+                              'timestamp': datetime.now().isoformat(),
+                              'category': 'codeprism_suite',
+                              'test_name': f'codeprism_{language}_comprehensive_suite',
+                              'time_ns': suite_perf.get('mean_duration_ms', 0) * 1e6,  # Convert ms to ns
+                              'lower_bound': suite_perf.get('min_duration_ms', 0) * 1e6,
+                              'upper_bound': suite_perf.get('max_duration_ms', 0) * 1e6
+                          })
+                      
+                      # Add individual tool performance data
+                      individual_perf = codeprism_results.get('individual_test_performance', {})
+                      for tool_name, tool_perf in individual_perf.items():
+                          performance_data.append({
+                              'timestamp': datetime.now().isoformat(),
+                              'category': 'codeprism_tool',
+                              'test_name': f'codeprism_{language}_{tool_name}',
+                              'time_ns': tool_perf.get('mean_duration_ms', 0) * 1e6,  # Convert ms to ns
+                              'lower_bound': tool_perf.get('min_duration_ms', 0) * 1e6,
+                              'upper_bound': tool_perf.get('max_duration_ms', 0) * 1e6
+                          })
+          except Exception as e:
+              print(f"Could not load CodePrism benchmarks: {e}")
           
           # Load historical data if available
           historical_data = []
@@ -220,9 +392,13 @@ jobs:
               if performance_data:
                   core_tests = [p for p in performance_data if p['category'] == 'core']
                   mcp_tests = [p for p in performance_data if p['category'] == 'mcp']
+                  codeprism_suite_tests = [p for p in performance_data if p['category'] == 'codeprism_suite']
+                  codeprism_tool_tests = [p for p in performance_data if p['category'] == 'codeprism_tool']
                   
                   f.write(f"- **Core Benchmarks:** {len(core_tests)} tests\n")
                   f.write(f"- **MCP Benchmarks:** {len(mcp_tests)} tests\n")
+                  f.write(f"- **CodePrism Suite Benchmarks:** {len(codeprism_suite_tests)} languages\n")
+                  f.write(f"- **CodePrism Tool Benchmarks:** {len(codeprism_tool_tests)} tools\n")
                   
                   if core_tests:
                       avg_core_time = np.mean([p['time_ns'] for p in core_tests])
@@ -231,6 +407,14 @@ jobs:
                   if mcp_tests:
                       avg_mcp_time = np.mean([p['time_ns'] for p in mcp_tests])
                       f.write(f"- **Average MCP Performance:** {avg_mcp_time:.0f} ns\n")
+                  
+                  if codeprism_suite_tests:
+                      avg_suite_time = np.mean([p['time_ns'] for p in codeprism_suite_tests])
+                      f.write(f"- **Average CodePrism Suite Performance:** {avg_suite_time:.0f} ns ({avg_suite_time/1e6:.1f} ms)\n")
+                  
+                  if codeprism_tool_tests:
+                      avg_tool_time = np.mean([p['time_ns'] for p in codeprism_tool_tests])
+                      f.write(f"- **Average CodePrism Tool Performance:** {avg_tool_time:.0f} ns ({avg_tool_time/1e6:.1f} ms)\n")
               
               f.write("\n")
               
@@ -360,6 +544,7 @@ jobs:
             test-harness-performance.txt
             performance-trend-report.md
             performance-trends.png
+            codeprism-benchmarking/
           retention-days: 180
 
       - name: Comment on performance changes

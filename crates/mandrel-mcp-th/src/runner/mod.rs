@@ -180,7 +180,10 @@ impl TestSuiteRunner {
     // ========================================================================
 
     /// Extract test cases from loaded specification
-    fn extract_test_cases(&self, specification: &TestSpecification) -> Result<Vec<TestCase>> {
+    fn extract_test_cases(
+        &self,
+        specification: &TestSpecification,
+    ) -> Result<Vec<crate::spec::TestCase>> {
         // Handle empty test suites - check if tools are defined
         let tools = match &specification.tools {
             Some(tools) if !tools.is_empty() => tools,
@@ -191,10 +194,7 @@ impl TestSuiteRunner {
         let mut test_cases = Vec::new();
         for tool in tools {
             for test in &tool.tests {
-                test_cases.push(TestCase {
-                    name: test.name.clone(),
-                    dependencies: vec![], // PLANNED(#228): Extract real dependencies when YAML dependency parsing is implemented
-                });
+                test_cases.push(test.clone());
             }
         }
 
@@ -231,13 +231,16 @@ impl TestSuiteRunner {
     }
 
     /// Resolve test case dependencies and determine execution order
-    fn resolve_dependencies(&self, test_cases: &[TestCase]) -> Result<DependencyResolution> {
+    fn resolve_dependencies(
+        &self,
+        test_cases: &[crate::spec::TestCase],
+    ) -> Result<DependencyResolution> {
         let mut resolver = DependencyResolver::new();
 
-        // Build dependency map
+        // Build dependency map from real test cases
         let dependencies: HashMap<String, Vec<String>> = test_cases
             .iter()
-            .map(|tc| (tc.name.clone(), tc.dependencies.clone()))
+            .map(|tc| (tc.name.clone(), tc.dependencies.clone().unwrap_or_default()))
             .collect();
 
         // Resolve execution order
@@ -256,7 +259,7 @@ impl TestSuiteRunner {
     /// Execute tests according to the configured strategy
     async fn execute_tests_with_strategy(
         &mut self,
-        test_cases: &[TestCase],
+        test_cases: &[crate::spec::TestCase],
         dependency_resolution: &DependencyResolution,
         specification: &TestSpecification,
     ) -> Result<Vec<TestResult>> {
@@ -275,7 +278,7 @@ impl TestSuiteRunner {
     /// Execute tests sequentially in dependency order
     async fn execute_tests_sequentially(
         &mut self,
-        _test_cases: &[TestCase],
+        _test_cases: &[crate::spec::TestCase],
         dependency_resolution: &DependencyResolution,
         specification: &TestSpecification,
     ) -> Result<Vec<TestResult>> {
@@ -325,7 +328,7 @@ impl TestSuiteRunner {
     /// Execute tests in parallel groups respecting dependencies
     async fn execute_tests_in_parallel(
         &mut self,
-        test_cases: &[TestCase],
+        test_cases: &[crate::spec::TestCase],
         dependency_resolution: &DependencyResolution,
         specification: &TestSpecification,
     ) -> Result<Vec<TestResult>> {
@@ -345,15 +348,11 @@ impl TestSuiteRunner {
     }
 }
 
-// Test case data structure for orchestrating test execution
-#[derive(Debug, Clone)]
-pub struct TestCase {
-    pub name: String,
-    pub dependencies: Vec<String>,
-}
-
 // Re-export TestResult from result module to avoid duplication
 pub use result::TestResult;
+
+// Use TestCase from the spec module directly
+pub use crate::spec::TestCase;
 
 #[cfg(test)]
 mod tests {
@@ -533,7 +532,6 @@ tools:
     }
 
     #[tokio::test]
-    #[ignore = "Future work for Issue #228 - requires YAML test case extraction from specification.tools"]
     async fn test_run_test_suite_with_dependencies() {
         // Create executor and runner with dependency resolution
         let executor = create_test_executor().await;

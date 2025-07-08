@@ -310,6 +310,7 @@ mod tests {
         TestCase {
             name: "test_case_1".to_string(),
             description: Some("Test case for tool execution".to_string()),
+            dependencies: None,
             input: serde_json::json!({
                 "message": "Hello, world!"
             }),

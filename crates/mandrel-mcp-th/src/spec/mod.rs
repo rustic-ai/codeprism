@@ -120,6 +120,8 @@ pub struct TestCase {
     pub name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dependencies: Option<Vec<String>>,
     pub input: serde_json::Value,
     pub expected: ExpectedOutput,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -425,6 +427,7 @@ impl Default for TestCase {
         Self {
             name: String::new(),
             description: None,
+            dependencies: None,
             input: serde_json::Value::Null,
             expected: ExpectedOutput::default(),
             performance: None,

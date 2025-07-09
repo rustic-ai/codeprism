@@ -24,6 +24,9 @@ Thumbs.db
 *.profdata
 tarpaulin-report.html
 cobertura.xml
+report.json
+reports/
+test-reports/
 
 # Benchmarks
 criterion/

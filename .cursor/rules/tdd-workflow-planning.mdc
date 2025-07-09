@@ -58,7 +58,7 @@ async fn test_single_tool_basic_case() {
 
 **Correct Sequence:**
 ```
-1. ✅ Study existing test patterns (codeprism-mcp)
+1. ✅ Study existing test patterns (codeprism-mcp-server)
 2. ✅ Analyze comprehensive requirements  
 3. ✅ Plan ALL test scenarios upfront
 4. ✅ Write ALL failing tests first
@@ -74,19 +74,19 @@ async fn test_single_tool_basic_case() {
 
 ```bash
 # REQUIRED: Analyze existing comprehensive tests
-grep -r "#\[tokio::test\]" crates/codeprism-mcp/src/ --include="*.rs" | wc -l
+grep -r "#\[tokio::test\]" crates/codeprism-mcp-server/src/ --include="*.rs" | wc -l
 # Expected: 80+ tests to study
 
 # REQUIRED: Identify test categories  
-grep -r "async fn test_.*_tool" crates/codeprism-mcp/src/tools_legacy.rs
+grep -r "async fn test_.*_tool" crates/codeprism-mcp-server/src/
 # Study individual tool test patterns
 
 # REQUIRED: Map error handling patterns
-grep -r "test_.*_error\|test_.*_invalid" crates/codeprism-mcp/src/
+grep -r "test_.*_error\|test_.*_invalid" crates/codeprism-mcp-server/src/
 # Understand error test coverage
 
 # REQUIRED: Study edge case patterns  
-grep -r "test_.*_edge\|test_.*_boundary" crates/codeprism-mcp/src/
+grep -r "test_.*_edge\|test_.*_boundary" crates/codeprism-mcp-server/src/
 # Learn edge case testing approaches
 ```
 
@@ -112,7 +112,7 @@ grep -r "test_.*_edge\|test_.*_boundary" crates/codeprism-mcp/src/
 TEST PLAN: codeprism-mcp-server Tool Implementation
 
 SCOPE: All 26 tools with comprehensive coverage
-REFERENCE: codeprism-mcp test patterns (80+ tests)
+REFERENCE: codeprism-mcp-server test patterns
 
 COVERAGE REQUIREMENTS:
 1. Individual Tool Tests (26 tests)
@@ -140,7 +140,7 @@ COVERAGE REQUIREMENTS:
    - Memory usage validation
    - Concurrent execution stress
 
-TOTAL TARGET: 76+ tests (matching codeprism-mcp coverage)
+TOTAL TARGET: 76+ tests (comprehensive coverage)
 */
 ```
 
@@ -211,7 +211,7 @@ cargo tarpaulin --out xml && python scripts/check_coverage.py --min 90
 ### Pre-Commit Requirements
 
 **BLOCK commits that:**
-- Have < 76 total tests (matching codeprism-mcp coverage)
+- Have < 76 total tests (comprehensive coverage)
 - Missing tool-specific tests for any of 26 tools
 - Missing error handling for any tool
 - Missing edge case coverage
@@ -250,8 +250,8 @@ cargo tarpaulin --out xml && python scripts/check_coverage.py --min 90 || echo "
 ## References and Learning
 
 **Study these comprehensive patterns:**
-- [codeprism-mcp comprehensive testing](mdc:crates/codeprism-mcp/src/tools_legacy.rs) lines 4539-6291
-- [Integration test workflows](mdc:crates/codeprism-mcp/src/server.rs) lines 579-1132
+- [codeprism-mcp-server comprehensive testing](mdc:crates/codeprism-mcp-server/src/server.rs) - comprehensive test patterns
+- [Integration test workflows](mdc:crates/codeprism-mcp-server/src/integration_test.rs) - integration test patterns
 - [End-to-end test examples](mdc:tests/test_mcp_test_harness_end_to_end.rs)
 
 **Test planning templates:**

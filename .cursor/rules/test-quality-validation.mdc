@@ -189,8 +189,8 @@ grep -r "fn test_" tests/ --include="*.rs" | grep -v "test_.*_.*_" && echo "❌ 
 ## References
 
 Study proper test patterns from:
-- [Comprehensive tool tests](mdc:crates/codeprism-mcp/src/tools_legacy.rs) lines 4539-6291
-- [Server integration tests](mdc:crates/codeprism-mcp/src/server.rs) lines 579-1132  
+- [Comprehensive tool tests](mdc:crates/codeprism-mcp-server/src/server.rs) - reference comprehensive test patterns from current server implementation
+- [Server integration tests](mdc:crates/codeprism-mcp-server/src/integration_test.rs) - integration test patterns  
 - [End-to-end test examples](mdc:tests/test_mcp_test_harness_end_to_end.rs)
 
 **Remember: If your test doesn't fail when the implementation is broken, it's not testing anything meaningful.**

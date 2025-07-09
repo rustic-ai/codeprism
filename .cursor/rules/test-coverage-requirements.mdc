@@ -12,21 +12,21 @@ description: Enforces comprehensive test coverage requirements and validation st
 **The codeprism-mcp-server testing gap (6 tests vs 80+ needed) occurred because:**
 
 1. **No systematic coverage planning** - Ad hoc test writing instead of comprehensive planning
-2. **No comparison to reference implementation** - Failed to study codeprism-mcp's 80+ tests  
+2. **No comparison to reference implementation** - Failed to study comprehensive testing patterns  
 3. **No coverage validation** - No enforcement of minimum coverage thresholds
 4. **Scope limitation** - Testing individual functions instead of entire system functionality
 
 ### ✅ Required Coverage Standards
 
-**Minimum coverage targets based on codeprism-mcp analysis:**
+**Minimum coverage targets for comprehensive testing:**
 
 | **Coverage Type** | **Target** | **Validation Method** | **Reference** |
 |-------------------|------------|----------------------|---------------|
-| **Overall Test Coverage** | **90%+** | `cargo tarpaulin --min 90` | [codeprism-mcp: 85%+ coverage](mdc:crates/codeprism-mcp/src/) |
-| **Tool-Specific Tests** | **100%** (26/26 tools) | Individual test per tool | [Tool test patterns](mdc:crates/codeprism-mcp/src/tools_legacy.rs) |
-| **Error Handling Tests** | **100%** of error paths | Error scenario coverage | [Error test examples](mcp:crates/codeprism-mcp/src/server.rs) |
+| **Overall Test Coverage** | **90%+** | `cargo tarpaulin --min 90` | [codeprism-mcp-server: comprehensive coverage](mdc:crates/codeprism-mcp-server/src/) |
+| **Tool-Specific Tests** | **100%** (26/26 tools) | Individual test per tool | [Tool test patterns](mdc:crates/codeprism-mcp-server/src/server.rs) |
+| **Error Handling Tests** | **100%** of error paths | Error scenario coverage | [Error test examples](mdc:crates/codeprism-mcp-server/src/integration_test.rs) |
 | **Integration Tests** | **80%** of workflows | End-to-end validation | [Integration patterns](mdc:tests/test_mcp_test_harness_end_to_end.rs) |
-| **Edge Case Tests** | **75%** of boundaries | Boundary condition testing | [Edge case patterns](mdc:crates/codeprism-mcp/src/tools_legacy.rs) |
+| **Edge Case Tests** | **75%** of boundaries | Boundary condition testing | [Edge case patterns](mdc:crates/codeprism-mcp-server/src/server.rs) |
 
 ## Coverage Validation Requirements
 
@@ -44,7 +44,7 @@ echo "🔍 Validating test coverage requirements..."
 
 # 1. Check total test count (must match reference implementation)
 CURRENT_TESTS=$(grep -r "#\[tokio::test\]" crates/codeprism-mcp-server/src/ --include="*.rs" | wc -l)
-REFERENCE_TESTS=80  # Based on codeprism-mcp analysis
+REFERENCE_TESTS=80  # Based on comprehensive testing analysis
 MIN_REQUIRED_TESTS=76
 
 if [ "$CURRENT_TESTS" -lt "$MIN_REQUIRED_TESTS" ]; then
@@ -313,7 +313,7 @@ jobs:
 ## References
 
 **Study comprehensive coverage examples:**
-- [codeprism-mcp test structure](mdc:crates/codeprism-mcp/src/tools_legacy.rs) - 80+ tests covering all scenarios
+- [codeprism-mcp-server test structure](mdc:crates/codeprism-mcp-server/src/server.rs) - comprehensive tests covering all scenarios
 - [Coverage validation scripts](mdc:scripts/check-implementation-completeness.sh) - Automated coverage checking
 - [Integration test patterns](mdc:tests/test_mcp_test_harness_end_to_end.rs) - End-to-end validation examples
 

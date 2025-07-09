@@ -227,7 +227,7 @@ impl CoverageTests {
         });
         
         harness.run_coverage_test("codeprism_mcp", || {
-            Self::estimate_crate_coverage("codeprism-mcp")
+            Self::estimate_crate_coverage("codeprism-mcp-server")
         });
         
         harness.run_coverage_test("codeprism_analysis", || {
@@ -277,7 +277,7 @@ impl CoverageTests {
                 // Estimate based on crate characteristics
                 match crate_name {
                     "codeprism-core" => Ok(85.2),
-                    "codeprism-mcp" => Ok(78.9),
+                    "codeprism-mcp-server" => Ok(78.9),
                     "codeprism-analysis" => Ok(82.1),
                     "codeprism-lang-python" => Ok(76.5),
                     "codeprism-lang-js" => Ok(81.3),
@@ -539,7 +539,7 @@ mod tests {
     fn test_crate_name_extraction() {
         let test_cases = vec![
             ("crates/codeprism-core/src/lib.rs", "codeprism-core"),
-            ("crates/codeprism-mcp/src/main.rs", "codeprism-mcp"),
+            ("crates/codeprism-mcp-server/src/main.rs", "codeprism-mcp-server"),
             ("src/lib.rs", "unknown"),
             ("some/other/path/src/file.rs", "path"),
         ];

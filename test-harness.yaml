@@ -19,7 +19,7 @@ global:
     json_format: false
 
 server:
-  start_command: "cargo run --bin codeprism-mcp"
+  start_command: "cargo run --bin codeprism-mcp-server"
   args:
     - "stdio"
   env: {}

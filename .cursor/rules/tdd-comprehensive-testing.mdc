@@ -66,7 +66,7 @@ Before implementing ANY feature:
 - Study existing test patterns in related modules
 - Identify comprehensive test coverage requirements  
 - Plan test scenarios based on proven patterns
-- Reference: [codeprism-mcp tests](mdc:crates/codeprism-mcp/src/tools_legacy.rs) for comprehensive examples
+- Reference: [codeprism-mcp-server tests](mdc:crates/codeprism-mcp-server/src/server.rs) for comprehensive examples
 
 ### 2. COMPREHENSIVE TEST PLANNING
 For every feature, write tests covering:
@@ -227,8 +227,8 @@ async fn test_concurrent_tool_execution() { /* stress test */ }
 
 ## References
 
-- Study comprehensive testing: [codeprism-mcp server tests](mdc:crates/codeprism-mcp/src/server.rs) lines 579-1132
-- Tool testing patterns: [codeprism-mcp tools tests](mdc:crates/codeprism-mcp/src/tools_legacy.rs) lines 4539-6291
+- Study comprehensive testing: [codeprism-mcp-server tests](mdc:crates/codeprism-mcp-server/src/server.rs) - comprehensive test patterns
+- Tool testing patterns: [codeprism-mcp-server integration tests](mdc:crates/codeprism-mcp-server/src/integration_test.rs) - tool testing patterns
 - Integration examples: [mcp integration tests](mdc:tests/test_mcp_test_harness_end_to_end.rs)
 
 **Remember: Real TDD means comprehensive testing that proves functionality works correctly, not mechanical RED-GREEN-REFACTOR with superficial tests.**

@@ -47,6 +47,10 @@ pub enum Error {
     /// YAML parsing errors
     #[error("YAML parsing error: {0}")]
     Yaml(#[from] serde_yml::Error),
+
+    /// Test case executor errors
+    #[error("Test executor error: {0}")]
+    Executor(#[from] crate::executor::ExecutorError),
 }
 
 impl Error {
@@ -98,6 +102,7 @@ impl Error {
             Self::Io(_) => "io",
             Self::Serialization(_) => "serialization",
             Self::Yaml(_) => "yaml",
+            Self::Executor(_) => "executor",
         }
     }
 }

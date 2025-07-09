@@ -1,482 +1,40 @@
 {
-  "suite_name": "CodePrism Rust Comprehensive Analysis",
-  "specification_file": "../../crates/codeprism-moth-specs/codeprism/comprehensive/codeprism-rust-comprehensive.yaml",
+  "suite_name": "Failing Test Suite",
+  "specification_file": "/tmp/.tmpTUzJWP/failing-test.yaml",
   "execution_start": {
-    "secs_since_epoch": 1751994196,
-    "nanos_since_epoch": 881382660
+    "secs_since_epoch": 1752026969,
+    "nanos_since_epoch": 579985167
   },
   "execution_end": {
-    "secs_since_epoch": 1751994197,
-    "nanos_since_epoch": 803159155
+    "secs_since_epoch": 1752026969,
+    "nanos_since_epoch": 580127329
   },
   "total_duration": {
     "secs": 0,
-    "nanos": 921776495
+    "nanos": 142162
   },
-  "total_tests": 18,
-  "passed": 18,
-  "failed": 0,
+  "total_tests": 1,
+  "passed": 0,
+  "failed": 1,
   "skipped": 0,
-  "error_rate": 0.0,
+  "error_rate": 1.0,
   "test_results": [
     {
-      "test_name": "rust_trait_explanation",
-      "success": true,
+      "test_name": "failing_test",
+      "success": false,
       "duration": {
         "secs": 0,
-        "nanos": 50000000
+        "nanos": 22303
       },
-      "error_message": null,
+      "error_message": "Test execution failed: Test executor error: MCP client connection failed: MCP client is not connected",
       "retry_attempts": 0,
       "start_time": {
-        "secs_since_epoch": 1751994196,
-        "nanos_since_epoch": 882331567
+        "secs_since_epoch": 1752026969,
+        "nanos_since_epoch": 580088040
       },
       "end_time": {
-        "secs_since_epoch": 1751994196,
-        "nanos_since_epoch": 932331567
-      },
-      "memory_usage_mb": null,
-      "metadata": {
-        "tags": [],
-        "category": null,
-        "priority": null,
-        "expected_duration": null,
-        "custom_properties": {}
-      }
-    },
-    {
-      "test_name": "rust_zero_cost_abstraction_analysis",
-      "success": true,
-      "duration": {
-        "secs": 0,
-        "nanos": 50000000
-      },
-      "error_message": null,
-      "retry_attempts": 0,
-      "start_time": {
-        "secs_since_epoch": 1751994196,
-        "nanos_since_epoch": 933469090
-      },
-      "end_time": {
-        "secs_since_epoch": 1751994196,
-        "nanos_since_epoch": 983469090
-      },
-      "memory_usage_mb": null,
-      "metadata": {
-        "tags": [],
-        "category": null,
-        "priority": null,
-        "expected_duration": null,
-        "custom_properties": {}
-      }
-    },
-    {
-      "test_name": "rust_macro_and_trait_search",
-      "success": true,
-      "duration": {
-        "secs": 0,
-        "nanos": 50000000
-      },
-      "error_message": null,
-      "retry_attempts": 0,
-      "start_time": {
-        "secs_since_epoch": 1751994196,
-        "nanos_since_epoch": 984806956
-      },
-      "end_time": {
-        "secs_since_epoch": 1751994197,
-        "nanos_since_epoch": 34806956
-      },
-      "memory_usage_mb": null,
-      "metadata": {
-        "tags": [],
-        "category": null,
-        "priority": null,
-        "expected_duration": null,
-        "custom_properties": {}
-      }
-    },
-    {
-      "test_name": "rust_crate_api_ergonomics_analysis",
-      "success": true,
-      "duration": {
-        "secs": 0,
-        "nanos": 50000000
-      },
-      "error_message": null,
-      "retry_attempts": 0,
-      "start_time": {
-        "secs_since_epoch": 1751994197,
-        "nanos_since_epoch": 36130175
-      },
-      "end_time": {
-        "secs_since_epoch": 1751994197,
-        "nanos_since_epoch": 86130175
-      },
-      "memory_usage_mb": null,
-      "metadata": {
-        "tags": [],
-        "category": null,
-        "priority": null,
-        "expected_duration": null,
-        "custom_properties": {}
-      }
-    },
-    {
-      "test_name": "rust_systems_pattern_detection",
-      "success": true,
-      "duration": {
-        "secs": 0,
-        "nanos": 50000000
-      },
-      "error_message": null,
-      "retry_attempts": 0,
-      "start_time": {
-        "secs_since_epoch": 1751994197,
-        "nanos_since_epoch": 87440140
-      },
-      "end_time": {
-        "secs_since_epoch": 1751994197,
-        "nanos_since_epoch": 137440140
-      },
-      "memory_usage_mb": null,
-      "metadata": {
-        "tags": [],
-        "category": null,
-        "priority": null,
-        "expected_duration": null,
-        "custom_properties": {}
-      }
-    },
-    {
-      "test_name": "rust_systems_batch_analysis",
-      "success": true,
-      "duration": {
-        "secs": 0,
-        "nanos": 50000000
-      },
-      "error_message": null,
-      "retry_attempts": 0,
-      "start_time": {
-        "secs_since_epoch": 1751994197,
-        "nanos_since_epoch": 138806112
-      },
-      "end_time": {
-        "secs_since_epoch": 1751994197,
-        "nanos_since_epoch": 188806112
-      },
-      "memory_usage_mb": null,
-      "metadata": {
-        "tags": [],
-        "category": null,
-        "priority": null,
-        "expected_duration": null,
-        "custom_properties": {}
-      }
-    },
-    {
-      "test_name": "rust_trait_implementation_duplicates",
-      "success": true,
-      "duration": {
-        "secs": 0,
-        "nanos": 50000000
-      },
-      "error_message": null,
-      "retry_attempts": 0,
-      "start_time": {
-        "secs_since_epoch": 1751994197,
-        "nanos_since_epoch": 189996550
-      },
-      "end_time": {
-        "secs_since_epoch": 1751994197,
-        "nanos_since_epoch": 239996550
-      },
-      "memory_usage_mb": null,
-      "metadata": {
-        "tags": [],
-        "category": null,
-        "priority": null,
-        "expected_duration": null,
-        "custom_properties": {}
-      }
-    },
-    {
-      "test_name": "rust_ownership_data_flow_analysis",
-      "success": true,
-      "duration": {
-        "secs": 0,
-        "nanos": 50000000
-      },
-      "error_message": null,
-      "retry_attempts": 0,
-      "start_time": {
-        "secs_since_epoch": 1751994197,
-        "nanos_since_epoch": 241289855
-      },
-      "end_time": {
-        "secs_since_epoch": 1751994197,
-        "nanos_since_epoch": 291289855
-      },
-      "memory_usage_mb": null,
-      "metadata": {
-        "tags": [],
-        "category": null,
-        "priority": null,
-        "expected_duration": null,
-        "custom_properties": {}
-      }
-    },
-    {
-      "test_name": "rust_ownership_complexity_analysis",
-      "success": true,
-      "duration": {
-        "secs": 0,
-        "nanos": 50000000
-      },
-      "error_message": null,
-      "retry_attempts": 0,
-      "start_time": {
-        "secs_since_epoch": 1751994197,
-        "nanos_since_epoch": 292511190
-      },
-      "end_time": {
-        "secs_since_epoch": 1751994197,
-        "nanos_since_epoch": 342511190
-      },
-      "memory_usage_mb": null,
-      "metadata": {
-        "tags": [],
-        "category": null,
-        "priority": null,
-        "expected_duration": null,
-        "custom_properties": {}
-      }
-    },
-    {
-      "test_name": "rust_ownership_flow_tracing",
-      "success": true,
-      "duration": {
-        "secs": 0,
-        "nanos": 50000000
-      },
-      "error_message": null,
-      "retry_attempts": 0,
-      "start_time": {
-        "secs_since_epoch": 1751994197,
-        "nanos_since_epoch": 342760670
-      },
-      "end_time": {
-        "secs_since_epoch": 1751994197,
-        "nanos_since_epoch": 392760670
-      },
-      "memory_usage_mb": null,
-      "metadata": {
-        "tags": [],
-        "category": null,
-        "priority": null,
-        "expected_duration": null,
-        "custom_properties": {}
-      }
-    },
-    {
-      "test_name": "rust_memory_safety_analysis",
-      "success": true,
-      "duration": {
-        "secs": 0,
-        "nanos": 50000000
-      },
-      "error_message": null,
-      "retry_attempts": 0,
-      "start_time": {
-        "secs_since_epoch": 1751994197,
-        "nanos_since_epoch": 393991103
-      },
-      "end_time": {
-        "secs_since_epoch": 1751994197,
-        "nanos_since_epoch": 443991103
-      },
-      "memory_usage_mb": null,
-      "metadata": {
-        "tags": [],
-        "category": null,
-        "priority": null,
-        "expected_duration": null,
-        "custom_properties": {}
-      }
-    },
-    {
-      "test_name": "rust_crate_repository_overview",
-      "success": true,
-      "duration": {
-        "secs": 0,
-        "nanos": 50000000
-      },
-      "error_message": null,
-      "retry_attempts": 0,
-      "start_time": {
-        "secs_since_epoch": 1751994197,
-        "nanos_since_epoch": 445186488
-      },
-      "end_time": {
-        "secs_since_epoch": 1751994197,
-        "nanos_since_epoch": 495186488
-      },
-      "memory_usage_mb": null,
-      "metadata": {
-        "tags": [],
-        "category": null,
-        "priority": null,
-        "expected_duration": null,
-        "custom_properties": {}
-      }
-    },
-    {
-      "test_name": "rust_cargo_dependency_analysis",
-      "success": true,
-      "duration": {
-        "secs": 0,
-        "nanos": 50000000
-      },
-      "error_message": null,
-      "retry_attempts": 0,
-      "start_time": {
-        "secs_since_epoch": 1751994197,
-        "nanos_since_epoch": 496525724
-      },
-      "end_time": {
-        "secs_since_epoch": 1751994197,
-        "nanos_since_epoch": 546525724
-      },
-      "memory_usage_mb": null,
-      "metadata": {
-        "tags": [],
-        "category": null,
-        "priority": null,
-        "expected_duration": null,
-        "custom_properties": {}
-      }
-    },
-    {
-      "test_name": "rust_unsafe_async_pattern_search",
-      "success": true,
-      "duration": {
-        "secs": 0,
-        "nanos": 50000000
-      },
-      "error_message": null,
-      "retry_attempts": 0,
-      "start_time": {
-        "secs_since_epoch": 1751994197,
-        "nanos_since_epoch": 546827107
-      },
-      "end_time": {
-        "secs_since_epoch": 1751994197,
-        "nanos_since_epoch": 596827107
-      },
-      "memory_usage_mb": null,
-      "metadata": {
-        "tags": [],
-        "category": null,
-        "priority": null,
-        "expected_duration": null,
-        "custom_properties": {}
-      }
-    },
-    {
-      "test_name": "rust_derive_attribute_analysis",
-      "success": true,
-      "duration": {
-        "secs": 0,
-        "nanos": 50000000
-      },
-      "error_message": null,
-      "retry_attempts": 0,
-      "start_time": {
-        "secs_since_epoch": 1751994197,
-        "nanos_since_epoch": 598044651
-      },
-      "end_time": {
-        "secs_since_epoch": 1751994197,
-        "nanos_since_epoch": 648044651
-      },
-      "memory_usage_mb": null,
-      "metadata": {
-        "tags": [],
-        "category": null,
-        "priority": null,
-        "expected_duration": null,
-        "custom_properties": {}
-      }
-    },
-    {
-      "test_name": "rust_trait_hierarchy_analysis",
-      "success": true,
-      "duration": {
-        "secs": 0,
-        "nanos": 50000000
-      },
-      "error_message": null,
-      "retry_attempts": 0,
-      "start_time": {
-        "secs_since_epoch": 1751994197,
-        "nanos_since_epoch": 649331761
-      },
-      "end_time": {
-        "secs_since_epoch": 1751994197,
-        "nanos_since_epoch": 699331761
-      },
-      "memory_usage_mb": null,
-      "metadata": {
-        "tags": [],
-        "category": null,
-        "priority": null,
-        "expected_duration": null,
-        "custom_properties": {}
-      }
-    },
-    {
-      "test_name": "rust_library_workflow_suggestion",
-      "success": true,
-      "duration": {
-        "secs": 0,
-        "nanos": 50000000
-      },
-      "error_message": null,
-      "retry_attempts": 0,
-      "start_time": {
-        "secs_since_epoch": 1751994197,
-        "nanos_since_epoch": 700647824
-      },
-      "end_time": {
-        "secs_since_epoch": 1751994197,
-        "nanos_since_epoch": 750647824
-      },
-      "memory_usage_mb": null,
-      "metadata": {
-        "tags": [],
-        "category": null,
-        "priority": null,
-        "expected_duration": null,
-        "custom_properties": {}
-      }
-    },
-    {
-      "test_name": "rust_transitive_security_analysis",
-      "success": true,
-      "duration": {
-        "secs": 0,
-        "nanos": 50000000
-      },
-      "error_message": null,
-      "retry_attempts": 0,
-      "start_time": {
-        "secs_since_epoch": 1751994197,
-        "nanos_since_epoch": 751890118
-      },
-      "end_time": {
-        "secs_since_epoch": 1751994197,
-        "nanos_since_epoch": 801890118
+        "secs_since_epoch": 1752026969,
+        "nanos_since_epoch": 580111540
       },
       "memory_usage_mb": null,
       "metadata": {
@@ -489,24 +47,24 @@
     }
   ],
   "suite_metrics": {
-    "total_memory_usage": 152,
+    "total_memory_usage": 16,
     "peak_memory_usage": 4,
     "average_test_duration": {
       "secs": 0,
-      "nanos": 51098750
+      "nanos": 23629
     },
-    "slowest_test": "rust_systems_pattern_detection",
-    "fastest_test": "rust_ownership_complexity_analysis",
+    "slowest_test": "failing_test",
+    "fastest_test": "failing_test",
     "slowest_duration": {
       "secs": 0,
-      "nanos": 51301689
+      "nanos": 23629
     },
     "fastest_duration": {
       "secs": 0,
-      "nanos": 50170968
+      "nanos": 23629
     },
-    "memory_efficiency_score": 99.99999997777778,
-    "execution_efficiency_score": 99.36629861406956
+    "memory_efficiency_score": 99.9999996,
+    "execution_efficiency_score": 100.0
   },
   "execution_mode": "Sequential",
   "dependency_resolution": {
@@ -518,45 +76,11 @@
       "nanos": 1000000
     },
     "execution_order": [
-      "rust_trait_explanation",
-      "rust_zero_cost_abstraction_analysis",
-      "rust_macro_and_trait_search",
-      "rust_crate_api_ergonomics_analysis",
-      "rust_systems_pattern_detection",
-      "rust_systems_batch_analysis",
-      "rust_trait_implementation_duplicates",
-      "rust_ownership_data_flow_analysis",
-      "rust_ownership_complexity_analysis",
-      "rust_ownership_flow_tracing",
-      "rust_memory_safety_analysis",
-      "rust_crate_repository_overview",
-      "rust_cargo_dependency_analysis",
-      "rust_unsafe_async_pattern_search",
-      "rust_derive_attribute_analysis",
-      "rust_trait_hierarchy_analysis",
-      "rust_library_workflow_suggestion",
-      "rust_transitive_security_analysis"
+      "failing_test"
     ],
     "dependency_groups": [
       [
-        "rust_crate_repository_overview",
-        "rust_ownership_flow_tracing",
-        "rust_trait_explanation",
-        "rust_macro_and_trait_search",
-        "rust_unsafe_async_pattern_search",
-        "rust_ownership_complexity_analysis",
-        "rust_trait_implementation_duplicates",
-        "rust_trait_hierarchy_analysis",
-        "rust_derive_attribute_analysis",
-        "rust_memory_safety_analysis",
-        "rust_zero_cost_abstraction_analysis",
-        "rust_crate_api_ergonomics_analysis",
-        "rust_cargo_dependency_analysis",
-        "rust_transitive_security_analysis",
-        "rust_ownership_data_flow_analysis",
-        "rust_systems_pattern_detection",
-        "rust_library_workflow_suggestion",
-        "rust_systems_batch_analysis"
+        "failing_test"
       ]
     ]
   }

@@ -28,115 +28,24 @@ server:
 # Core navigation tools testing
 tools:
   # ========================================================================
-  # REPOSITORY_STATS Tool - Repository analysis and statistics
+  # GET_REPOSITORY_INFO Tool - Repository analysis and statistics
   # ========================================================================
-  - name: "repository_stats"
-    description: "Analyze repository structure and generate comprehensive statistics"
+  - name: "get_repository_info"
+    description: "Get repository information and statistics"
     tests:
-      - name: "analyze_python_project"
-        description: "Generate repository statistics for Python test project"
-        input:
-          project_path: "test-projects/python-sample"
-          include_hidden: false
-          file_patterns: ["*.py"]
-          include_complexity: true
-          include_dependencies: true
+      - name: "get_repository_info_basic"
+        description: "Get basic repository information"
+        input: {}
         expected:
           error: false
           fields:
-            - path: "$.result.total_files"
-              field_type: "integer"
-              required: true
-            - path: "$.result.total_lines"
-              field_type: "integer"
-              required: true
-            - path: "$.result.languages_detected"
-              field_type: "array"
-              required: true
-            - path: "$.result.file_types"
+            - path: "$.result"
               field_type: "object"
               required: true
         performance:
           max_duration_ms: 5000
           max_memory_mb: 128
-        tags: ["repository", "stats", "python"]
-
-      - name: "analyze_rust_project"
-        description: "Generate repository statistics for Rust test project"
-        input:
-          project_path: "test-projects/rust-test-project"
-          include_hidden: false
-          file_patterns: ["*.rs", "*.toml"]
-          include_complexity: true
-        expected:
-          error: false
-          fields:
-            - path: "$.result.total_files"
-              field_type: "integer"
-              required: true
-            - path: "$.result.languages_detected"
-              field_type: "array"
-              required: true
-        performance:
-          max_duration_ms: 3000
-          max_memory_mb: 96
-        tags: ["repository", "stats", "rust"]
-
-      - name: "analyze_java_project"
-        description: "Generate repository statistics for Java test project"
-        input:
-          project_path: "test-projects/java-test-project"
-          include_hidden: false
-          file_patterns: ["*.java"]
-          include_complexity: true
-        expected:
-          error: false
-          fields:
-            - path: "$.result.total_files"
-              field_type: "integer"
-              required: true
-            - path: "$.result.languages_detected"
-              field_type: "array"
-              required: true
-        performance:
-          max_duration_ms: 4000
-          max_memory_mb: 112
-        tags: ["repository", "stats", "java"]
-
-      - name: "analyze_javascript_project"
-        description: "Generate repository statistics for JavaScript test project"
-        input:
-          project_path: "test-projects/js-dependency-test-project"
-          include_hidden: false
-          file_patterns: ["*.js", "*.jsx", "*.ts", "*.json"]
-          include_complexity: true
-        expected:
-          error: false
-          fields:
-            - path: "$.result.total_files"
-              field_type: "integer"
-              required: true
-            - path: "$.result.languages_detected"
-              field_type: "array"
-              required: true
-        performance:
-          max_duration_ms: 3500
-          max_memory_mb: 100
-        tags: ["repository", "stats", "javascript"]
-
-      - name: "handle_nonexistent_project"
-        description: "Handle non-existent project paths gracefully"
-        input:
-          project_path: "test-projects/nonexistent"
-          include_hidden: false
-        expected:
-          error: true
-          error_message_contains: "not found"
-          fields:
-            - path: "$.error.code"
-              field_type: "string"
-              required: true
-        tags: ["repository", "stats", "error"]
+        tags: ["repository", "info", "basic"]
 
   # ========================================================================
   # TRACE_PATH Tool - Path tracing between code symbols
@@ -144,14 +53,11 @@ tools:
   - name: "trace_path"
     description: "Find execution paths between code symbols"
     tests:
-      - name: "trace_python_function_path"
-        description: "Find path between two Python functions"
+      - name: "trace_path_basic"
+        description: "Find path between two symbols with hex IDs"
         input:
-          project_path: "test-projects/python-sample"
-          start_symbol: "main"
-          end_symbol: "get_user"
-          symbol_type: "function"
-          language: "python"
+          source: "abcdef123456"
+          target: "fedcba654321"
           max_depth: 5
         expected:
           error: false
@@ -159,23 +65,22 @@ tools:
             - path: "$.result.path_found"
               field_type: "boolean"
               required: true
-            - path: "$.result.path_steps"
-              field_type: "array"
-              required: false
+            - path: "$.result.source_id"
+              field_type: "string"
+              required: true
+            - path: "$.result.target_id"
+              field_type: "string"
+              required: true
         performance:
           max_duration_ms: 3000
           max_memory_mb: 64
-        tags: ["trace", "path", "python", "function"]
+        tags: ["trace", "path", "basic"]
 
-      - name: "trace_rust_struct_dependency"
-        description: "Trace dependencies between Rust structs"
+      - name: "trace_path_no_max_depth"
+        description: "Find path without specifying max depth (uses default)"
         input:
-          project_path: "test-projects/rust-test-project"
-          start_symbol: "Config"
-          end_symbol: "DatabaseConnection"
-          symbol_type: "struct"
-          language: "rust"
-          max_depth: 4
+          source: "abcdef123456"
+          target: "fedcba654321"
         expected:
           error: false
           fields:
@@ -183,147 +88,29 @@ tools:
               field_type: "boolean"
               required: true
         performance:
-          max_duration_ms: 2500
-          max_memory_mb: 56
-        tags: ["trace", "path", "rust", "struct"]
+          max_duration_ms: 3000
+          max_memory_mb: 64
+        tags: ["trace", "path", "defaults"]
 
-      - name: "trace_java_class_inheritance"
-        description: "Trace inheritance paths between Java classes"
+      - name: "trace_path_invalid_source"
+        description: "Handle invalid source ID format"
         input:
-          project_path: "test-projects/java-test-project"
-          start_symbol: "UserService"
-          end_symbol: "BaseService"
-          symbol_type: "class"
-          language: "java"
-          include_inheritance: true
-          max_depth: 3
-        expected:
-          error: false
-          fields:
-            - path: "$.result.inheritance_chain"
-              field_type: "array"
-              required: false
-        performance:
-          max_duration_ms: 2000
-          max_memory_mb: 48
-        tags: ["trace", "path", "java", "inheritance"]
-
-      - name: "trace_disconnected_symbols"
-        description: "Handle symbols with no connection"
-        input:
-          project_path: "test-projects/python-sample"
-          start_symbol: "isolated_function"
-          end_symbol: "unrelated_function"
-          symbol_type: "function"
-          language: "python"
-          max_depth: 5
-        expected:
-          error: false
-          fields:
-            - path: "$.result.path_found"
-              value: false
-              required: true
-        tags: ["trace", "path", "edge_case"]
-
-  # ========================================================================
-  # EXPLAIN_SYMBOL Tool - Detailed symbol explanations
-  # ========================================================================
-  - name: "explain_symbol"
-    description: "Provide detailed explanations of code symbols"
-    tests:
-      - name: "explain_python_function"
-        description: "Explain a Python function with signature and documentation"
-        input:
-          project_path: "test-projects/python-sample"
-          target_symbol: "get_user"
-          symbol_type: "function"
-          language: "python"
-          include_signature: true
-          include_docstring: true
-          include_usage_examples: true
-        expected:
-          error: false
-          fields:
-            - path: "$.result.symbol_name"
-              field_type: "string"
-              required: true
-            - path: "$.result.symbol_type"
-              field_type: "string"
-              required: true
-            - path: "$.result.signature"
-              field_type: "string"
-              required: true
-            - path: "$.result.documentation"
-              field_type: "string"
-              required: false
-        performance:
-          max_duration_ms: 2000
-          max_memory_mb: 32
-        tags: ["explain", "python", "function"]
-
-      - name: "explain_rust_struct"
-        description: "Explain a Rust struct with fields and traits"
-        input:
-          project_path: "test-projects/rust-test-project"
-          target_symbol: "DatabaseConnection"
-          symbol_type: "struct"
-          language: "rust"
-          include_signature: true
-          include_fields: true
-          include_traits: true
-        expected:
-          error: false
-          fields:
-            - path: "$.result.symbol_name"
-              field_type: "string"
-              required: true
-            - path: "$.result.fields"
-              field_type: "array"
-              required: false
-        performance:
-          max_duration_ms: 1500
-          max_memory_mb: 28
-        tags: ["explain", "rust", "struct"]
-
-      - name: "explain_java_class"
-        description: "Explain a Java class with methods and inheritance"
-        input:
-          project_path: "test-projects/java-test-project"
-          target_symbol: "UserController"
-          symbol_type: "class"
-          language: "java"
-          include_signature: true
-          include_methods: true
-          include_inheritance: true
-        expected:
-          error: false
-          fields:
-            - path: "$.result.symbol_name"
-              field_type: "string"
-              required: true
-            - path: "$.result.methods"
-              field_type: "array"
-              required: false
-        performance:
-          max_duration_ms: 2500
-          max_memory_mb: 40
-        tags: ["explain", "java", "class"]
-
-      - name: "explain_nonexistent_symbol"
-        description: "Handle non-existent symbols gracefully"
-        input:
-          project_path: "test-projects/python-sample"
-          target_symbol: "nonexistent_function"
-          symbol_type: "function"
-          language: "python"
+          source: "invalid_hex"
+          target: "fedcba654321"
         expected:
           error: true
-          error_message_contains: "not found"
-          fields:
-            - path: "$.error.code"
-              field_type: "string"
-              required: true
-        tags: ["explain", "error", "edge_case"]
+          error_message_contains: "Invalid source symbol ID format"
+        tags: ["trace", "path", "error"]
+
+      - name: "trace_path_invalid_target"
+        description: "Handle invalid target ID format"
+        input:
+          source: "abcdef123456"
+          target: "invalid_hex"
+        expected:
+          error: true
+          error_message_contains: "Invalid target symbol ID format"
+        tags: ["trace", "path", "error"]
 
   # ========================================================================
   # FIND_DEPENDENCIES Tool - Dependency analysis
@@ -331,67 +118,29 @@ tools:
   - name: "find_dependencies"
     description: "Find and analyze code dependencies"
     tests:
-      - name: "find_python_class_dependencies"
-        description: "Find dependencies for a Python class"
+      - name: "find_dependencies_basic"
+        description: "Find dependencies with default type"
         input:
-          project_path: "test-projects/python-sample"
-          target_symbol: "User"
-          symbol_type: "class"
-          language: "python"
-          include_imports: true
-          include_inheritance: true
-          max_depth: 3
+          target: "abcdef123456"
         expected:
           error: false
           fields:
+            - path: "$.result.target_symbol_id"
+              field_type: "string"
+              required: true
             - path: "$.result.dependencies"
               field_type: "array"
               required: true
-            - path: "$.result.import_dependencies"
-              field_type: "array"
-              required: false
-            - path: "$.result.internal_dependencies"
-              field_type: "array"
-              required: false
         performance:
           max_duration_ms: 4000
           max_memory_mb: 72
-        tags: ["dependencies", "python", "class"]
+        tags: ["dependencies", "basic"]
 
-      - name: "find_rust_module_dependencies"
-        description: "Find dependencies for a Rust module"
+      - name: "find_dependencies_direct"
+        description: "Find direct dependencies"
         input:
-          project_path: "test-projects/rust-test-project"
-          target_symbol: "database"
-          symbol_type: "module"
-          language: "rust"
-          include_imports: true
-          include_transitive: true
-          max_depth: 4
-        expected:
-          error: false
-          fields:
-            - path: "$.result.dependencies"
-              field_type: "array"
-              required: true
-            - path: "$.result.crate_dependencies"
-              field_type: "array"
-              required: false
-        performance:
-          max_duration_ms: 3500
-          max_memory_mb: 68
-        tags: ["dependencies", "rust", "module"]
-
-      - name: "find_java_package_dependencies"
-        description: "Find dependencies for a Java package"
-        input:
-          project_path: "test-projects/java-test-project"
-          target_symbol: "com.example.service"
-          symbol_type: "package"
-          language: "java"
-          include_imports: true
-          include_transitive: false
-          max_depth: 2
+          target: "abcdef123456"
+          dependency_type: "direct"
         expected:
           error: false
           fields:
@@ -399,33 +148,60 @@ tools:
               field_type: "array"
               required: true
         performance:
-          max_duration_ms: 3000
-          max_memory_mb: 64
-        tags: ["dependencies", "java", "package"]
+          max_duration_ms: 4000
+          max_memory_mb: 72
+        tags: ["dependencies", "direct"]
 
-      - name: "find_transitive_dependencies"
-        description: "Find transitive dependencies with depth control"
+      - name: "find_dependencies_calls"
+        description: "Find call dependencies"
         input:
-          project_path: "test-projects/dependency-test-project"
-          target_symbol: "UserManager"
-          symbol_type: "class"
-          language: "python"
-          include_transitive: true
-          max_depth: 4
-          include_imports: true
+          target: "abcdef123456"
+          dependency_type: "calls"
         expected:
           error: false
           fields:
-            - path: "$.result.dependency_graph"
-              field_type: "object"
-              required: false
-            - path: "$.result.depth_levels"
+            - path: "$.result.dependencies"
               field_type: "array"
-              required: false
+              required: true
         performance:
-          max_duration_ms: 5000
-          max_memory_mb: 96
-        tags: ["dependencies", "transitive", "graph"]
+          max_duration_ms: 4000
+          max_memory_mb: 72
+        tags: ["dependencies", "calls"]
+
+      - name: "find_dependencies_imports"
+        description: "Find import dependencies"
+        input:
+          target: "abcdef123456"
+          dependency_type: "imports"
+        expected:
+          error: false
+          fields:
+            - path: "$.result.dependencies"
+              field_type: "array"
+              required: true
+        performance:
+          max_duration_ms: 4000
+          max_memory_mb: 72
+        tags: ["dependencies", "imports"]
+
+      - name: "find_dependencies_invalid_type"
+        description: "Handle invalid dependency type"
+        input:
+          target: "abcdef123456"
+          dependency_type: "invalid_type"
+        expected:
+          error: true
+          error_message_contains: "Invalid dependency type"
+        tags: ["dependencies", "error"]
+
+      - name: "find_dependencies_invalid_target"
+        description: "Handle invalid target ID format"
+        input:
+          target: "invalid_hex"
+        expected:
+          error: true
+          error_message_contains: "Invalid target symbol ID format"
+        tags: ["dependencies", "error"]
 
   # ========================================================================
   # FIND_REFERENCES Tool - Reference finding
@@ -433,38 +209,29 @@ tools:
   - name: "find_references"
     description: "Find all references to code symbols"
     tests:
-      - name: "find_python_function_references"
-        description: "Find all references to a Python function"
+      - name: "find_references_basic"
+        description: "Find references with default parameters"
         input:
-          project_path: "test-projects/python-sample"
-          target_symbol: "get_user"
-          symbol_type: "function"
-          language: "python"
-          include_calls: true
-          include_imports: true
+          symbol_id: "abcdef123456"
         expected:
           error: false
           fields:
+            - path: "$.result.symbol_id"
+              field_type: "string"
+              required: true
             - path: "$.result.references"
               field_type: "array"
-              required: true
-            - path: "$.result.reference_count"
-              field_type: "integer"
               required: true
         performance:
           max_duration_ms: 2000
           max_memory_mb: 48
-        tags: ["references", "python", "function"]
+        tags: ["references", "basic"]
 
-      - name: "find_rust_struct_references"
-        description: "Find all references to a Rust struct"
+      - name: "find_references_with_definitions"
+        description: "Find references including definitions"
         input:
-          project_path: "test-projects/rust-test-project"
-          target_symbol: "Config"
-          symbol_type: "struct"
-          language: "rust"
-          include_instantiation: true
-          include_inheritance: false
+          symbol_id: "abcdef123456"
+          include_definitions: true
         expected:
           error: false
           fields:
@@ -472,77 +239,206 @@ tools:
               field_type: "array"
               required: true
         performance:
-          max_duration_ms: 1800
-          max_memory_mb: 44
-        tags: ["references", "rust", "struct"]
+          max_duration_ms: 2000
+          max_memory_mb: 48
+        tags: ["references", "definitions"]
 
-      - name: "find_java_class_references"
-        description: "Find all references to a Java class"
+      - name: "find_references_with_context"
+        description: "Find references with context lines"
         input:
-          project_path: "test-projects/java-test-project"
-          target_symbol: "User"
-          symbol_type: "class"
-          language: "java"
-          include_instantiation: true
-          include_inheritance: true
-          include_imports: true
+          symbol_id: "abcdef123456"
+          context_lines: 5
         expected:
           error: false
           fields:
             - path: "$.result.references"
               field_type: "array"
               required: true
-            - path: "$.result.inheritance_references"
-              field_type: "array"
-              required: false
         performance:
-          max_duration_ms: 2200
-          max_memory_mb: 52
-        tags: ["references", "java", "class"]
+          max_duration_ms: 2000
+          max_memory_mb: 48
+        tags: ["references", "context"]
 
-      - name: "find_unused_symbol_references"
-        description: "Handle symbols with no references"
+      - name: "find_references_invalid_symbol"
+        description: "Handle invalid symbol ID format"
         input:
-          project_path: "test-projects/python-sample"
-          target_symbol: "unused_function"
-          symbol_type: "function"
-          language: "python"
-          include_calls: true
+          symbol_id: "invalid_hex"
+        expected:
+          error: true
+          error_message_contains: "Invalid symbol ID format"
+        tags: ["references", "error"]
+
+  # ========================================================================
+  # EXPLAIN_SYMBOL Tool - Detailed symbol explanations
+  # ========================================================================
+  - name: "explain_symbol"
+    description: "Provide detailed explanations of code symbols"
+    tests:
+      - name: "explain_symbol_basic"
+        description: "Explain symbol with default parameters"
+        input:
+          symbol_id: "abcdef123456"
         expected:
           error: false
           fields:
-            - path: "$.result.references"
-              value: []
+            - path: "$.result.symbol_id"
+              field_type: "string"
               required: true
-            - path: "$.result.reference_count"
-              value: 0
+            - path: "$.result.explanation"
+              field_type: "string"
               required: true
-        tags: ["references", "unused", "edge_case"]
-
-      - name: "find_cross_file_references"
-        description: "Find references across multiple files"
-        input:
-          project_path: "test-projects/dependency-test-project"
-          target_symbol: "BaseModel"
-          symbol_type: "class"
-          language: "python"
-          include_calls: true
-          include_imports: true
-          include_inheritance: true
-          cross_file_search: true
-        expected:
-          error: false
-          fields:
-            - path: "$.result.references"
-              field_type: "array"
-              required: true
-            - path: "$.result.files_with_references"
-              field_type: "array"
-              required: false
         performance:
-          max_duration_ms: 3500
-          max_memory_mb: 80
-        tags: ["references", "cross_file", "comprehensive"]
+          max_duration_ms: 2000
+          max_memory_mb: 32
+        tags: ["explain", "basic"]
+
+      - name: "explain_symbol_with_dependencies"
+        description: "Explain symbol including dependencies"
+        input:
+          symbol_id: "abcdef123456"
+          include_dependencies: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.symbol_id"
+              field_type: "string"
+              required: true
+            - path: "$.result.explanation"
+              field_type: "string"
+              required: true
+        performance:
+          max_duration_ms: 2000
+          max_memory_mb: 32
+        tags: ["explain", "dependencies"]
+
+      - name: "explain_symbol_with_usages"
+        description: "Explain symbol including usages"
+        input:
+          symbol_id: "abcdef123456"
+          include_usages: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.symbol_id"
+              field_type: "string"
+              required: true
+            - path: "$.result.explanation"
+              field_type: "string"
+              required: true
+        performance:
+          max_duration_ms: 2000
+          max_memory_mb: 32
+        tags: ["explain", "usages"]
+
+      - name: "explain_symbol_with_context"
+        description: "Explain symbol with context lines"
+        input:
+          symbol_id: "abcdef123456"
+          context_lines: 10
+        expected:
+          error: false
+          fields:
+            - path: "$.result.symbol_id"
+              field_type: "string"
+              required: true
+            - path: "$.result.explanation"
+              field_type: "string"
+              required: true
+        performance:
+          max_duration_ms: 2000
+          max_memory_mb: 32
+        tags: ["explain", "context"]
+
+      - name: "explain_symbol_invalid_id"
+        description: "Handle invalid symbol ID format"
+        input:
+          symbol_id: "invalid_hex"
+        expected:
+          error: true
+          error_message_contains: "Invalid symbol ID format"
+        tags: ["explain", "error"]
+
+  # ========================================================================
+  # SEARCH_SYMBOLS Tool - Symbol search
+  # ========================================================================
+  - name: "search_symbols"
+    description: "Search for symbols by pattern"
+    tests:
+      - name: "search_symbols_basic"
+        description: "Search symbols with basic pattern"
+        input:
+          pattern: "get_user"
+        expected:
+          error: false
+          fields:
+            - path: "$.result.pattern"
+              field_type: "string"
+              required: true
+            - path: "$.result.symbols"
+              field_type: "array"
+              required: true
+        performance:
+          max_duration_ms: 3000
+          max_memory_mb: 64
+        tags: ["search", "basic"]
+
+      - name: "search_symbols_with_types"
+        description: "Search symbols filtered by types"
+        input:
+          pattern: "user"
+          symbol_types: ["function", "class"]
+        expected:
+          error: false
+          fields:
+            - path: "$.result.symbols"
+              field_type: "array"
+              required: true
+        performance:
+          max_duration_ms: 3000
+          max_memory_mb: 64
+        tags: ["search", "types"]
+
+      - name: "search_symbols_with_limit"
+        description: "Search symbols with result limit"
+        input:
+          pattern: "test"
+          limit: 10
+        expected:
+          error: false
+          fields:
+            - path: "$.result.symbols"
+              field_type: "array"
+              required: true
+        performance:
+          max_duration_ms: 3000
+          max_memory_mb: 64
+        tags: ["search", "limit"]
+
+      - name: "search_symbols_with_context"
+        description: "Search symbols with context lines"
+        input:
+          pattern: "main"
+          context_lines: 5
+        expected:
+          error: false
+          fields:
+            - path: "$.result.symbols"
+              field_type: "array"
+              required: true
+        performance:
+          max_duration_ms: 3000
+          max_memory_mb: 64
+        tags: ["search", "context"]
+
+      - name: "search_symbols_invalid_type"
+        description: "Handle invalid symbol type"
+        input:
+          pattern: "test"
+          symbol_types: ["invalid_type"]
+        expected:
+          error: true
+          error_message_contains: "Invalid symbol type"
+        tags: ["search", "error"]
 
 # Test configuration
 test_config:
@@ -554,29 +450,32 @@ test_config:
     retry_delay_ms: 1000
     exponential_backoff: true
 
-# Metadata for core navigation testing
+# Test metadata
 metadata:
   author: "CodePrism MCP Test Harness Team"
   documentation: "https://spec.modelcontextprotocol.io/"
   license: "MIT"
   tags: ["core", "navigation", "analysis", "multi-language"]
   test_coverage:
-    tools: 5
-    scenarios: 25
+    tools: 6
+    scenarios: 26
     languages: ["python", "rust", "java", "javascript"]
-    capabilities: ["repository_analysis", "path_tracing", "symbol_explanation", "dependency_analysis", "reference_finding"]
+    capabilities: ["path_tracing", "dependency_analysis", "symbol_explanation", "reference_finding", "symbol_search", "repository_info"]
   
-  # Performance benchmarks for core tools
+  # Performance benchmarks for core navigation tools
   benchmarks:
-    repository_stats_time_ms: 5000
+    get_repository_info_time_ms: 5000
     trace_path_time_ms: 3000
-    explain_symbol_time_ms: 2000
     find_dependencies_time_ms: 4000
-    find_references_time_ms: 2500
+    find_references_time_ms: 2000
+    explain_symbol_time_ms: 2000
+    search_symbols_time_ms: 3000
   
   # Quality targets
   quality_targets:
     success_rate_percent: 95
-    error_handling_coverage_percent: 100
-    cross_language_support_percent: 90
+    path_finding_accuracy_percent: 85
+    dependency_analysis_completeness_percent: 90
+    reference_finding_accuracy_percent: 92
+    symbol_explanation_quality_percent: 88
     performance_test_coverage_percent: 100 

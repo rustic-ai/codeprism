@@ -1,6 +1,6 @@
 # CodePrism MCP Server - Workflow Orchestration Tools Test Specification
-# Comprehensive testing for workflow orchestration tools including analysis workflow suggestions,
-# batch analysis execution, and workflow optimization with extensive test scenarios
+# Comprehensive testing for workflow orchestration tools including guidance,
+# optimization, batch processing, and workflow automation
 
 name: "CodePrism Workflow Orchestration Tools"
 version: "1.0.0"
@@ -28,648 +28,434 @@ server:
 # Workflow orchestration tools testing
 tools:
   # ========================================================================
-  # SUGGEST_ANALYSIS_WORKFLOW Tool - Analysis workflow recommendations
+  # PROVIDE_GUIDANCE Tool - Provide development guidance and recommendations
   # ========================================================================
-  - name: "suggest_analysis_workflow"
-    description: "Suggest optimal analysis workflows based on project characteristics"
+  - name: "provide_guidance"
+    description: "Provide development guidance and recommendations"
     tests:
-      - name: "suggest_python_web_app_workflow"
-        description: "Suggest analysis workflow for Python web application"
+      - name: "provide_guidance_basic"
+        description: "Basic guidance for a file"
         input:
-          project_path: "test-projects/python-sample"
-          language: "python"
-          project_type: "web_application"
-          analysis_goals: ["security", "performance", "code_quality"]
-          time_budget_minutes: 30
-          include_priority_ordering: true
+          target: "test-projects/python-sample/main.py"
         expected:
           error: false
           fields:
-            - path: "$.result.suggested_workflow"
-              field_type: "object"
+            - path: "$.result.target"
+              field_type: "string"
               required: true
-            - path: "$.result.analysis_steps"
-              field_type: "array"
+            - path: "$.result.guidance"
+              field_type: "string"
               required: true
-            - path: "$.result.estimated_duration"
-              field_type: "number"
-              required: false
-            - path: "$.result.priority_order"
-              field_type: "array"
-              required: false
-        performance:
-          max_duration_ms: 2000
-          max_memory_mb: 32
-        tags: ["workflow", "python", "web_app"]
-
-      - name: "suggest_rust_library_workflow"
-        description: "Suggest analysis workflow for Rust library project"
-        input:
-          project_path: "test-projects/rust-test-project"
-          language: "rust"
-          project_type: "library"
-          analysis_goals: ["api_design", "performance", "memory_safety"]
-          time_budget_minutes: 45
-          include_dependency_analysis: true
-        expected:
-          error: false
-          fields:
-            - path: "$.result.suggested_workflow"
-              field_type: "object"
-              required: true
-            - path: "$.result.analysis_steps"
-              field_type: "array"
-              required: true
-            - path: "$.result.rust_specific_checks"
-              field_type: "array"
-              required: false
-            - path: "$.result.api_analysis_priority"
-              field_type: "number"
-              required: false
-        performance:
-          max_duration_ms: 2200
-          max_memory_mb: 36
-        tags: ["workflow", "rust", "library"]
-
-      - name: "suggest_java_enterprise_workflow"
-        description: "Suggest analysis workflow for Java enterprise application"
-        input:
-          project_path: "test-projects/java-test-project"
-          language: "java"
-          project_type: "enterprise_application"
-          analysis_goals: ["architecture", "security", "performance", "maintainability"]
-          time_budget_minutes: 60
-          include_framework_analysis: true
-        expected:
-          error: false
-          fields:
-            - path: "$.result.suggested_workflow"
-              field_type: "object"
-              required: true
-            - path: "$.result.analysis_steps"
-              field_type: "array"
-              required: true
-            - path: "$.result.enterprise_focus_areas"
-              field_type: "array"
-              required: false
-            - path: "$.result.framework_analysis_steps"
-              field_type: "array"
-              required: false
-        performance:
-          max_duration_ms: 2500
-          max_memory_mb: 40
-        tags: ["workflow", "java", "enterprise"]
-
-      - name: "suggest_javascript_spa_workflow"
-        description: "Suggest analysis workflow for JavaScript single-page application"
-        input:
-          project_path: "test-projects/js-dependency-test-project"
-          language: "javascript"
-          project_type: "single_page_application"
-          analysis_goals: ["component_architecture", "performance", "accessibility", "security"]
-          time_budget_minutes: 40
-          include_frontend_specific: true
-        expected:
-          error: false
-          fields:
-            - path: "$.result.suggested_workflow"
-              field_type: "object"
-              required: true
-            - path: "$.result.analysis_steps"
-              field_type: "array"
-              required: true
-            - path: "$.result.frontend_priorities"
-              field_type: "array"
-              required: false
-            - path: "$.result.accessibility_checks"
-              field_type: "array"
-              required: false
-        performance:
-          max_duration_ms: 2300
-          max_memory_mb: 38
-        tags: ["workflow", "javascript", "spa"]
-
-      - name: "suggest_multi_language_workflow"
-        description: "Suggest analysis workflow for multi-language project"
-        input:
-          project_path: "test-projects/dependency-test-project"
-          language: "*"
-          project_type: "mixed_language"
-          analysis_goals: ["cross_language_integration", "dependency_management", "security"]
-          time_budget_minutes: 90
-          include_integration_analysis: true
-        expected:
-          error: false
-          fields:
-            - path: "$.result.suggested_workflow"
-              field_type: "object"
-              required: true
-            - path: "$.result.language_specific_steps"
-              field_type: "object"
-              required: true
-            - path: "$.result.integration_checks"
-              field_type: "array"
-              required: false
-            - path: "$.result.cross_language_risks"
-              field_type: "array"
-              required: false
         performance:
           max_duration_ms: 3000
           max_memory_mb: 48
-        tags: ["workflow", "multi_language", "integration"]
+        tags: ["guidance", "basic"]
 
-      - name: "suggest_ci_cd_workflow"
-        description: "Suggest analysis workflow optimized for CI/CD pipelines"
+      - name: "provide_guidance_complexity"
+        description: "Provide complexity guidance"
         input:
-          project_path: "test-projects/python-sample"
-          language: "python"
-          project_type: "continuous_integration"
-          analysis_goals: ["quality_gates", "regression_detection", "fast_feedback"]
-          time_budget_minutes: 15
-          include_parallel_execution: true
+          target: "test-projects/rust-test-project/src/main.rs"
+          guidance_type: "complexity"
         expected:
           error: false
           fields:
-            - path: "$.result.suggested_workflow"
-              field_type: "object"
+            - path: "$.result.target"
+              field_type: "string"
               required: true
-            - path: "$.result.parallel_steps"
-              field_type: "array"
-              required: false
-            - path: "$.result.quality_gates"
-              field_type: "array"
-              required: false
-            - path: "$.result.fast_track_options"
-              field_type: "array"
-              required: false
-        performance:
-          max_duration_ms: 1800
-          max_memory_mb: 30
-        tags: ["workflow", "ci_cd", "optimization"]
-
-      - name: "suggest_custom_goal_workflow"
-        description: "Suggest analysis workflow for custom analysis goals"
-        input:
-          project_path: "test-projects/rust-test-project"
-          language: "rust"
-          project_type: "custom"
-          analysis_goals: ["memory_efficiency", "zero_copy_opportunities", "unsafe_code_audit"]
-          time_budget_minutes: 120
-          custom_requirements: ["detailed_memory_analysis", "performance_profiling"]
-        expected:
-          error: false
-          fields:
-            - path: "$.result.suggested_workflow"
-              field_type: "object"
+            - path: "$.result.guidance"
+              field_type: "string"
               required: true
-            - path: "$.result.custom_analysis_steps"
-              field_type: "array"
-              required: true
-            - path: "$.result.specialized_tools"
-              field_type: "array"
-              required: false
-            - path: "$.result.custom_validations"
-              field_type: "array"
-              required: false
-        performance:
-          max_duration_ms: 2800
-          max_memory_mb: 44
-        tags: ["workflow", "custom", "specialized"]
-
-  # ========================================================================
-  # BATCH_ANALYSIS Tool - Execute multiple analysis tools in batch
-  # ========================================================================
-  - name: "batch_analysis"
-    description: "Execute multiple analysis tools in batch with coordination"
-    tests:
-      - name: "batch_core_analysis_suite"
-        description: "Execute core analysis tools in batch for comprehensive review"
-        input:
-          project_path: "test-projects/python-sample"
-          language: "python"
-          analysis_suite: "core"
-          tools: ["repository_stats", "analyze_complexity", "find_dependencies", "search_symbols"]
-          execution_mode: "parallel"
-          include_summary_report: true
-        expected:
-          error: false
-          fields:
-            - path: "$.result.batch_results"
-              field_type: "object"
-              required: true
-            - path: "$.result.tool_executions"
-              field_type: "array"
-              required: true
-            - path: "$.result.execution_summary"
-              field_type: "object"
-              required: false
-            - path: "$.result.consolidated_report"
-              field_type: "object"
-              required: false
-        performance:
-          max_duration_ms: 15000
-          max_memory_mb: 128
-        tags: ["batch", "core", "parallel"]
-
-      - name: "batch_security_analysis_suite"
-        description: "Execute security-focused analysis tools in batch"
-        input:
-          project_path: "test-projects/java-test-project"
-          language: "java"
-          analysis_suite: "security"
-          tools: ["analyze_security", "find_unused_code", "analyze_dependencies", "trace_data_flow"]
-          execution_mode: "sequential"
-          include_risk_assessment: true
-        expected:
-          error: false
-          fields:
-            - path: "$.result.batch_results"
-              field_type: "object"
-              required: true
-            - path: "$.result.security_findings"
-              field_type: "array"
-              required: true
-            - path: "$.result.risk_assessment"
-              field_type: "object"
-              required: false
-            - path: "$.result.remediation_plan"
-              field_type: "array"
-              required: false
-        performance:
-          max_duration_ms: 20000
-          max_memory_mb: 160
-        tags: ["batch", "security", "sequential"]
-
-      - name: "batch_performance_analysis_suite"
-        description: "Execute performance-focused analysis tools in batch"
-        input:
-          project_path: "test-projects/rust-test-project"
-          language: "rust"
-          analysis_suite: "performance"
-          tools: ["analyze_performance", "analyze_complexity", "find_duplicates", "trace_path"]
-          execution_mode: "parallel"
-          include_benchmarking: true
-        expected:
-          error: false
-          fields:
-            - path: "$.result.batch_results"
-              field_type: "object"
-              required: true
-            - path: "$.result.performance_metrics"
-              field_type: "object"
-              required: true
-            - path: "$.result.optimization_opportunities"
-              field_type: "array"
-              required: false
-            - path: "$.result.benchmark_results"
-              field_type: "object"
-              required: false
-        performance:
-          max_duration_ms: 18000
-          max_memory_mb: 144
-        tags: ["batch", "performance", "benchmarking"]
-
-      - name: "batch_javascript_specific_suite"
-        description: "Execute JavaScript-specific analysis tools in batch"
-        input:
-          project_path: "test-projects/js-dependency-test-project"
-          language: "javascript"
-          analysis_suite: "javascript_specific"
-          tools: ["analyze_javascript_frameworks", "analyze_react_components", "analyze_nodejs_patterns"]
-          execution_mode: "parallel"
-          include_framework_report: true
-        expected:
-          error: false
-          fields:
-            - path: "$.result.batch_results"
-              field_type: "object"
-              required: true
-            - path: "$.result.framework_analysis"
-              field_type: "object"
-              required: true
-            - path: "$.result.component_insights"
-              field_type: "array"
-              required: false
-            - path: "$.result.nodejs_recommendations"
-              field_type: "array"
-              required: false
-        performance:
-          max_duration_ms: 12000
-          max_memory_mb: 96
-        tags: ["batch", "javascript", "frameworks"]
-
-      - name: "batch_custom_tool_selection"
-        description: "Execute custom selection of analysis tools in batch"
-        input:
-          project_path: "test-projects/dependency-test-project"
-          language: "*"
-          analysis_suite: "custom"
-          tools: ["trace_inheritance", "analyze_decorators", "analyze_api_surface", "content_stats"]
-          execution_mode: "mixed"
-          tool_priorities: {"trace_inheritance": 1, "analyze_api_surface": 2}
-        expected:
-          error: false
-          fields:
-            - path: "$.result.batch_results"
-              field_type: "object"
-              required: true
-            - path: "$.result.prioritized_results"
-              field_type: "object"
-              required: true
-            - path: "$.result.execution_order"
-              field_type: "array"
-              required: false
-            - path: "$.result.cross_tool_insights"
-              field_type: "array"
-              required: false
-        performance:
-          max_duration_ms: 16000
-          max_memory_mb: 120
-        tags: ["batch", "custom", "prioritized"]
-
-      - name: "batch_error_handling_and_recovery"
-        description: "Test batch execution with error handling and recovery"
-        input:
-          project_path: "test-projects/python-sample"
-          language: "python"
-          analysis_suite: "resilience_test"
-          tools: ["repository_stats", "invalid_tool_name", "analyze_complexity", "find_dependencies"]
-          execution_mode: "continue_on_error"
-          include_error_analysis: true
-        expected:
-          error: false
-          fields:
-            - path: "$.result.batch_results"
-              field_type: "object"
-              required: true
-            - path: "$.result.successful_executions"
-              field_type: "array"
-              required: true
-            - path: "$.result.failed_executions"
-              field_type: "array"
-              required: true
-            - path: "$.result.error_analysis"
-              field_type: "object"
-              required: false
-        performance:
-          max_duration_ms: 10000
-          max_memory_mb: 80
-        tags: ["batch", "error_handling", "resilience"]
-
-      - name: "batch_large_project_analysis"
-        description: "Test batch execution on large project with resource management"
-        input:
-          project_path: "test-projects/dependency-test-project"
-          language: "*"
-          analysis_suite: "comprehensive"
-          tools: ["repository_stats", "search_content", "analyze_complexity", "find_dependencies", "analyze_security"]
-          execution_mode: "resource_managed"
-          max_memory_mb: 256
-          max_duration_minutes: 30
-        expected:
-          error: false
-          fields:
-            - path: "$.result.batch_results"
-              field_type: "object"
-              required: true
-            - path: "$.result.resource_usage"
-              field_type: "object"
-              required: true
-            - path: "$.result.performance_metrics"
-              field_type: "object"
-              required: false
-            - path: "$.result.resource_optimizations"
-              field_type: "array"
-              required: false
-        performance:
-          max_duration_ms: 25000
-          max_memory_mb: 200
-        tags: ["batch", "large_project", "resource_management"]
-
-  # ========================================================================
-  # OPTIMIZE_WORKFLOW Tool - Optimize existing analysis workflows
-  # ========================================================================
-  - name: "optimize_workflow"
-    description: "Optimize existing analysis workflows for better performance and effectiveness"
-    tests:
-      - name: "optimize_sequential_workflow"
-        description: "Optimize a sequential workflow by identifying parallelization opportunities"
-        input:
-          current_workflow:
-            steps: ["repository_stats", "analyze_complexity", "find_dependencies", "analyze_security"]
-            execution_mode: "sequential"
-            current_duration_minutes: 25
-          optimization_goals: ["reduce_duration", "maintain_quality"]
-          target_duration_minutes: 15
-          allow_parallel_execution: true
-        expected:
-          error: false
-          fields:
-            - path: "$.result.optimized_workflow"
-              field_type: "object"
-              required: true
-            - path: "$.result.optimization_suggestions"
-              field_type: "array"
-              required: true
-            - path: "$.result.estimated_improvement"
-              field_type: "object"
-              required: false
-            - path: "$.result.parallelization_opportunities"
-              field_type: "array"
-              required: false
         performance:
           max_duration_ms: 3000
           max_memory_mb: 48
-        tags: ["optimization", "parallelization", "workflow"]
+        tags: ["guidance", "complexity"]
 
-      - name: "optimize_redundant_workflow"
-        description: "Optimize workflow by removing redundant analysis steps"
+      - name: "provide_guidance_performance"
+        description: "Provide performance guidance"
         input:
-          current_workflow:
-            steps: ["find_dependencies", "analyze_transitive_dependencies", "find_dependencies", "trace_path"]
-            execution_mode: "parallel"
-            current_duration_minutes: 18
-          optimization_goals: ["eliminate_redundancy", "reduce_resource_usage"]
-          analyze_step_overlap: true
-          suggest_consolidation: true
+          target: "test-projects/java-test-project/src/main/java/Main.java"
+          guidance_type: "performance"
         expected:
           error: false
           fields:
-            - path: "$.result.optimized_workflow"
-              field_type: "object"
+            - path: "$.result.target"
+              field_type: "string"
               required: true
-            - path: "$.result.redundancy_analysis"
-              field_type: "object"
+            - path: "$.result.guidance"
+              field_type: "string"
               required: true
-            - path: "$.result.consolidated_steps"
-              field_type: "array"
-              required: false
-            - path: "$.result.resource_savings"
-              field_type: "object"
-              required: false
         performance:
-          max_duration_ms: 2800
-          max_memory_mb: 44
-        tags: ["optimization", "redundancy", "consolidation"]
+          max_duration_ms: 3000
+          max_memory_mb: 48
+        tags: ["guidance", "performance"]
 
-      - name: "optimize_resource_constrained_workflow"
-        description: "Optimize workflow for resource-constrained environments"
+      - name: "provide_guidance_security"
+        description: "Provide security guidance"
         input:
-          current_workflow:
-            steps: ["repository_stats", "analyze_performance", "find_duplicates", "analyze_security", "trace_inheritance"]
-            execution_mode: "parallel"
-            current_memory_mb: 256
-          optimization_goals: ["reduce_memory_usage", "maintain_coverage"]
-          max_memory_mb: 128
-          allow_step_reordering: true
+          target: "test-projects/js-dependency-test-project/src/index.js"
+          guidance_type: "security"
         expected:
           error: false
           fields:
-            - path: "$.result.optimized_workflow"
-              field_type: "object"
+            - path: "$.result.target"
+              field_type: "string"
               required: true
-            - path: "$.result.memory_optimizations"
-              field_type: "array"
+            - path: "$.result.guidance"
+              field_type: "string"
               required: true
-            - path: "$.result.step_reordering"
-              field_type: "object"
-              required: false
-            - path: "$.result.resource_impact"
-              field_type: "object"
-              required: false
         performance:
-          max_duration_ms: 3200
-          max_memory_mb: 50
-        tags: ["optimization", "memory", "constraints"]
+          max_duration_ms: 3000
+          max_memory_mb: 48
+        tags: ["guidance", "security"]
 
-      - name: "optimize_ci_cd_workflow"
-        description: "Optimize workflow for CI/CD pipeline integration"
+      - name: "provide_guidance_with_examples"
+        description: "Provide guidance with examples"
         input:
-          current_workflow:
-            steps: ["analyze_complexity", "analyze_security", "find_duplicates", "analyze_performance"]
-            execution_mode: "sequential"
-            current_duration_minutes: 12
-          optimization_goals: ["fast_feedback", "early_failure_detection", "quality_gates"]
-          ci_cd_constraints: {"max_duration_minutes": 8, "fail_fast": true}
-          include_quality_gates: true
+          target: "test-projects/python-sample/core/user_manager.py"
+          guidance_type: "complexity"
+          include_examples: true
         expected:
           error: false
           fields:
-            - path: "$.result.optimized_workflow"
-              field_type: "object"
+            - path: "$.result.target"
+              field_type: "string"
               required: true
-            - path: "$.result.ci_cd_optimizations"
-              field_type: "array"
+            - path: "$.result.guidance"
+              field_type: "string"
               required: true
-            - path: "$.result.quality_gates"
-              field_type: "array"
-              required: false
-            - path: "$.result.fail_fast_strategy"
-              field_type: "object"
-              required: false
         performance:
-          max_duration_ms: 2500
-          max_memory_mb: 40
-        tags: ["optimization", "ci_cd", "quality_gates"]
+          max_duration_ms: 3000
+          max_memory_mb: 48
+        tags: ["guidance", "examples"]
 
-      - name: "optimize_coverage_focused_workflow"
-        description: "Optimize workflow to maximize analysis coverage"
+      - name: "provide_guidance_priority_high"
+        description: "Provide high priority guidance"
         input:
-          current_workflow:
-            steps: ["repository_stats", "search_symbols", "find_files"]
-            execution_mode: "parallel"
-            current_coverage_percent: 65
-          optimization_goals: ["maximize_coverage", "identify_gaps"]
-          target_coverage_percent: 90
-          suggest_additional_tools: true
+          target: "test-projects/rust-test-project/src/lib.rs"
+          guidance_type: "performance"
+          priority_level: "high"
         expected:
           error: false
           fields:
-            - path: "$.result.optimized_workflow"
-              field_type: "object"
+            - path: "$.result.target"
+              field_type: "string"
               required: true
-            - path: "$.result.coverage_analysis"
-              field_type: "object"
+            - path: "$.result.guidance"
+              field_type: "string"
               required: true
-            - path: "$.result.coverage_gaps"
-              field_type: "array"
-              required: false
-            - path: "$.result.additional_tools"
-              field_type: "array"
-              required: false
         performance:
-          max_duration_ms: 3500
-          max_memory_mb: 52
-        tags: ["optimization", "coverage", "gaps"]
+          max_duration_ms: 3000
+          max_memory_mb: 48
+        tags: ["guidance", "priority", "high"]
 
-      - name: "optimize_multi_language_workflow"
-        description: "Optimize workflow for multi-language project analysis"
+  # ========================================================================
+  # OPTIMIZE_CODE Tool - Provide code optimization suggestions
+  # ========================================================================
+  - name: "optimize_code"
+    description: "Provide code optimization suggestions"
+    tests:
+      - name: "optimize_code_basic"
+        description: "Basic code optimization"
         input:
-          current_workflow:
-            steps: ["repository_stats", "analyze_complexity", "find_dependencies", "analyze_security"]
-            execution_mode: "parallel"
-            languages: ["python", "javascript", "rust"]
-          optimization_goals: ["language_specific_optimization", "cross_language_insights"]
-          include_language_prioritization: true
-          suggest_language_specific_tools: true
+          target: "test-projects/python-sample/main.py"
         expected:
           error: false
           fields:
-            - path: "$.result.optimized_workflow"
-              field_type: "object"
+            - path: "$.result.target"
+              field_type: "string"
               required: true
-            - path: "$.result.language_optimizations"
-              field_type: "object"
-              required: true
-            - path: "$.result.cross_language_steps"
+            - path: "$.result.optimizations"
               field_type: "array"
-              required: false
-            - path: "$.result.language_priorities"
-              field_type: "object"
-              required: false
+              required: true
         performance:
           max_duration_ms: 4000
-          max_memory_mb: 56
-        tags: ["optimization", "multi_language", "cross_language"]
+          max_memory_mb: 64
+        tags: ["optimization", "basic"]
 
-      - name: "optimize_iterative_workflow"
-        description: "Optimize workflow for iterative development cycles"
+      - name: "optimize_code_performance"
+        description: "Performance-focused code optimization"
         input:
-          current_workflow:
-            steps: ["repository_stats", "analyze_complexity", "find_dependencies", "analyze_security", "analyze_performance"]
-            execution_mode: "sequential"
-            iteration_frequency: "daily"
-          optimization_goals: ["incremental_analysis", "change_detection", "delta_optimization"]
-          enable_caching: true
-          focus_on_changes: true
+          target: "test-projects/rust-test-project/src/main.rs"
+          optimization_types: ["performance"]
         expected:
           error: false
           fields:
-            - path: "$.result.optimized_workflow"
-              field_type: "object"
+            - path: "$.result.target"
+              field_type: "string"
               required: true
-            - path: "$.result.incremental_strategy"
-              field_type: "object"
-              required: true
-            - path: "$.result.caching_opportunities"
+            - path: "$.result.optimizations"
               field_type: "array"
-              required: false
-            - path: "$.result.change_detection_logic"
-              field_type: "object"
-              required: false
+              required: true
         performance:
-          max_duration_ms: 3800
-          max_memory_mb: 54
-        tags: ["optimization", "iterative", "incremental"]
+          max_duration_ms: 4000
+          max_memory_mb: 64
+        tags: ["optimization", "performance"]
+
+      - name: "optimize_code_maintainability"
+        description: "Maintainability-focused code optimization"
+        input:
+          target: "test-projects/java-test-project/src/main/java/Main.java"
+          optimization_types: ["maintainability"]
+        expected:
+          error: false
+          fields:
+            - path: "$.result.target"
+              field_type: "string"
+              required: true
+            - path: "$.result.optimizations"
+              field_type: "array"
+              required: true
+        performance:
+          max_duration_ms: 4000
+          max_memory_mb: 64
+        tags: ["optimization", "maintainability"]
+
+      - name: "optimize_code_multiple_types"
+        description: "Multiple optimization types"
+        input:
+          target: "test-projects/js-dependency-test-project/src/index.js"
+          optimization_types: ["performance", "maintainability"]
+        expected:
+          error: false
+          fields:
+            - path: "$.result.target"
+              field_type: "string"
+              required: true
+            - path: "$.result.optimizations"
+              field_type: "array"
+              required: true
+        performance:
+          max_duration_ms: 4000
+          max_memory_mb: 64
+        tags: ["optimization", "multiple"]
+
+      - name: "optimize_code_aggressive"
+        description: "Aggressive optimization mode"
+        input:
+          target: "test-projects/python-sample/core/user_manager.py"
+          optimization_types: ["performance"]
+          aggressive_mode: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.target"
+              field_type: "string"
+              required: true
+            - path: "$.result.optimizations"
+              field_type: "array"
+              required: true
+        performance:
+          max_duration_ms: 4000
+          max_memory_mb: 64
+        tags: ["optimization", "aggressive"]
+
+      - name: "optimize_code_limited_suggestions"
+        description: "Limited number of optimization suggestions"
+        input:
+          target: "test-projects/rust-test-project/src/lib.rs"
+          optimization_types: ["performance", "maintainability"]
+          max_suggestions: 5
+        expected:
+          error: false
+          fields:
+            - path: "$.result.target"
+              field_type: "string"
+              required: true
+            - path: "$.result.optimizations"
+              field_type: "array"
+              required: true
+        performance:
+          max_duration_ms: 4000
+          max_memory_mb: 64
+        tags: ["optimization", "limited"]
+
+  # ========================================================================
+  # BATCH_PROCESS Tool - Execute multiple operations in batch
+  # ========================================================================
+  - name: "batch_process"
+    description: "Execute multiple operations in batch"
+    tests:
+      - name: "batch_process_analyze_complexity"
+        description: "Batch process complexity analysis"
+        input:
+          operation: "analyze_complexity"
+          targets: ["test-projects/python-sample/main.py", "test-projects/python-sample/core/user_manager.py"]
+        expected:
+          error: false
+          fields:
+            - path: "$.result.operation"
+              field_type: "string"
+              required: true
+            - path: "$.result.batch_results"
+              field_type: "array"
+              required: true
+        performance:
+          max_duration_ms: 8000
+          max_memory_mb: 96
+        tags: ["batch", "complexity"]
+
+      - name: "batch_process_with_concurrency"
+        description: "Batch process with concurrency control"
+        input:
+          operation: "analyze_complexity"
+          targets: ["test-projects/rust-test-project/src/main.rs", "test-projects/rust-test-project/src/lib.rs"]
+          max_concurrent: 2
+        expected:
+          error: false
+          fields:
+            - path: "$.result.operation"
+              field_type: "string"
+              required: true
+            - path: "$.result.batch_results"
+              field_type: "array"
+              required: true
+        performance:
+          max_duration_ms: 8000
+          max_memory_mb: 96
+        tags: ["batch", "concurrency"]
+
+      - name: "batch_process_with_parameters"
+        description: "Batch process with custom parameters"
+        input:
+          operation: "analyze_complexity"
+          targets: ["test-projects/java-test-project/src/main/java/Main.java"]
+          parameters: {"metrics": ["cyclomatic"], "threshold_warnings": true}
+        expected:
+          error: false
+          fields:
+            - path: "$.result.operation"
+              field_type: "string"
+              required: true
+            - path: "$.result.batch_results"
+              field_type: "array"
+              required: true
+        performance:
+          max_duration_ms: 8000
+          max_memory_mb: 96
+        tags: ["batch", "parameters"]
+
+      - name: "batch_process_fail_fast"
+        description: "Batch process with fail fast mode"
+        input:
+          operation: "analyze_complexity"
+          targets: ["test-projects/python-sample/main.py", "test-projects/nonexistent/file.py"]
+          fail_fast: true
+        expected:
+          error: true
+          error_message_contains: "not found"
+        tags: ["batch", "fail_fast", "error"]
+
+      - name: "batch_process_continue_on_error"
+        description: "Batch process continuing on errors"
+        input:
+          operation: "analyze_complexity"
+          targets: ["test-projects/python-sample/main.py", "test-projects/nonexistent/file.py"]
+          fail_fast: false
+        expected:
+          error: false
+          fields:
+            - path: "$.result.operation"
+              field_type: "string"
+              required: true
+            - path: "$.result.batch_results"
+              field_type: "array"
+              required: true
+        performance:
+          max_duration_ms: 8000
+          max_memory_mb: 96
+        tags: ["batch", "continue_on_error"]
+
+  # ========================================================================
+  # WORKFLOW_AUTOMATION Tool - Automate development workflows
+  # ========================================================================
+  - name: "workflow_automation"
+    description: "Automate common development workflows"
+    tests:
+      - name: "workflow_automation_basic"
+        description: "Basic workflow automation"
+        input:
+          workflow_type: "quality_check"
+        expected:
+          error: false
+          fields:
+            - path: "$.result.workflow_type"
+              field_type: "string"
+              required: true
+            - path: "$.result.automation_result"
+              field_type: "object"
+              required: true
+        performance:
+          max_duration_ms: 5000
+          max_memory_mb: 72
+        tags: ["automation", "basic"]
+
+      - name: "workflow_automation_with_scope"
+        description: "Workflow automation with target scope"
+        input:
+          workflow_type: "quality_check"
+          target_scope: "test-projects/python-sample"
+        expected:
+          error: false
+          fields:
+            - path: "$.result.workflow_type"
+              field_type: "string"
+              required: true
+            - path: "$.result.automation_result"
+              field_type: "object"
+              required: true
+        performance:
+          max_duration_ms: 5000
+          max_memory_mb: 72
+        tags: ["automation", "scope"]
+
+      - name: "workflow_automation_comprehensive"
+        description: "Comprehensive workflow automation"
+        input:
+          workflow_type: "comprehensive_analysis"
+          target_scope: "test-projects/rust-test-project"
+          automation_level: "full"
+        expected:
+          error: false
+          fields:
+            - path: "$.result.workflow_type"
+              field_type: "string"
+              required: true
+            - path: "$.result.automation_result"
+              field_type: "object"
+              required: true
+        performance:
+          max_duration_ms: 10000
+          max_memory_mb: 128
+        tags: ["automation", "comprehensive"]
+
+      - name: "workflow_automation_dry_run"
+        description: "Workflow automation dry run"
+        input:
+          workflow_type: "quality_check"
+          target_scope: "test-projects/java-test-project"
+          dry_run: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.workflow_type"
+              field_type: "string"
+              required: true
+            - path: "$.result.automation_result"
+              field_type: "object"
+              required: true
+        performance:
+          max_duration_ms: 5000
+          max_memory_mb: 72
+        tags: ["automation", "dry_run"]
 
 # Test configuration
 test_config:
-  timeout_seconds: 180
-  max_concurrency: 1
+  timeout_seconds: 120
+  max_concurrency: 2
   fail_fast: false
   retry:
     max_retries: 2
-    retry_delay_ms: 2000
+    retry_delay_ms: 1000
     exponential_backoff: true
 
 # Metadata for workflow orchestration testing
@@ -679,21 +465,22 @@ metadata:
   license: "MIT"
   tags: ["workflow", "orchestration", "batch", "optimization", "automation"]
   test_coverage:
-    tools: 3
-    scenarios: 21
-    languages: ["python", "rust", "java", "javascript", "*"]
-    capabilities: ["workflow_suggestion", "batch_execution", "workflow_optimization", "resource_management", "performance_optimization"]
+    tools: 4
+    scenarios: 19
+    languages: ["python", "rust", "java", "javascript"]
+    capabilities: ["guidance", "optimization", "batch_processing", "workflow_automation"]
   
   # Performance benchmarks for workflow orchestration tools
   benchmarks:
-    suggest_analysis_workflow_time_ms: 2500
-    batch_analysis_time_ms: 20000
-    optimize_workflow_time_ms: 3500
+    provide_guidance_time_ms: 3000
+    optimize_code_time_ms: 4000
+    batch_process_time_ms: 8000
+    workflow_automation_time_ms: 5000
   
   # Quality targets
   quality_targets:
     success_rate_percent: 95
-    workflow_suggestion_accuracy_percent: 88
-    batch_execution_reliability_percent: 92
+    guidance_quality_percent: 88
     optimization_effectiveness_percent: 85
-    resource_efficiency_improvement_percent: 30 
+    batch_processing_reliability_percent: 92
+    automation_accuracy_percent: 90 

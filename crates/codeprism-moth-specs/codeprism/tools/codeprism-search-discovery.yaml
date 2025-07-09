@@ -31,162 +31,179 @@ tools:
   # SEARCH_SYMBOLS Tool - Symbol search across codebases
   # ========================================================================
   - name: "search_symbols"
-    description: "Search for symbols across codebases with advanced filtering"
+    description: "Search for symbols by pattern"
     tests:
-      - name: "search_python_classes"
-        description: "Search for Python classes with pattern matching"
+      - name: "search_symbols_basic"
+        description: "Basic symbol search with pattern"
         input:
-          project_path: "test-projects/python-sample"
-          query: "class:*User*"
-          language: "python"
-          include_private: false
-          max_results: 50
+          pattern: "get_user"
         expected:
           error: false
           fields:
+            - path: "$.result.pattern"
+              field_type: "string"
+              required: true
             - path: "$.result.symbols"
               field_type: "array"
-              required: true
-            - path: "$.result.total_matches"
-              field_type: "integer"
-              required: true
-            - path: "$.result.symbols[0].name"
-              field_type: "string"
-              required: true
-            - path: "$.result.symbols[0].type"
-              field_type: "string"
-              required: true
-            - path: "$.result.symbols[0].file"
-              field_type: "string"
               required: true
         performance:
           max_duration_ms: 3000
           max_memory_mb: 64
-        tags: ["search", "symbols", "python", "class"]
+        tags: ["search", "symbols", "basic"]
 
-      - name: "search_rust_functions"
-        description: "Search for Rust functions with specific patterns"
+      - name: "search_symbols_with_types"
+        description: "Search symbols filtered by types"
         input:
-          project_path: "test-projects/rust-test-project"
-          query: "fn:connect*"
-          language: "rust"
-          include_private: true
-          case_sensitive: false
-          max_results: 30
+          pattern: "user"
+          symbol_types: ["function", "class"]
         expected:
           error: false
           fields:
             - path: "$.result.symbols"
               field_type: "array"
               required: true
-            - path: "$.result.symbols[0].visibility"
-              field_type: "string"
-              required: false
         performance:
-          max_duration_ms: 2500
-          max_memory_mb: 56
-        tags: ["search", "symbols", "rust", "function"]
+          max_duration_ms: 3000
+          max_memory_mb: 64
+        tags: ["search", "symbols", "types"]
 
-      - name: "search_java_methods"
-        description: "Search for Java methods with accessibility filters"
+      - name: "search_symbols_with_inheritance_filters"
+        description: "Search symbols with inheritance filters"
         input:
-          project_path: "test-projects/java-test-project"
-          query: "method:get*"
-          language: "java"
-          include_private: false
-          include_static: true
-          max_results: 40
+          pattern: "base"
+          inheritance_filters: ["extends", "implements"]
         expected:
           error: false
           fields:
             - path: "$.result.symbols"
               field_type: "array"
               required: true
-            - path: "$.result.symbols[0].modifiers"
-              field_type: "array"
-              required: false
         performance:
-          max_duration_ms: 2800
-          max_memory_mb: 60
-        tags: ["search", "symbols", "java", "method"]
+          max_duration_ms: 3000
+          max_memory_mb: 64
+        tags: ["search", "symbols", "inheritance"]
 
-      - name: "search_javascript_exports"
-        description: "Search for JavaScript exported functions and classes"
+      - name: "search_symbols_with_limit"
+        description: "Search symbols with result limit"
         input:
-          project_path: "test-projects/js-dependency-test-project"
-          query: "export:*"
-          language: "javascript"
-          include_default_exports: true
-          include_named_exports: true
-          max_results: 25
+          pattern: "test"
+          limit: 10
         expected:
           error: false
           fields:
             - path: "$.result.symbols"
               field_type: "array"
               required: true
-            - path: "$.result.symbols[0].export_type"
-              field_type: "string"
-              required: false
         performance:
-          max_duration_ms: 2200
-          max_memory_mb: 48
-        tags: ["search", "symbols", "javascript", "export"]
+          max_duration_ms: 3000
+          max_memory_mb: 64
+        tags: ["search", "symbols", "limit"]
 
-      - name: "search_with_no_matches"
-        description: "Handle search queries with no results"
+      - name: "search_symbols_with_context"
+        description: "Search symbols with context lines"
         input:
-          project_path: "test-projects/python-sample"
-          query: "class:NonexistentClass*"
-          language: "python"
-          max_results: 10
-        expected:
-          error: false
-          fields:
-            - path: "$.result.symbols"
-              value: []
-              required: true
-            - path: "$.result.total_matches"
-              value: 0
-              required: true
-        tags: ["search", "symbols", "edge_case", "no_results"]
-
-      - name: "search_cross_language"
-        description: "Search across multiple languages in a project"
-        input:
-          project_path: "test-projects/dependency-test-project"
-          query: "function:*"
-          language: "*"
-          include_all_languages: true
-          max_results: 100
+          pattern: "main"
+          context_lines: 5
         expected:
           error: false
           fields:
             - path: "$.result.symbols"
               field_type: "array"
               required: true
-            - path: "$.result.languages_found"
-              field_type: "array"
-              required: false
         performance:
-          max_duration_ms: 4000
-          max_memory_mb: 80
-        tags: ["search", "symbols", "cross_language"]
+          max_duration_ms: 3000
+          max_memory_mb: 64
+        tags: ["search", "symbols", "context"]
+
+      - name: "search_symbols_all_options"
+        description: "Search symbols with all options"
+        input:
+          pattern: "user"
+          symbol_types: ["function", "class", "variable"]
+          inheritance_filters: ["extends"]
+          limit: 20
+          context_lines: 3
+        expected:
+          error: false
+          fields:
+            - path: "$.result.symbols"
+              field_type: "array"
+              required: true
+        performance:
+          max_duration_ms: 3000
+          max_memory_mb: 64
+        tags: ["search", "symbols", "comprehensive"]
+
+      - name: "search_symbols_invalid_type"
+        description: "Handle invalid symbol type"
+        input:
+          pattern: "test"
+          symbol_types: ["invalid_type"]
+        expected:
+          error: true
+          error_message_contains: "Invalid symbol type"
+        tags: ["search", "symbols", "error"]
 
   # ========================================================================
-  # SEARCH_CONTENT Tool - Content search with context
+  # SEARCH_CONTENT Tool - Content search with filtering
   # ========================================================================
   - name: "search_content"
     description: "Search file contents with context and filtering options"
     tests:
-      - name: "search_python_imports"
-        description: "Search for import statements in Python files"
+      - name: "search_content_basic"
+        description: "Basic content search"
         input:
-          project_path: "test-projects/python-sample"
-          query: "import.*requests"
-          file_patterns: ["*.py"]
-          include_context: true
-          context_lines: 2
+          query: "import"
+        expected:
+          error: false
+          fields:
+            - path: "$.result.query"
+              field_type: "string"
+              required: true
+            - path: "$.result.matches"
+              field_type: "array"
+              required: true
+        performance:
+          max_duration_ms: 2500
+          max_memory_mb: 48
+        tags: ["search", "content", "basic"]
+
+      - name: "search_content_with_file_types"
+        description: "Search content filtered by file types"
+        input:
+          query: "function"
+          file_types: ["py", "js"]
+        expected:
+          error: false
+          fields:
+            - path: "$.result.matches"
+              field_type: "array"
+              required: true
+        performance:
+          max_duration_ms: 2500
+          max_memory_mb: 48
+        tags: ["search", "content", "file_types"]
+
+      - name: "search_content_case_sensitive"
+        description: "Case sensitive content search"
+        input:
+          query: "Class"
+          case_sensitive: true
+        expected:
+          error: false
+          fields:
+            - path: "$.result.matches"
+              field_type: "array"
+              required: true
+        performance:
+          max_duration_ms: 2500
+          max_memory_mb: 48
+        tags: ["search", "content", "case_sensitive"]
+
+      - name: "search_content_case_insensitive"
+        description: "Case insensitive content search"
+        input:
+          query: "class"
           case_sensitive: false
         expected:
           error: false
@@ -194,32 +211,16 @@ tools:
             - path: "$.result.matches"
               field_type: "array"
               required: true
-            - path: "$.result.total_matches"
-              field_type: "integer"
-              required: true
-            - path: "$.result.matches[0].file"
-              field_type: "string"
-              required: true
-            - path: "$.result.matches[0].line_number"
-              field_type: "integer"
-              required: true
-            - path: "$.result.matches[0].context"
-              field_type: "object"
-              required: false
         performance:
           max_duration_ms: 2500
           max_memory_mb: 48
-        tags: ["search", "content", "python", "imports"]
+        tags: ["search", "content", "case_insensitive"]
 
-      - name: "search_rust_error_handling"
-        description: "Search for error handling patterns in Rust"
+      - name: "search_content_regex"
+        description: "Regex content search"
         input:
-          project_path: "test-projects/rust-test-project"
-          query: "Result<.*Error>"
-          file_patterns: ["*.rs"]
-          include_context: true
-          context_lines: 3
-          regex_mode: true
+          query: "def\\s+\\w+"
+          regex: true
         expected:
           error: false
           fields:
@@ -227,42 +228,15 @@ tools:
               field_type: "array"
               required: true
         performance:
-          max_duration_ms: 2000
-          max_memory_mb: 44
-        tags: ["search", "content", "rust", "error_handling"]
+          max_duration_ms: 2500
+          max_memory_mb: 48
+        tags: ["search", "content", "regex"]
 
-      - name: "search_java_annotations"
-        description: "Search for Java annotations and their usage"
+      - name: "search_content_with_limit"
+        description: "Content search with result limit"
         input:
-          project_path: "test-projects/java-test-project"
-          query: "@Override|@Autowired|@Component"
-          file_patterns: ["*.java"]
-          include_context: true
-          context_lines: 1
-          regex_mode: true
-        expected:
-          error: false
-          fields:
-            - path: "$.result.matches"
-              field_type: "array"
-              required: true
-            - path: "$.result.annotation_types"
-              field_type: "array"
-              required: false
-        performance:
-          max_duration_ms: 2200
-          max_memory_mb: 50
-        tags: ["search", "content", "java", "annotations"]
-
-      - name: "search_javascript_async_patterns"
-        description: "Search for async/await patterns in JavaScript"
-        input:
-          project_path: "test-projects/js-dependency-test-project"
-          query: "async.*await"
-          file_patterns: ["*.js", "*.ts"]
-          include_context: true
-          context_lines: 2
-          regex_mode: true
+          query: "test"
+          limit: 10
         expected:
           error: false
           fields:
@@ -270,18 +244,18 @@ tools:
               field_type: "array"
               required: true
         performance:
-          max_duration_ms: 1800
-          max_memory_mb: 42
-        tags: ["search", "content", "javascript", "async"]
+          max_duration_ms: 2500
+          max_memory_mb: 48
+        tags: ["search", "content", "limit"]
 
-      - name: "search_large_files_performance"
-        description: "Performance test for searching in large files"
+      - name: "search_content_all_options"
+        description: "Content search with all options"
         input:
-          project_path: "test-projects/dependency-test-project"
-          query: "class"
-          file_patterns: ["*.py", "*.js", "*.java"]
-          include_context: false
-          max_matches: 500
+          query: "class\\s+\\w+"
+          file_types: ["py", "java"]
+          case_sensitive: false
+          regex: true
+          limit: 25
         expected:
           error: false
           fields:
@@ -289,324 +263,30 @@ tools:
               field_type: "array"
               required: true
         performance:
-          max_duration_ms: 5000
-          max_memory_mb: 96
-        tags: ["search", "content", "performance", "large_files"]
+          max_duration_ms: 2500
+          max_memory_mb: 48
+        tags: ["search", "content", "comprehensive"]
 
-  # ========================================================================
-  # FIND_FILES Tool - File discovery and filtering
-  # ========================================================================
-  - name: "find_files"
-    description: "Find files with advanced filtering and pattern matching"
-    tests:
-      - name: "find_python_files"
-        description: "Find Python files with various patterns"
+      - name: "search_content_no_matches"
+        description: "Handle search with no matches"
         input:
-          project_path: "test-projects/python-sample"
-          patterns: ["*.py"]
-          include_hidden: false
-          exclude_patterns: ["__pycache__", "*.pyc"]
-          max_depth: 10
+          query: "nonexistent_unique_string_12345"
         expected:
           error: false
           fields:
-            - path: "$.result.files"
-              field_type: "array"
-              required: true
-            - path: "$.result.total_files"
-              field_type: "integer"
-              required: true
-            - path: "$.result.files[0].path"
-              field_type: "string"
-              required: true
-            - path: "$.result.files[0].size"
-              field_type: "integer"
-              required: false
-        performance:
-          max_duration_ms: 2000
-          max_memory_mb: 32
-        tags: ["find", "files", "python"]
-
-      - name: "find_rust_source_files"
-        description: "Find Rust source and configuration files"
-        input:
-          project_path: "test-projects/rust-test-project"
-          patterns: ["*.rs", "*.toml"]
-          include_hidden: false
-          exclude_patterns: ["target/*"]
-          include_file_info: true
-        expected:
-          error: false
-          fields:
-            - path: "$.result.files"
-              field_type: "array"
-              required: true
-            - path: "$.result.files[0].extension"
-              field_type: "string"
-              required: false
-        performance:
-          max_duration_ms: 1500
-          max_memory_mb: 28
-        tags: ["find", "files", "rust"]
-
-      - name: "find_java_class_files"
-        description: "Find Java source files and resources"
-        input:
-          project_path: "test-projects/java-test-project"
-          patterns: ["*.java", "*.xml", "*.properties"]
-          include_hidden: false
-          exclude_patterns: ["target/*", "*.class"]
-          max_depth: 5
-        expected:
-          error: false
-          fields:
-            - path: "$.result.files"
-              field_type: "array"
-              required: true
-        performance:
-          max_duration_ms: 1800
-          max_memory_mb: 36
-        tags: ["find", "files", "java"]
-
-      - name: "find_javascript_modules"
-        description: "Find JavaScript and TypeScript modules"
-        input:
-          project_path: "test-projects/js-dependency-test-project"
-          patterns: ["*.js", "*.jsx", "*.ts", "*.tsx"]
-          include_hidden: false
-          exclude_patterns: ["node_modules/*", "dist/*"]
-          include_file_info: true
-        expected:
-          error: false
-          fields:
-            - path: "$.result.files"
-              field_type: "array"
-              required: true
-        performance:
-          max_duration_ms: 2200
-          max_memory_mb: 40
-        tags: ["find", "files", "javascript"]
-
-      - name: "find_with_size_filters"
-        description: "Find files with size constraints"
-        input:
-          project_path: "test-projects/dependency-test-project"
-          patterns: ["*.*"]
-          min_size_bytes: 100
-          max_size_bytes: 1048576
-          include_file_info: true
-        expected:
-          error: false
-          fields:
-            - path: "$.result.files"
-              field_type: "array"
-              required: true
-            - path: "$.result.size_distribution"
-              field_type: "object"
-              required: false
-        performance:
-          max_duration_ms: 3000
-          max_memory_mb: 56
-        tags: ["find", "files", "size_filter"]
-
-      - name: "find_no_matches"
-        description: "Handle pattern with no matching files"
-        input:
-          project_path: "test-projects/python-sample"
-          patterns: ["*.nonexistent"]
-          include_hidden: false
-        expected:
-          error: false
-          fields:
-            - path: "$.result.files"
+            - path: "$.result.matches"
               value: []
               required: true
-            - path: "$.result.total_files"
-              value: 0
-              required: true
-        tags: ["find", "files", "edge_case", "no_matches"]
-
-  # ========================================================================
-  # CONTENT_STATS Tool - Content analysis and statistics
-  # ========================================================================
-  - name: "content_stats"
-    description: "Analyze content statistics and metrics across files"
-    tests:
-      - name: "analyze_python_content"
-        description: "Analyze Python code content and metrics"
-        input:
-          project_path: "test-projects/python-sample"
-          file_patterns: ["*.py"]
-          include_line_counts: true
-          include_complexity: true
-          include_comment_ratio: true
-        expected:
-          error: false
-          fields:
-            - path: "$.result.total_lines"
-              field_type: "integer"
-              required: true
-            - path: "$.result.code_lines"
-              field_type: "integer"
-              required: true
-            - path: "$.result.comment_lines"
-              field_type: "integer"
-              required: true
-            - path: "$.result.blank_lines"
-              field_type: "integer"
-              required: true
-            - path: "$.result.comment_ratio"
-              field_type: "number"
-              required: false
-        performance:
-          max_duration_ms: 3000
-          max_memory_mb: 48
-        tags: ["content", "stats", "python", "metrics"]
-
-      - name: "analyze_rust_content"
-        description: "Analyze Rust code content and documentation"
-        input:
-          project_path: "test-projects/rust-test-project"
-          file_patterns: ["*.rs"]
-          include_line_counts: true
-          include_documentation_coverage: true
-          include_test_coverage: true
-        expected:
-          error: false
-          fields:
-            - path: "$.result.total_lines"
-              field_type: "integer"
-              required: true
-            - path: "$.result.documentation_coverage"
-              field_type: "number"
-              required: false
-            - path: "$.result.test_coverage"
-              field_type: "number"
-              required: false
-        performance:
-          max_duration_ms: 2500
-          max_memory_mb: 44
-        tags: ["content", "stats", "rust", "documentation"]
-
-      - name: "analyze_java_content"
-        description: "Analyze Java code structure and patterns"
-        input:
-          project_path: "test-projects/java-test-project"
-          file_patterns: ["*.java"]
-          include_line_counts: true
-          include_class_analysis: true
-          include_method_analysis: true
-        expected:
-          error: false
-          fields:
-            - path: "$.result.total_lines"
-              field_type: "integer"
-              required: true
-            - path: "$.result.class_count"
-              field_type: "integer"
-              required: false
-            - path: "$.result.method_count"
-              field_type: "integer"
-              required: false
-        performance:
-          max_duration_ms: 2800
-          max_memory_mb: 52
-        tags: ["content", "stats", "java", "structure"]
-
-      - name: "analyze_javascript_content"
-        description: "Analyze JavaScript/TypeScript content patterns"
-        input:
-          project_path: "test-projects/js-dependency-test-project"
-          file_patterns: ["*.js", "*.ts", "*.jsx", "*.tsx"]
-          include_line_counts: true
-          include_function_analysis: true
-          include_import_analysis: true
-        expected:
-          error: false
-          fields:
-            - path: "$.result.total_lines"
-              field_type: "integer"
-              required: true
-            - path: "$.result.function_count"
-              field_type: "integer"
-              required: false
-            - path: "$.result.import_count"
-              field_type: "integer"
-              required: false
-        performance:
-          max_duration_ms: 2400
-          max_memory_mb: 46
-        tags: ["content", "stats", "javascript", "functions"]
-
-      - name: "analyze_cross_language_stats"
-        description: "Analyze content statistics across multiple languages"
-        input:
-          project_path: "test-projects/dependency-test-project"
-          file_patterns: ["*.py", "*.js", "*.java", "*.rs"]
-          include_line_counts: true
-          include_language_breakdown: true
-          include_complexity_comparison: true
-        expected:
-          error: false
-          fields:
-            - path: "$.result.total_lines"
-              field_type: "integer"
-              required: true
-            - path: "$.result.language_breakdown"
-              field_type: "object"
-              required: false
-            - path: "$.result.complexity_by_language"
-              field_type: "object"
-              required: false
-        performance:
-          max_duration_ms: 4000
-          max_memory_mb: 72
-        tags: ["content", "stats", "cross_language", "comparison"]
-
-      - name: "analyze_empty_project"
-        description: "Handle empty project gracefully"
-        input:
-          project_path: "test-projects/empty-project"
-          file_patterns: ["*.*"]
-          include_line_counts: true
-        expected:
-          error: false
-          fields:
-            - path: "$.result.total_lines"
-              value: 0
-              required: true
-            - path: "$.result.total_files"
-              value: 0
-              required: true
-        tags: ["content", "stats", "edge_case", "empty"]
-
-      - name: "analyze_large_project_performance"
-        description: "Performance test for large project analysis"
-        input:
-          project_path: "test-projects/dependency-test-project"
-          file_patterns: ["*.*"]
-          include_line_counts: true
-          include_complexity: true
-          include_all_metrics: true
-        expected:
-          error: false
-          fields:
-            - path: "$.result.total_lines"
-              field_type: "integer"
-              required: true
-        performance:
-          max_duration_ms: 6000
-          max_memory_mb: 100
-        tags: ["content", "stats", "performance", "comprehensive"]
+        tags: ["search", "content", "no_matches"]
 
 # Test configuration
 test_config:
-  timeout_seconds: 45
-  max_concurrency: 4
+  timeout_seconds: 60
+  max_concurrency: 3
   fail_fast: false
   retry:
     max_retries: 2
-    retry_delay_ms: 500
+    retry_delay_ms: 1000
     exponential_backoff: true
 
 # Metadata for search and discovery testing
@@ -616,17 +296,16 @@ metadata:
   license: "MIT"
   tags: ["search", "discovery", "content", "analysis", "multi-language"]
   test_coverage:
-    tools: 4
-    scenarios: 28
+    tools: 2
+    scenarios: 16
     languages: ["python", "rust", "java", "javascript"]
-    capabilities: ["symbol_search", "content_search", "file_discovery", "content_analysis"]
+    capabilities: ["symbol_search", "content_search", "pattern_matching", "filtering"]
   
   # Performance benchmarks for search tools
   benchmarks:
     search_symbols_time_ms: 3000
     search_content_time_ms: 2500
-    find_files_time_ms: 2000
-    content_stats_time_ms: 4000
+    search_comprehensive_time_ms: 4000
   
   # Quality targets
   quality_targets:

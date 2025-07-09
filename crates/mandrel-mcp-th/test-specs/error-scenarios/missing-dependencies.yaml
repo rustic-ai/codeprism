@@ -1,0 +1,43 @@
+name: "Missing Dependencies Test Suite"
+version: "1.0.0"
+description: "Test suite with missing dependencies to test error handling"
+capabilities:
+  tools: true
+  resources: false
+  prompts: false
+  sampling: false
+  logging: false
+server:
+  command: "echo"
+  args: ["test"]
+  env: {}
+  working_dir: null
+  transport: "stdio"
+  startup_timeout_seconds: 30
+  shutdown_timeout_seconds: 10
+tools:
+  - name: "dependent_tool"
+    tests:
+      - name: "test_with_missing_dependency"
+        description: "Test that depends on a non-existent test"
+        dependencies: ["non_existent_test", "another_missing_test"]
+        input:
+          value: "test"
+        expected:
+          error: false
+          fields:
+            - path: "$.content[0].text"
+              type: "string"
+              required: true
+  - name: "valid_tool"
+    tests:
+      - name: "valid_test"
+        description: "Valid test without dependencies"
+        input:
+          value: "valid"
+        expected:
+          error: false
+          fields:
+            - path: "$.content[0].text"
+              type: "string"
+              required: true 

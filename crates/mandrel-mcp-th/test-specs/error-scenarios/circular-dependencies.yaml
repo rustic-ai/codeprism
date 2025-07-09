@@ -1,0 +1,57 @@
+name: "Circular Dependency Test Suite"
+version: "1.0.0"
+description: "Test suite with circular dependencies to test error handling"
+capabilities:
+  tools: true
+  resources: false
+  prompts: false
+  sampling: false
+  logging: false
+server:
+  command: "echo"
+  args: ["test"]
+  env: {}
+  working_dir: null
+  transport: "stdio"
+  startup_timeout_seconds: 30
+  shutdown_timeout_seconds: 10
+tools:
+  - name: "tool_a"
+    tests:
+      - name: "test_a"
+        description: "Test A depends on Test B"
+        dependencies: ["test_b"]
+        input:
+          value: "a"
+        expected:
+          error: false
+          fields:
+            - path: "$.content[0].text"
+              type: "string"
+              required: true
+  - name: "tool_b"
+    tests:
+      - name: "test_b"
+        description: "Test B depends on Test C"
+        dependencies: ["test_c"]
+        input:
+          value: "b"
+        expected:
+          error: false
+          fields:
+            - path: "$.content[0].text"
+              type: "string"
+              required: true
+  - name: "tool_c"
+    tests:
+      - name: "test_c"
+        description: "Test C depends on Test A (creates circular dependency!)"
+        dependencies: ["test_a"]
+        input:
+          value: "c"
+        expected:
+          error: false
+          fields:
+            - path: "$.content[0].text"
+              type: "string"
+              required: true 

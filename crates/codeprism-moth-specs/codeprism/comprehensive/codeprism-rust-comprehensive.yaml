@@ -9,7 +9,7 @@ description: "Comprehensive test specification for Rust projects using CodePrism
 
 # Server capabilities declaration
 capabilities:
-  tools: true           # 18/26 MCP tools (excluding JS-specific and some language-specific features)
+  tools: true           # Core navigation and analysis tools
   resources: false      # No file URI resources  
   prompts: false        # No prompt templates
   sampling: false       # No sampling support
@@ -31,33 +31,23 @@ tools:
   # ========================================================================
   # CORE NAVIGATION - Essential tools for Rust project exploration
   # ========================================================================
-  - name: "repository_stats"
+  - name: "get_repository_info"
     description: "Rust repository statistics with Cargo analysis"
     tests:
       - name: "rust_crate_repository_overview"
         description: "Analyze Rust crate repository structure"
-        input:
-          project_path: "test-projects/rust-test-project"
-          language: "rust"
-          include_cargo_analysis: true
-          include_feature_analysis: true
-          include_workspace_analysis: true
-          include_edition_analysis: true
+        input: {}
         expected:
           error: false
           fields:
-            - path: "$.result.repository_overview"
-              field_type: "object"
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
-            - path: "$.result.rust_metrics"
-              field_type: "object"
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
-            - path: "$.result.cargo_analysis"
-              field_type: "object"
-              required: false
-            - path: "$.result.feature_flags"
-              field_type: "array"
-              required: false
+              pattern: "\"repository_overview\":\\s*\\{"
         performance:
           max_duration_ms: 3200
           max_memory_mb: 60
@@ -69,25 +59,20 @@ tools:
       - name: "rust_ownership_flow_tracing"
         description: "Trace Rust execution paths with ownership and borrowing"
         input:
-          project_path: "test-projects/rust-test-project"
-          language: "rust"
-          start_function: "main"
+          source: "abcdef123456"
+          target: "fedcba654321"
           max_depth: 8
-          include_ownership_analysis: true
-          include_lifetime_analysis: true
-          include_panic_paths: true
         expected:
           error: false
           fields:
-            - path: "$.result.execution_paths"
-              field_type: "array"
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
-            - path: "$.result.ownership_flow"
-              field_type: "object"
-              required: false
-            - path: "$.result.lifetime_analysis"
-              field_type: "array"
-              required: false
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+              pattern: "\"path_found\":\\s*(true|false)"
         performance:
           max_duration_ms: 3800
           max_memory_mb: 68
@@ -99,25 +84,20 @@ tools:
       - name: "rust_trait_explanation"
         description: "Explain Rust traits with bounds and implementations"
         input:
-          project_path: "test-projects/rust-test-project"
-          language: "rust"
-          symbol_name: "Clone"
-          include_trait_bounds: true
-          include_implementations: true
-          include_derive_macros: true
-          include_generic_parameters: true
+          symbol_id: "abcdef123456"
+          include_dependencies: true
+          include_usages: true
         expected:
           error: false
           fields:
-            - path: "$.result.symbol_explanation"
-              field_type: "object"
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
-            - path: "$.result.trait_implementations"
-              field_type: "array"
-              required: false
-            - path: "$.result.generic_analysis"
-              field_type: "object"
-              required: false
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+              pattern: "\"symbol\":\\s*\\{"
         performance:
           max_duration_ms: 2800
           max_memory_mb: 52
@@ -132,24 +112,20 @@ tools:
       - name: "rust_macro_and_trait_search"
         description: "Search for Rust macros and trait definitions"
         input:
-          project_path: "test-projects/rust-test-project"
-          language: "rust"
-          symbol_pattern: "(trait|macro|impl|derive)"
-          symbol_types: ["trait", "macro", "impl_block", "derive"]
-          include_procedural_macros: true
-          include_trait_objects: true
+          pattern: "Clone"
+          symbol_types: ["trait", "impl_block"]
+          limit: 20
         expected:
           error: false
           fields:
-            - path: "$.result.traits_found"
-              field_type: "array"
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
-            - path: "$.result.macros_found"
-              field_type: "array"
-              required: false
-            - path: "$.result.impl_blocks"
-              field_type: "array"
-              required: false
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+              pattern: "\"symbols\":\\s*\\["
         performance:
           max_duration_ms: 3000
           max_memory_mb: 56
@@ -161,24 +137,20 @@ tools:
       - name: "rust_unsafe_async_pattern_search"
         description: "Search for unsafe blocks and async patterns in Rust"
         input:
-          project_path: "test-projects/rust-test-project"
-          language: "rust"
-          search_pattern: "(unsafe|async|await|\\.unwrap\\(\\))"
-          include_unsafe_analysis: true
-          include_async_analysis: true
-          include_error_handling: true
+          query: "unsafe"
+          file_types: ["rs"]
+          regex: true
         expected:
           error: false
           fields:
-            - path: "$.result.unsafe_blocks"
-              field_type: "array"
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
-            - path: "$.result.async_patterns"
-              field_type: "array"
-              required: false
-            - path: "$.result.error_handling_patterns"
-              field_type: "array"
-              required: false
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+              pattern: "\"matches\":\\s*\\["
         performance:
           max_duration_ms: 2800
           max_memory_mb: 50
@@ -193,217 +165,24 @@ tools:
       - name: "rust_ownership_complexity_analysis"
         description: "Analyze Rust complexity including ownership patterns"
         input:
-          project_path: "test-projects/rust-test-project"
-          language: "rust"
-          complexity_types: ["cyclomatic", "cognitive", "lifetime_complexity", "generic_complexity"]
-          include_ownership_complexity: true
-          include_trait_complexity: true
-          include_macro_complexity: true
+          target: "test-projects/rust-test-project/src/main.rs"
+          metrics: ["cyclomatic", "cognitive"]
+          threshold_warnings: true
         expected:
           error: false
           fields:
-            - path: "$.result.complexity_metrics"
-              field_type: "object"
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
-            - path: "$.result.ownership_complexity"
-              field_type: "object"
-              required: false
-            - path: "$.result.lifetime_complexity"
-              field_type: "array"
-              required: false
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+              pattern: "\"complexity_metrics\":\\s*\\{"
         performance:
           max_duration_ms: 4200
           max_memory_mb: 76
         tags: ["rust", "complexity", "ownership"]
-
-  - name: "find_duplicates"
-    description: "Rust duplicate code detection with trait and macro awareness"
-    tests:
-      - name: "rust_trait_implementation_duplicates"
-        description: "Detect duplicate trait implementations and code patterns"
-        input:
-          project_path: "test-projects/rust-test-project"
-          language: "rust"
-          similarity_threshold: 0.8
-          include_trait_implementations: true
-          include_macro_expansions: true
-          include_generic_instantiations: true
-        expected:
-          error: false
-          fields:
-            - path: "$.result.duplicate_groups"
-              field_type: "array"
-              required: true
-            - path: "$.result.trait_duplication"
-              field_type: "object"
-              required: false
-        performance:
-          max_duration_ms: 5500
-          max_memory_mb: 88
-        tags: ["rust", "duplicates", "traits"]
-
-  # ========================================================================
-  # TRAIT ANALYSIS - Rust trait system analysis
-  # ========================================================================
-  - name: "trace_inheritance"
-    description: "Rust trait inheritance and implementation analysis"
-    tests:
-      - name: "rust_trait_hierarchy_analysis"
-        description: "Analyze Rust trait hierarchies and implementations"
-        input:
-          project_path: "test-projects/rust-test-project"
-          language: "rust"
-          root_trait: "Iterator"
-          include_trait_bounds: true
-          include_associated_types: true
-          include_default_implementations: true
-          include_blanket_implementations: true
-        expected:
-          error: false
-          fields:
-            - path: "$.result.trait_hierarchy"
-              field_type: "object"
-              required: true
-            - path: "$.result.trait_implementations"
-              field_type: "array"
-              required: false
-            - path: "$.result.associated_types"
-              field_type: "array"
-              required: false
-        performance:
-          max_duration_ms: 3200
-          max_memory_mb: 58
-        tags: ["rust", "traits", "hierarchy"]
-
-  # ========================================================================
-  # ATTRIBUTE ANALYSIS - Rust attribute and derive analysis
-  # ========================================================================
-  - name: "analyze_decorators"
-    description: "Rust attribute and derive macro analysis"
-    tests:
-      - name: "rust_derive_attribute_analysis"
-        description: "Analyze Rust derive macros and attributes"
-        input:
-          project_path: "test-projects/rust-test-project"
-          language: "rust"
-          attribute_types: ["derive", "cfg", "test", "allow", "deny"]
-          include_procedural_macros: true
-          include_conditional_compilation: true
-          include_lint_attributes: true
-        expected:
-          error: false
-          fields:
-            - path: "$.result.attribute_analysis"
-              field_type: "object"
-              required: true
-            - path: "$.result.derive_usage"
-              field_type: "array"
-              required: false
-            - path: "$.result.conditional_compilation"
-              field_type: "object"
-              required: false
-        performance:
-          max_duration_ms: 2800
-          max_memory_mb: 48
-        tags: ["rust", "attributes", "derive"]
-
-  # ========================================================================
-  # SECURITY ANALYSIS - Rust memory safety and security
-  # ========================================================================
-  - name: "analyze_security"
-    description: "Rust security analysis focusing on memory safety"
-    tests:
-      - name: "rust_memory_safety_analysis"
-        description: "Analyze Rust memory safety and unsafe usage"
-        input:
-          project_path: "test-projects/rust-test-project"
-          language: "rust"
-          vulnerability_types: ["unsafe_usage", "ffi_safety", "data_races", "memory_leaks"]
-          include_unsafe_block_analysis: true
-          include_ffi_analysis: true
-          include_concurrency_safety: true
-        expected:
-          error: false
-          fields:
-            - path: "$.result.safety_analysis"
-              field_type: "object"
-              required: true
-            - path: "$.result.unsafe_usage"
-              field_type: "array"
-              required: false
-            - path: "$.result.ffi_risks"
-              field_type: "array"
-              required: false
-        performance:
-          max_duration_ms: 4500
-          max_memory_mb: 80
-        tags: ["rust", "safety", "memory"]
-
-  # ========================================================================
-  # PERFORMANCE ANALYSIS - Rust zero-cost abstractions and optimization
-  # ========================================================================
-  - name: "analyze_performance"
-    description: "Rust performance analysis with zero-cost abstraction focus"
-    tests:
-      - name: "rust_zero_cost_abstraction_analysis"
-        description: "Analyze Rust zero-cost abstractions and performance"
-        input:
-          project_path: "test-projects/rust-test-project"
-          language: "rust"
-          analysis_type: "zero_cost_optimization"
-          include_allocation_analysis: true
-          include_iterator_optimization: true
-          include_inline_analysis: true
-          include_monomorphization: true
-        expected:
-          error: false
-          fields:
-            - path: "$.result.performance_analysis"
-              field_type: "object"
-              required: true
-            - path: "$.result.allocation_patterns"
-              field_type: "array"
-              required: false
-            - path: "$.result.optimization_opportunities"
-              field_type: "array"
-              required: false
-        performance:
-          max_duration_ms: 5000
-          max_memory_mb: 84
-        tags: ["rust", "performance", "zero_cost"]
-
-  # ========================================================================
-  # API ANALYSIS - Rust crate API design
-  # ========================================================================
-  - name: "analyze_api_surface"
-    description: "Rust crate API surface analysis with ergonomics focus"
-    tests:
-      - name: "rust_crate_api_ergonomics_analysis"
-        description: "Analyze Rust crate API ergonomics and design"
-        input:
-          project_path: "test-projects/rust-test-project"
-          language: "rust"
-          api_scope: "public"
-          include_trait_design: true
-          include_error_ergonomics: true
-          include_builder_patterns: true
-          include_documentation_analysis: true
-        expected:
-          error: false
-          fields:
-            - path: "$.result.api_surface"
-              field_type: "object"
-              required: true
-            - path: "$.result.ergonomics_score"
-              field_type: "number"
-              required: false
-            - path: "$.result.trait_design_quality"
-              field_type: "object"
-              required: false
-        performance:
-          max_duration_ms: 3500
-          max_memory_mb: 62
-        tags: ["rust", "api", "ergonomics"]
 
   # ========================================================================
   # DEPENDENCY ANALYSIS - Cargo dependency management
@@ -414,251 +193,207 @@ tools:
       - name: "rust_cargo_dependency_analysis"
         description: "Analyze Cargo dependencies and feature flags"
         input:
-          project_path: "test-projects/rust-test-project"
-          language: "rust"
-          dependency_types: ["cargo"]
-          include_feature_analysis: true
-          include_dev_dependencies: true
-          include_build_dependencies: true
-          include_optional_dependencies: true
+          target: "abcdef123456"
+          dependency_type: "direct"
         expected:
           error: false
           fields:
-            - path: "$.result.dependencies"
-              field_type: "array"
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
-            - path: "$.result.cargo_analysis"
-              field_type: "object"
-              required: false
-            - path: "$.result.feature_gates"
-              field_type: "array"
-              required: false
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+              pattern: "\"dependencies\":\\s*\\["
         performance:
           max_duration_ms: 3800
           max_memory_mb: 66
         tags: ["rust", "cargo", "dependencies"]
 
-  - name: "analyze_transitive_dependencies"
-    description: "Rust transitive dependency analysis with security audit"
+  - name: "find_references"
+    description: "Find references to Rust symbols"
     tests:
-      - name: "rust_transitive_security_analysis"
-        description: "Analyze Rust transitive dependencies for security issues"
+      - name: "rust_symbol_references"
+        description: "Find references to Rust symbols with context"
         input:
-          project_path: "test-projects/rust-test-project"
-          language: "rust"
-          max_depth: 4
-          include_cargo_audit: true
-          include_license_analysis: true
-          include_feature_propagation: true
+          symbol_id: "abcdef123456"
+          include_definitions: true
+          context_lines: 5
         expected:
           error: false
           fields:
-            - path: "$.result.transitive_dependencies"
-              field_type: "array"
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
-            - path: "$.result.cargo_audit_results"
-              field_type: "object"
-              required: false
-            - path: "$.result.feature_compatibility"
-              field_type: "object"
-              required: false
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+              pattern: "\"references\":\\s*\\["
+        performance:
+          max_duration_ms: 3200
+          max_memory_mb: 58
+        tags: ["rust", "references", "context"]
+
+  # ========================================================================
+  # WORKFLOW TOOLS - Guidance and optimization
+  # ========================================================================
+  - name: "provide_guidance"
+    description: "Rust-specific guidance and recommendations"
+    tests:
+      - name: "rust_guidance_analysis"
+        description: "Provide Rust-specific guidance for code quality"
+        input:
+          target: "test-projects/rust-test-project/src/main.rs"
+          guidance_type: "performance"
+          include_examples: true
+        expected:
+          error: false
+          fields:
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+              pattern: "\"guidance\""
+        performance:
+          max_duration_ms: 3500
+          max_memory_mb: 62
+        tags: ["rust", "guidance", "performance"]
+
+  - name: "optimize_code"
+    description: "Rust code optimization suggestions"
+    tests:
+      - name: "rust_optimization_suggestions"
+        description: "Analyze Rust code for optimization opportunities"
+        input:
+          target: "test-projects/rust-test-project/src/main.rs"
+          optimization_types: ["performance", "maintainability"]
+          aggressive_mode: false
+        expected:
+          error: false
+          fields:
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+              pattern: "\"optimizations\":\\s*\\["
+        performance:
+          max_duration_ms: 4500
+          max_memory_mb: 80
+        tags: ["rust", "optimization", "performance"]
+
+  - name: "batch_process"
+    description: "Batch processing for multiple Rust files"
+    tests:
+      - name: "rust_batch_analysis"
+        description: "Batch process multiple Rust files for analysis"
+        input:
+          operation: "analyze_complexity"
+          targets: ["test-projects/rust-test-project/src/main.rs", "test-projects/rust-test-project/src/lib.rs"]
+          max_concurrent: 2
+        expected:
+          error: false
+          fields:
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+              pattern: "\"batch_results\":\\s*\\["
         performance:
           max_duration_ms: 5200
           max_memory_mb: 86
-        tags: ["rust", "transitive", "security"]
+        tags: ["rust", "batch", "analysis"]
 
-  # ========================================================================
-  # DATA FLOW ANALYSIS - Rust ownership and borrowing flow
-  # ========================================================================
-  - name: "trace_data_flow"
-    description: "Rust data flow analysis with ownership tracking"
+  - name: "workflow_automation"
+    description: "Automated Rust development workflows"
     tests:
-      - name: "rust_ownership_data_flow_analysis"
-        description: "Trace Rust data flow with ownership and borrowing"
+      - name: "rust_workflow_automation"
+        description: "Automate Rust code quality workflows"
         input:
-          project_path: "test-projects/rust-test-project"
-          language: "rust"
-          start_variable: "data"
-          include_move_semantics: true
-          include_borrow_checker_analysis: true
-          include_lifetime_flow: true
+          workflow_type: "quality_check"
+          target_scope: "test-projects/rust-test-project"
+          automation_level: "full"
         expected:
           error: false
           fields:
-            - path: "$.result.data_flow_graph"
-              field_type: "object"
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
-            - path: "$.result.ownership_transfers"
-              field_type: "array"
-              required: false
-            - path: "$.result.borrow_analysis"
-              field_type: "object"
-              required: false
-        performance:
-          max_duration_ms: 4200
-          max_memory_mb: 74
-        tags: ["rust", "ownership", "data_flow"]
-
-  - name: "detect_patterns"
-    description: "Rust design pattern detection with systems programming focus"
-    tests:
-      - name: "rust_systems_pattern_detection"
-        description: "Detect Rust systems programming patterns"
-        input:
-          project_path: "test-projects/rust-test-project"
-          language: "rust"
-          pattern_types: ["builder", "newtype", "typestate", "raii", "zero_cost_wrapper"]
-          include_async_patterns: true
-          include_error_handling_patterns: true
-          include_concurrency_patterns: true
-        expected:
-          error: false
-          fields:
-            - path: "$.result.detected_patterns"
-              field_type: "array"
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
-            - path: "$.result.systems_patterns"
-              field_type: "array"
-              required: false
-            - path: "$.result.async_patterns"
-              field_type: "array"
-              required: false
+              pattern: "\"automation_result\":\\s*\\{"
         performance:
-          max_duration_ms: 3800
-          max_memory_mb: 66
-        tags: ["rust", "patterns", "systems"]
+          max_duration_ms: 10000
+          max_memory_mb: 128
+        tags: ["rust", "automation", "workflow"]
 
-  # ========================================================================
-  # WORKFLOW ORCHESTRATION - Rust project workflow optimization
-  # ========================================================================
-  - name: "suggest_analysis_workflow"
-    description: "Suggest optimal analysis workflow for Rust projects"
-    tests:
-      - name: "rust_library_workflow_suggestion"
-        description: "Suggest analysis workflow for Rust library project"
-        input:
-          project_path: "test-projects/rust-test-project"
-          language: "rust"
-          project_type: "library"
-          analysis_goals: ["memory_safety", "performance", "api_design", "documentation"]
-          cargo_hints: ["edition_2021", "no_std"]
-        expected:
-          error: false
-          fields:
-            - path: "$.result.suggested_workflow"
-              field_type: "object"
-              required: true
-            - path: "$.result.rust_specific_checks"
-              field_type: "array"
-              required: false
-        performance:
-          max_duration_ms: 2000
-          max_memory_mb: 32
-        tags: ["rust", "workflow", "library"]
+# Error handling test cases for comprehensive coverage
+error_tests:
+  - name: "invalid_symbol_id"
+    description: "Test error handling for invalid symbol IDs"
+    tool: "explain_symbol"
+    input:
+      symbol_id: "invalid_hex"
+    expected:
+      error: true
+      error_message_contains: "not found"
 
-  - name: "batch_analysis"
-    description: "Execute Rust-focused batch analysis"
-    tests:
-      - name: "rust_systems_batch_analysis"
-        description: "Execute comprehensive Rust systems programming analysis"
-        input:
-          project_path: "test-projects/rust-test-project"
-          language: "rust"
-          analysis_suite: "systems_comprehensive"
-          tools: ["repository_stats", "analyze_complexity", "analyze_security", "trace_inheritance", "analyze_performance", "analyze_api_surface"]
-          execution_mode: "parallel"
-          rust_optimizations: true
-        expected:
-          error: false
-          fields:
-            - path: "$.result.batch_results"
-              field_type: "object"
-              required: true
-            - path: "$.result.rust_insights"
-              field_type: "object"
-              required: false
-        performance:
-          max_duration_ms: 16000
-          max_memory_mb: 180
-        tags: ["rust", "batch", "systems"]
+  - name: "missing_file_target"
+    description: "Test error handling for missing file targets"
+    tool: "analyze_complexity"
+    input:
+      target: "nonexistent/file.rs"
+    expected:
+      error: true
+      error_message_contains: "not found"
 
-# Test configuration optimized for Rust projects
-test_config:
-  timeout_seconds: 150
-  max_concurrency: 3
-  fail_fast: false
-  retry:
-    max_retries: 2
-    retry_delay_ms: 1000
-    exponential_backoff: true
+  - name: "invalid_dependency_type"
+    description: "Test error handling for invalid dependency types"
+    tool: "find_dependencies"
+    input:
+      target: "abcdef123456"
+      dependency_type: "invalid_type"
+    expected:
+      error: true
+      error_message_contains: "Invalid"
 
-# Rust-specific metadata and benchmarks
-metadata:
-  author: "CodePrism MCP Test Harness Team"
-  documentation: "https://spec.modelcontextprotocol.io/"
-  license: "MIT"
-  tags: ["rust", "systems", "memory_safety", "performance", "cargo", "traits"]
-  test_coverage:
-    tools: 18
-    scenarios: 16
-    languages: ["rust"]
-    rust_editions: ["2018", "2021"]
-    ecosystems: ["tokio", "serde", "clap", "diesel", "actix"]
-    targets: ["x86_64", "aarch64", "wasm32"]
-    capabilities: [
-      "memory_safety_analysis", "performance_optimization", "trait_analysis",
-      "ownership_tracking", "async_analysis", "cargo_analysis",
-      "api_ergonomics", "zero_cost_abstraction_validation"
-    ]
-  
-  # Performance benchmarks for Rust-specific analysis
-  benchmarks:
-    repository_stats_time_ms: 3200
-    complexity_analysis_time_ms: 4200
-    security_analysis_time_ms: 4500
-    performance_analysis_time_ms: 5000
-    trait_analysis_time_ms: 3200
-    api_analysis_time_ms: 3500
-    batch_analysis_time_ms: 16000
-  
-  # Rust-specific quality targets
-  quality_targets:
-    success_rate_percent: 96
-    memory_safety_detection_accuracy_percent: 98
-    performance_optimization_effectiveness_percent: 92
-    trait_analysis_accuracy_percent: 90
-    api_ergonomics_score_target: 85
-    unsafe_code_coverage_percent: 100
-    cargo_analysis_accuracy_percent: 94
+  - name: "invalid_search_pattern"
+    description: "Test error handling for invalid search patterns"
+    tool: "search_symbols"
+    input:
+      pattern: ""
+    expected:
+      error: true
+      error_message_contains: "pattern"
 
-# Rust-specific analysis focus areas
-rust_focus_areas:
-  memory_safety:
-    - unsafe_block_validation
-    - ffi_safety_analysis
-    - data_race_detection
-    - memory_leak_prevention
-  
-  performance_optimization:
-    - zero_cost_abstraction_validation
-    - allocation_minimization
-    - iterator_optimization
-    - inlining_opportunities
-  
-  async_programming:
-    - tokio_runtime_analysis
-    - async_trait_usage
-    - future_composition_patterns
-    - async_drop_safety
-  
-  trait_system:
-    - trait_object_analysis
-    - associated_type_usage
-    - generic_specialization
-    - coherence_validation
-  
-  cargo_ecosystem:
-    - feature_flag_analysis
-    - workspace_organization
-    - dependency_minimization
-    - cross_compilation_support 
+  - name: "invalid_path_parameters"
+    description: "Test error handling for invalid path tracing parameters"
+    tool: "trace_path"
+    input:
+      source: "invalid_hex"
+      target: "also_invalid"
+    expected:
+      error: true
+      error_message_contains: "not found"
+
+  - name: "invalid_batch_operation"
+    description: "Test error handling for invalid batch operations"
+    tool: "batch_process"
+    input:
+      operation: "invalid_operation"
+      targets: ["test.rs"]
+    expected:
+      error: true
+      error_message_contains: "Invalid" 

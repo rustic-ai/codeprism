@@ -1,0 +1,30 @@
+name: "Invalid YAML Test Suite"
+version: "1.0.0"
+capabilities:
+  tools: true
+  resources: false
+  prompts: false
+  sampling: false
+  logging: false
+server:
+  command: "echo"
+  args: ["test"]
+  env: {}
+  working_dir: null
+  transport: "stdio"
+  startup_timeout_seconds: 30
+  shutdown_timeout_seconds: 10
+tools:
+  - name: "test_tool"
+    tests:
+      - name: "test1"
+        description: "This is valid YAML"
+        input:
+          value: "test"
+        expected:
+          error: false
+      - name: "test2
+        description: "Missing closing quote above causes YAML syntax error"
+        input: [unclosed_bracket_causes_error
+        expected:
+          error:: invalid_double_colon 

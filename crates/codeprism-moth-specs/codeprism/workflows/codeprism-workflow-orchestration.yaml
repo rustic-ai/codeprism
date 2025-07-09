@@ -40,12 +40,14 @@ tools:
         expected:
           error: false
           fields:
-            - path: "$.result.target"
+            - path: "$.content[0].text"
               field_type: "string"
               required: true
-            - path: "$.result.guidance"
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
               field_type: "string"
               required: true
+              pattern: "\"guidance\""
         performance:
           max_duration_ms: 3000
           max_memory_mb: 48
@@ -59,12 +61,14 @@ tools:
         expected:
           error: false
           fields:
-            - path: "$.result.target"
+            - path: "$.content[0].text"
               field_type: "string"
               required: true
-            - path: "$.result.guidance"
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
               field_type: "string"
               required: true
+              pattern: "\"guidance\""
         performance:
           max_duration_ms: 3000
           max_memory_mb: 48
@@ -78,12 +82,14 @@ tools:
         expected:
           error: false
           fields:
-            - path: "$.result.target"
+            - path: "$.content[0].text"
               field_type: "string"
               required: true
-            - path: "$.result.guidance"
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
               field_type: "string"
               required: true
+              pattern: "\"guidance\""
         performance:
           max_duration_ms: 3000
           max_memory_mb: 48
@@ -97,12 +103,14 @@ tools:
         expected:
           error: false
           fields:
-            - path: "$.result.target"
+            - path: "$.content[0].text"
               field_type: "string"
               required: true
-            - path: "$.result.guidance"
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
               field_type: "string"
               required: true
+              pattern: "\"guidance\""
         performance:
           max_duration_ms: 3000
           max_memory_mb: 48
@@ -117,12 +125,14 @@ tools:
         expected:
           error: false
           fields:
-            - path: "$.result.target"
+            - path: "$.content[0].text"
               field_type: "string"
               required: true
-            - path: "$.result.guidance"
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
               field_type: "string"
               required: true
+              pattern: "\"guidance\""
         performance:
           max_duration_ms: 3000
           max_memory_mb: 48
@@ -137,12 +147,14 @@ tools:
         expected:
           error: false
           fields:
-            - path: "$.result.target"
+            - path: "$.content[0].text"
               field_type: "string"
               required: true
-            - path: "$.result.guidance"
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
               field_type: "string"
               required: true
+              pattern: "\"guidance\""
         performance:
           max_duration_ms: 3000
           max_memory_mb: 48
@@ -161,12 +173,14 @@ tools:
         expected:
           error: false
           fields:
-            - path: "$.result.target"
+            - path: "$.content[0].text"
               field_type: "string"
               required: true
-            - path: "$.result.optimizations"
-              field_type: "array"
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
+              pattern: "\"optimizations\":\\s*\\["
         performance:
           max_duration_ms: 4000
           max_memory_mb: 64
@@ -180,12 +194,14 @@ tools:
         expected:
           error: false
           fields:
-            - path: "$.result.target"
+            - path: "$.content[0].text"
               field_type: "string"
               required: true
-            - path: "$.result.optimizations"
-              field_type: "array"
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
+              pattern: "\"optimizations\":\\s*\\["
         performance:
           max_duration_ms: 4000
           max_memory_mb: 64
@@ -199,12 +215,14 @@ tools:
         expected:
           error: false
           fields:
-            - path: "$.result.target"
+            - path: "$.content[0].text"
               field_type: "string"
               required: true
-            - path: "$.result.optimizations"
-              field_type: "array"
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
+              pattern: "\"optimizations\":\\s*\\["
         performance:
           max_duration_ms: 4000
           max_memory_mb: 64
@@ -218,12 +236,14 @@ tools:
         expected:
           error: false
           fields:
-            - path: "$.result.target"
+            - path: "$.content[0].text"
               field_type: "string"
               required: true
-            - path: "$.result.optimizations"
-              field_type: "array"
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
+              pattern: "\"optimizations\":\\s*\\["
         performance:
           max_duration_ms: 4000
           max_memory_mb: 64
@@ -238,12 +258,14 @@ tools:
         expected:
           error: false
           fields:
-            - path: "$.result.target"
+            - path: "$.content[0].text"
               field_type: "string"
               required: true
-            - path: "$.result.optimizations"
-              field_type: "array"
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
+              pattern: "\"optimizations\":\\s*\\["
         performance:
           max_duration_ms: 4000
           max_memory_mb: 64
@@ -258,12 +280,14 @@ tools:
         expected:
           error: false
           fields:
-            - path: "$.result.target"
+            - path: "$.content[0].text"
               field_type: "string"
               required: true
-            - path: "$.result.optimizations"
-              field_type: "array"
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
+              pattern: "\"optimizations\":\\s*\\["
         performance:
           max_duration_ms: 4000
           max_memory_mb: 64
@@ -283,12 +307,14 @@ tools:
         expected:
           error: false
           fields:
-            - path: "$.result.operation"
+            - path: "$.content[0].text"
               field_type: "string"
               required: true
-            - path: "$.result.batch_results"
-              field_type: "array"
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
+              pattern: "\"batch_results\":\\s*\\["
         performance:
           max_duration_ms: 8000
           max_memory_mb: 96
@@ -303,12 +329,14 @@ tools:
         expected:
           error: false
           fields:
-            - path: "$.result.operation"
+            - path: "$.content[0].text"
               field_type: "string"
               required: true
-            - path: "$.result.batch_results"
-              field_type: "array"
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
+              pattern: "\"batch_results\":\\s*\\["
         performance:
           max_duration_ms: 8000
           max_memory_mb: 96
@@ -323,12 +351,14 @@ tools:
         expected:
           error: false
           fields:
-            - path: "$.result.operation"
+            - path: "$.content[0].text"
               field_type: "string"
               required: true
-            - path: "$.result.batch_results"
-              field_type: "array"
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
+              pattern: "\"batch_results\":\\s*\\["
         performance:
           max_duration_ms: 8000
           max_memory_mb: 96
@@ -354,12 +384,14 @@ tools:
         expected:
           error: false
           fields:
-            - path: "$.result.operation"
+            - path: "$.content[0].text"
               field_type: "string"
               required: true
-            - path: "$.result.batch_results"
-              field_type: "array"
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
+              pattern: "\"batch_results\":\\s*\\["
         performance:
           max_duration_ms: 8000
           max_memory_mb: 96
@@ -378,12 +410,14 @@ tools:
         expected:
           error: false
           fields:
-            - path: "$.result.workflow_type"
+            - path: "$.content[0].text"
               field_type: "string"
               required: true
-            - path: "$.result.automation_result"
-              field_type: "object"
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
+              pattern: "\"automation_result\":\\s*\\{"
         performance:
           max_duration_ms: 5000
           max_memory_mb: 72
@@ -397,12 +431,14 @@ tools:
         expected:
           error: false
           fields:
-            - path: "$.result.workflow_type"
+            - path: "$.content[0].text"
               field_type: "string"
               required: true
-            - path: "$.result.automation_result"
-              field_type: "object"
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
+              pattern: "\"automation_result\":\\s*\\{"
         performance:
           max_duration_ms: 5000
           max_memory_mb: 72
@@ -417,12 +453,14 @@ tools:
         expected:
           error: false
           fields:
-            - path: "$.result.workflow_type"
+            - path: "$.content[0].text"
               field_type: "string"
               required: true
-            - path: "$.result.automation_result"
-              field_type: "object"
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
+              pattern: "\"automation_result\":\\s*\\{"
         performance:
           max_duration_ms: 10000
           max_memory_mb: 128
@@ -437,12 +475,14 @@ tools:
         expected:
           error: false
           fields:
-            - path: "$.result.workflow_type"
+            - path: "$.content[0].text"
               field_type: "string"
               required: true
-            - path: "$.result.automation_result"
-              field_type: "object"
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
+              pattern: "\"automation_result\":\\s*\\{"
         performance:
           max_duration_ms: 5000
           max_memory_mb: 72

@@ -1,0 +1,30 @@
+name: "Server Connection Failure Test Suite"
+version: "1.0.0"
+description: "Test suite with invalid server command to test connection failure handling"
+capabilities:
+  tools: true
+  resources: false
+  prompts: false
+  sampling: false
+  logging: false
+server:
+  command: "non_existent_command_that_will_fail"
+  args: ["--invalid", "--flags"]
+  env: {}
+  working_dir: null
+  transport: "stdio"
+  startup_timeout_seconds: 5
+  shutdown_timeout_seconds: 5
+tools:
+  - name: "test_tool"
+    tests:
+      - name: "test_that_will_fail_to_connect"
+        description: "Test that will fail due to server connection issues"
+        input:
+          value: "test"
+        expected:
+          error: false
+          fields:
+            - path: "$.content[0].text"
+              type: "string"
+              required: true 

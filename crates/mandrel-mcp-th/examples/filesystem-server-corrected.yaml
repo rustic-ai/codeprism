@@ -1,0 +1,108 @@
+# Corrected Filesystem MCP Server Test Specification
+# Updated to match actual @modelcontextprotocol/server-filesystem responses
+
+name: "Filesystem MCP Server (Corrected)"
+version: "1.0.0"
+description: "MCP server providing file system operations - corrected for actual server responses"
+
+# Server capabilities declaration
+capabilities:
+  tools: true
+  resources: false
+  prompts: false
+  sampling: false
+  logging: false
+
+# Server startup configuration  
+server:
+  command: "npx"
+  args: ["@modelcontextprotocol/server-filesystem", "/tmp/mcp-test-sandbox"]
+  env:
+    LOG_LEVEL: "warn"
+  transport: "stdio"
+  startup_timeout_seconds: 15
+  shutdown_timeout_seconds: 8
+
+# Corrected filesystem tool testing
+tools:
+  # ========================================================================
+  # READ_FILE Tool - Corrected for actual text responses
+  # ========================================================================
+  - name: "read_file"
+    description: "Read file contents - corrected for actual responses"
+    tests:
+      - name: "read_existing_text_file"
+        description: "Successfully read a standard text file"
+        input:
+          path: "/tmp/mcp-test-sandbox/test.txt"
+        expected:
+          error: false
+          fields:
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+            - path: "$.content[0].type"
+              value: "text"
+              required: true
+        tags: ["filesystem", "read", "success"]
+
+  # ========================================================================
+  # WRITE_FILE Tool - Corrected for actual text responses
+  # ========================================================================
+  - name: "write_file"
+    description: "Write file contents - corrected for actual responses"
+    tests:
+      - name: "write_new_file"
+        description: "Successfully create and write a new file"
+        input:
+          path: "/tmp/mcp-test-sandbox/new_test_file.txt"
+          content: "Hello, MCP World!"
+        expected:
+          error: false
+          fields:
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+            - path: "$.content[0].type"
+              value: "text"
+              required: true
+        tags: ["filesystem", "write", "success"]
+
+  # ========================================================================
+  # LIST_DIRECTORY Tool - Corrected for actual text responses
+  # ========================================================================
+  - name: "list_directory"
+    description: "List directory contents - corrected for actual responses"
+    tests:
+      - name: "list_basic_directory"
+        description: "List contents of a basic directory"
+        input:
+          path: "/tmp/mcp-test-sandbox"
+        expected:
+          error: false
+          fields:
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+            - path: "$.content[0].type"
+              value: "text"
+              required: true
+        tags: ["filesystem", "list", "success"]
+
+  # ========================================================================
+  # Error Testing
+  # ========================================================================
+  - name: "read_file"
+    description: "Read file error testing"
+    tests:
+      - name: "read_nonexistent_file"
+        description: "Handle file not found error gracefully"
+        input:
+          path: "/tmp/mcp-test-sandbox/nonexistent.txt"
+        expected:
+          error: true
+          fields:
+            - path: "$.error.message"
+              field_type: "string"
+              required: true
+        tags: ["filesystem", "read", "error"] 

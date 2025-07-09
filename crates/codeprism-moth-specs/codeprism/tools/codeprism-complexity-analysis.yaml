@@ -40,12 +40,18 @@ tools:
         expected:
           error: false
           fields:
-            - path: "$.result.target"
+            - path: "$.content[0].text"
               field_type: "string"
               required: true
-            - path: "$.result.complexity_metrics"
-              field_type: "object"
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
+              pattern: "\"target\":\\s*\"test-projects/python-sample/core/user_manager.py\""
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+              pattern: "\"complexity_metrics\":\\s*\\{"
         performance:
           max_duration_ms: 4000
           max_memory_mb: 72
@@ -59,12 +65,14 @@ tools:
         expected:
           error: false
           fields:
-            - path: "$.result.target"
+            - path: "$.content[0].text"
               field_type: "string"
               required: true
-            - path: "$.result.complexity_metrics"
-              field_type: "object"
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
+              pattern: "\"complexity_metrics\":\\s*\\{"
         performance:
           max_duration_ms: 4000
           max_memory_mb: 72
@@ -78,12 +86,14 @@ tools:
         expected:
           error: false
           fields:
-            - path: "$.result.target"
+            - path: "$.content[0].text"
               field_type: "string"
               required: true
-            - path: "$.result.complexity_metrics"
-              field_type: "object"
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
+              pattern: "\"complexity_metrics\":\\s*\\{"
         performance:
           max_duration_ms: 4000
           max_memory_mb: 72
@@ -97,12 +107,14 @@ tools:
         expected:
           error: false
           fields:
-            - path: "$.result.target"
+            - path: "$.content[0].text"
               field_type: "string"
               required: true
-            - path: "$.result.complexity_metrics"
-              field_type: "object"
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
+              pattern: "\"complexity_metrics\":\\s*\\{"
         performance:
           max_duration_ms: 4000
           max_memory_mb: 72
@@ -116,12 +128,14 @@ tools:
         expected:
           error: false
           fields:
-            - path: "$.result.target"
+            - path: "$.content[0].text"
               field_type: "string"
               required: true
-            - path: "$.result.complexity_metrics"
-              field_type: "object"
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
+              pattern: "\"complexity_metrics\":\\s*\\{"
         performance:
           max_duration_ms: 4000
           max_memory_mb: 72
@@ -136,12 +150,14 @@ tools:
         expected:
           error: false
           fields:
-            - path: "$.result.target"
+            - path: "$.content[0].text"
               field_type: "string"
               required: true
-            - path: "$.result.complexity_metrics"
-              field_type: "object"
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
+              pattern: "\"complexity_metrics\":\\s*\\{"
         performance:
           max_duration_ms: 4000
           max_memory_mb: 72
@@ -155,9 +171,10 @@ tools:
         expected:
           error: false
           fields:
-            - path: "$.result.target"
+            - path: "$.content[0].text"
               field_type: "string"
               required: true
+              pattern: "\"status\":\\s*\"success\""
         performance:
           max_duration_ms: 6000
           max_memory_mb: 96
@@ -181,9 +198,10 @@ tools:
         expected:
           error: false
           fields:
-            - path: "$.result.target"
+            - path: "$.content[0].text"
               field_type: "string"
               required: true
+              pattern: "\"status\":\\s*\"success\""
         performance:
           max_duration_ms: 8000
           max_memory_mb: 128
@@ -197,9 +215,10 @@ tools:
         expected:
           error: false
           fields:
-            - path: "$.result.target"
+            - path: "$.content[0].text"
               field_type: "string"
               required: true
+              pattern: "\"status\":\\s*\"success\""
         performance:
           max_duration_ms: 4000
           max_memory_mb: 72

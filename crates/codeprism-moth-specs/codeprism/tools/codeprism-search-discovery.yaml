@@ -40,12 +40,18 @@ tools:
         expected:
           error: false
           fields:
-            - path: "$.result.pattern"
+            - path: "$.content[0].text"
               field_type: "string"
               required: true
-            - path: "$.result.symbols"
-              field_type: "array"
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
+              pattern: "\"pattern\":\\s*\"get_user\""
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+              pattern: "\"symbols\":\\s*\\["
         performance:
           max_duration_ms: 3000
           max_memory_mb: 64
@@ -59,9 +65,14 @@ tools:
         expected:
           error: false
           fields:
-            - path: "$.result.symbols"
-              field_type: "array"
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+              pattern: "\"symbols\":\\s*\\["
         performance:
           max_duration_ms: 3000
           max_memory_mb: 64
@@ -75,9 +86,14 @@ tools:
         expected:
           error: false
           fields:
-            - path: "$.result.symbols"
-              field_type: "array"
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+              pattern: "\"symbols\":\\s*\\["
         performance:
           max_duration_ms: 3000
           max_memory_mb: 64
@@ -91,9 +107,14 @@ tools:
         expected:
           error: false
           fields:
-            - path: "$.result.symbols"
-              field_type: "array"
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+              pattern: "\"symbols\":\\s*\\["
         performance:
           max_duration_ms: 3000
           max_memory_mb: 64
@@ -107,9 +128,14 @@ tools:
         expected:
           error: false
           fields:
-            - path: "$.result.symbols"
-              field_type: "array"
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+              pattern: "\"symbols\":\\s*\\["
         performance:
           max_duration_ms: 3000
           max_memory_mb: 64
@@ -126,9 +152,14 @@ tools:
         expected:
           error: false
           fields:
-            - path: "$.result.symbols"
-              field_type: "array"
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+              pattern: "\"symbols\":\\s*\\["
         performance:
           max_duration_ms: 3000
           max_memory_mb: 64
@@ -157,12 +188,18 @@ tools:
         expected:
           error: false
           fields:
-            - path: "$.result.query"
+            - path: "$.content[0].text"
               field_type: "string"
               required: true
-            - path: "$.result.matches"
-              field_type: "array"
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
+              pattern: "\"query\":\\s*\"import\""
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+              pattern: "\"matches\":\\s*\\["
         performance:
           max_duration_ms: 2500
           max_memory_mb: 48
@@ -176,9 +213,14 @@ tools:
         expected:
           error: false
           fields:
-            - path: "$.result.matches"
-              field_type: "array"
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+              pattern: "\"matches\":\\s*\\["
         performance:
           max_duration_ms: 2500
           max_memory_mb: 48
@@ -192,9 +234,14 @@ tools:
         expected:
           error: false
           fields:
-            - path: "$.result.matches"
-              field_type: "array"
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+              pattern: "\"matches\":\\s*\\["
         performance:
           max_duration_ms: 2500
           max_memory_mb: 48
@@ -208,9 +255,14 @@ tools:
         expected:
           error: false
           fields:
-            - path: "$.result.matches"
-              field_type: "array"
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+              pattern: "\"matches\":\\s*\\["
         performance:
           max_duration_ms: 2500
           max_memory_mb: 48
@@ -224,9 +276,14 @@ tools:
         expected:
           error: false
           fields:
-            - path: "$.result.matches"
-              field_type: "array"
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+              pattern: "\"matches\":\\s*\\["
         performance:
           max_duration_ms: 2500
           max_memory_mb: 48
@@ -240,9 +297,14 @@ tools:
         expected:
           error: false
           fields:
-            - path: "$.result.matches"
-              field_type: "array"
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+              pattern: "\"matches\":\\s*\\["
         performance:
           max_duration_ms: 2500
           max_memory_mb: 48
@@ -259,9 +321,14 @@ tools:
         expected:
           error: false
           fields:
-            - path: "$.result.matches"
-              field_type: "array"
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+              pattern: "\"matches\":\\s*\\["
         performance:
           max_duration_ms: 2500
           max_memory_mb: 48
@@ -274,9 +341,14 @@ tools:
         expected:
           error: false
           fields:
-            - path: "$.result.matches"
-              value: []
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+              pattern: "\"matches\":\\s*\\[\\s*\\]"
         tags: ["search", "content", "no_matches"]
 
 # Test configuration

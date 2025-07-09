@@ -1,0 +1,192 @@
+# MCP-Compliant Filesystem Server Test Specification
+# Based on the official MCP specification: https://spec.modelcontextprotocol.io/
+
+name: "Filesystem MCP Server (MCP-Compliant)"
+version: "1.0.0"
+description: "Testing @modelcontextprotocol/server-filesystem according to MCP specification"
+
+# Server capabilities declaration
+capabilities:
+  tools: true
+  resources: false
+  prompts: false
+  sampling: false
+  logging: false
+
+# Server startup configuration  
+server:
+  command: "npx"
+  args: ["@modelcontextprotocol/server-filesystem", "/tmp/mcp-test-sandbox"]
+  env:
+    LOG_LEVEL: "warn"
+  transport: "stdio"
+  startup_timeout_seconds: 15
+  shutdown_timeout_seconds: 8
+
+# MCP-compliant tool testing
+tools:
+  # ========================================================================
+  # READ_FILE Tool - MCP-compliant validation
+  # ========================================================================
+  - name: "read_file"
+    description: "Read file contents according to MCP specification"
+    tests:
+      - name: "read_existing_text_file"
+        description: "Successfully read a text file with MCP-compliant response"
+        input:
+          path: "/tmp/mcp-test-sandbox/test.txt"
+        expected:
+          error: false
+          fields:
+            # According to MCP spec: result.content[0].text
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+            # According to MCP spec: result.content[0].type should be "text"
+            - path: "$.content[0].type"
+              value: "text"
+              required: true
+            # Optional: MCP spec allows isError field
+            - path: "$.isError"
+              value: false
+              required: false
+        tags: ["filesystem", "read", "success", "mcp-compliant"]
+
+  # ========================================================================
+  # WRITE_FILE Tool - MCP-compliant validation
+  # ========================================================================
+  - name: "write_file"
+    description: "Write file contents according to MCP specification"
+    tests:
+      - name: "write_new_file"
+        description: "Successfully write a new file with MCP-compliant response"
+        input:
+          path: "/tmp/mcp-test-sandbox/mcp_test_write.txt"
+          content: "Hello, MCP-compliant world!"
+        expected:
+          error: false
+          fields:
+            # MCP spec: result.content[0].text contains success message
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+            # MCP spec: result.content[0].type should be "text"
+            - path: "$.content[0].type"
+              value: "text"
+              required: true
+            # Optional: MCP spec allows isError field
+            - path: "$.isError"
+              value: false
+              required: false
+        tags: ["filesystem", "write", "success", "mcp-compliant"]
+
+  # ========================================================================
+  # LIST_DIRECTORY Tool - MCP-compliant validation
+  # ========================================================================
+  - name: "list_directory"
+    description: "List directory contents according to MCP specification"
+    tests:
+      - name: "list_basic_directory"
+        description: "List directory with MCP-compliant response"
+        input:
+          path: "/tmp/mcp-test-sandbox"
+        expected:
+          error: false
+          fields:
+            # MCP spec: result.content[0].text contains directory listing
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+            # MCP spec: result.content[0].type should be "text"
+            - path: "$.content[0].type"
+              value: "text"
+              required: true
+            # Optional: MCP spec allows isError field
+            - path: "$.isError"
+              value: false
+              required: false
+        tags: ["filesystem", "list", "success", "mcp-compliant"]
+
+  # ========================================================================
+  # Error Testing - MCP-compliant error handling
+  # ========================================================================
+  - name: "read_file"
+    description: "Read file error testing according to MCP specification"
+    tests:
+      - name: "read_nonexistent_file"
+        description: "Handle file not found with MCP-compliant error response"
+        input:
+          path: "/tmp/mcp-test-sandbox/nonexistent.txt"
+        expected:
+          # MCP spec: errors can be in JSON-RPC error field OR result.isError
+          error: true
+          fields:
+            # Check if it's a JSON-RPC error ($.error.message)
+            # OR a tool execution error ($.content[0].text with $.isError: true)
+            - path: "$.error.message"
+              field_type: "string"
+              required: false  # Optional because could be tool execution error
+            # Alternative: tool execution error format
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: false  # Optional because could be protocol error
+            - path: "$.isError"
+              value: true
+              required: false  # Optional because could be protocol error
+        tags: ["filesystem", "read", "error", "mcp-compliant"]
+
+  # ========================================================================
+  # CREATE_DIRECTORY Tool - MCP-compliant validation
+  # ========================================================================
+  - name: "create_directory"
+    description: "Create directory according to MCP specification"
+    tests:
+      - name: "create_new_directory"
+        description: "Successfully create a directory with MCP-compliant response"
+        input:
+          path: "/tmp/mcp-test-sandbox/mcp_test_dir"
+        expected:
+          error: false
+          fields:
+            # MCP spec: result.content[0].text contains success message
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+            # MCP spec: result.content[0].type should be "text"
+            - path: "$.content[0].type"
+              value: "text"
+              required: true
+            # Optional: MCP spec allows isError field
+            - path: "$.isError"
+              value: false
+              required: false
+        tags: ["filesystem", "create", "success", "mcp-compliant"]
+
+  # ========================================================================
+  # MOVE_FILE Tool - MCP-compliant validation (filesystem server has move_file, not delete_file)
+  # ========================================================================
+  - name: "move_file"
+    description: "Move/rename file according to MCP specification"
+    tests:
+      - name: "move_existing_file"
+        description: "Successfully move a file with MCP-compliant response"
+        depends_on: ["write_new_file"]  # Must run after write_new_file creates the source file
+        input:
+          source: "/tmp/mcp-test-sandbox/mcp_test_write.txt"
+          destination: "/tmp/mcp-test-sandbox/mcp_test_moved.txt"
+        expected:
+          error: false
+          fields:
+            # MCP spec: result.content[0].text contains success message
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+            # MCP spec: result.content[0].type should be "text"
+            - path: "$.content[0].type"
+              value: "text"
+              required: true
+            # Optional: MCP spec allows isError field
+            - path: "$.isError"
+              value: false
+              required: false
+        tags: ["filesystem", "move", "success", "mcp-compliant"] 

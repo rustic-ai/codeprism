@@ -375,7 +375,7 @@ impl ValidationEngine {
     ) -> Result<FieldValidationResult> {
         // Extract value using JSONPath - handle missing fields gracefully
         let actual_value = match self.evaluate_jsonpath(response, &validation.path) {
-            Ok(value) => value,
+            Ok(value) => Some(value),
             Err(_) => {
                 // Field not found - check if it's required
                 if validation.required {
@@ -385,7 +385,10 @@ impl ValidationEngine {
                         is_valid: false,
                         actual_value: None,
                         expected_value: validation.value.clone(),
-                        error_message: Some("Required field is missing or null".to_string()),
+                        error_message: Some(format!(
+                            "Required field '{}' is missing",
+                            validation.path
+                        )),
                     });
                 } else {
                     // Optional field not found is valid
@@ -400,6 +403,9 @@ impl ValidationEngine {
                 }
             }
         };
+
+        // If we have a value, unwrap it; if not, we would have returned early above
+        let actual_value = actual_value.unwrap();
 
         // Determine validation type based on FieldValidation fields
         let validation_type = if validation.value.is_some() {
@@ -537,47 +543,49 @@ impl ValidationEngine {
         response: &serde_json::Value,
         path: &str,
     ) -> Result<serde_json::Value> {
-        // Simple JSONPath evaluation (basic implementation)
-        match path {
-            "$.status" => response
-                .get("status")
-                .cloned()
-                .ok_or_else(|| crate::error::Error::validation("Path not found: $.status")),
-            "$.tools[0].name" => response
-                .get("tools")
-                .and_then(|tools| tools.as_array())
-                .and_then(|arr| arr.first())
-                .and_then(|tool| tool.get("name"))
-                .cloned()
-                .ok_or_else(|| crate::error::Error::validation("Path not found: $.tools[0].name")),
-            "$.tools" => response
-                .get("tools")
-                .cloned()
-                .ok_or_else(|| crate::error::Error::validation("Path not found: $.tools")),
-            "$.metadata" => response
-                .get("metadata")
-                .cloned()
-                .ok_or_else(|| crate::error::Error::validation("Path not found: $.metadata")),
-            "$.count" => response
-                .get("count")
-                .cloned()
-                .ok_or_else(|| crate::error::Error::validation("Path not found: $.count")),
-            path => {
-                // For other paths, return null to simulate missing field
-                if response.pointer(&path.replace("$", "")).is_some() {
-                    response
-                        .pointer(&path.replace("$", ""))
-                        .cloned()
-                        .ok_or_else(|| {
-                            crate::error::Error::validation(format!("Path not found: {}", path))
-                        })
-                } else {
-                    Err(crate::error::Error::validation(format!(
-                        "Path not found: {}",
-                        path
-                    )))
+        // Use jsonpath_lib for comprehensive JSONPath support
+        use jsonpath_lib::select;
+
+        // Check cache first if caching is enabled
+        if self.validation_config.enable_caching {
+            if let Some(_cached_path) = self.jsonpath_cache.get(path) {
+                // Cache hit - proceed with evaluation
+                // Note: We store the path string for now, but could cache compiled expressions
+            } else if self.jsonpath_cache.len() < self.validation_config.max_cache_size {
+                // Cache miss - add to cache
+                self.jsonpath_cache
+                    .insert(path.to_string(), path.to_string());
+            }
+        }
+
+        // Evaluate JSONPath expression
+        match select(response, path) {
+            Ok(results) => {
+                // JSONPath can return multiple results, but we need a single value
+                match results.as_slice() {
+                    [] => {
+                        // No results found - this is not necessarily an error for optional fields
+                        Err(crate::error::Error::validation(format!(
+                            "JSONPath '{}' returned no results",
+                            path
+                        )))
+                    }
+                    [single_result] => {
+                        // Single result - return it
+                        Ok((*single_result).clone())
+                    }
+                    multiple_results => {
+                        // Multiple results - return as array
+                        Ok(serde_json::Value::Array(
+                            multiple_results.iter().map(|&v| v.clone()).collect(),
+                        ))
+                    }
                 }
             }
+            Err(err) => Err(crate::error::Error::validation(format!(
+                "JSONPath evaluation failed for '{}': {}",
+                path, err
+            ))),
         }
     }
 

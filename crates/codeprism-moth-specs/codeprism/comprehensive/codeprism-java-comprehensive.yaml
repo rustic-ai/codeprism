@@ -1,6 +1,6 @@
 # CodePrism MCP Server - Java Comprehensive Language-Specific Test Specification
-# Comprehensive testing for Java projects covering 19 applicable MCP tools
-# with Java-focused scenarios, Spring framework patterns, and enterprise development
+# Comprehensive testing for Java projects covering 18 applicable MCP tools
+# with Java-focused scenarios, JVM ecosystem analysis, and enterprise patterns
 # following the MCP 2025-06-18 specification
 
 name: "CodePrism Java Comprehensive Analysis"
@@ -9,7 +9,7 @@ description: "Comprehensive test specification for Java projects using CodePrism
 
 # Server capabilities declaration
 capabilities:
-  tools: true           # 19/26 MCP tools (excluding JS-specific and some language-specific features)
+  tools: true           # Core navigation and analysis tools
   resources: false      # No file URI resources  
   prompts: false        # No prompt templates
   sampling: false       # No sampling support
@@ -31,634 +31,369 @@ tools:
   # ========================================================================
   # CORE NAVIGATION - Essential tools for Java project exploration
   # ========================================================================
-  - name: "repository_stats"
+  - name: "get_repository_info"
     description: "Java repository statistics with Maven/Gradle analysis"
     tests:
       - name: "java_enterprise_repository_overview"
-        description: "Analyze Java enterprise application repository"
-        input:
-          project_path: "test-projects/java-test-project"
-          language: "java"
-          include_build_tool_analysis: true
-          include_framework_detection: true
-          include_annotation_analysis: true
-          include_package_structure: true
+        description: "Analyze Java enterprise repository structure"
+        input: {}
         expected:
           error: false
           fields:
-            - path: "$.result.repository_overview"
-              field_type: "object"
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
-            - path: "$.result.java_metrics"
-              field_type: "object"
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
-            - path: "$.result.build_system"
-              field_type: "object"
-              required: false
-            - path: "$.result.framework_detection"
-              field_type: "object"
-              required: false
+              pattern: "\"repository_overview\":\\s*\\{"
         performance:
-          max_duration_ms: 4000
-          max_memory_mb: 72
-        tags: ["java", "enterprise", "repository"]
+          max_duration_ms: 3200
+          max_memory_mb: 60
+        tags: ["java", "enterprise", "maven"]
 
   - name: "trace_path"
-    description: "Trace execution paths in Java with exception handling analysis"
+    description: "Trace execution paths in Java with inheritance analysis"
     tests:
-      - name: "java_method_call_tracing"
-        description: "Trace Java method calls with exception flow analysis"
+      - name: "java_polymorphic_flow_tracing"
+        description: "Trace Java execution paths with polymorphism analysis"
         input:
-          project_path: "test-projects/java-test-project"
-          language: "java"
-          start_method: "main"
+          source: "abcdef123456"
+          target: "fedcba654321"
           max_depth: 8
-          include_exception_paths: true
-          include_interface_calls: true
-          include_reflection_calls: true
         expected:
           error: false
           fields:
-            - path: "$.result.execution_paths"
-              field_type: "array"
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
-            - path: "$.result.exception_flow"
-              field_type: "object"
-              required: false
-            - path: "$.result.interface_analysis"
-              field_type: "array"
-              required: false
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+              pattern: "\"path_found\":\\s*(true|false)"
         performance:
-          max_duration_ms: 4500
-          max_memory_mb: 80
-        tags: ["java", "tracing", "exceptions"]
+          max_duration_ms: 3800
+          max_memory_mb: 68
+        tags: ["java", "polymorphism", "inheritance"]
 
   - name: "explain_symbol"
-    description: "Explain Java symbols with annotation and generics context"
+    description: "Explain Java symbols with generics and annotations"
     tests:
-      - name: "java_class_annotation_explanation"
-        description: "Explain Java class with annotations and generics"
+      - name: "java_generic_explanation"
+        description: "Explain Java generics with type bounds and wildcards"
         input:
-          project_path: "test-projects/java-test-project"
-          language: "java"
-          symbol_name: "UserService"
-          include_annotations: true
-          include_generics: true
-          include_inheritance: true
-          include_interface_contracts: true
+          symbol_id: "abcdef123456"
+          include_dependencies: true
+          include_usages: true
         expected:
           error: false
           fields:
-            - path: "$.result.symbol_explanation"
-              field_type: "object"
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
-            - path: "$.result.annotation_analysis"
-              field_type: "array"
-              required: false
-            - path: "$.result.generics_info"
-              field_type: "object"
-              required: false
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+              pattern: "\"symbol\":\\s*\\{"
         performance:
-          max_duration_ms: 3000
-          max_memory_mb: 56
-        tags: ["java", "symbols", "annotations"]
+          max_duration_ms: 2800
+          max_memory_mb: 52
+        tags: ["java", "generics", "annotations"]
 
   # ========================================================================
   # SEARCH & DISCOVERY - Java-specific search capabilities
   # ========================================================================
   - name: "search_symbols"
-    description: "Java symbol search with annotation and interface filtering"
+    description: "Java symbol search with interface and annotation filtering"
     tests:
-      - name: "java_annotation_search"
-        description: "Search for Java annotations and annotated elements"
+      - name: "java_annotation_interface_search"
+        description: "Search for Java annotations and interface definitions"
         input:
-          project_path: "test-projects/java-test-project"
-          language: "java"
-          symbol_pattern: "@\\w+"
-          symbol_types: ["annotation", "method", "class", "field"]
-          include_spring_annotations: true
-          include_jpa_annotations: true
-          include_custom_annotations: true
+          pattern: "Override"
+          symbol_types: ["annotation", "interface"]
+          limit: 20
         expected:
           error: false
           fields:
-            - path: "$.result.annotations_found"
-              field_type: "array"
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
-            - path: "$.result.spring_annotations"
-              field_type: "array"
-              required: false
-            - path: "$.result.jpa_annotations"
-              field_type: "array"
-              required: false
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+              pattern: "\"symbols\":\\s*\\["
         performance:
-          max_duration_ms: 3800
-          max_memory_mb: 64
-        tags: ["java", "annotations", "spring"]
+          max_duration_ms: 3000
+          max_memory_mb: 56
+        tags: ["java", "annotations", "interfaces"]
 
   - name: "search_content"
-    description: "Java content search with pattern matching for enterprise features"
+    description: "Java content search with pattern matching for generics and lambda"
     tests:
-      - name: "java_enterprise_pattern_search"
-        description: "Search for Java enterprise patterns and frameworks"
+      - name: "java_lambda_generic_pattern_search"
+        description: "Search for lambda expressions and generic patterns in Java"
         input:
-          project_path: "test-projects/java-test-project"
-          language: "java"
-          search_pattern: "(throws|implements|extends|@\\w+)"
-          include_framework_patterns: true
-          include_design_patterns: true
-          include_lambda_expressions: true
+          query: "->"
+          file_types: ["java"]
+          regex: true
         expected:
           error: false
           fields:
-            - path: "$.result.enterprise_patterns"
-              field_type: "array"
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
-            - path: "$.result.framework_usage"
-              field_type: "object"
-              required: false
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+              pattern: "\"matches\":\\s*\\["
         performance:
-          max_duration_ms: 3200
-          max_memory_mb: 58
-        tags: ["java", "enterprise", "patterns"]
+          max_duration_ms: 2800
+          max_memory_mb: 50
+        tags: ["java", "lambda", "generics"]
 
   # ========================================================================
-  # COMPLEXITY ANALYSIS - Java complexity with OOP considerations
+  # COMPLEXITY ANALYSIS - Java complexity with enterprise considerations
   # ========================================================================
   - name: "analyze_complexity"
-    description: "Java complexity analysis with OOP and enterprise considerations"
+    description: "Java complexity analysis with enterprise pattern complexity"
     tests:
       - name: "java_enterprise_complexity_analysis"
-        description: "Analyze Java enterprise application complexity"
+        description: "Analyze Java complexity including enterprise patterns"
         input:
-          project_path: "test-projects/java-test-project"
-          language: "java"
-          complexity_types: ["cyclomatic", "cognitive", "inheritance_depth", "coupling"]
-          include_class_complexity: true
-          include_package_complexity: true
-          include_annotation_complexity: true
+          target: "test-projects/java-test-project/src/main/java/Main.java"
+          metrics: ["cyclomatic", "cognitive"]
+          threshold_warnings: true
         expected:
           error: false
           fields:
-            - path: "$.result.complexity_metrics"
-              field_type: "object"
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
-            - path: "$.result.high_complexity_classes"
-              field_type: "array"
-              required: false
-            - path: "$.result.coupling_analysis"
-              field_type: "object"
-              required: false
-        performance:
-          max_duration_ms: 5500
-          max_memory_mb: 92
-        tags: ["java", "complexity", "enterprise"]
-
-  - name: "find_duplicates"
-    description: "Java duplicate code detection with method-level analysis"
-    tests:
-      - name: "java_method_duplication_analysis"
-        description: "Detect duplicate methods and code blocks in Java"
-        input:
-          project_path: "test-projects/java-test-project"
-          language: "java"
-          similarity_threshold: 0.85
-          include_method_duplicates: true
-          include_getter_setter_analysis: true
-          include_boilerplate_detection: true
-        expected:
-          error: false
-          fields:
-            - path: "$.result.duplicate_groups"
-              field_type: "array"
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
-            - path: "$.result.boilerplate_analysis"
-              field_type: "object"
-              required: false
-        performance:
-          max_duration_ms: 6500
-          max_memory_mb: 104
-        tags: ["java", "duplicates", "boilerplate"]
-
-  # ========================================================================
-  # INHERITANCE ANALYSIS - Java OOP inheritance patterns
-  # ========================================================================
-  - name: "trace_inheritance"
-    description: "Java inheritance analysis with interface implementation"
-    tests:
-      - name: "java_class_hierarchy_analysis"
-        description: "Analyze Java class hierarchies and interface implementations"
-        input:
-          project_path: "test-projects/java-test-project"
-          language: "java"
-          root_class: "BaseEntity"
-          include_interface_analysis: true
-          include_abstract_classes: true
-          include_method_overrides: true
-          include_polymorphism_analysis: true
-        expected:
-          error: false
-          fields:
-            - path: "$.result.inheritance_tree"
-              field_type: "object"
-              required: true
-            - path: "$.result.interface_implementations"
-              field_type: "array"
-              required: false
-            - path: "$.result.method_overrides"
-              field_type: "array"
-              required: false
-            - path: "$.result.polymorphism_usage"
-              field_type: "object"
-              required: false
-        performance:
-          max_duration_ms: 4000
-          max_memory_mb: 72
-        tags: ["java", "inheritance", "polymorphism"]
-
-  # ========================================================================
-  # ANNOTATION ANALYSIS - Java annotation patterns
-  # ========================================================================
-  - name: "analyze_decorators"
-    description: "Java annotation analysis (equivalent to decorators)"
-    tests:
-      - name: "java_spring_annotation_analysis"
-        description: "Analyze Spring framework annotation usage"
-        input:
-          project_path: "test-projects/java-test-project"
-          language: "java"
-          annotation_types: ["@Component", "@Service", "@Repository", "@Controller", "@RestController"]
-          include_dependency_injection: true
-          include_transaction_annotations: true
-          include_security_annotations: true
-        expected:
-          error: false
-          fields:
-            - path: "$.result.annotation_analysis"
-              field_type: "object"
-              required: true
-            - path: "$.result.spring_patterns"
-              field_type: "array"
-              required: false
-            - path: "$.result.dependency_injection"
-              field_type: "object"
-              required: false
-        performance:
-          max_duration_ms: 3500
-          max_memory_mb: 64
-        tags: ["java", "spring", "annotations"]
-
-  # ========================================================================
-  # SECURITY ANALYSIS - Java security vulnerabilities
-  # ========================================================================
-  - name: "analyze_security"
-    description: "Java security analysis with enterprise focus"
-    tests:
-      - name: "java_enterprise_security_analysis"
-        description: "Analyze Java enterprise security vulnerabilities"
-        input:
-          project_path: "test-projects/java-test-project"
-          language: "java"
-          vulnerability_types: ["sql_injection", "deserialization", "xml_injection", "path_traversal", "authentication"]
-          include_spring_security: true
-          include_jpa_security: true
-          include_servlet_security: true
-        expected:
-          error: false
-          fields:
-            - path: "$.result.vulnerabilities"
-              field_type: "array"
-              required: true
-            - path: "$.result.security_score"
-              field_type: "number"
-              required: true
-            - path: "$.result.spring_security_analysis"
-              field_type: "object"
-              required: false
-        performance:
-          max_duration_ms: 7000
-          max_memory_mb: 112
-        tags: ["java", "security", "spring"]
-
-  # ========================================================================
-  # PERFORMANCE ANALYSIS - Java/JVM performance optimization
-  # ========================================================================
-  - name: "analyze_performance"
-    description: "Java performance analysis with JVM considerations"
-    tests:
-      - name: "java_jvm_performance_analysis"
-        description: "Analyze Java performance with JVM optimization focus"
-        input:
-          project_path: "test-projects/java-test-project"
-          language: "java"
-          analysis_type: "jvm_optimization"
-          include_gc_analysis: true
-          include_memory_analysis: true
-          include_collection_usage: true
-          include_concurrency_analysis: true
-        expected:
-          error: false
-          fields:
-            - path: "$.result.performance_analysis"
-              field_type: "object"
-              required: true
-            - path: "$.result.gc_recommendations"
-              field_type: "array"
-              required: false
-            - path: "$.result.memory_optimization"
-              field_type: "object"
-              required: false
-            - path: "$.result.concurrency_issues"
-              field_type: "array"
-              required: false
-        performance:
-          max_duration_ms: 6500
-          max_memory_mb: 104
-        tags: ["java", "performance", "jvm"]
-
-  # ========================================================================
-  # API ANALYSIS - Java API design and documentation
-  # ========================================================================
-  - name: "analyze_api_surface"
-    description: "Java API surface analysis with Javadoc integration"
-    tests:
-      - name: "java_api_javadoc_analysis"
-        description: "Analyze Java API surface with Javadoc coverage"
-        input:
-          project_path: "test-projects/java-test-project"
-          language: "java"
-          api_scope: "public"
-          include_javadoc_analysis: true
-          include_interface_design: true
-          include_exception_design: true
-          include_generics_usage: true
-        expected:
-          error: false
-          fields:
-            - path: "$.result.api_surface"
-              field_type: "object"
-              required: true
-            - path: "$.result.javadoc_coverage"
-              field_type: "number"
-              required: false
-            - path: "$.result.interface_quality"
-              field_type: "object"
-              required: false
+              pattern: "\"complexity_metrics\":\\s*\\{"
         performance:
           max_duration_ms: 4200
           max_memory_mb: 76
-        tags: ["java", "api", "javadoc"]
+        tags: ["java", "complexity", "enterprise"]
 
   # ========================================================================
-  # DEPENDENCY ANALYSIS - Maven/Gradle dependency management
+  # DEPENDENCY ANALYSIS - Java dependency management
   # ========================================================================
   - name: "find_dependencies"
-    description: "Java dependency analysis with Maven/Gradle integration"
+    description: "Java dependency analysis with Maven/Gradle ecosystem focus"
     tests:
       - name: "java_maven_dependency_analysis"
-        description: "Analyze Maven dependencies and package imports"
+        description: "Analyze Maven dependencies and artifact resolution"
         input:
-          project_path: "test-projects/java-test-project"
-          language: "java"
-          dependency_types: ["maven", "gradle"]
-          include_spring_dependencies: true
-          include_test_dependencies: true
-          include_circular_dependencies: true
+          target: "abcdef123456"
+          dependency_type: "direct"
         expected:
           error: false
           fields:
-            - path: "$.result.dependencies"
-              field_type: "array"
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
-            - path: "$.result.maven_analysis"
-              field_type: "object"
-              required: false
-            - path: "$.result.spring_dependencies"
-              field_type: "array"
-              required: false
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+              pattern: "\"dependencies\":\\s*\\["
         performance:
-          max_duration_ms: 5000
-          max_memory_mb: 88
+          max_duration_ms: 3800
+          max_memory_mb: 66
         tags: ["java", "maven", "dependencies"]
 
-  - name: "analyze_transitive_dependencies"
-    description: "Java transitive dependency analysis with security focus"
+  - name: "find_references"
+    description: "Find references to Java symbols"
     tests:
-      - name: "java_transitive_security_analysis"
-        description: "Analyze Java transitive dependencies for security issues"
+      - name: "java_symbol_references"
+        description: "Find references to Java symbols with context"
         input:
-          project_path: "test-projects/java-test-project"
-          language: "java"
-          max_depth: 4
-          include_security_audit: true
-          include_license_analysis: true
-          include_version_conflicts: true
+          symbol_id: "abcdef123456"
+          include_definitions: true
+          context_lines: 5
         expected:
           error: false
           fields:
-            - path: "$.result.transitive_dependencies"
-              field_type: "array"
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
-            - path: "$.result.security_vulnerabilities"
-              field_type: "array"
-              required: false
-            - path: "$.result.license_issues"
-              field_type: "array"
-              required: false
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+              pattern: "\"references\":\\s*\\["
         performance:
-          max_duration_ms: 6000
-          max_memory_mb: 96
-        tags: ["java", "transitive", "security"]
+          max_duration_ms: 3200
+          max_memory_mb: 58
+        tags: ["java", "references", "context"]
 
   # ========================================================================
-  # DATA FLOW ANALYSIS - Java data flow and object lifecycle
+  # WORKFLOW TOOLS - Guidance and optimization
   # ========================================================================
-  - name: "trace_data_flow"
-    description: "Java data flow analysis with object lifecycle tracking"
+  - name: "provide_guidance"
+    description: "Java-specific guidance and recommendations"
     tests:
-      - name: "java_object_lifecycle_analysis"
-        description: "Trace Java object lifecycle and data flow"
+      - name: "java_guidance_analysis"
+        description: "Provide Java-specific guidance for code quality"
         input:
-          project_path: "test-projects/java-test-project"
-          language: "java"
-          start_variable: "userData"
-          include_field_access: true
-          include_method_parameters: true
-          include_return_values: true
+          target: "test-projects/java-test-project/src/main/java/Main.java"
+          guidance_type: "performance"
+          include_examples: true
         expected:
           error: false
           fields:
-            - path: "$.result.data_flow_graph"
-              field_type: "object"
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
-            - path: "$.result.object_lifecycle"
-              field_type: "array"
-              required: false
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+              pattern: "\"guidance\""
         performance:
-          max_duration_ms: 5200
-          max_memory_mb: 90
-        tags: ["java", "data_flow", "objects"]
+          max_duration_ms: 3500
+          max_memory_mb: 62
+        tags: ["java", "guidance", "performance"]
 
-  - name: "detect_patterns"
-    description: "Java design pattern detection with GoF patterns"
+  - name: "optimize_code"
+    description: "Java code optimization suggestions"
     tests:
-      - name: "java_gof_pattern_detection"
-        description: "Detect Gang of Four design patterns in Java code"
+      - name: "java_optimization_suggestions"
+        description: "Analyze Java code for optimization opportunities"
         input:
-          project_path: "test-projects/java-test-project"
-          language: "java"
-          pattern_types: ["singleton", "factory", "observer", "strategy", "decorator", "adapter"]
-          include_spring_patterns: true
-          include_jee_patterns: true
-          include_anti_patterns: true
+          target: "test-projects/java-test-project/src/main/java/Main.java"
+          optimization_types: ["performance", "maintainability"]
+          aggressive_mode: false
         expected:
           error: false
           fields:
-            - path: "$.result.detected_patterns"
-              field_type: "array"
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
-            - path: "$.result.spring_patterns"
-              field_type: "array"
-              required: false
-            - path: "$.result.anti_patterns"
-              field_type: "array"
-              required: false
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+              pattern: "\"optimizations\":\\s*\\["
         performance:
           max_duration_ms: 4500
           max_memory_mb: 80
-        tags: ["java", "patterns", "gof"]
+        tags: ["java", "optimization", "performance"]
 
-  # ========================================================================
-  # WORKFLOW ORCHESTRATION - Java project workflow optimization
-  # ========================================================================
-  - name: "suggest_analysis_workflow"
-    description: "Suggest optimal analysis workflow for Java projects"
+  - name: "batch_process"
+    description: "Batch processing for multiple Java files"
     tests:
-      - name: "java_enterprise_workflow_suggestion"
-        description: "Suggest analysis workflow for Java enterprise application"
+      - name: "java_batch_analysis"
+        description: "Batch process multiple Java files for analysis"
         input:
-          project_path: "test-projects/java-test-project"
-          language: "java"
-          project_type: "enterprise_application"
-          analysis_goals: ["architecture", "security", "performance", "maintainability"]
-          framework_hints: ["spring", "hibernate", "maven"]
+          operation: "analyze_complexity"
+          targets: ["test-projects/java-test-project/src/main/java/Main.java", "test-projects/java-test-project/src/main/java/Service.java"]
+          max_concurrent: 2
         expected:
           error: false
           fields:
-            - path: "$.result.suggested_workflow"
-              field_type: "object"
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
-            - path: "$.result.enterprise_priorities"
-              field_type: "array"
-              required: false
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+              pattern: "\"batch_results\":\\s*\\["
         performance:
-          max_duration_ms: 2500
-          max_memory_mb: 40
-        tags: ["java", "workflow", "enterprise"]
+          max_duration_ms: 5200
+          max_memory_mb: 86
+        tags: ["java", "batch", "analysis"]
 
-  - name: "batch_analysis"
-    description: "Execute Java-focused batch analysis"
+  - name: "workflow_automation"
+    description: "Automated Java development workflows"
     tests:
-      - name: "java_enterprise_batch_analysis"
-        description: "Execute comprehensive Java enterprise analysis"
+      - name: "java_workflow_automation"
+        description: "Automate Java code quality workflows"
         input:
-          project_path: "test-projects/java-test-project"
-          language: "java"
-          analysis_suite: "enterprise_comprehensive"
-          tools: ["repository_stats", "analyze_complexity", "analyze_security", "trace_inheritance", "analyze_decorators", "analyze_performance"]
-          execution_mode: "parallel"
-          enterprise_optimizations: true
+          workflow_type: "quality_check"
+          target_scope: "test-projects/java-test-project"
+          automation_level: "full"
         expected:
           error: false
           fields:
-            - path: "$.result.batch_results"
-              field_type: "object"
+            - path: "$.content[0].text"
+              field_type: "string"
               required: true
-            - path: "$.result.enterprise_insights"
-              field_type: "object"
-              required: false
+              pattern: "\"status\":\\s*\"success\""
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+              pattern: "\"automation_result\":\\s*\\{"
         performance:
-          max_duration_ms: 22000
-          max_memory_mb: 280
-        tags: ["java", "batch", "enterprise"]
+          max_duration_ms: 10000
+          max_memory_mb: 128
+        tags: ["java", "automation", "workflow"]
 
-# Test configuration optimized for Java projects
-test_config:
-  timeout_seconds: 200
-  max_concurrency: 2
-  fail_fast: false
-  retry:
-    max_retries: 2
-    retry_delay_ms: 1500
-    exponential_backoff: true
+# Error handling test cases for comprehensive coverage
+error_tests:
+  - name: "invalid_symbol_id"
+    description: "Test error handling for invalid symbol IDs"
+    tool: "explain_symbol"
+    input:
+      symbol_id: "invalid_hex"
+    expected:
+      error: true
+      error_message_contains: "not found"
 
-# Java-specific metadata and benchmarks
-metadata:
-  author: "CodePrism MCP Test Harness Team"
-  documentation: "https://spec.modelcontextprotocol.io/"
-  license: "MIT"
-  tags: ["java", "enterprise", "spring", "jvm", "maven", "gradle"]
-  test_coverage:
-    tools: 19
-    scenarios: 16
-    languages: ["java"]
-    java_versions: ["8", "11", "17", "21"]
-    frameworks: ["spring", "spring_boot", "hibernate", "junit", "mockito"]
-    build_tools: ["maven", "gradle"]
-    capabilities: [
-      "enterprise_analysis", "spring_framework_analysis", "jvm_optimization",
-      "security_scanning", "performance_analysis", "dependency_management",
-      "inheritance_analysis", "annotation_analysis", "design_patterns"
-    ]
-  
-  # Performance benchmarks for Java-specific analysis
-  benchmarks:
-    repository_stats_time_ms: 4000
-    complexity_analysis_time_ms: 5500
-    security_analysis_time_ms: 7000
-    performance_analysis_time_ms: 6500
-    inheritance_analysis_time_ms: 4000
-    annotation_analysis_time_ms: 3500
-    batch_analysis_time_ms: 22000
-  
-  # Java-specific quality targets
-  quality_targets:
-    success_rate_percent: 93
-    spring_pattern_detection_accuracy_percent: 90
-    security_detection_accuracy_percent: 88
-    performance_optimization_effectiveness_percent: 85
-    complexity_analysis_accuracy_percent: 92
-    javadoc_coverage_target_percent: 75
-    dependency_analysis_accuracy_percent: 90
+  - name: "missing_file_target"
+    description: "Test error handling for missing file targets"
+    tool: "analyze_complexity"
+    input:
+      target: "nonexistent/file.java"
+    expected:
+      error: true
+      error_message_contains: "not found"
 
-# Java-specific analysis focus areas
-java_focus_areas:
-  spring_framework:
-    - dependency_injection_analysis
-    - aspect_oriented_programming
-    - mvc_pattern_detection
-    - security_configuration_analysis
-  
-  enterprise_patterns:
-    - service_layer_analysis
-    - data_access_patterns
-    - transaction_management
-    - exception_handling_strategies
-  
-  jvm_optimization:
-    - garbage_collection_tuning
-    - memory_leak_detection
-    - concurrent_programming_analysis
-    - performance_profiling_insights
-  
-  build_and_deployment:
-    - maven_pom_analysis
-    - gradle_build_optimization
-    - packaging_best_practices
-    - configuration_management
-  
-  testing_frameworks:
-    - junit_test_organization
-    - mockito_usage_patterns
-    - integration_test_strategies
-    - test_coverage_analysis 
+  - name: "invalid_dependency_type"
+    description: "Test error handling for invalid dependency types"
+    tool: "find_dependencies"
+    input:
+      target: "abcdef123456"
+      dependency_type: "invalid_type"
+    expected:
+      error: true
+      error_message_contains: "Invalid"
+
+  - name: "invalid_search_pattern"
+    description: "Test error handling for invalid search patterns"
+    tool: "search_symbols"
+    input:
+      pattern: ""
+    expected:
+      error: true
+      error_message_contains: "pattern"
+
+  - name: "invalid_path_parameters"
+    description: "Test error handling for invalid path tracing parameters"
+    tool: "trace_path"
+    input:
+      source: "invalid_hex"
+      target: "also_invalid"
+    expected:
+      error: true
+      error_message_contains: "not found"
+
+  - name: "invalid_batch_operation"
+    description: "Test error handling for invalid batch operations"
+    tool: "batch_process"
+    input:
+      operation: "invalid_operation"
+      targets: ["test.java"]
+    expected:
+      error: true
+      error_message_contains: "Invalid" 

@@ -74,20 +74,24 @@ impl CliApp {
         // 2. Initialize the client and executor
         // NOTE: This uses the ServerConfig from the loaded YAML spec
         let client_config = spec.server.clone();
-        let client = McpClient::new(client_config.into()).await?;
+        let mut client = McpClient::new(client_config.into()).await?;
+
+        // 3. Connect to the MCP server
+        client.connect().await?;
+
         let executor_config = ExecutorConfig::default();
         let executor = TestCaseExecutor::new(Arc::new(Mutex::new(client)), executor_config);
 
-        // 3. Initialize the TestSuiteRunner
+        // 4. Initialize the TestSuiteRunner
         let runner_config = RunnerConfig::new()
             .with_parallel_execution(args.parallel)
             .with_fail_fast(args.fail_fast);
         let mut runner = TestSuiteRunner::new(executor, runner_config);
 
-        // 4. Execute the test suite
+        // 5. Execute the test suite
         let suite_result = runner.run_test_suite(&args.config).await?;
 
-        // 5. Generate a report (simplified for now)
+        // 6. Generate a report (simplified for now)
         if let Some(output_dir) = &args.output {
             if !output_dir.exists() {
                 tokio::fs::create_dir_all(output_dir).await?;
@@ -97,7 +101,7 @@ impl CliApp {
             tokio::fs::write(report_path, report_json).await?;
         }
 
-        // 6. Display summary and return exit code
+        // 7. Display summary and return exit code
         self.display_summary(&suite_result);
         Ok(if suite_result.failed == 0 { 0 } else { 1 })
     }

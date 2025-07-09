@@ -122,6 +122,16 @@ pub struct TestCaseExecutor {
     config: ExecutorConfig,
 }
 
+impl std::fmt::Debug for TestCaseExecutor {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TestCaseExecutor")
+            .field("config", &self.config)
+            .field("client", &"<McpClient>")
+            .field("validation_engine", &"<ValidationEngine>")
+            .finish()
+    }
+}
+
 impl TestCaseExecutor {
     /// Create a new test case executor
     pub fn new(client: Arc<Mutex<McpClient>>, config: ExecutorConfig) -> Self {
@@ -239,7 +249,16 @@ impl TestCaseExecutor {
             ExecutorError::ToolCallError(format!("Failed to serialize response: {}", e))
         })?;
 
-        Ok(response_json)
+        // Extract the result field from JSON-RPC response for validation
+        // This allows test specifications to use simpler JSONPath expressions
+        let validation_json = if let Some(result_field) = response_json.get("result") {
+            result_field.clone()
+        } else {
+            // If no result field, pass the full response (for error cases)
+            response_json
+        };
+
+        Ok(validation_json)
     }
 
     /// Validate response against expected output

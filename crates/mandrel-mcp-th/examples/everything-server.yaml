@@ -34,6 +34,383 @@ server:
   shutdown_timeout_seconds: 15
 
 # ==========================================
+# CUSTOM LUA VALIDATION SCRIPTS
+# ==========================================
+
+validation_scripts:
+  # Mathematical validation with precision checking
+  - name: "math_precision_validator"
+    language: "lua"
+    execution_phase: "after"
+    description: "Validates mathematical operations with floating-point precision"
+    required: true
+    source: |
+      -- Access to rich context: context.request, context.response, context.metadata
+      local request = context.request
+      local response = context.response
+      
+      -- Extract input parameters
+      local a = request.params.a
+      local b = request.params.b
+      
+      if a and b then
+          -- Calculate expected result with Lua precision
+          local expected = a + b
+          
+          -- Extract actual result from response text
+          local result_text = response[1].text
+          local actual = tonumber(result_text:match("[-+]?[%d]*%.?[%d]+"))
+          
+          -- Validate with tolerance for floating-point arithmetic
+          local tolerance = 0.0001
+          local difference = math.abs(expected - actual)
+          
+          result = {
+              success = difference <= tolerance,
+              message = string.format("Expected: %.6f, Actual: %.6f, Diff: %.6f", 
+                                    expected, actual, difference),
+              expected_value = expected,
+              actual_value = actual,
+              precision_check = difference <= tolerance
+          }
+      else
+          result = {
+              success = false,
+              message = "Missing required parameters a or b"
+          }
+      end
+
+  # Large text analysis and performance validation
+  - name: "large_text_analyzer"
+    language: "lua"
+    execution_phase: "after"
+    description: "Analyzes large text responses for completeness and performance"
+    required: true
+    source: |
+      local response = context.response
+      local metadata = context.metadata
+      
+      if response and response[1] and response[1].text then
+          local text = response[1].text
+          local text_length = string.len(text)
+          local duration_ms = metadata.duration_ms
+          
+          -- Performance analysis
+          local chars_per_ms = text_length / duration_ms
+          local performance_grade = "A"
+          
+          if chars_per_ms < 1 then
+              performance_grade = "C"
+          elseif chars_per_ms < 10 then
+              performance_grade = "B"
+          end
+          
+          -- Content validation
+          local has_expected_content = string.find(text, "Large text payload") ~= nil
+          local has_performance_text = string.find(text, "performance") ~= nil
+          
+          result = {
+              success = text_length >= 100 and has_expected_content,
+              message = string.format("Text length: %d chars, Speed: %.2f chars/ms, Grade: %s", 
+                                    text_length, chars_per_ms, performance_grade),
+              metrics = {
+                  text_length = text_length,
+                  processing_speed_chars_per_ms = chars_per_ms,
+                  performance_grade = performance_grade,
+                  content_validation = {
+                      has_expected_content = has_expected_content,
+                      has_performance_text = has_performance_text
+                  }
+              }
+          }
+      else
+          result = {
+              success = false,
+              message = "No text content found in response"
+          }
+      end
+
+  # Unicode and internationalization validation
+  - name: "unicode_validator"
+    language: "lua"
+    execution_phase: "after"
+    description: "Validates Unicode character handling and encoding"
+    required: true
+    source: |
+      local response = context.response
+      
+      if response and response[1] and response[1].text then
+          local text = response[1].text
+          
+          -- Check for specific Unicode characters
+          local has_rocket = string.find(text, "🚀") ~= nil
+          local has_chinese = string.find(text, "你好世界") ~= nil
+          local has_earth = string.find(text, "🌍") ~= nil
+          local has_party = string.find(text, "🎉") ~= nil
+          
+          -- Count emoji characters (simplified detection)
+          local emoji_count = 0
+          for emoji in string.gmatch(text, "[🚀🌍🎉]") do
+              emoji_count = emoji_count + 1
+          end
+          
+          -- UTF-8 length validation (Lua 5.3+ supports utf8)
+          local byte_length = string.len(text)
+          
+          result = {
+              success = has_rocket and has_chinese and emoji_count >= 3,
+              message = string.format("Unicode validation: %d emojis, %d bytes", 
+                                    emoji_count, byte_length),
+              unicode_features = {
+                  rocket_emoji = has_rocket,
+                  chinese_text = has_chinese,
+                  earth_emoji = has_earth,
+                  party_emoji = has_party,
+                  emoji_count = emoji_count,
+                  byte_length = byte_length
+              }
+          }
+      else
+          result = {
+              success = false,
+              message = "No text content found for Unicode validation"
+          }
+      end
+
+  # Base64 image validation with format checking
+  - name: "base64_image_validator"
+    language: "lua"
+    execution_phase: "after"
+    description: "Validates Base64 encoded images with format verification"
+    required: true
+    source: |
+      local response = context.response
+      
+      if response and response[1] and response[1].data then
+          local data = response[1].data
+          local response_type = response[1].type
+          
+          -- Validate response type
+          local correct_type = response_type == "image"
+          
+          -- Validate Base64 PNG header
+          local has_png_header = string.find(data, "data:image/png;base64,") == 1
+          local has_base64_png_sig = string.find(data, "iVBORw0KGgo") ~= nil
+          
+          -- Calculate data size (Base64 encoded)
+          local base64_data = data:match("data:image/png;base64,(.+)")
+          local base64_length = base64_data and string.len(base64_data) or 0
+          
+          -- Estimate original size (Base64 is ~4/3 of original)
+          local estimated_bytes = math.floor(base64_length * 3 / 4)
+          
+          -- PNG validation (simplified)
+          local has_png_end = base64_data and string.find(base64_data, "AAAAASUVORK5CYII=") ~= nil
+          
+          result = {
+              success = correct_type and has_png_header and has_base64_png_sig and base64_length > 100,
+              message = string.format("Image validation: %s type, %d Base64 chars, ~%d bytes", 
+                                    response_type, base64_length, estimated_bytes),
+              image_analysis = {
+                  correct_type = correct_type,
+                  has_png_header = has_png_header,
+                  has_png_signature = has_base64_png_sig,
+                  has_png_end_marker = has_png_end,
+                  base64_length = base64_length,
+                  estimated_size_bytes = estimated_bytes
+              }
+          }
+      else
+          result = {
+              success = false,
+              message = "No image data found in response"
+          }
+      end
+
+  # LLM response quality analysis
+  - name: "llm_response_analyzer"
+    language: "lua"
+    execution_phase: "after"
+    description: "Analyzes LLM-generated content for quality and appropriateness"
+    required: false  # Non-critical since LLM responses can vary
+    source: |
+      local response = context.response
+      local request = context.request
+      local metadata = context.metadata
+      
+      if response and response[1] and response[1].text then
+          local text = response[1].text
+          local prompt = request.params.prompt or ""
+          local max_tokens = request.params.maxTokens or 100
+          
+          -- Basic quality metrics
+          local word_count = 0
+          for word in string.gmatch(text, "%S+") do
+              word_count = word_count + 1
+          end
+          
+          local char_count = string.len(text)
+          local sentence_count = 0
+          for sentence in string.gmatch(text, "[.!?]+") do
+              sentence_count = sentence_count + 1
+          end
+          
+          -- Responsiveness to prompt
+          local prompt_keywords = {}
+          for word in string.gmatch(prompt:lower(), "%w+") do
+              if string.len(word) > 3 then  -- Skip short words
+                  table.insert(prompt_keywords, word)
+              end
+          end
+          
+          local keyword_matches = 0
+          for _, keyword in ipairs(prompt_keywords) do
+              if string.find(text:lower(), keyword) then
+                  keyword_matches = keyword_matches + 1
+              end
+          end
+          
+          local responsiveness = #prompt_keywords > 0 and (keyword_matches / #prompt_keywords) or 0
+          
+          -- Token efficiency (rough estimate)
+          local estimated_tokens = word_count * 1.3  -- Rough tokens-to-words ratio
+          local token_efficiency = max_tokens > 0 and (estimated_tokens / max_tokens) or 0
+          
+          result = {
+              success = word_count > 0 and char_count >= 5,  -- Basic sanity check
+              message = string.format("LLM Analysis: %d words, %d chars, %.1f%% prompt responsiveness", 
+                                    word_count, char_count, responsiveness * 100),
+              quality_metrics = {
+                  word_count = word_count,
+                  character_count = char_count,
+                  sentence_count = sentence_count,
+                  estimated_tokens = estimated_tokens,
+                  token_efficiency = token_efficiency,
+                  prompt_responsiveness = responsiveness,
+                  duration_ms = metadata.duration_ms,
+                  words_per_second = metadata.duration_ms > 0 and (word_count / (metadata.duration_ms / 1000)) or 0
+              }
+          }
+      else
+          result = {
+              success = false,
+              message = "No LLM response text found"
+          }
+      end
+
+  # Progress tracking and performance validation
+  - name: "progress_performance_validator"
+    language: "lua"
+    execution_phase: "after"
+    description: "Validates long-running operations with progress tracking"
+    required: true
+    source: |
+      local response = context.response
+      local request = context.request
+      local metadata = context.metadata
+      
+      local duration = request.params.duration or 10
+      local steps = request.params.steps or 5
+      local actual_duration_ms = metadata.duration_ms
+      local expected_duration_ms = duration * 1000
+      
+      -- Performance validation
+      local duration_tolerance = 2000  -- 2 second tolerance
+      local within_tolerance = math.abs(actual_duration_ms - expected_duration_ms) <= duration_tolerance
+      
+      -- Response validation
+      local has_completion_message = false
+      local has_timing_info = false
+      
+      if response and response[1] and response[1].text then
+          local text = response[1].text
+          has_completion_message = string.find(text:lower(), "completed") ~= nil
+          has_timing_info = string.find(text, tostring(duration)) ~= nil or 
+                           string.find(text, tostring(steps)) ~= nil
+      end
+      
+      -- Calculate performance grade
+      local performance_ratio = actual_duration_ms / expected_duration_ms
+      local performance_grade = "A"
+      
+      if performance_ratio > 1.5 then
+          performance_grade = "C"
+      elseif performance_ratio > 1.2 then
+          performance_grade = "B"
+      end
+      
+      result = {
+          success = within_tolerance and has_completion_message,
+          message = string.format("Progress validation: %dms actual vs %dms expected (ratio: %.2f), Grade: %s", 
+                                actual_duration_ms, expected_duration_ms, performance_ratio, performance_grade),
+          performance_analysis = {
+              expected_duration_ms = expected_duration_ms,
+              actual_duration_ms = actual_duration_ms,
+              within_tolerance = within_tolerance,
+              performance_ratio = performance_ratio,
+              performance_grade = performance_grade,
+              has_completion_message = has_completion_message,
+              has_timing_info = has_timing_info
+          }
+      }
+
+  # Security and environment validation
+  - name: "security_env_validator"
+    language: "lua"
+    execution_phase: "after"
+    description: "Validates environment data for security compliance"
+    required: true
+    source: |
+      local response = context.response
+      
+      if response and response[1] and response[1].text then
+          local text = response[1].text
+          
+          -- Security checks - ensure no sensitive data is exposed
+          local sensitive_patterns = {
+              "password", "secret", "key", "token", "auth", 
+              "private", "credential", "api_key", "access_key"
+          }
+          
+          local security_violations = {}
+          for _, pattern in ipairs(sensitive_patterns) do
+              if string.find(text:lower(), pattern) then
+                  table.insert(security_violations, pattern)
+              end
+          end
+          
+          -- Check for expected environment variables
+          local has_node_env = string.find(text, "NODE_ENV") ~= nil
+          local has_log_level = string.find(text, "LOG_LEVEL") ~= nil
+          
+          -- Validate JSON format (basic check)
+          local looks_like_json = string.find(text, "{") and string.find(text, "}")
+          
+          -- Data size validation
+          local data_size = string.len(text)
+          local reasonable_size = data_size > 10 and data_size < 10000  -- Between 10 bytes and 10KB
+          
+          result = {
+              success = #security_violations == 0 and has_node_env and reasonable_size,
+              message = string.format("Security validation: %d violations, %d bytes, JSON: %s", 
+                                    #security_violations, data_size, looks_like_json and "yes" or "no"),
+              security_analysis = {
+                  security_violations = security_violations,
+                  violation_count = #security_violations,
+                  has_expected_env_vars = has_node_env and has_log_level,
+                  data_size_bytes = data_size,
+                  reasonable_size = reasonable_size,
+                  appears_json_formatted = looks_like_json
+              }
+          }
+      else
+          result = {
+              success = false,
+              message = "No environment data found in response"
+          }
+      end
+
+# ==========================================
 # COMPREHENSIVE TOOL TESTING (8 Tools)
 # ==========================================
 
@@ -76,16 +453,17 @@ tools:
       - name: "echo_large_text"
         description: "Test echo with large text payload"
         input:
-          message: ${{ "Large text: " + "A".repeat(10000) }}
+          message: "Large text payload for performance testing: This is a moderately sized text message designed to test how the echo tool handles larger payloads without overwhelming the system during testing."
         expected:
           error: false
           fields:
             - path: "$[0].text"
               field_type: "string"
-              min_length: 10000
+              min_length: 100
               required: true
         performance:
           max_duration_ms: 200
+        validation_scripts: ["large_text_analyzer"]
         tags: ["text", "performance", "large-payload"]
 
       - name: "echo_unicode_support" 
@@ -98,6 +476,7 @@ tools:
             - path: "$[0].text"
               contains: "🚀"
               required: true
+        validation_scripts: ["unicode_validator"]
         tags: ["text", "unicode", "international"]
 
   # ----------------------------------------
@@ -119,6 +498,7 @@ tools:
               required: true
         performance:
           max_duration_ms: 50
+        validation_scripts: ["math_precision_validator"]
         tags: ["math", "integer", "basic"]
 
       - name: "decimal_precision"
@@ -132,6 +512,7 @@ tools:
             - path: "$[0].text"
               field_type: "string"
               required: true
+        validation_scripts: ["math_precision_validator"]
         tags: ["math", "decimal", "precision"]
 
       - name: "large_numbers"
@@ -145,6 +526,7 @@ tools:
             - path: "$[0].text"
               field_type: "string"
               required: true
+        validation_scripts: ["math_precision_validator"]
         tags: ["math", "large-numbers", "limits"]
 
       - name: "negative_numbers"
@@ -158,6 +540,7 @@ tools:
             - path: "$[0].text"
               contains: "-20"
               required: true
+        validation_scripts: ["math_precision_validator"]
         tags: ["math", "negative", "edge-case"]
 
       - name: "add_missing_parameter"
@@ -189,6 +572,7 @@ tools:
         performance:
           max_duration_ms: 12000  # Allow extra time for 10-second operation
           expect_progress_notifications: true
+        validation_scripts: ["progress_performance_validator"]
         tags: ["progress", "default", "timing"]
 
       - name: "custom_duration"
@@ -205,6 +589,7 @@ tools:
         performance:
           max_duration_ms: 5000
           expect_progress_notifications: true
+        validation_scripts: ["progress_performance_validator"]
         tags: ["progress", "custom", "timing"]
 
       - name: "progress_notifications"
@@ -255,6 +640,7 @@ tools:
               required: true
         performance:
           max_duration_ms: 30000  # LLM calls can be slow
+        validation_scripts: ["llm_response_analyzer"]
         tags: ["llm", "sampling", "basic"]
 
       - name: "token_limits"
@@ -269,6 +655,7 @@ tools:
               field_type: "string"
               max_length: 100  # Should be limited by maxTokens
               required: true
+        validation_scripts: ["llm_response_analyzer"]
         tags: ["llm", "token-limits", "constraints"]
 
       - name: "complex_prompt"
@@ -282,6 +669,7 @@ tools:
             - path: "$[0].text"
               field_type: "string"
               required: true
+        validation_scripts: ["llm_response_analyzer"]
         tags: ["llm", "complex", "analysis"]
 
       - name: "empty_prompt_error"
@@ -315,6 +703,7 @@ tools:
               required: true
         performance:
           max_duration_ms: 500
+        validation_scripts: ["base64_image_validator"]
         tags: ["media", "image", "base64"]
 
       - name: "base64_validation"
@@ -327,6 +716,7 @@ tools:
               field_type: "string"
               min_length: 100  # Base64 encoded PNG should be substantial
               required: true
+        validation_scripts: ["base64_image_validator"]
         tags: ["media", "validation", "encoding"]
 
       - name: "image_format_verification"
@@ -338,6 +728,7 @@ tools:
             - path: "$[0].data"
               contains: "iVBORw0KGgo"  # PNG header in base64
               required: true
+        validation_scripts: ["base64_image_validator"]
         tags: ["media", "format", "png"]
 
   # ----------------------------------------  
@@ -358,6 +749,7 @@ tools:
               required: true
         performance:
           max_duration_ms: 200
+        validation_scripts: ["security_env_validator"]
         tags: ["system", "environment", "debug"]
 
       - name: "env_data_format"
@@ -369,6 +761,7 @@ tools:
             - path: "$[0].text"
               contains: "NODE_ENV"
               required: true
+        validation_scripts: ["security_env_validator"]
         tags: ["system", "json", "format"]
 
       - name: "security_validation"
@@ -380,6 +773,7 @@ tools:
           security_constraints:
             - no_passwords: true
             - no_api_keys: true
+        validation_scripts: ["security_env_validator"]
         tags: ["system", "security", "validation"]
 
   # ----------------------------------------

@@ -48,6 +48,14 @@
 //!         // Configuration validation
 //!         println!("Validating config: {}", validate_args.config.display());
 //!     }
+//!     Commands::Profile(_profile_args) => {
+//!         // Profile management
+//!         println!("Managing configuration profiles");
+//!     }
+//!     Commands::Watch(_watch_args) => {
+//!         // File watching and auto-generation
+//!         println!("Starting file watch mode");
+//!     }
 //! }
 //! # Ok(())
 //! # }

@@ -1,0 +1,243 @@
+
+running 224 tests
+📖 Loading test results from: test-results.json
+test cli::tests::test_branding_config_default_creation ... ok
+test cli::tests::test_branding_config_to_branding_info_conversion ... ok
+test cli::tests::test_branding_config_validation ... ok
+test cli::tests::test_branding_config_file_loading ... ok
+test cli::tests::test_ci_system_detection ... ok
+test cli::tests::test_ci_specific_configuration ... ok
+test cli::tests::test_cli_app_initialization ... ok
+test cli::tests::test_cli_argument_parsing_boolean_flags ... ok
+test cli::tests::test_cli_argument_parsing_report_command ... ok
+test cli::tests::test_cli_argument_parsing_organization_strategies ... ok
+test cli::tests::test_cli_argument_parsing_timestamp_formats ... ok
+test cli::tests::test_cli_argument_parsing_with_custom_fields ... ok
+test cli::tests::test_cli_argument_parsing_with_template ... ok
+test cli::tests::test_cli_app_execution_with_valid_args ... FAILED
+test cli::tests::test_cli_version_flag ... ok
+test cli::tests::test_cli_help_generation ... ok
+test cli::tests::test_environment_variable_integration ... ok
+test cli::tests::test_file_manager_initialization ... ok
+test cli::tests::test_cli_argument_parsing_invalid_arguments ... ok
+test cli::tests::test_configuration_profile_save_and_load ... ok
+test cli::tests::test_file_manager_path_generation_flat ... ok
+test cli::tests::test_cli_verbose_levels ... ok
+test cli::tests::test_input_file_schema_validation ... ok
+test cli::tests::test_file_manager_path_generation_by_format ... ok
+test client::tests::test_connection_lifecycle ... ignored, Requires real MCP server - echo command is not an MCP server
+test client::tests::test_double_connect ... ignored, Requires real MCP server - echo command is not an MCP server
+test client::tests::test_double_disconnect ... ignored, Requires real MCP server - echo command is not an MCP server
+test client::tests::test_operations_while_connected ... ignored, Requires real MCP server - echo command is not an MCP server
+test cli::tests::test_configuration_validation ... ok
+test cli::tests::test_file_manager_write_report ... ok
+test cli::tests::test_validation_engine_initialization ... ok
+test cli::tests::test_profile_manager_initialization ... ok
+test cli::tests::test_file_manager_path_generation_by_date ... ok
+test cli::tests::test_template_validation ... ok
+test cli::tests::test_profile_list_and_delete ... ok
+test client::tests::test_operations_while_disconnected ... ok
+test cli::tests::test_profile_export_and_import ... ok
+test client::tests::test_connection_state_equality ... ok
+test client::tests::test_server_config_default ... ok
+test client::tests::test_transport_serialization ... ok
+test error::tests::test_error_category ... ok
+test error::tests::test_error_display ... ok
+test error::tests::test_error_from_io ... ok
+test error::tests::test_error_constructors ... ok
+test error::tests::test_error_is_retryable ... ok
+test error::tests::test_error_from_serde_yml ... ok
+test error::tests::test_error_from_serde_json ... ok
+test error::tests::test_result_type_alias ... ok
+test error_handling::context::tests::test_error_context_for_server ... ok
+test error_handling::context::tests::test_error_context_creation ... ok
+test client::tests::test_client_creation ... ok
+test cli::tests::test_watch_mode_initialization ... ok
+test error_handling::context::tests::test_error_context_for_test ... ok
+test error_handling::context::tests::test_environment_info_creation ... ok
+test error_handling::context::tests::test_performance_snapshot_capture ... ok
+test error_handling::context::tests::test_error_context_with_trace_info ... ok
+test error_handling::context::tests::test_error_context_summary ... ok
+test error_handling::metrics::tests::test_error_collector_creation ... ok
+test error_handling::context::tests::test_retry_context_detection ... ok
+test error_handling::metrics::tests::test_error_recording ... ok
+test client::tests::test_server_process_with_working_dir ... ok
+test error_handling::context::tests::test_error_context_with_user_data ... ok
+test error_handling::recovery::tests::test_circuit_breaker_failure_threshold ... ok
+test error_handling::metrics::tests::test_error_categorization ... ok
+test error_handling::metrics::tests::test_error_summary_generation ... ok
+test client::tests::test_server_process_lifecycle ... ok
+test error_handling::recovery::tests::test_circuit_breaker_creation ... ok
+test error_handling::recovery::tests::test_retry_executor_non_retryable_error ... ok
+test error_handling::metrics::tests::test_retry_statistics ... ok
+test error_handling::tests::test_error_category_default_retry_config ... ok
+test error_handling::tests::test_error_category_retry_behavior ... ok
+✅ Test correctly detected disconnected client
+test error_handling::tests::test_error_classifier_categorization ... ok
+✅ Test correctly detected disconnected client
+test error_handling::recovery::tests::test_retry_executor_success_on_first_try ... ok
+test error_handling::metrics::tests::test_performance_cost_tracking ... ok
+✅ Test correctly detected disconnected client
+test error_handling::tests::test_error_classifier_retryable_errors ... ok
+test error_handling::recovery::tests::test_circuit_breaker_success_recovery ... ok
+test error_handling::types::tests::test_configuration_error_missing_required ... ok
+test error_handling::metrics::tests::test_recovery_tracking ... ok
+test error_handling::recovery::tests::test_retry_config_selection ... ok
+test error_handling::tests::test_error_classifier_custom_rules ... ok
+✅ Test validation passed completely
+test error_handling::types::tests::test_error_categorization ... ok
+test error_handling::types::tests::test_error_severity_levels ... ok
+test error_handling::types::tests::test_error_suggestions ... ok
+test error_handling::types::tests::test_mcp_client_error_creation ... ok
+test error_handling::types::tests::test_test_execution_error_assertion_failed ... ok
+test executor::tests::test_execute_test_case_basic_success ... ok
+test executor::tests::test_execute_test_case_timeout ... ok
+test executor::tests::test_executor_config_default ... ok
+test executor::tests::test_execute_test_case_with_validation_failure ... ok
+test executor::tests::test_executor_creation ... ok
+test executor::tests::test_executor_error_types ... ok
+test executor::tests::test_prepare_tool_request ... ok
+test runner::config::tests::test_concurrency_clamping ... ok
+test runner::config::tests::test_config_builder_pattern ... ok
+test runner::config::tests::test_default_config ... ok
+test executor::tests::test_validate_response_success ... ok
+test runner::dependency::tests::test_circular_dependency_detection ... ok
+test runner::dependency::tests::test_no_dependencies ... ok
+test runner::dependency::tests::test_parallel_grouping ... ok
+test runner::dependency::tests::test_simple_dependency_resolution ... ok
+test runner::dependency::tests::test_validate_empty_dependency_name ... ok
+test runner::dependency::tests::test_validate_complex_dependency_mix ... ok
+test runner::execution::tests::test_execution_stats ... ignored, Future work for Issue #227 - floating point precision issues in metrics calculations
+test runner::dependency::tests::test_validate_multiple_validation_errors ... ok
+test runner::dependency::tests::test_validate_non_existent_dependency ... ok
+test runner::dependency::tests::test_validate_self_dependency ... ok
+test runner::execution::tests::test_execution_scheduler_parallel ... ok
+test runner::execution::tests::test_execution_scheduler_sequential ... ok
+test runner::execution::tests::test_execution_strategy_concurrency_clamping ... ok
+test runner::execution::tests::test_execution_strategy_creation ... ok
+test runner::execution::tests::test_fail_fast_behavior ... ok
+test runner::metrics::tests::test_retry_counting ... ok
+test runner::result::tests::test_aggregated_results ... ok
+test runner::result::tests::test_dependency_resolution ... ok
+✅ Invalid YAML correctly rejected: YAML parsing error: did not find expected key at line 27 column 23, while parsing a block mapping at line 26 column 9
+test runner::metrics::tests::test_memory_sampling ... ok
+test runner::result::tests::test_test_suite_result_calculations ... ignored, Future work for Issue #227 - floating point precision issues in metrics calculations
+test runner::result::tests::test_test_metadata ... ok
+test runner::tests::test_fail_fast_behavior ... ignored, Future work for Issue #225 - fail-fast behavior is sensitive to test execution order
+test runner::tests::test_parallel_execution_mode ... ignored, Future work for Issue #229 - parallel execution timing is sensitive and needs proper implementation
+test runner::tests::test_invalid_yaml_specification ... ok
+test spec::tests::test_load_comprehensive_yaml_specification ... ok
+test spec::tests::test_load_nonexistent_file ... ok
+test spec::tests::test_load_from_directory ... ok
+test spec::tests::test_parse_invalid_yaml ... ok
+✅ Circular dependency test: Failed during executor creation as expected: Server connection error: Failed to connect to MCP server: Server connection error: Failed to create MCP service: connection closed: initialize response
+test runner::tests::test_circular_dependency_detection ... ok
+test spec::tests::test_validate_specification_inconsistent_capabilities ... ok
+test spec::tests::test_validate_specification_success ... ok
+test tests::test_constants ... ok
+test tests::test_module_exports ... ok
+test tests::test_shutdown_functions ... ok
+test validation::custom::tests::test_business_rule_validator ... ok
+test validation::custom::tests::test_content_length_validator ... ok
+test validation::custom::tests::test_response_time_validator ... ok
+test validation::custom::tests::test_security_validator ... ok
+test validation::custom::tests::test_validation_context_creation ... ok
+test validation::custom::tests::test_validator_metadata ... ok
+test validation::engine::tests::test_load_validation_spec_from_file ... ok
+test validation::engine::tests::test_mcp_validation_engine_creation ... ok
+test validation::engine::tests::test_precompile_schemas ... ok
+test validation::engine::tests::test_validate_response_success ... ok
+test validation::engine::tests::test_validation_spec_deserialization ... ok
+test validation::jsonpath::tests::test_evaluate_rule_array_length_constraint ... ok
+test validation::jsonpath::tests::test_evaluate_rule_contains_constraint ... ok
+test validation::jsonpath::tests::test_evaluate_rule_equals_constraint ... ok
+test validation::jsonpath::tests::test_evaluate_rule_exists_constraint ... ok
+test validation::jsonpath::tests::test_evaluate_rule_range_constraint ... ok
+test validation::jsonpath::tests::test_evaluate_rule_type_constraint ... ok
+test validation::jsonpath::tests::test_evaluate_rule_validation_failure ... ok
+test validation::jsonpath::tests::test_extract_values_array_access ... ok
+test validation::jsonpath::tests::test_extract_values_nested_path ... ok
+test validation::jsonpath::tests::test_extract_values_path_not_found ... ok
+test validation::jsonpath::tests::test_extract_values_simple_path ... ok
+test validation::jsonpath::tests::test_jsonpath_evaluator_creation ... ok
+test validation::protocol::tests::test_protocol_validator_creation ... ok
+test validation::protocol::tests::test_validate_capability_announcement ... ok
+test validation::protocol::tests::test_validate_error_structure ... ok
+test validation::protocol::tests::test_validate_invalid_capability_announcement ... ok
+test validation::protocol::tests::test_validate_jsonrpc_structure_both_result_and_error ... ok
+test validation::protocol::tests::test_validate_jsonrpc_structure_missing_fields ... ok
+test validation::protocol::tests::test_validate_jsonrpc_structure_valid ... ok
+test validation::protocol::tests::test_validate_tools_call_result ... ok
+test validation::protocol::tests::test_validate_tools_list_result ... ok
+test validation::schema::tests::test_add_schema_invalid ... ok
+test validation::schema::tests::test_add_schema_success ... ok
+test validation::schema::tests::test_clear_schemas ... ok
+test validation::schema::tests::test_remove_schema ... ok
+test validation::schema::tests::test_schema_info ... ok
+test validation::schema::tests::test_schema_validator_creation ... ok
+test validation::schema::tests::test_validate_against_schema_failure ... ok
+test validation::schema::tests::test_validate_against_schema_success ... ok
+test validation::schema::tests::test_validate_array_constraints ... ok
+test validation::schema::tests::test_validate_type_mismatch ... ok
+test validation::schema::tests::test_validate_with_inline_schema_failure ... ok
+test validation::schema::tests::test_validate_with_inline_schema_success ... ok
+test validation::tests::test_cache_overflow ... ok
+test validation::tests::test_clear_cache ... ok
+test validation::tests::test_evaluate_jsonpath_array_access ... ok
+test validation::tests::test_evaluate_jsonpath_invalid_path ... ok
+test validation::tests::test_evaluate_jsonpath_simple ... ok
+test validation::tests::test_fail_fast_mode ... ok
+test validation::tests::test_jsonpath_caching ... ok
+test validation::tests::test_mcp_validation_result_creation ... ok
+test validation::tests::test_strict_mode_fails_on_any_error ... ok
+test validation::tests::test_validate_field_equals_failure ... ok
+test validation::tests::test_validate_field_equals_success ... ok
+test validation::tests::test_validate_field_pattern_validation ... ok
+test validation::tests::test_validate_field_range_validation ... ok
+test validation::tests::test_validate_field_required_missing ... ok
+test validation::tests::test_validate_field_type_validation ... ok
+test validation::tests::test_validate_response_field_mismatch ... ok
+test validation::tests::test_validate_response_missing_field ... ok
+test validation::tests::test_validate_response_success ... ok
+test validation::tests::test_validate_schema_failure ... ok
+test validation::tests::test_validate_schema_success ... ok
+test validation::tests::test_validation_config_default ... ok
+test validation::tests::test_validation_engine_default ... ok
+test validation::tests::test_validation_engine_new ... ok
+test validation::tests::test_validation_error_creation ... ok
+test validation::tests::test_validation_performance_metrics ... ok
+test validation::tests::test_validation_result_add_error ... ok
+test validation::tests::test_validation_result_add_warning ... ok
+test validation::tests::test_validation_severity_ordering ... ok
+test validation::tests::test_validation_spec_deserialization ... ok
+test executor::tests::test_collect_metrics ... ok
+test spec::tests::test_load_json_specification ... ok
+test spec::tests::test_parse_missing_required_fields ... ok
+test spec::tests::test_base_directory_resolution ... ok
+test spec::tests::test_load_yaml_with_validation_scripts ... ok
+test spec::tests::test_load_minimal_yaml_specification ... ok
+test runner::metrics::tests::test_efficiency_scores ... ok
+test runner::metrics::tests::test_metrics_collector_basic_flow ... ok
+test runner::metrics::tests::test_suite_metrics_calculation ... ok
+test error_handling::recovery::tests::test_retry_executor_permanent_failure ... ok
+test error_handling::recovery::tests::test_retry_executor_success_after_retries ... ok
+test cli::tests::test_watch_mode_file_detection ... ok
+test runner::tests::test_runner_configuration_updates ... ok
+test runner::tests::test_empty_test_suite ... ok
+test runner::tests::test_missing_specification_file ... ok
+test runner::tests::test_suite_metrics_collection ... ok
+✅ FILESYSTEM MCP SERVER SUCCESS: 5 passed, 1 failed out of 6 total tests
+test runner::tests::test_sequential_execution_mode ... ok
+test runner::tests::test_run_simple_test_suite_with_real_execution ... ok
+test runner::tests::test_metrics_collector_access ... ok
+✅ DEPENDENCY RESOLUTION SUCCESS: 5 passed, 1 failed, all 6 tests in correct order
+test runner::tests::test_run_test_suite_with_dependencies_real_execution ... ok
+test cli::tests::test_watch_mode_debouncing ... ok
+
+failures:
+
+failures:
+    cli::tests::test_cli_app_execution_with_valid_args
+
+test result: FAILED. 215 passed; 1 failed; 8 ignored; 0 measured; 0 filtered out; finished in 1.81s
+

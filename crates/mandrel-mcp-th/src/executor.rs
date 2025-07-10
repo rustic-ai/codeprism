@@ -349,6 +349,7 @@ mod tests {
             performance: None,
             skip: false,
             tags: vec!["unit_test".to_string()],
+            validation_scripts: None,
         }
     }
 

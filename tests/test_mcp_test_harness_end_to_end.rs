@@ -127,6 +127,7 @@ impl TestHarnessIntegrationTest {
                         }),
                         skip: false,
                         tags: vec!["basic".to_string(), "echo".to_string(), "integration".to_string()],
+                        validation_scripts: None,
                     },
                     TestCase {
                         name: "echo_empty_message".to_string(),
@@ -153,6 +154,7 @@ impl TestHarnessIntegrationTest {
                         performance: None,
                         skip: false,
                         tags: vec!["edge_case".to_string(), "echo".to_string()],
+                        validation_scripts: None,
                     },
                     TestCase {
                         name: "echo_invalid_input".to_string(),
@@ -177,6 +179,7 @@ impl TestHarnessIntegrationTest {
                         performance: None,
                         skip: false,
                         tags: vec!["error_handling".to_string(), "echo".to_string()],
+                        validation_scripts: None,
                     }
                 ],
             }]),
@@ -259,6 +262,7 @@ impl TestHarnessIntegrationTest {
                             }),
                             skip: false,
                             tags: vec!["math".to_string(), "basic".to_string()],
+                            validation_scripts: None,
                         },
                         TestCase {
                             name: "add_negative_numbers".to_string(),
@@ -283,6 +287,7 @@ impl TestHarnessIntegrationTest {
                             performance: None,
                             skip: false,
                             tags: vec!["math".to_string(), "edge_case".to_string()],
+                            validation_scripts: None,
                         }
                     ],
                 },
@@ -322,6 +327,7 @@ impl TestHarnessIntegrationTest {
                             performance: None,
                             skip: false,
                             tags: vec!["math".to_string(), "basic".to_string()],
+                            validation_scripts: None,
                         }
                     ],
                 }
@@ -390,6 +396,7 @@ impl TestHarnessIntegrationTest {
                             performance: None,
                             skip: false,
                             tags: vec!["error_handling".to_string(), "timeout".to_string()],
+                            validation_scripts: None,
                         }
                     ],
                 },
@@ -419,6 +426,7 @@ impl TestHarnessIntegrationTest {
                             performance: None,
                             skip: false,
                             tags: vec!["error_handling".to_string(), "validation".to_string()],
+                            validation_scripts: None,
                         }
                     ],
                 }

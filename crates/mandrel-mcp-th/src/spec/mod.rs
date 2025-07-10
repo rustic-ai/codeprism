@@ -37,6 +37,9 @@ pub struct TestSpecification {
     /// Additional metadata
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<HashMap<String, serde_json::Value>>,
+    /// Validation scripts
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub validation_scripts: Option<Vec<ValidationScript>>,
 }
 
 /// Server capability configuration
@@ -130,6 +133,9 @@ pub struct TestCase {
     pub skip: bool,
     #[serde(default)]
     pub tags: Vec<String>,
+    /// Validation scripts to run after this test case
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub validation_scripts: Option<Vec<String>>,
 }
 
 /// Expected output specification
@@ -217,6 +223,19 @@ pub struct RetryConfig {
     pub retry_delay_ms: u32,
     #[serde(default = "default_exponential_backoff")]
     pub exponential_backoff: bool,
+}
+
+/// Validation script specification
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct ValidationScript {
+    pub name: String,
+    pub language: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub execution_phase: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub required: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source: Option<String>,
 }
 
 /// Validation error for specifications
@@ -433,6 +452,7 @@ impl Default for TestCase {
             performance: None,
             skip: false,
             tags: Vec::new(),
+            validation_scripts: None,
         }
     }
 }
@@ -650,6 +670,79 @@ metadata:
         );
     }
 
+    #[tokio::test]
+    async fn test_load_yaml_with_validation_scripts() {
+        let loader = SpecificationLoader::new().expect("Failed to create loader");
+
+        // YAML with validation_scripts at the top level and referenced in a test case
+        let mut temp_file = NamedTempFile::new().unwrap();
+        write!(
+            temp_file,
+            r#"
+name: "Script Validation Server"
+version: "1.0.0"
+capabilities:
+  tools: true
+  resources: false
+  prompts: false
+  sampling: false
+  logging: false
+server:
+  command: "test-server"
+  transport: "stdio"
+validation_scripts:
+  - name: "math_precision_validator"
+    language: "lua"
+    execution_phase: "after"
+    required: true
+    source: |
+      local request = context.request
+      local response = context.response
+      -- ...
+tools:
+  - name: "add"
+    tests:
+      - name: "add_integers"
+        input:
+          a: 5
+          b: 3
+        expected:
+          error: false
+          fields:
+            - path: "$[0].text"
+              pattern: "8"
+        validation_scripts: ["math_precision_validator"]
+"#
+        )
+        .unwrap();
+
+        let spec = loader.load_from_file(temp_file.path()).await.unwrap();
+        // Validate top-level validation_scripts
+        let scripts = spec
+            .validation_scripts
+            .as_ref()
+            .expect("Missing validation_scripts");
+        assert_eq!(scripts.len(), 1);
+        assert_eq!(scripts[0].name, "math_precision_validator");
+        assert_eq!(scripts[0].language, "lua");
+        assert_eq!(scripts[0].execution_phase.as_deref(), Some("after"));
+        assert_eq!(scripts[0].required, Some(true));
+        assert!(scripts[0]
+            .source
+            .as_ref()
+            .expect("Missing source")
+            .contains("local request"));
+
+        // Validate test case references
+        let tools = spec.tools.as_ref().unwrap();
+        let test_case = &tools[0].tests[0];
+        let test_scripts = test_case
+            .validation_scripts
+            .as_ref()
+            .expect("Test case missing validation_scripts");
+        assert_eq!(test_scripts, &["math_precision_validator".to_string()]);
+    }
+
     // ========================================================================
     // PHASE 2: Error Handling Tests (Should FAIL until GREEN phase)
     // ========================================================================
@@ -732,6 +825,7 @@ server:
             prompts: None,
             test_config: None,
             metadata: None,
+            validation_scripts: None,
         };
 
         let result = loader.validate_specification(&valid_spec);
@@ -765,6 +859,7 @@ server:
             prompts: None,
             test_config: None,
             metadata: None,
+            validation_scripts: None,
         };
 
         let result = loader.validate_specification(&invalid_spec);

@@ -1210,8 +1210,56 @@ mod tests {
 
     #[tokio::test]
     async fn test_cli_app_execution_with_valid_args() {
+        use serde_json::json;
+        use std::fs;
+        use std::io::Write;
+        use std::time::SystemTime;
+        // Create a minimal valid test-results.json file
+        let file_path = "test-results.json";
+        let now = SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+        let system_time = json!({"secs_since_epoch": now, "nanos_since_epoch": 0});
+        let duration = json!({"secs": 0, "nanos": 0});
+        let minimal_json = json!({
+            "suite_name": "dummy_suite",
+            "specification_file": "dummy_spec.yaml",
+            "execution_start": system_time,
+            "execution_end": system_time,
+            "total_duration": duration,
+            "total_tests": 0,
+            "passed": 0,
+            "failed": 0,
+            "skipped": 0,
+            "error_rate": 0.0,
+            "test_results": [],
+            "suite_metrics": {
+                "total_memory_usage": 0,
+                "peak_memory_usage": 0,
+                "average_test_duration": duration,
+                "slowest_test": null,
+                "fastest_test": null,
+                "slowest_duration": duration,
+                "fastest_duration": duration,
+                "memory_efficiency_score": 0.0,
+                "execution_efficiency_score": 0.0
+            },
+            "execution_mode": "Sequential",
+            "dependency_resolution": {
+                "total_dependencies": 0,
+                "circular_dependencies": 0,
+                "circular_dependency_chains": [],
+                "resolution_duration": duration,
+                "execution_order": [],
+                "dependency_groups": []
+            }
+        });
+        let mut file = fs::File::create(file_path).expect("Failed to create test-results.json");
+        write!(file, "{}", minimal_json).expect("Failed to write to test-results.json");
+
         // Test with controlled arguments instead of parsing real command line
-        let cli = Cli::parse_from(["mandrel-mcp-th", "report", "--input", "test-results.json"]);
+        let cli = Cli::parse_from(["mandrel-mcp-th", "report", "--input", file_path]);
 
         let app = CliApp { args: cli };
 
@@ -1225,6 +1273,9 @@ mod tests {
 
         let exit_code = result.unwrap();
         assert_eq!(exit_code, 0, "Should return success exit code");
+
+        // Clean up the test file
+        let _ = fs::remove_file(file_path);
     }
 
     #[test]

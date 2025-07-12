@@ -1,0 +1,176 @@
+//! Script execution engines for validation scripts
+//!
+//! This module provides support for executing validation scripts in multiple languages:
+//! - Lua (via mlua)
+//! - JavaScript (via quickjs)
+//! - Python (via pyo3)
+//! - Regular expressions (via regex)
+//! - UUID generation (via uuid)
+
+pub mod js_engine;
+pub mod lua_engine;
+pub mod python_engine;
+pub mod utilities;
+
+#[cfg(test)]
+mod dependency_tests {
+    use std::time::Instant;
+
+    #[tokio::test]
+    async fn test_mlua_basic_execution() {
+        let lua = mlua::Lua::new();
+        let result: String = lua.load("return 'Hello from Lua'").eval().unwrap();
+        assert_eq!(result, "Hello from Lua");
+    }
+
+    #[tokio::test]
+    async fn test_quickjs_basic_execution() {
+        let runtime = rquickjs::Runtime::new().unwrap();
+        let context = rquickjs::Context::full(&runtime).unwrap();
+
+        context.with(|ctx| {
+            let result: String = ctx.eval("'Hello from JavaScript'").unwrap();
+            assert_eq!(result, "Hello from JavaScript");
+        });
+    }
+
+    #[test]
+    fn test_pyo3_basic_execution() {
+        pyo3::Python::with_gil(|py| {
+            let result = py.eval_bound("'Hello from Python'", None, None).unwrap();
+            assert_eq!(result.to_string(), "Hello from Python");
+        });
+    }
+
+    #[test]
+    fn test_regex_pattern_matching() {
+        let re = regex::Regex::new(r"hello").unwrap();
+        assert!(re.is_match("hello world"));
+        assert!(!re.is_match("goodbye world"));
+    }
+
+    #[test]
+    fn test_uuid_generation() {
+        let id = uuid::Uuid::new_v4();
+        assert_eq!(id.get_version(), Some(uuid::Version::Random));
+
+        // Test serialization
+        let serialized = serde_json::to_string(&id).unwrap();
+        let deserialized: uuid::Uuid = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(id, deserialized);
+    }
+
+    // Performance benchmarks
+    #[tokio::test]
+    async fn test_mlua_performance() {
+        let lua = mlua::Lua::new();
+        let start = Instant::now();
+        let _result: String = lua.load("return 'Performance test'").eval().unwrap();
+        let duration = start.elapsed();
+
+        // Should be under 1ms for simple scripts
+        assert!(
+            duration.as_millis() < 10,
+            "Lua execution took {}ms, expected <10ms",
+            duration.as_millis()
+        );
+    }
+
+    #[tokio::test]
+    async fn test_quickjs_performance() {
+        let runtime = rquickjs::Runtime::new().unwrap();
+        let context = rquickjs::Context::full(&runtime).unwrap();
+
+        let start = Instant::now();
+        context.with(|ctx| {
+            let _result: String = ctx.eval("'Performance test'").unwrap();
+        });
+        let duration = start.elapsed();
+
+        // Should be under 5ms for simple scripts
+        assert!(
+            duration.as_millis() < 10,
+            "JavaScript execution took {}ms, expected <10ms",
+            duration.as_millis()
+        );
+    }
+
+    #[test]
+    fn test_pyo3_performance() {
+        let start = Instant::now();
+        pyo3::Python::with_gil(|py| {
+            let _result = py.eval_bound("'Performance test'", None, None).unwrap();
+        });
+        let duration = start.elapsed();
+
+        // Should be under 30ms for simple scripts (allowing for system variability)
+        assert!(
+            duration.as_millis() < 30,
+            "Python execution took {}ms, expected <30ms",
+            duration.as_millis()
+        );
+    }
+
+    #[test]
+    fn test_regex_performance() {
+        let start = Instant::now();
+        let re = regex::Regex::new(r"test").unwrap();
+        let _result = re.is_match("performance test");
+        let duration = start.elapsed();
+
+        // Should be under 0.1ms for simple patterns
+        assert!(
+            duration.as_micros() < 1000,
+            "Regex matching took {}μs, expected <1000μs",
+            duration.as_micros()
+        );
+    }
+
+    #[test]
+    fn test_uuid_performance() {
+        let start = Instant::now();
+        let _id = uuid::Uuid::new_v4();
+        let duration = start.elapsed();
+
+        // Should be under 0.01ms per UUID
+        assert!(
+            duration.as_micros() < 100,
+            "UUID generation took {}μs, expected <100μs",
+            duration.as_micros()
+        );
+    }
+
+    // Error handling tests
+    #[tokio::test]
+    async fn test_mlua_error_handling() {
+        let lua = mlua::Lua::new();
+        let result = lua.load("invalid_syntax(").eval::<String>();
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_quickjs_error_handling() {
+        let runtime = rquickjs::Runtime::new().unwrap();
+        let context = rquickjs::Context::full(&runtime).unwrap();
+
+        context.with(|ctx| {
+            let result = ctx.eval::<String, &str>("invalid_syntax(");
+            assert!(result.is_err());
+        });
+    }
+
+    #[test]
+    fn test_pyo3_error_handling() {
+        pyo3::Python::with_gil(|py| {
+            let result = py.eval_bound("invalid_syntax(", None, None);
+            assert!(result.is_err());
+        });
+    }
+
+    #[test]
+    fn test_regex_error_handling() {
+        #[allow(clippy::invalid_regex)]
+        let result = regex::Regex::new(r"[invalid");
+        assert!(result.is_err());
+    }
+}

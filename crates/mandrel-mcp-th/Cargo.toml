@@ -52,6 +52,11 @@ jsonschema = "0.18"
 uuid = { version = "1.0", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 
+# Script execution engines
+mlua = { version = "0.9", features = ["lua54", "async", "vendored"] }
+rquickjs = { version = "0.9", features = ["array-buffer", "futures"] }
+pyo3 = { version = "0.21", features = ["auto-initialize"] }
+
 # Reporting and templating
 quick-junit = "0.5"
 tera = "1.19"

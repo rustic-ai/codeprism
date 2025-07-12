@@ -68,11 +68,10 @@ pub mod error_handling;
 pub mod executor;
 pub mod reporting;
 pub mod runner;
+pub mod script_engines;
 pub mod spec;
-pub mod validation;
-
-#[cfg(any(test, feature = "testing"))]
 pub mod testing;
+pub mod validation;
 
 // Re-export commonly used types
 pub use error::{Error, Result};

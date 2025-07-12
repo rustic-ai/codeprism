@@ -6,11 +6,55 @@
 //! - Python (via pyo3)
 //! - Regular expressions (via regex)
 //! - UUID generation (via uuid)
+//!
+//! ## Core Types
+//!
+//! The foundation of the script execution system consists of four main types:
+//!
+//! - [`ScriptConfig`] - Configuration for script execution (timeouts, security settings)
+//! - [`ScriptContext`] - Runtime context passed to scripts (request/response data, metadata)
+//! - [`ScriptResult`] - Standardized result type for script execution outcomes
+//! - [`ScriptError`] - Comprehensive error handling for script execution failures
+//!
+//! ## Example Usage
+//!
+//! ```rust
+//! use mandrel_mcp_th::script_engines::{ScriptConfig, ScriptContext, ScriptResult, LogLevel};
+//! use serde_json::json;
+//!
+//! // Create a secure configuration
+//! let config = ScriptConfig::new();
+//! assert_eq!(config.timeout_ms, 5000);
+//! assert!(!config.allow_network);
+//!
+//! // Create a script context
+//! let context = ScriptContext::new(
+//!     json!({"input": "test_data"}),
+//!     "test_case".to_string(),
+//!     "test_tool".to_string(),
+//!     config,
+//! );
+//!
+//! // Create a successful result
+//! let result = ScriptResult::success(json!({"output": "success"}), 150)
+//!     .add_log(LogLevel::Info, "Script executed successfully".to_string())
+//!     .with_memory_usage(2.5);
+//!
+//! assert!(result.success);
+//! assert_eq!(result.duration_ms, 150);
+//! ```
 
 pub mod js_engine;
 pub mod lua_engine;
 pub mod python_engine;
+pub mod types;
 pub mod utilities;
+
+// Re-export core types for easier access
+pub use types::{
+    ContextMetadata, LogEntry, LogLevel, ScriptConfig, ScriptContext, ScriptError, ScriptResult,
+    ServerInfo,
+};
 
 #[cfg(test)]
 mod dependency_tests {

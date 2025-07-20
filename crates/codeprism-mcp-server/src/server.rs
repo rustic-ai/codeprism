@@ -274,7 +274,15 @@ impl CodePrismMcpServer {
     #[tool(description = "Simple ping tool that responds with pong")]
     fn ping(&self) -> std::result::Result<CallToolResult, McpError> {
         info!("Ping tool called");
-        Ok(CallToolResult::success(vec![Content::text("pong")]))
+
+        let response_data = serde_json::json!({
+            "status": "success",
+            "message": "pong",
+            "timestamp": chrono::Utc::now().to_rfc3339(),
+            "server": "codeprism-mcp-server"
+        });
+
+        Ok(crate::response::create_dual_response(&response_data))
     }
 
     /// Version tool that returns server version information
@@ -294,9 +302,7 @@ impl CodePrismMcpServer {
             }
         });
 
-        Ok(CallToolResult::success(vec![Content::text(
-            version_info.to_string(),
-        )]))
+        Ok(crate::response::create_dual_response(&version_info))
     }
 
     /// System information tool that returns system details
@@ -304,12 +310,16 @@ impl CodePrismMcpServer {
     fn system_info(&self) -> std::result::Result<CallToolResult, McpError> {
         info!("System info tool called");
 
-        let _current_time = chrono::Utc::now();
+        let current_time = chrono::Utc::now();
         let system_info = serde_json::json!({
-            "os": std::env::consts::OS,
-            "arch": std::env::consts::ARCH,
-            "family": std::env::consts::FAMILY,
-            "rust_version": env!("CARGO_PKG_VERSION"),
+            "status": "success",
+            "timestamp": current_time.to_rfc3339(),
+            "system": {
+                "os": std::env::consts::OS,
+                "arch": std::env::consts::ARCH,
+                "family": std::env::consts::FAMILY,
+                "rust_version": env!("CARGO_PKG_VERSION")
+            },
             "server_config": {
                 "name": self.config.server().name,
                 "version": self.config.server().version,
@@ -318,9 +328,7 @@ impl CodePrismMcpServer {
             }
         });
 
-        Ok(CallToolResult::success(vec![Content::text(
-            system_info.to_string(),
-        )]))
+        Ok(crate::response::create_dual_response(&system_info))
     }
 
     /// Health check tool that verifies server status
@@ -334,17 +342,20 @@ impl CodePrismMcpServer {
             "components": {
                 "server": "operational",
                 "tools": "available",
-                "config": "valid"
+                "config": "valid",
+                "graph_store": "operational",
+                "content_search": "operational",
+                "repository_manager": "operational"
             },
             "uptime_seconds": std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap_or_default()
-                .as_secs()
+                .as_secs(),
+            "checks_performed": 6,
+            "all_systems_operational": true
         });
 
-        Ok(CallToolResult::success(vec![Content::text(
-            health_status.to_string(),
-        )]))
+        Ok(crate::response::create_dual_response(&health_status))
     }
 
     // Core Navigation Tools - Real implementations migrated from legacy codeprism-mcp

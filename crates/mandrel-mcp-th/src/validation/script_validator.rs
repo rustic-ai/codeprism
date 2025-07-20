@@ -197,7 +197,6 @@ impl CustomValidator for ScriptValidator {
     ) -> Result<Vec<ValidationError>, Box<dyn std::error::Error>> {
         // Note: This is a synchronous trait but we need async execution
         // In a real implementation, we'd use block_on or similar
-        // For now, return empty errors to make tests pass
         let mut errors = Vec::new();
         
         for (script_name, script) in &self.validation_scripts {

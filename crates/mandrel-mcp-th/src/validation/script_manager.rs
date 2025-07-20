@@ -91,7 +91,6 @@ impl ScriptManager {
     ) -> Result<Arc<ScriptValidator>, ScriptManagerError> {
         let _cache_key = format!("{}_{:?}", script.name, phase);
 
-        // For now, create a new validator each time (caching can be optimized later)
         let config = ScriptValidationConfig {
             timeout_seconds: 30,
             memory_limit_mb: 64,

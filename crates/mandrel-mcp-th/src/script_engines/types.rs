@@ -217,6 +217,9 @@ pub enum ScriptError {
 
     #[error("Serialization error: {message}")]
     SerializationError { message: String },
+
+    #[error("Memory tracking error: {message}")]
+    MemoryTrackingError { message: String },
 }
 
 impl ScriptConfig {

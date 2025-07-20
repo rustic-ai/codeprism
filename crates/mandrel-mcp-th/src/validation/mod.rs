@@ -23,6 +23,7 @@ pub mod engine;
 pub mod jsonpath;
 pub mod protocol;
 pub mod schema;
+pub mod script_manager;
 pub mod script_validator_simple;
 
 pub use custom::{CustomValidator, ValidationContext};
@@ -30,6 +31,7 @@ pub use engine::McpValidationEngine;
 pub use jsonpath::{JsonPathEvaluator, JsonPathRule, PathConstraint};
 pub use protocol::{ProtocolCategory, ProtocolIssue, ProtocolRequirements, ProtocolValidator};
 pub use schema::{SchemaValidator, SchemaViolation};
+pub use script_manager::{ScriptManager, ScriptManagerError};
 pub use script_validator_simple::{ScriptExecutionPhase, ScriptValidationConfig, ScriptValidator};
 
 /// Comprehensive validation engine for MCP responses

@@ -10,7 +10,7 @@ use serde_json::Value;
 use std::collections::HashMap;
 
 /// Script execution phases for validation
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum ScriptExecutionPhase {
     Before, // Execute before standard validation
     After,  // Execute after standard validation
@@ -37,6 +37,7 @@ impl Default for ScriptValidationConfig {
 }
 
 /// Simplified ScriptValidator implementing CustomValidator trait
+#[derive(Debug)]
 pub struct ScriptValidator {
     validation_scripts: HashMap<String, ValidationScript>,
     execution_phase: ScriptExecutionPhase,

@@ -98,6 +98,7 @@ pub struct ResourceViolation {
 pub struct ResourceMonitor {
     limits: ResourceLimits,
     metrics: Arc<RwLock<ResourceMetrics>>,
+    #[allow(dead_code)] // Reserved for future duration tracking
     start_time: Instant,
     monitoring_active: Arc<Mutex<bool>>,
 }

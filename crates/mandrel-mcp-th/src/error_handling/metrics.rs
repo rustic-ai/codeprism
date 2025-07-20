@@ -78,6 +78,7 @@ pub enum TrendDirection {
 pub struct ErrorAnalyzer {
     metrics: ErrorMetrics,
     events: Vec<ErrorEvent>,
+    #[allow(dead_code)] // Reserved for future time-window analysis
     analysis_window: Duration,
     start_time: Instant,
 }

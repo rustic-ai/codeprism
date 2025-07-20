@@ -91,12 +91,14 @@ pub struct FileRotation {
 
 /// Central logging system that coordinates all logging activities
 pub struct LoggingSystem {
+    #[allow(dead_code)] // Reserved for future configuration updates
     config: LoggingConfig,
     error_collector: Arc<Mutex<ErrorCollector>>,
 }
 
 impl LoggingSystem {
     /// Initialize the logging system with the given configuration
+    #[allow(clippy::result_large_err)] // Error enum variants are from existing error system
     pub fn initialize(config: LoggingConfig) -> Result<Self, TestHarnessError> {
         let error_collector = Arc::new(Mutex::new(ErrorCollector::new()));
 
@@ -153,6 +155,7 @@ impl LoggingSystem {
     }
 
     /// Get current error statistics
+    #[allow(clippy::result_large_err)] // Error enum variants are from existing error system
     pub fn get_error_statistics(&self) -> Result<ErrorStatistics, TestHarnessError> {
         let collector = self.error_collector.lock().map_err(|e| {
             TestHarnessError::Reporting(

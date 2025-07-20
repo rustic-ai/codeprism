@@ -4,8 +4,11 @@
 //! and resource monitoring for test validation scenarios.
 
 use crate::script_engines::memory_tracker::{MemoryTracker, MemoryTrackingConfig};
-use crate::script_engines::{ScriptConfig, ScriptContext, ScriptError, ScriptResult};
+use crate::script_engines::{
+    LogEntry, LogLevel, ScriptConfig, ScriptContext, ScriptError, ScriptResult,
+};
 use mlua::{Lua, LuaSerdeExt, Result as LuaResult, Value as LuaValue};
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use tokio::time::timeout;
 use tracing::debug;
@@ -44,6 +47,75 @@ use tracing::debug;
 /// # Ok::<(), Box<dyn std::error::Error>>(())
 /// # });
 /// ```
+/// Thread-safe buffer for capturing Lua print statements
+#[derive(Debug, Clone)]
+struct LogBuffer {
+    entries: Arc<Mutex<Vec<CapturedLogEntry>>>,
+    #[allow(dead_code)] // Reserved for future use in log analysis
+    start_time: chrono::DateTime<chrono::Utc>,
+}
+
+/// Internal structure for captured log entries before conversion to LogEntry
+#[derive(Debug, Clone)]
+struct CapturedLogEntry {
+    message: String,
+    timestamp: chrono::DateTime<chrono::Utc>,
+    level: LogLevel,
+}
+
+const MAX_LOG_ENTRIES: usize = 1000; // Prevent unbounded growth
+
+impl LogBuffer {
+    /// Create a new log buffer
+    fn new() -> Self {
+        Self {
+            entries: Arc::new(Mutex::new(Vec::with_capacity(100))),
+            start_time: chrono::Utc::now(),
+        }
+    }
+
+    /// Capture a log message with the specified level
+    fn capture(&self, message: String, level: LogLevel) {
+        if let Ok(mut entries) = self.entries.lock() {
+            // Prevent unbounded growth by removing oldest entries
+            if entries.len() >= MAX_LOG_ENTRIES {
+                entries.remove(0);
+            }
+
+            entries.push(CapturedLogEntry {
+                message,
+                timestamp: chrono::Utc::now(),
+                level,
+            });
+        }
+    }
+
+    /// Extract all captured logs as LogEntry structs
+    fn extract_logs(&self) -> Vec<LogEntry> {
+        self.entries
+            .lock()
+            .map(|entries| {
+                entries
+                    .iter()
+                    .map(|captured| LogEntry {
+                        level: captured.level.clone(),
+                        message: captured.message.clone(),
+                        timestamp: captured.timestamp,
+                    })
+                    .collect()
+            })
+            .unwrap_or_default()
+    }
+
+    /// Clear all captured logs
+    #[allow(dead_code)] // May be used for cleanup in future
+    fn clear(&self) {
+        if let Ok(mut entries) = self.entries.lock() {
+            entries.clear();
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct LuaEngine {
     lua: Lua,
@@ -184,6 +256,9 @@ impl LuaEngine {
         let start_time = Instant::now();
         let security_manager = SecurityManager::new(&self.config);
 
+        // Initialize logging infrastructure
+        let log_buffer = Arc::new(LogBuffer::new());
+
         // Initialize memory tracking
         let memory_config = MemoryTrackingConfig::default();
         let memory_tracker = MemoryTracker::new(memory_config);
@@ -198,6 +273,9 @@ impl LuaEngine {
 
         // Inject context into Lua environment
         self.inject_context(&context)?;
+
+        // Setup custom print function for log capture
+        self.setup_log_capture(Arc::clone(&log_buffer))?;
 
         // Execute with timeout
         let execution_future = self.execute_with_monitoring(script, &security_manager);
@@ -219,16 +297,23 @@ impl LuaEngine {
         let memory_delta = memory_tracker.calculate_delta(&memory_before, &memory_after);
         let memory_used_mb = Some(memory_tracker.delta_to_mb(&memory_delta));
 
+        // Extract logs before processing results
+        let captured_logs = log_buffer.extract_logs();
+
         let duration = start_time.elapsed();
         let duration_ms = duration.as_millis() as u64;
 
         match lua_result {
-            Ok(Ok(lua_value)) => self.extract_result(lua_value, duration_ms, memory_used_mb),
-            Ok(Err(lua_error)) => self.handle_lua_error(lua_error, duration_ms, memory_used_mb),
+            Ok(Ok(lua_value)) => {
+                self.extract_result(lua_value, duration_ms, memory_used_mb, captured_logs)
+            }
+            Ok(Err(lua_error)) => {
+                self.handle_lua_error(lua_error, duration_ms, memory_used_mb, captured_logs)
+            }
             Err(_) => Ok(ScriptResult {
                 success: false,
                 output: serde_json::Value::Null,
-                logs: vec![],
+                logs: captured_logs,
                 duration_ms,
                 memory_used_mb,
                 error: Some(ScriptError::TimeoutError {
@@ -453,6 +538,44 @@ impl LuaEngine {
         Ok(())
     }
 
+    /// Setup custom print function for log capture
+    fn setup_log_capture(&self, log_buffer: Arc<LogBuffer>) -> Result<(), ScriptError> {
+        let buffer_clone = Arc::clone(&log_buffer);
+
+        let custom_print = self
+            .lua
+            .create_function(move |_lua, args: mlua::MultiValue| {
+                let messages: Vec<String> = args
+                    .into_iter()
+                    .map(|val| match val {
+                        LuaValue::String(s) => s.to_str().unwrap_or("").to_string(),
+                        LuaValue::Integer(i) => i.to_string(),
+                        LuaValue::Number(n) => n.to_string(),
+                        LuaValue::Boolean(b) => b.to_string(),
+                        LuaValue::Nil => "nil".to_string(),
+                        _ => format!("{:?}", val),
+                    })
+                    .collect();
+
+                let combined_message = messages.join("\t");
+                buffer_clone.capture(combined_message, LogLevel::Info);
+
+                Ok(())
+            })
+            .map_err(|e| ScriptError::ExecutionError {
+                message: format!("Failed to create custom print function: {}", e),
+            })?;
+
+        let globals = self.lua.globals();
+        globals
+            .set("print", custom_print)
+            .map_err(|e| ScriptError::ExecutionError {
+                message: format!("Failed to set custom print function: {}", e),
+            })?;
+
+        Ok(())
+    }
+
     /// Executes script with resource monitoring
     async fn execute_with_monitoring(
         &self,
@@ -489,6 +612,7 @@ impl LuaEngine {
         lua_value: LuaValue,
         duration_ms: u64,
         memory_used_mb: Option<f64>,
+        logs: Vec<LogEntry>,
     ) -> Result<ScriptResult, ScriptError> {
         let output =
             self.lua
@@ -500,7 +624,7 @@ impl LuaEngine {
         Ok(ScriptResult {
             success: true,
             output,
-            logs: vec![], // FUTURE(#300): Capture actual logs from Lua print statements
+            logs,
             duration_ms,
             memory_used_mb,
             error: None,
@@ -513,6 +637,7 @@ impl LuaEngine {
         lua_error: mlua::Error,
         duration_ms: u64,
         memory_used_mb: Option<f64>,
+        logs: Vec<LogEntry>,
     ) -> Result<ScriptResult, ScriptError> {
         let line_number = self.extract_line_number(&lua_error);
         let script_error = match lua_error {
@@ -529,7 +654,7 @@ impl LuaEngine {
         Ok(ScriptResult {
             success: false,
             output: serde_json::Value::Null,
-            logs: vec![],
+            logs,
             duration_ms,
             memory_used_mb,
             error: Some(script_error),
@@ -1167,5 +1292,200 @@ mod tests {
         assert!(result.success);
         // Memory tracking might succeed or fail depending on platform
         // The important thing is that it doesn't crash the script execution
+    }
+
+    #[tokio::test]
+    async fn test_lua_print_capture() {
+        let engine = LuaEngine::new(&ScriptConfig::new()).unwrap();
+        let context = create_test_context();
+
+        let script = r#"
+            print("Hello from Lua")
+            print("Debug info:", 42)
+            print("Multiple", "arguments", "test")
+            result = { success = true }
+        "#;
+
+        let result = engine.execute_script(script, context).await.unwrap();
+
+        assert!(result.success);
+        assert_eq!(result.logs.len(), 3);
+        assert_eq!(result.logs[0].message, "Hello from Lua");
+        assert_eq!(result.logs[1].message, "Debug info:\t42");
+        assert_eq!(result.logs[2].message, "Multiple\targuments\ttest");
+        assert!(result
+            .logs
+            .iter()
+            .all(|log| matches!(log.level, LogLevel::Info)));
+    }
+
+    #[tokio::test]
+    async fn test_log_capture_with_different_types() {
+        let engine = LuaEngine::new(&ScriptConfig::new()).unwrap();
+        let context = create_test_context();
+
+        let script = r#"
+            print("String value")
+            print(42)
+            print(3.14)
+            print(true)
+            print(false)
+            print(nil)
+            result = { success = true }
+        "#;
+
+        let result = engine.execute_script(script, context).await.unwrap();
+
+        assert!(result.success);
+        assert_eq!(result.logs.len(), 6);
+        assert_eq!(result.logs[0].message, "String value");
+        assert_eq!(result.logs[1].message, "42");
+        assert_eq!(result.logs[2].message, "3.14");
+        assert_eq!(result.logs[3].message, "true");
+        assert_eq!(result.logs[4].message, "false");
+        assert_eq!(result.logs[5].message, "nil");
+    }
+
+    #[tokio::test]
+    async fn test_log_capture_with_error() {
+        let engine = LuaEngine::new(&ScriptConfig::new()).unwrap();
+        let context = create_test_context();
+
+        let script = r#"
+            print("Before error")
+            error("Intentional error")
+            print("This should not be printed")
+        "#;
+
+        let result = engine.execute_script(script, context).await.unwrap();
+
+        assert!(!result.success);
+        assert!(result.error.is_some());
+        // Should still capture logs before the error
+        assert_eq!(result.logs.len(), 1);
+        assert_eq!(result.logs[0].message, "Before error");
+    }
+
+    #[tokio::test]
+    async fn test_log_capture_empty_script() {
+        let engine = LuaEngine::new(&ScriptConfig::new()).unwrap();
+        let context = create_test_context();
+
+        let script = r#"
+            result = { success = true }
+        "#;
+
+        let result = engine.execute_script(script, context).await.unwrap();
+
+        assert!(result.success);
+        assert_eq!(result.logs.len(), 0); // No print statements
+    }
+
+    #[tokio::test]
+    async fn test_log_capture_many_prints() {
+        let engine = LuaEngine::new(&ScriptConfig::new()).unwrap();
+        let context = create_test_context();
+
+        let script = r#"
+            for i = 1, 10 do
+                print("Log entry " .. i)
+            end
+            result = { success = true }
+        "#;
+
+        let result = engine.execute_script(script, context).await.unwrap();
+
+        assert!(result.success);
+        assert_eq!(result.logs.len(), 10);
+        for i in 0..10 {
+            assert_eq!(result.logs[i].message, format!("Log entry {}", i + 1));
+        }
+    }
+
+    #[tokio::test]
+    async fn test_log_capture_performance_overhead() {
+        let engine = LuaEngine::new(&ScriptConfig::new()).unwrap();
+        let context = create_test_context();
+
+        let script_with_logs = r#"
+            for i = 1, 100 do
+                print("Log entry " .. i)
+            end
+            result = { success = true }
+        "#;
+
+        let script_without_logs = r#"
+            for i = 1, 100 do
+                -- No print statements
+            end
+            result = { success = true }
+        "#;
+
+        // Measure execution times multiple times for better accuracy
+        let mut time_with_logs_total = Duration::new(0, 0);
+        let mut time_without_logs_total = Duration::new(0, 0);
+        let iterations = 5;
+
+        for _ in 0..iterations {
+            let start = Instant::now();
+            let _result_with_logs = engine
+                .execute_script(script_with_logs, context.clone())
+                .await
+                .unwrap();
+            time_with_logs_total += start.elapsed();
+
+            let start = Instant::now();
+            let _result_without_logs = engine
+                .execute_script(script_without_logs, context.clone())
+                .await
+                .unwrap();
+            time_without_logs_total += start.elapsed();
+        }
+
+        let avg_time_with_logs = time_with_logs_total.as_millis() as f64 / iterations as f64;
+        let avg_time_without_logs = time_without_logs_total.as_millis() as f64 / iterations as f64;
+
+        // Verify overhead is reasonable (allowing some variance for system conditions)
+        let overhead_ratio = avg_time_with_logs / avg_time_without_logs.max(1.0); // Avoid division by zero
+
+        println!("Log capture performance test:");
+        println!("  With logs: {:.2}ms", avg_time_with_logs);
+        println!("  Without logs: {:.2}ms", avg_time_without_logs);
+        println!("  Overhead ratio: {:.2}x", overhead_ratio);
+
+        // Allow up to 3x overhead for log capture (generous allowance for testing variability)
+        assert!(
+            overhead_ratio < 3.0,
+            "Log capture overhead too high: {:.1}x (expected <3.0x)",
+            overhead_ratio
+        );
+    }
+
+    #[tokio::test]
+    async fn test_log_timestamps() {
+        let engine = LuaEngine::new(&ScriptConfig::new()).unwrap();
+        let context = create_test_context();
+
+        let script = r#"
+            print("First message")
+            print("Second message")
+            result = { success = true }
+        "#;
+
+        let start_time = chrono::Utc::now();
+        let result = engine.execute_script(script, context).await.unwrap();
+        let end_time = chrono::Utc::now();
+
+        assert!(result.success);
+        assert_eq!(result.logs.len(), 2);
+
+        // Verify timestamps are reasonable
+        for log in &result.logs {
+            assert!(log.timestamp >= start_time);
+            assert!(log.timestamp <= end_time);
+        }
+
+        // Verify timestamps are ordered (second log should be after first)
+        assert!(result.logs[1].timestamp >= result.logs[0].timestamp);
     }
 }

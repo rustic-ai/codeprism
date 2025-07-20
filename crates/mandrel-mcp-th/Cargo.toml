@@ -53,7 +53,7 @@ uuid = { version = "1.0", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 
 # Script execution engines
-mlua = { version = "0.9", features = ["lua54", "async", "vendored"] }
+mlua = { version = "0.9", features = ["lua54", "async", "vendored", "serialize"] }
 rquickjs = { version = "0.9", features = ["array-buffer", "futures"] }
 pyo3 = { version = "0.21", features = ["auto-initialize"] }
 

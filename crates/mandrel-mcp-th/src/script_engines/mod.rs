@@ -57,6 +57,9 @@ pub use types::{
     ServerInfo,
 };
 
+// Re-export engine types
+pub use lua_engine::{LuaEngine, LuaScript};
+
 // Re-export sandbox types for secure script execution
 pub use sandbox::{
     ResourceLimits, ResourceMetrics, ResourceMonitor, SandboxManager, SecurityPolicy,

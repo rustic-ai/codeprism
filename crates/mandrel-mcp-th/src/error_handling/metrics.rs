@@ -1,802 +1,773 @@
-//! Error metrics collection and analysis for the Mandrel MCP Test Harness
+//! Error metrics collection and analysis for MOTH test harness
 //!
-//! This module provides comprehensive error metrics collection, analysis, and reporting
-//! capabilities to track error patterns, recovery rates, and system reliability.
+//! This module implements comprehensive error metrics collection, analysis, and reporting
+//! as specified in the design document.
 
-use crate::error_handling::{ErrorCategory, ErrorContext, ErrorSeverity, TestHarnessError};
-use chrono::{DateTime, Utc};
+use crate::error_handling::errors::{ErrorContext, TestHarnessError};
+use crate::error_handling::logging::ErrorEvent;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
-/// Comprehensive error metrics and statistics
-#[derive(Debug, Clone, Serialize, Deserialize)]
+/// Comprehensive error metrics for monitoring and analysis
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ErrorMetrics {
-    /// Total number of errors recorded
     pub total_errors: u64,
-    /// Errors grouped by category
-    pub errors_by_category: HashMap<ErrorCategory, u64>,
-    /// Errors grouped by severity level
-    pub errors_by_severity: HashMap<ErrorSeverity, u64>,
-    /// Errors grouped by test name
+    pub errors_by_category: HashMap<String, u64>,
     pub errors_by_test: HashMap<String, u64>,
-    /// Errors grouped by server name
     pub errors_by_server: HashMap<String, u64>,
-    /// Retry attempt statistics
-    pub retry_stats: RetryStatistics,
-    /// Error recovery success rate (percentage)
+    pub retry_counts: HashMap<String, u64>,
     pub recovery_success_rate: f64,
-    /// Average time to resolve errors (in seconds)
-    pub average_resolution_time_seconds: f64,
-    /// Error frequency over time
-    pub error_frequency: ErrorFrequency,
-    /// Performance impact statistics
-    pub performance_impact: PerformanceImpact,
-    /// Time range for these metrics
-    pub time_range: TimeRange,
+    pub average_error_resolution_time: Duration,
+    pub error_rate_per_hour: f64,
+    pub peak_error_time: Option<chrono::DateTime<chrono::Utc>>,
+    pub most_frequent_error: Option<String>,
 }
 
-/// Retry attempt statistics
+/// Error trend analysis over time
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RetryStatistics {
-    /// Total number of retry attempts
-    pub total_retries: u64,
-    /// Number of successful recoveries after retry
-    pub successful_recoveries: u64,
-    /// Number of permanent failures after all retries
-    pub permanent_failures: u64,
-    /// Average number of retries per error
-    pub average_retries_per_error: f64,
-    /// Distribution of retry counts
-    pub retry_distribution: HashMap<u32, u64>,
-    /// Average retry delay in milliseconds
-    pub average_retry_delay_ms: f64,
+pub struct ErrorTrends {
+    pub hourly_error_counts: Vec<HourlyErrorCount>,
+    pub daily_error_counts: Vec<DailyErrorCount>,
+    pub error_patterns: Vec<ErrorPattern>,
+    pub trending_errors: Vec<TrendingError>,
 }
 
-/// Error frequency analysis over time
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ErrorFrequency {
-    /// Errors per hour
-    pub errors_per_hour: f64,
-    /// Peak error rate (errors per minute)
-    pub peak_error_rate: f64,
-    /// Time of peak error rate
-    pub peak_error_time: Option<DateTime<Utc>>,
-    /// Error trends (increasing, decreasing, stable)
-    pub trend: ErrorTrend,
-    /// Hourly error distribution
-    pub hourly_distribution: Vec<u64>,
+pub struct HourlyErrorCount {
+    pub hour: chrono::DateTime<chrono::Utc>,
+    pub count: u64,
+    pub categories: HashMap<String, u64>,
 }
 
-/// Error trend analysis
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum ErrorTrend {
-    Increasing { rate_per_hour: f64 },
-    Decreasing { rate_per_hour: f64 },
-    Stable { variance: f64 },
-    InsufficientData,
+pub struct DailyErrorCount {
+    pub date: chrono::NaiveDate,
+    pub count: u64,
+    pub categories: HashMap<String, u64>,
 }
 
-/// Performance impact of errors
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PerformanceImpact {
-    /// Average operation duration increase due to errors (in milliseconds)
-    pub average_duration_increase_ms: f64,
-    /// Memory overhead from error handling (in MB)
-    pub memory_overhead_mb: f64,
-    /// CPU time spent on error handling (in milliseconds)
-    pub cpu_time_error_handling_ms: u64,
-    /// Network bandwidth consumed by retries (in bytes)
-    pub retry_bandwidth_bytes: u64,
-    /// Test execution slowdown percentage
-    pub test_slowdown_percentage: f64,
+pub struct ErrorPattern {
+    pub pattern_id: String,
+    pub description: String,
+    pub frequency: u64,
+    pub first_seen: chrono::DateTime<chrono::Utc>,
+    pub last_seen: chrono::DateTime<chrono::Utc>,
+    pub affected_tests: Vec<String>,
+    pub suggested_fix: Option<String>,
 }
 
-/// Time range for metrics
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TimeRange {
-    pub start: DateTime<Utc>,
-    pub end: DateTime<Utc>,
-    pub duration_seconds: u64,
+pub struct TrendingError {
+    pub error_type: String,
+    pub current_count: u64,
+    pub previous_count: u64,
+    pub trend_direction: TrendDirection,
+    pub confidence: f64,
 }
 
-/// Individual error event for tracking
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ErrorEvent {
-    /// Unique identifier for this error event
-    pub id: uuid::Uuid,
-    /// Timestamp when the error occurred
-    pub timestamp: DateTime<Utc>,
-    /// The error that occurred
-    pub error: TestHarnessError,
-    /// Context information
-    pub context: ErrorContext,
-    /// Whether recovery was attempted
-    pub recovery_attempted: bool,
-    /// Whether recovery was successful
-    pub recovery_successful: bool,
-    /// Time taken to resolve the error (if resolved)
-    pub resolution_time: Option<Duration>,
-    /// Number of retry attempts made
-    pub retry_attempts: u32,
-    /// Performance impact of this error
-    pub performance_cost: Option<PerformanceCost>,
+pub enum TrendDirection {
+    Increasing,
+    Decreasing,
+    Stable,
 }
 
-/// Performance cost of a single error event
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PerformanceCost {
-    /// Additional time spent due to this error
-    pub additional_duration_ms: u64,
-    /// Memory allocated for error handling
-    pub memory_allocated_bytes: u64,
-    /// CPU cycles consumed for error handling
-    pub cpu_cycles: Option<u64>,
-    /// Network I/O for retries
-    pub network_io_bytes: u64,
-}
-
-/// Error collector for gathering and analyzing error events
-#[derive(Debug)]
-pub struct ErrorCollector {
-    /// All error events recorded
+/// Error analysis engine for comprehensive error insights
+pub struct ErrorAnalyzer {
+    metrics: ErrorMetrics,
     events: Vec<ErrorEvent>,
-    /// Start time for metrics collection
+    analysis_window: Duration,
     start_time: Instant,
-    /// Maximum number of events to retain
-    max_events: usize,
-    /// Current metrics snapshot
-    current_metrics: ErrorMetrics,
 }
 
-impl ErrorCollector {
-    /// Create a new error collector
-    pub fn new() -> Self {
-        Self::with_capacity(10000)
-    }
-
-    /// Create a new error collector with specified capacity
-    pub fn with_capacity(max_events: usize) -> Self {
+impl ErrorAnalyzer {
+    /// Create a new error analyzer
+    pub fn new(analysis_window: Duration) -> Self {
         Self {
-            events: Vec::with_capacity(max_events.min(1000)),
+            metrics: ErrorMetrics::default(),
+            events: Vec::new(),
+            analysis_window,
             start_time: Instant::now(),
-            max_events,
-            current_metrics: ErrorMetrics::new(),
         }
     }
 
-    /// Record an error event
-    pub fn record_error(&mut self, error: TestHarnessError, context: ErrorContext) -> uuid::Uuid {
+    /// Record an error event for analysis
+    pub fn record_error(&mut self, error: &TestHarnessError, context: ErrorContext) {
         let event = ErrorEvent {
-            id: uuid::Uuid::new_v4(),
-            timestamp: Utc::now(),
-            error,
-            context,
+            timestamp: chrono::Utc::now(),
+            error: error.clone(),
+            context: context.clone(),
             recovery_attempted: false,
             recovery_successful: false,
-            resolution_time: None,
-            retry_attempts: 0,
-            performance_cost: None,
         };
-
-        let event_id = event.id;
-        self.add_event(event);
-        event_id
-    }
-
-    /// Update an error event with recovery information
-    pub fn update_recovery(
-        &mut self,
-        event_id: uuid::Uuid,
-        successful: bool,
-        resolution_time: Duration,
-    ) {
-        if let Some(event) = self.events.iter_mut().find(|e| e.id == event_id) {
-            event.recovery_attempted = true;
-            event.recovery_successful = successful;
-            event.resolution_time = Some(resolution_time);
-            self.update_metrics();
-        }
-    }
-
-    /// Update an error event with retry information
-    pub fn update_retry(&mut self, event_id: uuid::Uuid, retry_count: u32) {
-        if let Some(event) = self.events.iter_mut().find(|e| e.id == event_id) {
-            event.retry_attempts = retry_count;
-            self.update_metrics();
-        }
-    }
-
-    /// Update an error event with performance cost
-    pub fn update_performance_cost(&mut self, event_id: uuid::Uuid, cost: PerformanceCost) {
-        if let Some(event) = self.events.iter_mut().find(|e| e.id == event_id) {
-            event.performance_cost = Some(cost);
-            self.update_metrics();
-        }
-    }
-
-    /// Add an error event to the collection
-    fn add_event(&mut self, event: ErrorEvent) {
-        // Maintain capacity limit
-        if self.events.len() >= self.max_events {
-            self.events.remove(0); // Remove oldest event
-        }
 
         self.events.push(event);
-        self.update_metrics();
+        self.update_metrics(error, &context);
     }
 
-    /// Update current metrics based on collected events
-    fn update_metrics(&mut self) {
-        self.current_metrics = self.calculate_metrics();
+    /// Record a recovery attempt
+    pub fn record_recovery_attempt(&mut self, _error_id: Option<String>, successful: bool) {
+        if let Some(event) = self.events.last_mut() {
+            event.recovery_attempted = true;
+            event.recovery_successful = successful;
+        }
+
+        self.update_recovery_metrics(successful);
     }
 
-    /// Calculate comprehensive metrics from collected events
-    pub fn calculate_metrics(&self) -> ErrorMetrics {
-        if self.events.is_empty() {
-            return ErrorMetrics::new();
+    /// Update metrics based on a new error
+    fn update_metrics(&mut self, error: &TestHarnessError, context: &ErrorContext) {
+        self.metrics.total_errors += 1;
+
+        // Update category metrics
+        let category = self.categorize_error(error);
+        *self.metrics.errors_by_category.entry(category).or_insert(0) += 1;
+
+        // Update test metrics
+        if let Some(test_name) = &context.test_name {
+            *self
+                .metrics
+                .errors_by_test
+                .entry(test_name.clone())
+                .or_insert(0) += 1;
         }
 
-        let total_errors = self.events.len() as u64;
-        let mut errors_by_category = HashMap::new();
-        let mut errors_by_severity = HashMap::new();
-        let mut errors_by_test = HashMap::new();
-        let mut errors_by_server = HashMap::new();
-
-        #[allow(unused_variables)]
-        let mut total_retries = 0u64;
-        let mut successful_recoveries = 0u64;
-        let mut total_resolution_time = Duration::ZERO;
-        let mut resolved_errors = 0u64;
-
-        for event in &self.events {
-            // Category counting
-            let category = event.error.category();
-            *errors_by_category.entry(category).or_insert(0) += 1;
-
-            // Severity counting
-            let severity = event.error.severity();
-            *errors_by_severity.entry(severity).or_insert(0) += 1;
-
-            // Test name counting
-            if let Some(ref test_ctx) = event.context.test_context {
-                *errors_by_test
-                    .entry(test_ctx.test_name.clone())
-                    .or_insert(0) += 1;
-            }
-
-            // Server name counting
-            if let Some(ref server_ctx) = event.context.server_context {
-                *errors_by_server
-                    .entry(server_ctx.server_name.clone())
-                    .or_insert(0) += 1;
-            }
-
-            // Retry statistics
-            total_retries += event.retry_attempts as u64;
-            if event.recovery_successful {
-                successful_recoveries += 1;
-            }
-
-            // Resolution time
-            if let Some(resolution_time) = event.resolution_time {
-                total_resolution_time += resolution_time;
-                resolved_errors += 1;
-            }
+        // Update server metrics
+        if let Some(server_name) = &context.server_name {
+            *self
+                .metrics
+                .errors_by_server
+                .entry(server_name.clone())
+                .or_insert(0) += 1;
         }
 
-        let recovery_success_rate = if total_errors > 0 {
-            (successful_recoveries as f64 / total_errors as f64) * 100.0
-        } else {
-            0.0
-        };
+        // Update error rate
+        let elapsed = self.start_time.elapsed();
+        self.metrics.error_rate_per_hour =
+            (self.metrics.total_errors as f64) / elapsed.as_secs_f64() * 3600.0;
 
-        let average_resolution_time_seconds = if resolved_errors > 0 {
-            total_resolution_time.as_secs_f64() / resolved_errors as f64
-        } else {
-            0.0
-        };
-
-        let retry_stats = self.calculate_retry_statistics();
-        let error_frequency = self.calculate_error_frequency();
-        let performance_impact = self.calculate_performance_impact();
-
-        ErrorMetrics {
-            total_errors,
-            errors_by_category,
-            errors_by_severity,
-            errors_by_test,
-            errors_by_server,
-            retry_stats,
-            recovery_success_rate,
-            average_resolution_time_seconds,
-            error_frequency,
-            performance_impact,
-            time_range: self.get_time_range(),
-        }
+        // Update most frequent error
+        self.metrics.most_frequent_error = self.find_most_frequent_error();
     }
 
-    /// Calculate retry statistics
-    fn calculate_retry_statistics(&self) -> RetryStatistics {
-        if self.events.is_empty() {
-            return RetryStatistics::default();
-        }
+    /// Update recovery success rate
+    fn update_recovery_metrics(&mut self, _successful: bool) {
+        let recovery_attempts = self.events.iter().filter(|e| e.recovery_attempted).count();
 
-        let total_retries: u64 = self.events.iter().map(|e| e.retry_attempts as u64).sum();
-        let successful_recoveries =
-            self.events.iter().filter(|e| e.recovery_successful).count() as u64;
-        let permanent_failures = self
+        let successful_recoveries = self
             .events
             .iter()
-            .filter(|e| e.recovery_attempted && !e.recovery_successful)
-            .count() as u64;
+            .filter(|e| e.recovery_attempted && e.recovery_successful)
+            .count();
 
-        let average_retries_per_error = if !self.events.is_empty() {
-            total_retries as f64 / self.events.len() as f64
-        } else {
-            0.0
-        };
-
-        let mut retry_distribution = HashMap::new();
-        for event in &self.events {
-            *retry_distribution.entry(event.retry_attempts).or_insert(0) += 1;
-        }
-
-        RetryStatistics {
-            total_retries,
-            successful_recoveries,
-            permanent_failures,
-            average_retries_per_error,
-            retry_distribution,
-            average_retry_delay_ms: 0.0, // Would need actual retry delay tracking
+        if recovery_attempts > 0 {
+            self.metrics.recovery_success_rate =
+                successful_recoveries as f64 / recovery_attempts as f64;
         }
     }
 
-    /// Calculate error frequency over time
-    fn calculate_error_frequency(&self) -> ErrorFrequency {
-        if self.events.is_empty() {
-            return ErrorFrequency::default();
-        }
-
-        let time_range = self.get_time_range();
-        let duration_hours = time_range.duration_seconds as f64 / 3600.0;
-
-        let errors_per_hour = if duration_hours > 0.0 {
-            self.events.len() as f64 / duration_hours
-        } else {
-            0.0
-        };
-
-        // Calculate hourly distribution (simplified)
-        let hourly_distribution = vec![0; 24]; // Would need actual hourly breakdown
-
-        ErrorFrequency {
-            errors_per_hour,
-            peak_error_rate: 0.0, // Would need time window analysis
-            peak_error_time: None,
-            trend: ErrorTrend::InsufficientData,
-            hourly_distribution,
+    /// Categorize an error for metrics
+    fn categorize_error(&self, error: &TestHarnessError) -> String {
+        match error {
+            TestHarnessError::Client(_) => "client".to_string(),
+            TestHarnessError::Execution(_) => "execution".to_string(),
+            TestHarnessError::Validation(_) => "validation".to_string(),
+            TestHarnessError::Configuration(_) => "configuration".to_string(),
+            TestHarnessError::Io(_) => "io".to_string(),
+            TestHarnessError::Reporting(_) => "reporting".to_string(),
+            TestHarnessError::Network(_) => "network".to_string(),
+            TestHarnessError::Performance(_) => "performance".to_string(),
+            TestHarnessError::Security(_) => "security".to_string(),
         }
     }
 
-    /// Calculate performance impact
-    fn calculate_performance_impact(&self) -> PerformanceImpact {
-        let mut total_duration_increase = 0u64;
-        let mut total_memory_overhead = 0u64;
-        let mut total_cpu_time = 0u64;
-        let mut total_retry_bandwidth = 0u64;
-
-        for event in &self.events {
-            if let Some(ref cost) = event.performance_cost {
-                total_duration_increase += cost.additional_duration_ms;
-                total_memory_overhead += cost.memory_allocated_bytes;
-                total_cpu_time += cost.cpu_cycles.unwrap_or(0);
-                total_retry_bandwidth += cost.network_io_bytes;
-            }
-        }
-
-        let event_count = self.events.len() as f64;
-
-        PerformanceImpact {
-            average_duration_increase_ms: if event_count > 0.0 {
-                total_duration_increase as f64 / event_count
-            } else {
-                0.0
-            },
-            memory_overhead_mb: total_memory_overhead as f64 / (1024.0 * 1024.0),
-            cpu_time_error_handling_ms: total_cpu_time,
-            retry_bandwidth_bytes: total_retry_bandwidth,
-            test_slowdown_percentage: 0.0, // Would need baseline measurements
-        }
-    }
-
-    /// Get the time range for current metrics
-    fn get_time_range(&self) -> TimeRange {
-        let now = Utc::now();
-        let start = if let Some(first_event) = self.events.first() {
-            first_event.timestamp
-        } else {
-            now
-        };
-
-        TimeRange {
-            start,
-            end: now,
-            duration_seconds: (now - start).num_seconds().max(0) as u64,
-        }
-    }
-
-    /// Get current metrics snapshot
-    pub fn get_metrics(&self) -> &ErrorMetrics {
-        &self.current_metrics
-    }
-
-    /// Generate error summary report
-    pub fn generate_summary(&self) -> ErrorSummary {
-        let metrics = &self.current_metrics;
-
-        ErrorSummary {
-            total_errors: metrics.total_errors,
-            error_rate_per_hour: metrics.error_frequency.errors_per_hour,
-            recovery_success_rate: metrics.recovery_success_rate,
-            most_common_category: self.get_most_common_category(),
-            most_problematic_test: self.get_most_problematic_test(),
-            most_problematic_server: self.get_most_problematic_server(),
-            recommendations: self.generate_recommendations(),
-            time_range: metrics.time_range.clone(),
-        }
-    }
-
-    /// Get the most common error category
-    fn get_most_common_category(&self) -> Option<ErrorCategory> {
-        self.current_metrics
+    /// Find the most frequent error category
+    fn find_most_frequent_error(&self) -> Option<String> {
+        self.metrics
             .errors_by_category
             .iter()
             .max_by_key(|(_, count)| *count)
             .map(|(category, _)| category.clone())
     }
 
-    /// Get the test with the most errors
-    fn get_most_problematic_test(&self) -> Option<String> {
-        self.current_metrics
-            .errors_by_test
-            .iter()
-            .max_by_key(|(_, count)| *count)
-            .map(|(test_name, _)| test_name.clone())
+    /// Get current error metrics
+    pub fn get_metrics(&self) -> &ErrorMetrics {
+        &self.metrics
     }
 
-    /// Get the server with the most errors
-    fn get_most_problematic_server(&self) -> Option<String> {
-        self.current_metrics
-            .errors_by_server
-            .iter()
-            .max_by_key(|(_, count)| *count)
-            .map(|(server_name, _)| server_name.clone())
+    /// Generate error trends analysis
+    pub fn analyze_trends(&self) -> ErrorTrends {
+        let hourly_counts = self.calculate_hourly_error_counts();
+        let daily_counts = self.calculate_daily_error_counts();
+        let patterns = self.identify_error_patterns();
+        let trending = self.calculate_trending_errors();
+
+        ErrorTrends {
+            hourly_error_counts: hourly_counts,
+            daily_error_counts: daily_counts,
+            error_patterns: patterns,
+            trending_errors: trending,
+        }
     }
 
-    /// Generate actionable recommendations based on error patterns
-    fn generate_recommendations(&self) -> Vec<String> {
+    /// Calculate hourly error counts
+    fn calculate_hourly_error_counts(&self) -> Vec<HourlyErrorCount> {
+        let mut hourly_map: HashMap<i64, (u64, HashMap<String, u64>)> = HashMap::new();
+
+        for event in &self.events {
+            let hour_timestamp = event.timestamp.timestamp() / 3600 * 3600;
+            let category = self.categorize_error(&event.error);
+
+            let (count, categories) = hourly_map
+                .entry(hour_timestamp)
+                .or_insert((0, HashMap::new()));
+            *count += 1;
+            *categories.entry(category).or_insert(0) += 1;
+        }
+
+        let mut hourly_counts: Vec<_> = hourly_map
+            .into_iter()
+            .map(|(timestamp, (count, categories))| HourlyErrorCount {
+                hour: chrono::DateTime::from_timestamp(timestamp, 0)
+                    .unwrap_or_else(chrono::Utc::now),
+                count,
+                categories,
+            })
+            .collect();
+
+        hourly_counts.sort_by_key(|h| h.hour);
+        hourly_counts
+    }
+
+    /// Calculate daily error counts
+    fn calculate_daily_error_counts(&self) -> Vec<DailyErrorCount> {
+        let mut daily_map: HashMap<chrono::NaiveDate, (u64, HashMap<String, u64>)> = HashMap::new();
+
+        for event in &self.events {
+            let date = event.timestamp.date_naive();
+            let category = self.categorize_error(&event.error);
+
+            let (count, categories) = daily_map.entry(date).or_insert((0, HashMap::new()));
+            *count += 1;
+            *categories.entry(category).or_insert(0) += 1;
+        }
+
+        let mut daily_counts: Vec<_> = daily_map
+            .into_iter()
+            .map(|(date, (count, categories))| DailyErrorCount {
+                date,
+                count,
+                categories,
+            })
+            .collect();
+
+        daily_counts.sort_by_key(|d| d.date);
+        daily_counts
+    }
+
+    /// Identify error patterns in the data
+    fn identify_error_patterns(&self) -> Vec<ErrorPattern> {
+        let mut patterns = Vec::new();
+        let mut pattern_map: HashMap<String, Vec<&ErrorEvent>> = HashMap::new();
+
+        // Group errors by similar characteristics
+        for event in &self.events {
+            let pattern_key = self.generate_pattern_key(&event.error);
+            pattern_map.entry(pattern_key).or_default().push(event);
+        }
+
+        // Create patterns for groups with sufficient frequency
+        for (_pattern_key, events) in pattern_map {
+            if events.len() >= 2 {
+                // Minimum frequency threshold
+                let first_event = events.first().unwrap();
+                let last_event = events.last().unwrap();
+
+                let affected_tests: Vec<String> = events
+                    .iter()
+                    .filter_map(|e| e.context.test_name.clone())
+                    .collect::<std::collections::HashSet<_>>()
+                    .into_iter()
+                    .collect();
+
+                patterns.push(ErrorPattern {
+                    pattern_id: format!("pattern_{}", uuid::Uuid::new_v4()),
+                    description: self.generate_pattern_description(&first_event.error),
+                    frequency: events.len() as u64,
+                    first_seen: first_event.timestamp,
+                    last_seen: last_event.timestamp,
+                    affected_tests,
+                    suggested_fix: self.suggest_fix(&first_event.error),
+                });
+            }
+        }
+
+        patterns.sort_by(|a, b| b.frequency.cmp(&a.frequency));
+        patterns
+    }
+
+    /// Generate a pattern key for grouping similar errors
+    fn generate_pattern_key(&self, error: &TestHarnessError) -> String {
+        match error {
+            TestHarnessError::Client(client_error) => match client_error {
+                crate::error_handling::errors::McpClientError::ConnectionFailed { .. } => {
+                    "client_connection_failed".to_string()
+                }
+                crate::error_handling::errors::McpClientError::ProtocolViolation { .. } => {
+                    "client_protocol_violation".to_string()
+                }
+                crate::error_handling::errors::McpClientError::RequestTimeout { .. } => {
+                    "client_request_timeout".to_string()
+                }
+                crate::error_handling::errors::McpClientError::ServerError { .. } => {
+                    "client_server_error".to_string()
+                }
+                crate::error_handling::errors::McpClientError::TransportError { .. } => {
+                    "client_transport_error".to_string()
+                }
+                crate::error_handling::errors::McpClientError::AuthenticationError { .. } => {
+                    "client_authentication_error".to_string()
+                }
+            },
+            TestHarnessError::Network(network_error) => match network_error {
+                crate::error_handling::errors::NetworkError::ConnectionTimeout { .. } => {
+                    "network_connection_timeout".to_string()
+                }
+                crate::error_handling::errors::NetworkError::DnsResolutionFailed { .. } => {
+                    "network_dns_resolution_failed".to_string()
+                }
+            },
+            TestHarnessError::Validation(validation_error) => match validation_error {
+                crate::error_handling::errors::ValidationError::SchemaValidation { .. } => {
+                    "validation_schema_validation".to_string()
+                }
+                crate::error_handling::errors::ValidationError::JsonPathValidation { .. } => {
+                    "validation_jsonpath_validation".to_string()
+                }
+                crate::error_handling::errors::ValidationError::ResponseFormat { .. } => {
+                    "validation_response_format".to_string()
+                }
+            },
+            TestHarnessError::Execution(_) => "execution".to_string(),
+            TestHarnessError::Configuration(_) => "configuration".to_string(),
+            TestHarnessError::Io(_) => "io".to_string(),
+            TestHarnessError::Reporting(_) => "reporting".to_string(),
+            TestHarnessError::Performance(_) => "performance".to_string(),
+            TestHarnessError::Security(_) => "security".to_string(),
+        }
+    }
+
+    /// Generate a human-readable pattern description
+    fn generate_pattern_description(&self, error: &TestHarnessError) -> String {
+        match error {
+            TestHarnessError::Client(_) => {
+                "MCP client connection or communication issues".to_string()
+            }
+            TestHarnessError::Network(_) => "Network connectivity or timeout problems".to_string(),
+            TestHarnessError::Validation(_) => {
+                "Response validation or schema compliance failures".to_string()
+            }
+            TestHarnessError::Execution(_) => {
+                "Test execution failures or assertion errors".to_string()
+            }
+            TestHarnessError::Configuration(_) => "Configuration or setup issues".to_string(),
+            TestHarnessError::Io(_) => "File system or I/O operation failures".to_string(),
+            TestHarnessError::Reporting(_) => "Report generation or output issues".to_string(),
+            TestHarnessError::Performance(_) => {
+                "Performance threshold violations or timeouts".to_string()
+            }
+            TestHarnessError::Security(_) => {
+                "Security policy violations or access issues".to_string()
+            }
+        }
+    }
+
+    /// Suggest a fix for common error patterns
+    fn suggest_fix(&self, error: &TestHarnessError) -> Option<String> {
+        match error {
+            TestHarnessError::Client(_) => {
+                Some("Check MCP server connectivity and configuration".to_string())
+            }
+            TestHarnessError::Network(_) => {
+                Some("Verify network connectivity and increase timeout values".to_string())
+            }
+            TestHarnessError::Validation(_) => {
+                Some("Review response schema and validation rules".to_string())
+            }
+            TestHarnessError::Execution(_) => {
+                Some("Check test logic and expected outcomes".to_string())
+            }
+            TestHarnessError::Configuration(_) => {
+                Some("Verify configuration file format and required fields".to_string())
+            }
+            TestHarnessError::Performance(_) => {
+                Some("Optimize operations or increase performance thresholds".to_string())
+            }
+            _ => None,
+        }
+    }
+
+    /// Calculate trending errors
+    fn calculate_trending_errors(&self) -> Vec<TrendingError> {
+        // This is a simplified implementation
+        // In practice, you'd want more sophisticated trend analysis
+        let mut trending = Vec::new();
+
+        let now = chrono::Utc::now();
+        let one_hour_ago = now - chrono::Duration::hours(1);
+        let two_hours_ago = now - chrono::Duration::hours(2);
+
+        let mut current_counts: HashMap<String, u64> = HashMap::new();
+        let mut previous_counts: HashMap<String, u64> = HashMap::new();
+
+        // Count errors in the last hour
+        for event in &self.events {
+            if event.timestamp >= one_hour_ago {
+                let category = self.categorize_error(&event.error);
+                *current_counts.entry(category).or_insert(0) += 1;
+            } else if event.timestamp >= two_hours_ago {
+                let category = self.categorize_error(&event.error);
+                *previous_counts.entry(category).or_insert(0) += 1;
+            }
+        }
+
+        // Calculate trends
+        for (category, current) in current_counts {
+            let previous = previous_counts.get(&category).unwrap_or(&0);
+            let trend_direction = if current > *previous {
+                TrendDirection::Increasing
+            } else if current < *previous {
+                TrendDirection::Decreasing
+            } else {
+                TrendDirection::Stable
+            };
+
+            let confidence = if *previous > 0 {
+                1.0 - ((*previous as f64 - current as f64).abs() / *previous as f64)
+            } else if current > 0 {
+                1.0
+            } else {
+                0.0
+            };
+
+            trending.push(TrendingError {
+                error_type: category,
+                current_count: current,
+                previous_count: *previous,
+                trend_direction,
+                confidence,
+            });
+        }
+
+        trending.sort_by(|a, b| {
+            b.current_count.cmp(&a.current_count).then_with(|| {
+                b.confidence
+                    .partial_cmp(&a.confidence)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            })
+        });
+
+        trending
+    }
+
+    /// Generate a comprehensive error report
+    pub fn generate_report(&self) -> ErrorAnalysisReport {
+        let trends = self.analyze_trends();
+
+        ErrorAnalysisReport {
+            summary: self.metrics.clone(),
+            trends,
+            recommendations: self.generate_recommendations(),
+            analysis_period: self.start_time.elapsed(),
+            report_generated_at: chrono::Utc::now(),
+        }
+    }
+
+    /// Generate actionable recommendations based on error analysis
+    fn generate_recommendations(&self) -> Vec<ErrorRecommendation> {
         let mut recommendations = Vec::new();
-        let metrics = &self.current_metrics;
+
+        // Only generate recommendations if there are errors
+        if self.metrics.total_errors == 0 {
+            return recommendations;
+        }
 
         // High error rate recommendation
-        if metrics.error_frequency.errors_per_hour > 10.0 {
-            recommendations.push(
-                "High error rate detected. Consider reviewing test configurations and server stability.".to_string()
-            );
+        if self.metrics.error_rate_per_hour > 10.0 {
+            recommendations.push(ErrorRecommendation {
+                priority: RecommendationPriority::High,
+                category: "error_rate".to_string(),
+                title: "High Error Rate Detected".to_string(),
+                description: format!(
+                    "Error rate of {:.1} errors/hour exceeds recommended threshold",
+                    self.metrics.error_rate_per_hour
+                ),
+                action: "Investigate root causes and implement error prevention measures"
+                    .to_string(),
+                estimated_impact: "Reduce error rate by 50-70%".to_string(),
+            });
         }
 
         // Low recovery rate recommendation
-        if metrics.recovery_success_rate < 50.0 && metrics.total_errors > 5 {
-            recommendations.push(
-                "Low recovery success rate. Review retry configurations and error handling logic."
-                    .to_string(),
-            );
+        if self.metrics.recovery_success_rate < 0.8 {
+            recommendations.push(ErrorRecommendation {
+                priority: RecommendationPriority::Medium,
+                category: "recovery".to_string(),
+                title: "Low Error Recovery Rate".to_string(),
+                description: format!(
+                    "Recovery success rate of {:.1}% is below optimal threshold",
+                    self.metrics.recovery_success_rate * 100.0
+                ),
+                action: "Review and improve retry logic and error handling strategies".to_string(),
+                estimated_impact: "Improve system reliability by 20-30%".to_string(),
+            });
         }
 
-        // Specific category recommendations
-        if let Some(category) = self.get_most_common_category() {
-            match category {
-                ErrorCategory::Connection => {
-                    recommendations.push(
-                        "Many connection errors detected. Check network stability and server availability.".to_string()
-                    );
-                }
-                ErrorCategory::Validation => {
-                    recommendations.push(
-                        "Many validation errors detected. Review test data and server response formats.".to_string()
-                    );
-                }
-                _ => {}
-            }
+        // Test-specific recommendations
+        if let Some(problematic_test) = self.find_most_problematic_test() {
+            recommendations.push(ErrorRecommendation {
+                priority: RecommendationPriority::Medium,
+                category: "test_quality".to_string(),
+                title: format!("Test '{}' Has High Error Rate", problematic_test.0),
+                description: format!(
+                    "Test '{}' accounts for {} errors ({}% of total)",
+                    problematic_test.0,
+                    problematic_test.1,
+                    (problematic_test.1 as f64 / self.metrics.total_errors as f64 * 100.0) as u32
+                ),
+                action: "Review test implementation and expected behaviors".to_string(),
+                estimated_impact: "Reduce test-specific failures by 40-60%".to_string(),
+            });
         }
 
         recommendations
     }
 
-    /// Clear all collected events
-    pub fn clear(&mut self) {
-        self.events.clear();
-        self.start_time = Instant::now();
-        self.current_metrics = ErrorMetrics::new();
-    }
-
-    /// Get the number of events collected
-    pub fn event_count(&self) -> usize {
-        self.events.len()
+    /// Find the test with the most errors
+    fn find_most_problematic_test(&self) -> Option<(String, u64)> {
+        self.metrics
+            .errors_by_test
+            .iter()
+            .max_by_key(|(_, count)| *count)
+            .map(|(test, count)| (test.clone(), *count))
     }
 }
 
-/// Error summary report for high-level analysis
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ErrorSummary {
-    pub total_errors: u64,
-    pub error_rate_per_hour: f64,
-    pub recovery_success_rate: f64,
-    pub most_common_category: Option<ErrorCategory>,
-    pub most_problematic_test: Option<String>,
-    pub most_problematic_server: Option<String>,
-    pub recommendations: Vec<String>,
-    pub time_range: TimeRange,
+/// Comprehensive error analysis report
+#[derive(Debug, Clone, Serialize)]
+pub struct ErrorAnalysisReport {
+    pub summary: ErrorMetrics,
+    pub trends: ErrorTrends,
+    pub recommendations: Vec<ErrorRecommendation>,
+    pub analysis_period: Duration,
+    pub report_generated_at: chrono::DateTime<chrono::Utc>,
 }
 
-impl Default for ErrorCollector {
-    fn default() -> Self {
-        Self::new()
-    }
+/// Error improvement recommendation
+#[derive(Debug, Clone, Serialize)]
+pub struct ErrorRecommendation {
+    pub priority: RecommendationPriority,
+    pub category: String,
+    pub title: String,
+    pub description: String,
+    pub action: String,
+    pub estimated_impact: String,
 }
 
-impl ErrorMetrics {
-    fn new() -> Self {
-        Self {
-            total_errors: 0,
-            errors_by_category: HashMap::new(),
-            errors_by_severity: HashMap::new(),
-            errors_by_test: HashMap::new(),
-            errors_by_server: HashMap::new(),
-            retry_stats: RetryStatistics::default(),
-            recovery_success_rate: 0.0,
-            average_resolution_time_seconds: 0.0,
-            error_frequency: ErrorFrequency::default(),
-            performance_impact: PerformanceImpact::default(),
-            time_range: TimeRange {
-                start: Utc::now(),
-                end: Utc::now(),
-                duration_seconds: 0,
-            },
-        }
-    }
-}
-
-impl Default for RetryStatistics {
-    fn default() -> Self {
-        Self {
-            total_retries: 0,
-            successful_recoveries: 0,
-            permanent_failures: 0,
-            average_retries_per_error: 0.0,
-            retry_distribution: HashMap::new(),
-            average_retry_delay_ms: 0.0,
-        }
-    }
-}
-
-impl Default for ErrorFrequency {
-    fn default() -> Self {
-        Self {
-            errors_per_hour: 0.0,
-            peak_error_rate: 0.0,
-            peak_error_time: None,
-            trend: ErrorTrend::InsufficientData,
-            hourly_distribution: vec![0; 24],
-        }
-    }
-}
-
-impl Default for PerformanceImpact {
-    fn default() -> Self {
-        Self {
-            average_duration_increase_ms: 0.0,
-            memory_overhead_mb: 0.0,
-            cpu_time_error_handling_ms: 0,
-            retry_bandwidth_bytes: 0,
-            test_slowdown_percentage: 0.0,
-        }
-    }
+#[derive(Debug, Clone, Serialize)]
+pub enum RecommendationPriority {
+    High,
+    Medium,
+    Low,
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::error_handling::{McpClientError, TestExecutionError};
+    use crate::error_handling::errors::*;
 
     #[test]
-    fn test_error_collector_creation() {
-        let collector = ErrorCollector::new();
-        assert_eq!(collector.event_count(), 0);
-        assert_eq!(collector.get_metrics().total_errors, 0);
+    fn test_error_analyzer_creation() {
+        let analyzer = ErrorAnalyzer::new(Duration::from_secs(3600)); // 1 hour
+        assert_eq!(analyzer.metrics.total_errors, 0);
+        assert!(analyzer.events.is_empty());
     }
 
     #[test]
     fn test_error_recording() {
-        let mut collector = ErrorCollector::new();
+        let mut analyzer = ErrorAnalyzer::new(Duration::from_secs(3600));
 
         let error = TestHarnessError::Client(McpClientError::ConnectionFailed {
             server_name: "test-server".to_string(),
-            message: "Connection refused".to_string(),
-            retry_count: 0,
-            last_attempt: Utc::now(),
+            message: "Connection failed".to_string(),
+            retry_count: 1,
+            last_attempt: chrono::Utc::now(),
             underlying_error: None,
         });
 
-        let context = ErrorContext::for_server(
-            "test-server".to_string(),
-            "stdio://test".to_string(),
-            "connect".to_string(),
+        let context = ErrorContext::new("test_operation")
+            .with_test("sample_test")
+            .with_server("test_server");
+
+        analyzer.record_error(&error, context);
+
+        assert_eq!(analyzer.metrics.total_errors, 1);
+        assert_eq!(analyzer.events.len(), 1);
+        assert_eq!(analyzer.metrics.errors_by_category.get("client"), Some(&1));
+        assert_eq!(analyzer.metrics.errors_by_test.get("sample_test"), Some(&1));
+        assert_eq!(
+            analyzer.metrics.errors_by_server.get("test_server"),
+            Some(&1)
         );
-
-        let event_id = collector.record_error(error, context);
-
-        assert_eq!(collector.event_count(), 1);
-        assert_eq!(collector.get_metrics().total_errors, 1);
-        assert!(!event_id.is_nil());
     }
 
     #[test]
-    fn test_recovery_tracking() {
-        let mut collector = ErrorCollector::new();
+    fn test_recovery_metrics() {
+        let mut analyzer = ErrorAnalyzer::new(Duration::from_secs(3600));
 
-        let error = TestHarnessError::Execution(TestExecutionError::TestTimeout {
-            test_name: "test_example".to_string(),
-            timeout_seconds: 30,
-            elapsed_seconds: 35,
-            phase: "execution".to_string(),
-            partial_results: None,
+        let error = TestHarnessError::Network(NetworkError::ConnectionTimeout {
+            endpoint: "test-endpoint".to_string(),
+            timeout_ms: 5000,
         });
 
-        let context = ErrorContext::for_test("test_example".to_string(), "execute".to_string());
-        let event_id = collector.record_error(error, context);
+        let context = ErrorContext::new("test_operation");
 
-        // Update with successful recovery
-        collector.update_recovery(event_id, true, Duration::from_secs(5));
+        analyzer.record_error(&error, context);
+        analyzer.record_recovery_attempt(None, true);
 
-        let metrics = collector.get_metrics();
-        assert_eq!(metrics.recovery_success_rate, 100.0);
-    }
-
-    #[test]
-    fn test_retry_statistics() {
-        let mut collector = ErrorCollector::new();
-
-        let error = TestHarnessError::Client(McpClientError::RequestTimeout {
-            method: "tools/list".to_string(),
-            duration_ms: 5000,
-            timeout_ms: 3000,
-            request_id: Some("123".to_string()),
-            partial_response: None,
-        });
-
-        let context = ErrorContext::new("tools/list".to_string());
-        let event_id = collector.record_error(error, context);
-
-        // Update with retry information
-        collector.update_retry(event_id, 3);
-
-        let metrics = collector.get_metrics();
-        assert_eq!(metrics.retry_stats.total_retries, 3);
-        assert_eq!(metrics.retry_stats.average_retries_per_error, 3.0);
+        assert_eq!(analyzer.metrics.recovery_success_rate, 1.0);
     }
 
     #[test]
     fn test_error_categorization() {
-        let mut collector = ErrorCollector::new();
+        let analyzer = ErrorAnalyzer::new(Duration::from_secs(3600));
 
-        // Add a connection error
-        let connection_error = TestHarnessError::Client(McpClientError::ConnectionFailed {
-            server_name: "server1".to_string(),
-            message: "Failed".to_string(),
-            retry_count: 0,
-            last_attempt: Utc::now(),
-            underlying_error: None,
+        let client_error = TestHarnessError::Client(McpClientError::RequestTimeout {
+            method: "test_method".to_string(),
+            duration_ms: 5000,
+            timeout_ms: 3000,
+            request_id: None,
         });
 
-        let context1 = ErrorContext::new("connect".to_string());
-        collector.record_error(connection_error, context1);
+        assert_eq!(analyzer.categorize_error(&client_error), "client");
 
-        // Add an execution error
-        let execution_error = TestHarnessError::Execution(TestExecutionError::AssertionFailed {
-            test_name: "test1".to_string(),
-            step: 1,
-            message: "Assertion failed".to_string(),
-            expected: None,
-            actual: None,
-            assertion_type: "equals".to_string(),
-            context: None,
+        let validation_error = TestHarnessError::Validation(ValidationError::SchemaValidation {
+            path: "$.test".to_string(),
+            message: "Invalid schema".to_string(),
+            expected_schema: None,
+            actual_value: None,
         });
 
-        let context2 = ErrorContext::for_test("test1".to_string(), "assert".to_string());
-        collector.record_error(execution_error, context2);
-
-        let metrics = collector.get_metrics();
-        assert_eq!(metrics.total_errors, 2);
-        assert_eq!(
-            *metrics
-                .errors_by_category
-                .get(&ErrorCategory::Connection)
-                .unwrap(),
-            1
-        );
-        assert_eq!(
-            *metrics
-                .errors_by_category
-                .get(&ErrorCategory::Execution)
-                .unwrap(),
-            1
-        );
-        assert_eq!(*metrics.errors_by_test.get("test1").unwrap(), 1);
+        assert_eq!(analyzer.categorize_error(&validation_error), "validation");
     }
 
     #[test]
-    fn test_error_summary_generation() {
-        let mut collector = ErrorCollector::new();
+    fn test_most_frequent_error() {
+        let mut analyzer = ErrorAnalyzer::new(Duration::from_secs(3600));
+
+        // Add multiple network errors
+        for _ in 0..3 {
+            let error = TestHarnessError::Network(NetworkError::ConnectionTimeout {
+                endpoint: "test".to_string(),
+                timeout_ms: 1000,
+            });
+            analyzer.record_error(&error, ErrorContext::new("test"));
+        }
+
+        // Add one client error
+        let error = TestHarnessError::Client(McpClientError::ConnectionFailed {
+            server_name: "test".to_string(),
+            message: "failed".to_string(),
+            retry_count: 0,
+            last_attempt: chrono::Utc::now(),
+            underlying_error: None,
+        });
+        analyzer.record_error(&error, ErrorContext::new("test"));
+
+        assert_eq!(
+            analyzer.metrics.most_frequent_error,
+            Some("network".to_string())
+        );
+    }
+
+    #[test]
+    fn test_pattern_generation() {
+        let analyzer = ErrorAnalyzer::new(Duration::from_secs(3600));
 
         let error = TestHarnessError::Client(McpClientError::ConnectionFailed {
-            server_name: "problematic-server".to_string(),
-            message: "Connection failed".to_string(),
-            retry_count: 2,
-            last_attempt: Utc::now(),
+            server_name: "test".to_string(),
+            message: "failed".to_string(),
+            retry_count: 0,
+            last_attempt: chrono::Utc::now(),
             underlying_error: None,
         });
 
-        let context = ErrorContext::for_server(
-            "problematic-server".to_string(),
-            "stdio://test".to_string(),
-            "connect".to_string(),
-        );
+        let pattern_key = analyzer.generate_pattern_key(&error);
+        assert!(pattern_key.starts_with("client_"));
 
-        collector.record_error(error, context);
-
-        let summary = collector.generate_summary();
-        assert_eq!(summary.total_errors, 1);
-        assert_eq!(
-            summary.most_common_category,
-            Some(ErrorCategory::Connection)
-        );
-        assert_eq!(
-            summary.most_problematic_server,
-            Some("problematic-server".to_string())
-        );
-        assert!(!summary.recommendations.is_empty());
+        let description = analyzer.generate_pattern_description(&error);
+        assert!(description.contains("MCP client"));
     }
 
     #[test]
-    fn test_performance_cost_tracking() {
-        let mut collector = ErrorCollector::new();
+    fn test_trending_calculation() {
+        let mut analyzer = ErrorAnalyzer::new(Duration::from_secs(3600));
 
-        let error = TestHarnessError::Performance(
-            crate::error_handling::PerformanceError::OperationTimeout {
-                operation: "test_operation".to_string(),
-                limit_ms: 1000,
-                actual_ms: 2000,
-                resource_contention: false,
-            },
+        // Add some errors to create trends
+        let error = TestHarnessError::Network(NetworkError::ConnectionTimeout {
+            endpoint: "test".to_string(),
+            timeout_ms: 1000,
+        });
+
+        analyzer.record_error(&error, ErrorContext::new("test"));
+
+        let trending = analyzer.calculate_trending_errors();
+        assert!(!trending.is_empty());
+    }
+
+    #[test]
+    fn test_recommendation_generation() {
+        let mut analyzer = ErrorAnalyzer::new(Duration::from_secs(3600));
+
+        // Create high error rate scenario
+        for i in 0..20 {
+            let error = TestHarnessError::Network(NetworkError::ConnectionTimeout {
+                endpoint: format!("test-{}", i),
+                timeout_ms: 1000,
+            });
+            analyzer.record_error(&error, ErrorContext::new("test"));
+        }
+
+        // Simulate high error rate
+        analyzer.start_time = Instant::now() - Duration::from_secs(60); // 1 minute ago
+        analyzer.update_metrics(
+            &TestHarnessError::Network(NetworkError::ConnectionTimeout {
+                endpoint: "dummy".to_string(),
+                timeout_ms: 1000,
+            }),
+            &ErrorContext::new("dummy"),
         );
 
-        let context = ErrorContext::new("timeout_test".to_string());
-        let event_id = collector.record_error(error, context);
+        let recommendations = analyzer.generate_recommendations();
+        assert!(!recommendations.is_empty());
 
-        // Add performance cost information
-        let cost = PerformanceCost {
-            additional_duration_ms: 1000,
-            memory_allocated_bytes: 1024 * 1024, // 1MB
-            cpu_cycles: Some(1000000),
-            network_io_bytes: 512,
-        };
+        // Should have high priority recommendation for error rate
+        assert!(recommendations
+            .iter()
+            .any(|r| matches!(r.priority, RecommendationPriority::High)));
+    }
 
-        collector.update_performance_cost(event_id, cost);
+    #[test]
+    fn test_report_generation() {
+        let analyzer = ErrorAnalyzer::new(Duration::from_secs(3600));
+        let report = analyzer.generate_report();
 
-        let metrics = collector.get_metrics();
-        assert!(metrics.performance_impact.average_duration_increase_ms > 0.0);
-        assert!(metrics.performance_impact.memory_overhead_mb > 0.0);
+        assert_eq!(report.summary.total_errors, 0);
+        assert!(report.trends.hourly_error_counts.is_empty());
+        // With zero errors, there should be no recommendations
+        assert!(report.recommendations.is_empty());
+        assert!(report.analysis_period >= Duration::from_nanos(0));
     }
 }

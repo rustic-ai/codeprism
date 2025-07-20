@@ -72,6 +72,12 @@ codeprism-utils = { path = "../codeprism-utils" }
 regex = "1.10"              # For validation patterns
 html5ever = "0.26"          # HTML validation
 
+# Security and sandboxing dependencies
+tempfile = "3.8"            # Temporary directory management
+
+# Error handling for comprehensive error system
+rand = "0.8"                # For jitter in retry delays
+
 [dev-dependencies]
 tokio-test = "0.4"
 tempfile = "3.8"

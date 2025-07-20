@@ -47,6 +47,7 @@
 pub mod js_engine;
 pub mod lua_engine;
 pub mod python_engine;
+pub mod sandbox;
 pub mod types;
 pub mod utilities;
 
@@ -54,6 +55,11 @@ pub mod utilities;
 pub use types::{
     ContextMetadata, LogEntry, LogLevel, ScriptConfig, ScriptContext, ScriptError, ScriptResult,
     ServerInfo,
+};
+
+// Re-export sandbox types for secure script execution
+pub use sandbox::{
+    ResourceLimits, ResourceMetrics, ResourceMonitor, SandboxManager, SecurityPolicy,
 };
 
 #[cfg(test)]

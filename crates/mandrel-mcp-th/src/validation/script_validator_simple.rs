@@ -65,15 +65,9 @@ impl ScriptValidator {
 
     fn should_execute_script(&self, script: &ValidationScript) -> bool {
         match (&script.execution_phase, &self.execution_phase) {
-            (Some(phase), current_phase) => {
-                matches!(
-                    (phase.as_str(), current_phase),
-                    ("before", ScriptExecutionPhase::Before)
-                        | ("after", ScriptExecutionPhase::After)
-                )
-            }
-            // Default to "after" if no phase specified
-            (None, ScriptExecutionPhase::After) => true,
+            (crate::spec::ExecutionPhase::Before, ScriptExecutionPhase::Before) => true,
+            (crate::spec::ExecutionPhase::After, ScriptExecutionPhase::After) => true,
+            (crate::spec::ExecutionPhase::Both, _) => true,
             _ => false,
         }
     }
@@ -101,10 +95,11 @@ impl CustomValidator for ScriptValidator {
             }
 
             // For the GREEN phase, simulate script execution based on script content
-            if let Some(source) = &script.source {
+            {
+                let source = &script.source;
                 if source.contains("error(") {
                     // Script contains error() call - simulate failure
-                    if script.required.unwrap_or(false) || self.config.fail_on_script_error {
+                    if script.required || self.config.fail_on_script_error {
                         errors.push(ValidationError::FieldError {
                             field: format!("script:{}", script_name),
                             expected: "script execution success".to_string(),
@@ -137,10 +132,15 @@ mod tests {
     fn create_test_validation_script(name: &str, phase: Option<&str>) -> ValidationScript {
         ValidationScript {
             name: name.to_string(),
-            language: "lua".to_string(),
-            execution_phase: phase.map(|p| p.to_string()),
-            required: Some(true),
-            source: Some("-- test script\nreturn {success = true}".to_string()),
+            language: crate::spec::ScriptLanguage::Lua,
+            execution_phase: phase.map_or(crate::spec::ExecutionPhase::After, |p| match p {
+                "before" => crate::spec::ExecutionPhase::Before,
+                "both" => crate::spec::ExecutionPhase::Both,
+                _ => crate::spec::ExecutionPhase::After,
+            }),
+            required: true,
+            source: "-- test script\nreturn {success = true}".to_string(),
+            timeout_ms: None,
         }
     }
 
@@ -212,10 +212,11 @@ mod tests {
     fn test_custom_validator_validate_success() {
         let script = ValidationScript {
             name: "success_validator".to_string(),
-            language: "lua".to_string(),
-            execution_phase: Some("after".to_string()),
-            required: Some(false),
-            source: Some("return {success = true}".to_string()),
+            language: crate::spec::ScriptLanguage::Lua,
+            execution_phase: crate::spec::ExecutionPhase::After,
+            required: false,
+            source: "return {success = true}".to_string(),
+            timeout_ms: None,
         };
 
         let scripts = vec![script];

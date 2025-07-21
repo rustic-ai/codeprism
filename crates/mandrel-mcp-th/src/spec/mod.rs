@@ -9,6 +9,24 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
+/// Script language enum for validation scripts
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum ScriptLanguage {
+    JavaScript,
+    Python,
+    Lua,
+}
+
+/// Script execution phase enum
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum ExecutionPhase {
+    Before, // Execute before MCP request
+    After,  // Execute after MCP response
+    Both,   // Execute in both phases
+}
+
 /// Complete test specification parsed from YAML
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct TestSpecification {
@@ -225,17 +243,18 @@ pub struct RetryConfig {
     pub exponential_backoff: bool,
 }
 
-/// Validation script specification
+/// Validation script specification  
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ValidationScript {
     pub name: String,
-    pub language: String,
+    pub language: ScriptLanguage,
+    #[serde(default = "default_execution_phase")]
+    pub execution_phase: ExecutionPhase,
+    #[serde(default = "default_required")]
+    pub required: bool,
+    pub source: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub execution_phase: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub required: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub source: Option<String>,
+    pub timeout_ms: Option<u64>,
 }
 
 /// Validation error for specifications
@@ -420,6 +439,12 @@ fn default_retry_delay() -> u32 {
     1000
 }
 fn default_exponential_backoff() -> bool {
+    true
+}
+fn default_execution_phase() -> ExecutionPhase {
+    ExecutionPhase::After
+}
+fn default_required() -> bool {
     true
 }
 
@@ -724,14 +749,13 @@ tools:
             .expect("Missing validation_scripts");
         assert_eq!(scripts.len(), 1);
         assert_eq!(scripts[0].name, "math_precision_validator");
-        assert_eq!(scripts[0].language, "lua");
-        assert_eq!(scripts[0].execution_phase.as_deref(), Some("after"));
-        assert_eq!(scripts[0].required, Some(true));
-        assert!(scripts[0]
-            .source
-            .as_ref()
-            .expect("Missing source")
-            .contains("local request"));
+        assert_eq!(scripts[0].language, crate::spec::ScriptLanguage::Lua);
+        assert_eq!(
+            scripts[0].execution_phase,
+            crate::spec::ExecutionPhase::After
+        );
+        assert_eq!(scripts[0].required, true);
+        assert!(scripts[0].source.contains("local request"));
 
         // Validate test case references
         let tools = spec.tools.as_ref().unwrap();
@@ -997,5 +1021,127 @@ server:
             .await
             .unwrap();
         assert_eq!(spec.name, "Base Dir Test");
+    }
+
+    // ========================================================================
+    // PHASE 1: ValidationScript Enhanced Data Structure Tests (RED Phase)
+    // ========================================================================
+
+    #[tokio::test]
+    async fn test_validation_script_data_structure_parsing() {
+        let yaml = r#"
+validation_scripts:
+  - name: "precision_validator"
+    language: "lua"
+    execution_phase: "after"
+    required: true
+    source: |
+      result = { success = true, message = "Test passed" }
+    timeout_ms: 5000
+"#;
+
+        let spec: TestSpecification = serde_yml::from_str(yaml).unwrap();
+        assert!(spec.validation_scripts.is_some());
+        let scripts = spec.validation_scripts.unwrap();
+        assert_eq!(scripts.len(), 1);
+        assert_eq!(scripts[0].name, "precision_validator");
+        assert_eq!(scripts[0].language, ScriptLanguage::Lua);
+        assert_eq!(scripts[0].execution_phase, ExecutionPhase::After);
+        assert_eq!(scripts[0].required, true);
+        assert!(scripts[0].source.contains("success = true"));
+        assert_eq!(scripts[0].timeout_ms, Some(5000));
+    }
+
+    #[tokio::test]
+    async fn test_validation_script_enum_serialization() {
+        let script = ValidationScript {
+            name: "test_script".to_string(),
+            language: ScriptLanguage::JavaScript,
+            execution_phase: ExecutionPhase::Before,
+            required: false,
+            source: "console.log('test')".to_string(),
+            timeout_ms: Some(3000),
+        };
+
+        let yaml = serde_yml::to_string(&script).unwrap();
+        assert!(yaml.contains("language: javascript"));
+        assert!(yaml.contains("execution_phase: before"));
+        assert!(yaml.contains("required: false"));
+    }
+
+    #[tokio::test]
+    async fn test_validation_script_defaults() {
+        let yaml = r#"
+name: "minimal_script"
+language: "python"
+source: "print('hello')"
+"#;
+
+        let script: ValidationScript = serde_yml::from_str(yaml).unwrap();
+        assert_eq!(script.execution_phase, ExecutionPhase::After); // default
+        assert_eq!(script.required, true); // default
+        assert_eq!(script.timeout_ms, None); // no default
+    }
+
+    #[tokio::test]
+    async fn test_complete_spec_with_validation_scripts() {
+        let yaml = r#"
+name: "Enhanced Test Server"
+version: "1.0.0"
+capabilities:
+  tools: true
+  resources: false
+  prompts: false
+  sampling: false
+  logging: false
+server:
+  command: "test-server"
+  transport: "stdio"
+validation_scripts:
+  - name: "math_precision_validator"
+    language: "lua"
+    execution_phase: "after"
+    required: true
+    source: |
+      local expected = context.request.params.a + context.request.params.b
+      local actual = tonumber(context.response[1].text)
+      result = { success = math.abs(expected - actual) < 0.001 }
+  - name: "response_structure_validator"
+    language: "javascript"
+    execution_phase: "both"
+    required: false
+    source: |
+      const valid = context.response && Array.isArray(context.response);
+      result = { success: valid, message: valid ? "Valid" : "Invalid structure" };
+    timeout_ms: 2000
+tools:
+  - name: "add"
+    tests:
+      - name: "add_integers"
+        input: {"a": 5, "b": 3}
+        expected:
+          fields:
+            - path: "$[0].text"
+              pattern: "8"
+"#;
+
+        let spec: TestSpecification = serde_yml::from_str(yaml).unwrap();
+        assert_eq!(spec.name, "Enhanced Test Server");
+
+        let scripts = spec.validation_scripts.unwrap();
+        assert_eq!(scripts.len(), 2);
+
+        // First script
+        assert_eq!(scripts[0].name, "math_precision_validator");
+        assert_eq!(scripts[0].language, ScriptLanguage::Lua);
+        assert_eq!(scripts[0].execution_phase, ExecutionPhase::After);
+        assert_eq!(scripts[0].required, true);
+
+        // Second script
+        assert_eq!(scripts[1].name, "response_structure_validator");
+        assert_eq!(scripts[1].language, ScriptLanguage::JavaScript);
+        assert_eq!(scripts[1].execution_phase, ExecutionPhase::Both);
+        assert_eq!(scripts[1].required, false);
+        assert_eq!(scripts[1].timeout_ms, Some(2000));
     }
 }

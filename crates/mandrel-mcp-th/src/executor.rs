@@ -192,7 +192,12 @@ impl TestCaseExecutor {
             let scripts = script_manager.get_scripts_for_test_case(test_case);
             let before_scripts: Vec<&ValidationScript> = scripts
                 .iter()
-                .filter(|s| s.execution_phase.as_deref() == Some("before"))
+                .filter(|s| {
+                    matches!(
+                        s.execution_phase,
+                        crate::spec::ExecutionPhase::Before | crate::spec::ExecutionPhase::Both
+                    )
+                })
                 .copied()
                 .collect();
 
@@ -211,7 +216,7 @@ impl TestCaseExecutor {
                 let required_failed = before_scripts
                     .iter()
                     .zip(before_results.iter())
-                    .any(|(script, result)| script.required.unwrap_or(false) && !result.success);
+                    .any(|(script, result)| script.required && !result.success);
 
                 script_results.extend(before_results);
 
@@ -256,7 +261,12 @@ impl TestCaseExecutor {
             let scripts = script_manager.get_scripts_for_test_case(test_case);
             let after_scripts: Vec<&ValidationScript> = scripts
                 .iter()
-                .filter(|s| s.execution_phase.as_deref() != Some("before"))
+                .filter(|s| {
+                    matches!(
+                        s.execution_phase,
+                        crate::spec::ExecutionPhase::After | crate::spec::ExecutionPhase::Both
+                    )
+                })
                 .copied()
                 .collect();
 
@@ -500,7 +510,8 @@ impl TestCaseExecutor {
 
             // For GREEN phase: simulate script execution based on source code patterns
             // Real script execution will be implemented in REFACTOR phase
-            let (success, errors) = if let Some(source) = &script.source {
+            let (success, errors) = {
+                let source = &script.source;
                 // Special handling for conditional error cases
                 if source.contains("error(") && source.contains("if not response") {
                     // This is the response validator that should succeed when response is available
@@ -522,9 +533,6 @@ impl TestCaseExecutor {
                     // Simulate success for normal scripts
                     (true, vec![])
                 }
-            } else {
-                // No source code, assume success
-                (true, vec![])
             };
 
             let execution_time = start_time.elapsed();
@@ -602,10 +610,14 @@ mod tests {
     ) -> ValidationScript {
         ValidationScript {
             name: name.to_string(),
-            language: "lua".to_string(),
-            execution_phase: phase.map(|p| p.to_string()),
-            required: Some(required),
-            source: Some(format!(
+            language: crate::spec::ScriptLanguage::Lua,
+            execution_phase: phase.map_or(crate::spec::ExecutionPhase::After, |p| match p {
+                "before" => crate::spec::ExecutionPhase::Before,
+                "both" => crate::spec::ExecutionPhase::Both,
+                _ => crate::spec::ExecutionPhase::After,
+            }),
+            required,
+            source: format!(
                 r#"
                 -- Test script: {}
                 local context = context or {{}}
@@ -617,7 +629,8 @@ mod tests {
                 end
                 "#,
                 name
-            )),
+            ),
+            timeout_ms: None,
         }
     }
 
@@ -704,7 +717,7 @@ mod tests {
         // Filter before phase scripts
         let before_scripts: Vec<_> = all_scripts
             .iter()
-            .filter(|s| s.execution_phase.as_deref() == Some("before"))
+            .filter(|s| matches!(s.execution_phase, crate::spec::ExecutionPhase::Before))
             .collect();
         assert_eq!(before_scripts.len(), 1);
         assert_eq!(before_scripts[0].name, "before_script");
@@ -712,7 +725,7 @@ mod tests {
         // Filter after phase scripts (including default)
         let after_scripts: Vec<_> = all_scripts
             .iter()
-            .filter(|s| s.execution_phase.as_deref() != Some("before"))
+            .filter(|s| !matches!(s.execution_phase, crate::spec::ExecutionPhase::Before))
             .collect();
         assert_eq!(after_scripts.len(), 2);
     }
@@ -833,10 +846,11 @@ mod tests {
         // Create a script that will fail
         let failing_script = ValidationScript {
             name: "failing_required_script".to_string(),
-            language: "lua".to_string(),
-            execution_phase: Some("before".to_string()),
-            required: Some(true), // Required script
-            source: Some("error('This script always fails')".to_string()),
+            language: crate::spec::ScriptLanguage::Lua,
+            execution_phase: crate::spec::ExecutionPhase::Before,
+            required: true, // Required script
+            source: "error('This script always fails')".to_string(),
+            timeout_ms: None,
         };
 
         let mut executor =
@@ -862,10 +876,11 @@ mod tests {
         // Create a script that will fail but is optional
         let failing_script = ValidationScript {
             name: "failing_optional_script".to_string(),
-            language: "lua".to_string(),
-            execution_phase: Some("after".to_string()),
-            required: Some(false), // Optional script
-            source: Some("error('This script always fails')".to_string()),
+            language: crate::spec::ScriptLanguage::Lua,
+            execution_phase: crate::spec::ExecutionPhase::After,
+            required: false, // Optional script
+            source: "error('This script always fails')".to_string(),
+            timeout_ms: None,
         };
 
         let mut executor =
@@ -925,20 +940,19 @@ mod tests {
         // Script that validates response data is available
         let response_script = ValidationScript {
             name: "response_validator".to_string(),
-            language: "lua".to_string(),
-            execution_phase: Some("after".to_string()),
-            required: Some(true),
-            source: Some(
-                r#"
+            language: crate::spec::ScriptLanguage::Lua,
+            execution_phase: crate::spec::ExecutionPhase::After,
+            required: true,
+            source: r#"
                 local context = context or {}
                 local response = context.response
                 if not response then
                     error("Response data not available in after phase")
                 end
                 return true
-            "#
-                .to_string(),
-            ),
+                "#
+            .to_string(),
+            timeout_ms: None,
         };
 
         let mut executor =
@@ -1031,10 +1045,11 @@ mod tests {
         // Create a script that would timeout
         let timeout_script = ValidationScript {
             name: "timeout_script".to_string(),
-            language: "lua".to_string(),
-            execution_phase: Some("after".to_string()),
-            required: Some(false),
-            source: Some("while true do end -- infinite loop".to_string()),
+            language: crate::spec::ScriptLanguage::Lua,
+            execution_phase: crate::spec::ExecutionPhase::After,
+            required: false,
+            source: "while true do end -- infinite loop".to_string(),
+            timeout_ms: None,
         };
 
         let mut executor =

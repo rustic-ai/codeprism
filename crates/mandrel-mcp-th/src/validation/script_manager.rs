@@ -65,7 +65,11 @@ impl ScriptManager {
 
         for script in scripts {
             // Filter scripts by phase
-            let script_phase = script.execution_phase.as_deref();
+            let script_phase = match &script.execution_phase {
+                crate::spec::ExecutionPhase::Before => Some("before"),
+                crate::spec::ExecutionPhase::After => Some("after"),
+                crate::spec::ExecutionPhase::Both => Some("both"),
+            };
             let matches_phase = match (script_phase, &phase) {
                 (Some("before"), ScriptExecutionPhase::Before) => true,
                 (Some("after"), ScriptExecutionPhase::After) => true,
@@ -94,7 +98,7 @@ impl ScriptManager {
         let config = ScriptValidationConfig {
             timeout_seconds: 30,
             memory_limit_mb: 64,
-            fail_on_script_error: script.required.unwrap_or(false),
+            fail_on_script_error: script.required,
             capture_script_logs: true,
         };
 
@@ -109,7 +113,7 @@ impl ScriptManager {
     pub fn is_script_required(&self, script_name: &str) -> bool {
         self.available_scripts
             .get(script_name)
-            .map(|script| script.required.unwrap_or(false))
+            .map(|script| script.required)
             .unwrap_or(false)
     }
 
@@ -131,10 +135,15 @@ mod tests {
     fn create_test_script(name: &str, phase: Option<&str>, required: bool) -> ValidationScript {
         ValidationScript {
             name: name.to_string(),
-            language: "lua".to_string(),
-            execution_phase: phase.map(|p| p.to_string()),
-            required: Some(required),
-            source: Some(format!("-- Test script: {}", name)),
+            language: crate::spec::ScriptLanguage::Lua,
+            execution_phase: phase.map_or(crate::spec::ExecutionPhase::After, |p| match p {
+                "before" => crate::spec::ExecutionPhase::Before,
+                "both" => crate::spec::ExecutionPhase::Both,
+                _ => crate::spec::ExecutionPhase::After,
+            }),
+            required,
+            source: format!("-- Test script: {}", name),
+            timeout_ms: None,
         }
     }
 

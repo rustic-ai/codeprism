@@ -23,6 +23,7 @@ pub mod engine;
 pub mod jsonpath;
 pub mod protocol;
 pub mod schema;
+pub mod script_context;
 pub mod script_manager;
 pub mod script_validator_simple;
 

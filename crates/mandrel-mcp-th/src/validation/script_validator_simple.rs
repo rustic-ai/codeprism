@@ -64,12 +64,16 @@ impl ScriptValidator {
     }
 
     fn should_execute_script(&self, script: &ValidationScript) -> bool {
-        match (&script.execution_phase, &self.execution_phase) {
-            (crate::spec::ExecutionPhase::Before, ScriptExecutionPhase::Before) => true,
-            (crate::spec::ExecutionPhase::After, ScriptExecutionPhase::After) => true,
-            (crate::spec::ExecutionPhase::Both, _) => true,
-            _ => false,
-        }
+        matches!(
+            (&script.execution_phase, &self.execution_phase),
+            (
+                crate::spec::ExecutionPhase::Before,
+                ScriptExecutionPhase::Before
+            ) | (
+                crate::spec::ExecutionPhase::After,
+                ScriptExecutionPhase::After
+            ) | (crate::spec::ExecutionPhase::Both, _)
+        )
     }
 }
 
@@ -237,10 +241,11 @@ mod tests {
     fn test_custom_validator_validate_script_failure_required() {
         let script = ValidationScript {
             name: "failing_validator".to_string(),
-            language: "lua".to_string(),
-            execution_phase: Some("after".to_string()),
-            required: Some(true), // Required script
-            source: Some("error('validation failed')".to_string()),
+            language: crate::spec::ScriptLanguage::Lua,
+            execution_phase: crate::spec::ExecutionPhase::After,
+            required: true, // Required script
+            source: "error('validation failed')".to_string(),
+            timeout_ms: None,
         };
 
         let scripts = vec![script];
@@ -265,10 +270,11 @@ mod tests {
     fn test_custom_validator_validate_script_failure_optional() {
         let script = ValidationScript {
             name: "failing_optional_validator".to_string(),
-            language: "lua".to_string(),
-            execution_phase: Some("after".to_string()),
-            required: Some(false), // Optional script
-            source: Some("error('validation failed')".to_string()),
+            language: crate::spec::ScriptLanguage::Lua,
+            execution_phase: crate::spec::ExecutionPhase::After,
+            required: false, // Optional script
+            source: "error('validation failed')".to_string(),
+            timeout_ms: None,
         };
 
         let scripts = vec![script];
@@ -292,10 +298,11 @@ mod tests {
     fn test_custom_validator_validate_wrong_execution_phase() {
         let script = ValidationScript {
             name: "before_script".to_string(),
-            language: "lua".to_string(),
-            execution_phase: Some("before".to_string()), // Before phase script
-            required: Some(true),
-            source: Some("return {success = true}".to_string()),
+            language: crate::spec::ScriptLanguage::Lua,
+            execution_phase: crate::spec::ExecutionPhase::Before, // Before phase script
+            required: true,
+            source: "return {success = true}".to_string(),
+            timeout_ms: None,
         };
 
         let scripts = vec![script];

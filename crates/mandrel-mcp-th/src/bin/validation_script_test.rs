@@ -2,7 +2,6 @@
 // This demonstrates our enhanced data structure works correctly
 
 use mandrel_mcp_th::spec::{ExecutionPhase, ScriptLanguage, ValidationScript};
-use serde_json;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 pub struct TestSpec {
@@ -50,7 +49,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     for language in &languages {
         for phase in &phases {
-            let test_script = ValidationScript {
+            let _test_script = ValidationScript {
                 name: format!("test_{:?}_{:?}", language, phase),
                 language: language.clone(),
                 execution_phase: phase.clone(),
@@ -100,7 +99,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     assert_eq!(parsed.name, "deserialize_test");
     assert_eq!(parsed.language, ScriptLanguage::Python);
     assert_eq!(parsed.execution_phase, ExecutionPhase::After);
-    assert_eq!(parsed.required, true);
+    assert!(parsed.required);
     assert_eq!(parsed.timeout_ms, Some(2000));
 
     // Test 5: Test specification with multiple scripts
@@ -144,16 +143,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Verify each script
     assert_eq!(scripts[0].language, ScriptLanguage::Lua);
     assert_eq!(scripts[0].execution_phase, ExecutionPhase::After);
-    assert_eq!(scripts[0].required, true);
+    assert!(scripts[0].required);
 
     assert_eq!(scripts[1].language, ScriptLanguage::JavaScript);
     assert_eq!(scripts[1].execution_phase, ExecutionPhase::Both);
-    assert_eq!(scripts[1].required, false);
+    assert!(!scripts[1].required);
     assert_eq!(scripts[1].timeout_ms, Some(1500));
 
     assert_eq!(scripts[2].language, ScriptLanguage::Python);
     assert_eq!(scripts[2].execution_phase, ExecutionPhase::Before);
-    assert_eq!(scripts[2].required, true);
+    assert!(scripts[2].required);
     assert_eq!(scripts[2].timeout_ms, Some(3000));
 
     println!("  ✓ All assertions passed for complex specification!");

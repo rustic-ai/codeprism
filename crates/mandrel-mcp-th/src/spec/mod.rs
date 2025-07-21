@@ -754,7 +754,7 @@ tools:
             scripts[0].execution_phase,
             crate::spec::ExecutionPhase::After
         );
-        assert_eq!(scripts[0].required, true);
+        assert!(scripts[0].required);
         assert!(scripts[0].source.contains("local request"));
 
         // Validate test case references
@@ -1030,6 +1030,17 @@ server:
     #[tokio::test]
     async fn test_validation_script_data_structure_parsing() {
         let yaml = r#"
+name: "Test Server"
+version: "1.0.0"
+capabilities:
+  tools: true
+  resources: false
+  prompts: false
+  sampling: false
+  logging: false
+server:
+  command: "test-server"
+  transport: "stdio"
 validation_scripts:
   - name: "precision_validator"
     language: "lua"
@@ -1047,7 +1058,7 @@ validation_scripts:
         assert_eq!(scripts[0].name, "precision_validator");
         assert_eq!(scripts[0].language, ScriptLanguage::Lua);
         assert_eq!(scripts[0].execution_phase, ExecutionPhase::After);
-        assert_eq!(scripts[0].required, true);
+        assert!(scripts[0].required);
         assert!(scripts[0].source.contains("success = true"));
         assert_eq!(scripts[0].timeout_ms, Some(5000));
     }
@@ -1079,7 +1090,7 @@ source: "print('hello')"
 
         let script: ValidationScript = serde_yml::from_str(yaml).unwrap();
         assert_eq!(script.execution_phase, ExecutionPhase::After); // default
-        assert_eq!(script.required, true); // default
+        assert!(script.required); // default
         assert_eq!(script.timeout_ms, None); // no default
     }
 
@@ -1135,13 +1146,13 @@ tools:
         assert_eq!(scripts[0].name, "math_precision_validator");
         assert_eq!(scripts[0].language, ScriptLanguage::Lua);
         assert_eq!(scripts[0].execution_phase, ExecutionPhase::After);
-        assert_eq!(scripts[0].required, true);
+        assert!(scripts[0].required);
 
         // Second script
         assert_eq!(scripts[1].name, "response_structure_validator");
         assert_eq!(scripts[1].language, ScriptLanguage::JavaScript);
         assert_eq!(scripts[1].execution_phase, ExecutionPhase::Both);
-        assert_eq!(scripts[1].required, false);
+        assert!(!scripts[1].required);
         assert_eq!(scripts[1].timeout_ms, Some(2000));
     }
 }

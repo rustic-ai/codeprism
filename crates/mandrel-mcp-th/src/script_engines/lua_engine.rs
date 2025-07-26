@@ -277,10 +277,10 @@ impl LuaEngine {
         // Setup custom print function for log capture
         self.setup_log_capture(Arc::clone(&log_buffer))?;
 
-        // Execute with timeout
+        // Execute with timeout (use context timeout instead of engine default)
         let execution_future = self.execute_with_monitoring(script, &security_manager);
         let lua_result = timeout(
-            Duration::from_millis(self.config.timeout_ms),
+            Duration::from_millis(context.config.timeout_ms),
             execution_future,
         )
         .await;
@@ -317,7 +317,7 @@ impl LuaEngine {
                 duration_ms,
                 memory_used_mb,
                 error: Some(ScriptError::TimeoutError {
-                    timeout_ms: self.config.timeout_ms,
+                    timeout_ms: context.config.timeout_ms,
                 }),
             }),
         }
@@ -921,19 +921,31 @@ mod tests {
 
     #[tokio::test]
     async fn test_timeout_enforcement() {
-        let mut config = ScriptConfig::new();
-        config.timeout_ms = 100; // Very short timeout
-        let engine = LuaEngine::new(&config).unwrap();
-        let context = create_test_context();
+        let engine_config = ScriptConfig::new();
+        let engine = LuaEngine::new(&engine_config).unwrap();
+
+        // Create context with short timeout for this test
+        let mut script_config = ScriptConfig::new();
+        script_config.timeout_ms = 100; // Very short timeout
+        let context = ScriptContext::new(
+            json!({"input": "test_data", "value": 42}),
+            "test_case".to_string(),
+            "test_tool".to_string(),
+            script_config,
+        );
 
         // Should timeout long-running scripts
         let long_running_script = r#"
-            -- Simulate long-running operation
-            local start = os.clock()
-            while os.clock() - start < 1 do
-                -- Busy wait for 1 second
+            -- This will definitely take longer than 100ms but should be interruptible
+            local function fibonacci(n)
+                if n <= 1 then return n end
+                return fibonacci(n-1) + fibonacci(n-2)
             end
-            result = { success = true }
+            
+            -- Calculate a large fibonacci number (this will take time)
+            local result_val = fibonacci(35)  -- This takes significant time
+            
+            result = { success = true, fib = result_val }
         "#;
 
         let result = engine

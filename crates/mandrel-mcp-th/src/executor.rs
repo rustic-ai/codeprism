@@ -5,11 +5,11 @@ use std::time::{Duration, Instant};
 
 use crate::client::McpClient;
 
+use crate::script_engines::{LuaEngine, ScriptConfig, ScriptContext};
 use crate::spec::{ExpectedOutput, TestCase, ValidationScript};
 use crate::validation::{
     ScriptExecutionPhase, ScriptManager, ValidationEngine, ValidationError, ValidationResult,
 };
-use crate::script_engines::{LuaEngine, ScriptConfig, ScriptContext};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum TestStatus {
@@ -173,9 +173,10 @@ impl TestCaseExecutor {
             ExecutorError::ConfigError(format!("Failed to create script manager: {}", e))
         })?;
 
-        let lua_engine = LuaEngine::new(&ScriptConfig::default())
-            .map_err(|e| ExecutorError::ConfigError(format!("Failed to create LuaEngine: {}", e)))?;
-        
+        let lua_engine = LuaEngine::new(&ScriptConfig::default()).map_err(|e| {
+            ExecutorError::ConfigError(format!("Failed to create LuaEngine: {}", e))
+        })?;
+
         Ok(Self {
             client,
             validation_engine: ValidationEngine::default(),
@@ -506,51 +507,76 @@ impl TestCaseExecutor {
         &self,
         phase: ScriptExecutionPhase,
         scripts: &[&crate::spec::ValidationScript],
-        _tool_name: &str,
-        _input: &serde_json::Value,
-        _response: Option<&serde_json::Value>,
+        tool_name: &str,
+        input: &serde_json::Value,
+        response: Option<&serde_json::Value>,
     ) -> Result<Vec<ScriptValidationResult>, ExecutorError> {
         let mut results = Vec::new();
+
+        // Get the LuaEngine for script execution
+        let lua_engine = self
+            .lua_engine
+            .as_ref()
+            .ok_or_else(|| ExecutorError::ConfigError("LuaEngine not initialized".to_string()))?;
 
         for script in scripts {
             let start_time = Instant::now();
 
-            // For GREEN phase: simulate script execution based on source code patterns
-            // Real script execution will be implemented in REFACTOR phase
-            let (success, errors) = {
-                let source = &script.source;
-                // Special handling for conditional error cases
-                if source.contains("error(") && source.contains("if not response") {
-                    // This is the response validator that should succeed when response is available
-                    (true, vec![])
-                } else if source.contains("error(")
-                    || source.contains("fail")
-                    || source.contains("timeout")
-                    || source.contains("while true do")
-                    || source.contains("infinite loop")
-                {
-                    // Simulate failure for scripts that should fail
-                    (
-                        false,
-                        vec![ValidationError::SchemaError {
-                            message: "Simulated script failure".to_string(),
-                        }],
-                    )
-                } else {
-                    // Simulate success for normal scripts
-                    (true, vec![])
+            // Create script context with request/response data
+            let mut context = self.create_script_context(script, tool_name, input, response);
+
+            // Add response data if available
+            if let Some(response_data) = response {
+                context = context.with_response(response_data.clone());
+            }
+
+            // Execute the script using LuaEngine
+            let script_result = match lua_engine.execute_script(&script.source, context).await {
+                Ok(result) => {
+                    // Convert ScriptResult to ScriptValidationResult
+                    let errors = if result.success {
+                        vec![]
+                    } else {
+                        // Convert ScriptError to ValidationError
+                        result.error.map_or(vec![], |script_error| {
+                            vec![ValidationError::SchemaError {
+                                message: format!("Script execution failed: {}", script_error),
+                            }]
+                        })
+                    };
+
+                    // Convert logs from LogEntry to String
+                    let logs = result
+                        .logs
+                        .into_iter()
+                        .map(|log_entry| format!("[{}] {}", log_entry.level, log_entry.message))
+                        .collect();
+
+                    ScriptValidationResult {
+                        script_name: script.name.clone(),
+                        success: result.success,
+                        execution_time: Duration::from_millis(result.duration_ms),
+                        errors,
+                        logs,
+                        phase: phase.clone(),
+                    }
                 }
-            };
+                Err(script_error) => {
+                    // Handle script execution errors
+                    let error_message = format!("Script execution error: {}", script_error);
+                    let errors = vec![ValidationError::SchemaError {
+                        message: error_message.clone(),
+                    }];
 
-            let execution_time = start_time.elapsed();
-
-            let script_result = ScriptValidationResult {
-                script_name: script.name.clone(),
-                success,
-                execution_time,
-                errors,
-                logs: vec![], // No logs captured yet
-                phase: phase.clone(),
+                    ScriptValidationResult {
+                        script_name: script.name.clone(),
+                        success: false,
+                        execution_time: start_time.elapsed(),
+                        errors,
+                        logs: vec![format!("ERROR: {}", error_message)],
+                        phase: phase.clone(),
+                    }
+                }
             };
 
             results.push(script_result);
@@ -576,7 +602,14 @@ impl TestCaseExecutor {
         input: &serde_json::Value,
         _response: Option<&serde_json::Value>,
     ) -> ScriptContext {
-        let script_config = ScriptConfig::default();
+        // Use timeout from ExecutorConfig, or script-specific timeout if specified
+        let timeout_ms = script
+            .timeout_ms
+            .unwrap_or_else(|| self.config.timeout.as_millis() as u64);
+
+        let mut script_config = ScriptConfig::default();
+        script_config.timeout_ms = timeout_ms;
+
         ScriptContext::new(
             input.clone(),
             script.name.clone(),
@@ -1072,7 +1105,8 @@ mod tests {
             language: crate::spec::ScriptLanguage::Lua,
             execution_phase: crate::spec::ExecutionPhase::After,
             required: false,
-            source: "while true do end -- infinite loop".to_string(),
+            source: "while true do os.execute('sleep 0.001') end -- infinite loop with yield"
+                .to_string(),
             timeout_ms: None,
         };
 

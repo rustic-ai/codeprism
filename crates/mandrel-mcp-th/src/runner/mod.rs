@@ -568,11 +568,48 @@ mod tests {
     }
 
     // ========================================================================
+    // Test Setup Helper Functions
+    // ========================================================================
+
+    async fn setup_mcp_test_environment() -> Result<()> {
+        use std::fs;
+        use std::path::Path;
+
+        let test_dir = Path::new("/tmp/mcp-test-sandbox");
+
+        // Always ensure test directory exists (create if missing, but don't delete if exists)
+        fs::create_dir_all(test_dir).map_err(|e| {
+            crate::error::Error::validation(format!("Failed to create test directory: {}", e))
+        })?;
+
+        // Always ensure test.txt file exists (create if missing, but don't overwrite if exists)
+        let test_file = test_dir.join("test.txt");
+        if !test_file.exists() {
+            fs::write(&test_file, "Hello, MCP test world!").map_err(|e| {
+                crate::error::Error::validation(format!("Failed to create test file: {}", e))
+            })?;
+        }
+
+        Ok(())
+    }
+
+    async fn cleanup_mcp_test_environment() -> Result<()> {
+        // For concurrent tests, don't actually clean up the shared directory
+        // It will be cleaned up by the OS when /tmp is cleared
+        // This prevents tests from interfering with each other
+        Ok(())
+    }
+
+    // ========================================================================
     // PHASE 1: Basic Test Suite Execution Tests (RED PHASE)
     // ========================================================================
 
     #[tokio::test]
     async fn test_run_simple_test_suite_with_real_execution() {
+        // Setup test environment
+        setup_mcp_test_environment()
+            .await
+            .expect("Failed to setup test environment");
         let test_spec_path = get_filesystem_test_spec_path();
 
         // Create generic executor from specification (gets server config from YAML)
@@ -651,10 +688,17 @@ mod tests {
             "✅ FILESYSTEM MCP SERVER SUCCESS: {} passed, {} failed out of {} total tests",
             suite_result.passed, suite_result.failed, suite_result.total_tests
         );
+
+        // Cleanup test environment
+        cleanup_mcp_test_environment().await.ok();
     }
 
     #[tokio::test]
     async fn test_run_test_suite_with_dependencies_real_execution() {
+        // Setup test environment
+        setup_mcp_test_environment()
+            .await
+            .expect("Failed to setup test environment");
         let test_spec_path = get_simplified_filesystem_spec_path();
 
         let executor = create_test_executor_from_spec(&test_spec_path)
@@ -720,6 +764,9 @@ mod tests {
             "✅ DEPENDENCY RESOLUTION SUCCESS: {} passed, {} failed, all {} tests in correct order",
             suite_result.passed, suite_result.failed, suite_result.total_tests
         );
+
+        // Cleanup test environment
+        cleanup_mcp_test_environment().await.ok();
     }
 
     #[tokio::test]
@@ -765,6 +812,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_sequential_execution_mode() {
+        // Setup test environment
+        setup_mcp_test_environment()
+            .await
+            .expect("Failed to setup test environment");
         let test_spec_path = get_filesystem_test_spec_path();
 
         let executor = create_test_executor_from_spec(&test_spec_path)
@@ -794,6 +845,9 @@ mod tests {
             );
             prev_end_time = test_result.end_time;
         }
+
+        // Cleanup test environment
+        cleanup_mcp_test_environment().await.ok();
     }
 
     #[tokio::test]
@@ -890,6 +944,10 @@ tools:
 
     #[tokio::test]
     async fn test_suite_metrics_collection() {
+        // Setup test environment
+        setup_mcp_test_environment()
+            .await
+            .expect("Failed to setup test environment");
         let test_spec_path = get_filesystem_test_spec_path();
 
         let executor = create_test_executor_from_spec(&test_spec_path)
@@ -925,6 +983,9 @@ tools:
         // Verify total duration makes sense
         assert!(suite_result.total_duration > Duration::from_millis(0));
         assert!(suite_result.execution_start <= suite_result.execution_end);
+
+        // Cleanup test environment
+        cleanup_mcp_test_environment().await.ok();
     }
 
     // ========================================================================
@@ -994,6 +1055,10 @@ tools:
 
     #[tokio::test]
     async fn test_missing_specification_file() {
+        // Setup test environment
+        setup_mcp_test_environment()
+            .await
+            .expect("Failed to setup test environment");
         // For file error tests, use the existing filesystem spec for a valid executor
         let valid_spec_path = get_filesystem_test_spec_path();
         let executor = create_test_executor_from_spec(&valid_spec_path)
@@ -1015,6 +1080,9 @@ tools:
             "Should be an I/O or Spec error: {:?}",
             error
         );
+
+        // Cleanup test environment
+        cleanup_mcp_test_environment().await.ok();
     }
 
     // ========================================================================
@@ -1023,6 +1091,10 @@ tools:
 
     #[tokio::test]
     async fn test_runner_configuration_updates() {
+        // Setup test environment
+        setup_mcp_test_environment()
+            .await
+            .expect("Failed to setup test environment");
         // For configuration tests, use the existing filesystem spec for a valid executor
         let valid_spec_path = get_filesystem_test_spec_path();
         let executor = create_test_executor_from_spec(&valid_spec_path)
@@ -1048,10 +1120,17 @@ tools:
         assert_eq!(runner.config.execution_mode, ExecutionMode::Parallel);
         assert!(runner.config.fail_fast);
         assert_eq!(runner.config.max_concurrency, 8);
+
+        // Cleanup test environment
+        cleanup_mcp_test_environment().await.ok();
     }
 
     #[tokio::test]
     async fn test_metrics_collector_access() {
+        // Setup test environment
+        setup_mcp_test_environment()
+            .await
+            .expect("Failed to setup test environment");
         // For metrics access tests, use the existing filesystem spec for a valid executor
         let valid_spec_path = get_filesystem_test_spec_path();
         let executor = create_test_executor_from_spec(&valid_spec_path)
@@ -1068,6 +1147,9 @@ tools:
         let summary = metrics_collector.get_summary();
         assert_eq!(summary.total_tests, 0); // Should start with no tests
         assert_eq!(summary.success_rate(), 0.0);
+
+        // Cleanup test environment
+        cleanup_mcp_test_environment().await.ok();
     }
 
     #[tokio::test]

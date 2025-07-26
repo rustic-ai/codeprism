@@ -56,10 +56,18 @@ fn test_cli_run_command_file_not_found() {
 
 #[test]
 fn test_cli_run_command_with_working_mcp_server() {
+    // Setup test environment for MCP server
+    std::fs::create_dir_all("/tmp/mcp-test-sandbox").expect("Failed to create test directory");
+    std::fs::write("/tmp/mcp-test-sandbox/test.txt", "Hello, MCP test world!")
+        .expect("Failed to create test file");
+
     // This test uses our working filesystem server specification with proper dependencies
     let mut cmd = Command::cargo_bin("moth").unwrap();
-    cmd.arg("run")
-        .arg("examples/filesystem-server-mcp-compliant.yaml");
+
+    // Use path relative to the test's working directory
+    // Integration tests run from the crate directory, so we use a relative path
+    let spec_path = "examples/filesystem-server-mcp-compliant.yaml";
+    cmd.arg("run").arg(spec_path);
 
     let output = cmd.output().unwrap();
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -97,4 +105,7 @@ fn test_cli_run_command_with_working_mcp_server() {
         "No tests should fail with fixed dependencies, got: {}",
         stdout
     );
+
+    // Cleanup test environment
+    std::fs::remove_dir_all("/tmp/mcp-test-sandbox").ok();
 }

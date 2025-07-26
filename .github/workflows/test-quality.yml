@@ -1,0 +1,299 @@
+name: Test Quality Validation
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test-theater-detection:
+    name: Test Theater Detection
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        # Add any Python deps if needed in the future
+    
+    - name: Detect Test Theater Patterns
+      run: |
+        echo "🔍 Scanning for test theater anti-patterns..."
+        python3 scripts/detect-test-theater.py --output test-theater-report.txt
+        
+        # Check exit code - script exits 1 if high-severity issues found
+        if [ $? -eq 1 ]; then
+          echo "❌ Test theater patterns detected - blocking merge"
+          echo "📄 Test Theater Report:"
+          cat test-theater-report.txt
+          exit 1
+        else
+          echo "✅ No critical test theater patterns found"
+        fi
+    
+    - name: Upload Test Theater Report
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-theater-report
+        path: test-theater-report.txt
+
+  test-execution-validation:
+    name: Test Execution & Coverage
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt, clippy
+    
+    - name: Cache Cargo dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+    
+    - name: Check Code Formatting
+      run: cargo fmt --all -- --check
+    
+    - name: Run Clippy
+      run: cargo clippy --all-targets --all-features -- -D warnings
+    
+    - name: Run Tests
+      run: |
+        echo "🧪 Running comprehensive test suite..."
+        cargo test --all-features --verbose
+    
+    - name: Install Tarpaulin for Coverage
+      run: cargo install cargo-tarpaulin --version ^0.27
+    
+    - name: Generate Test Coverage
+      run: |
+        echo "📊 Generating test coverage report..."
+        cargo tarpaulin --verbose --all-features --workspace --timeout 120 --out xml
+    
+    - name: Validate Test Coverage
+      run: |
+        echo "🎯 Validating test coverage requirements..."
+        
+        # Extract coverage percentage from tarpaulin output
+        COVERAGE=$(grep -oP 'coverage: \K[\d.]+' cobertura.xml | head -1 || echo "0")
+        echo "Current test coverage: ${COVERAGE}%"
+        
+        # Check minimum coverage requirement
+        if (( $(echo "$COVERAGE < 85" | bc -l) )); then
+          echo "❌ Test coverage ${COVERAGE}% is below minimum requirement (85%)"
+          exit 1
+        else
+          echo "✅ Test coverage ${COVERAGE}% meets requirement"
+        fi
+    
+    - name: Upload Coverage Reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-reports
+        path: cobertura.xml
+
+  test-quality-gates:
+    name: Test Quality Gates
+    runs-on: ubuntu-latest
+    needs: [test-theater-detection, test-execution-validation]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python  
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Test Quality Validation
+      run: |
+        echo "🛡️ Running comprehensive test quality validation..."
+        
+        # 1. Check for test theater patterns (comprehensive scan)
+        echo "1️⃣ Test Theater Detection"
+        python3 scripts/detect-test-theater.py tests/ crates/*/tests/
+        THEATER_RESULT=$?
+        
+        # 2. Validate test naming conventions
+        echo "2️⃣ Test Naming Convention Check"
+        INVALID_NAMES=$(find tests/ crates/*/tests/ -name "*.rs" -exec grep -l "#\[.*test\]" {} \; | \
+          xargs grep -n "fn test_" | grep -v "test_.*_.*_" | wc -l)
+        
+        if [ $INVALID_NAMES -gt 0 ]; then
+          echo "❌ Found $INVALID_NAMES tests with poor naming conventions"
+          echo "Tests should follow pattern: test_{component}_{scenario}_{expected_outcome}"
+          find tests/ crates/*/tests/ -name "*.rs" -exec grep -l "#\[.*test\]" {} \; | \
+            xargs grep -n "fn test_" | grep -v "test_.*_.*_" | head -10
+          exit 1
+        fi
+        
+        # 3. Check for meaningful assertions
+        echo "3️⃣ Meaningful Assertion Check"
+        MEANINGLESS_ASSERTIONS=$(find tests/ crates/*/tests/ -name "*.rs" -exec grep -c "assert!(true)" {} \; | \
+          awk -F: '{sum += $2} END {print sum+0}')
+        
+        if [ $MEANINGLESS_ASSERTIONS -gt 0 ]; then
+          echo "❌ Found $MEANINGLESS_ASSERTIONS meaningless assertions"
+          echo "Replace assert!(true) with meaningful validation"
+          exit 1
+        fi
+        
+        # 4. Overall quality gate result
+        if [ $THEATER_RESULT -eq 1 ]; then
+          echo "❌ Test quality gates failed - test theater detected"
+          exit 1
+        fi
+        
+        echo "✅ All test quality gates passed"
+
+  performance-test-validation:
+    name: Performance Test Validation
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Run Performance Benchmarks
+      run: |
+        echo "⚡ Running performance tests and benchmarks..."
+        
+        # Run performance tests specifically
+        cargo test --release performance -- --nocapture
+        
+        # Run benchmarks if they exist
+        if find . -name "*.rs" -exec grep -l "#\[bench\]" {} \; | grep -q .; then
+          cargo bench
+        fi
+    
+    - name: Validate Performance Requirements
+      run: |
+        echo "🎯 Validating performance requirements..."
+        
+        # Check if any performance tests failed (basic validation)
+        if ! cargo test --release performance; then
+          echo "❌ Performance tests failed"
+          exit 1
+        fi
+        
+        echo "✅ Performance requirements validated"
+
+  integration-test-validation:
+    name: Integration Test Validation  
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Build Test Projects
+      run: |
+        echo "🏗️ Building test projects for integration testing..."
+        
+        # Ensure test projects exist and are valid
+        if [ -d "test-projects" ]; then
+          echo "Found test projects directory"
+          ls -la test-projects/
+        else
+          echo "⚠️ No test-projects directory found - creating minimal test structure"
+          mkdir -p test-projects/rust-test-project/src
+          echo 'fn main() { println!("Hello, world!"); }' > test-projects/rust-test-project/src/main.rs
+          echo -e '[package]\nname = "test-project"\nversion = "0.1.0"\nedition = "2021"' > test-projects/rust-test-project/Cargo.toml
+        fi
+    
+    - name: Run Integration Tests
+      run: |
+        echo "🔗 Running integration tests..."
+        
+        # Run integration tests specifically
+        cargo test --test "*integration*" --verbose
+        
+        # Run end-to-end tests
+        cargo test test_.*_end_to_end --verbose
+
+  summary:
+    name: Test Quality Summary
+    runs-on: ubuntu-latest
+    needs: [test-theater-detection, test-execution-validation, test-quality-gates, performance-test-validation, integration-test-validation]
+    if: always()
+    
+    steps:
+    - name: Test Quality Summary
+      run: |
+        echo "📋 Test Quality Validation Summary"
+        echo "=================================="
+        
+        # Check status of each job
+        if [ "${{ needs.test-theater-detection.result }}" == "success" ]; then
+          echo "✅ Test Theater Detection: PASSED"
+        else
+          echo "❌ Test Theater Detection: FAILED"
+        fi
+        
+        if [ "${{ needs.test-execution-validation.result }}" == "success" ]; then
+          echo "✅ Test Execution & Coverage: PASSED"
+        else
+          echo "❌ Test Execution & Coverage: FAILED"
+        fi
+        
+        if [ "${{ needs.test-quality-gates.result }}" == "success" ]; then
+          echo "✅ Test Quality Gates: PASSED"
+        else
+          echo "❌ Test Quality Gates: FAILED"
+        fi
+        
+        if [ "${{ needs.performance-test-validation.result }}" == "success" ]; then
+          echo "✅ Performance Test Validation: PASSED"
+        else
+          echo "❌ Performance Test Validation: FAILED"
+        fi
+        
+        if [ "${{ needs.integration-test-validation.result }}" == "success" ]; then
+          echo "✅ Integration Test Validation: PASSED"
+        else
+          echo "❌ Integration Test Validation: FAILED"
+        fi
+        
+        # Overall result
+        if [ "${{ needs.test-theater-detection.result }}" == "success" ] && \
+           [ "${{ needs.test-execution-validation.result }}" == "success" ] && \
+           [ "${{ needs.test-quality-gates.result }}" == "success" ] && \
+           [ "${{ needs.performance-test-validation.result }}" == "success" ] && \
+           [ "${{ needs.integration-test-validation.result }}" == "success" ]; then
+          echo ""
+          echo "🎉 All test quality validations PASSED!"
+          echo "Code is ready for merge."
+        else
+          echo ""
+          echo "❌ Test quality validation FAILED!"
+          echo "Please fix the issues before merging."
+          exit 1
+        fi 

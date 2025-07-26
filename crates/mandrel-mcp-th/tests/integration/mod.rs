@@ -1,1 +1,1 @@
-pub mod test_issue_231_mandrel_codeprism_execution;
+pub mod test_mandrel_codeprism_integration;

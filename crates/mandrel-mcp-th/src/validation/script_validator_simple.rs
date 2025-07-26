@@ -3,6 +3,7 @@
 //! This module provides a simplified ScriptValidator that implements the CustomValidator trait
 //! to integrate basic script validation into the validation pipeline.
 
+use crate::script_engines::{LuaEngine, ScriptConfig, ScriptContext};
 use crate::spec::ValidationScript;
 use crate::validation::{CustomValidator, ValidationContext, ValidationError};
 // Note: serde traits may be needed for future serialization
@@ -75,6 +76,143 @@ impl ScriptValidator {
             ) | (crate::spec::ExecutionPhase::Both, _)
         )
     }
+
+    /// Execute a script using the appropriate engine
+    fn execute_script(
+        &self,
+        script: &ValidationScript,
+        data: &Value,
+        context: &ValidationContext,
+        script_name: &str,
+    ) -> Result<crate::script_engines::ScriptResult, Box<dyn std::error::Error>> {
+        // Create script context with validation data
+        let script_context = self.create_script_context(script, data, context, script_name);
+
+        // Execute script based on language (currently only Lua is supported)
+        match script.language {
+            crate::spec::ScriptLanguage::Lua => {
+                // Move all data needed for script execution
+                let timeout_ms = script_context.config.timeout_ms;
+                let script_source = script.source.clone();
+                let script_request = script_context.request.clone();
+                let script_response = script_context.response.clone();
+                let script_tool_name = script_context.metadata.tool_name.clone();
+                let script_test_name = script_context.metadata.test_name.clone();
+
+                // Execute script in a separate thread to avoid runtime conflicts
+                std::thread::spawn(
+                    move || -> Result<crate::script_engines::ScriptResult, String> {
+                        // Create everything fresh inside the thread to avoid Send/Sync issues
+                        let script_config = ScriptConfig {
+                            timeout_ms,
+                            ..ScriptConfig::default()
+                        };
+
+                        let lua_engine = LuaEngine::new(&script_config)
+                            .map_err(|e| format!("Failed to create LuaEngine: {}", e))?;
+
+                        // Recreate script context inside thread
+                        let fresh_script_context = ScriptContext::new(
+                            script_request,
+                            script_test_name,
+                            script_tool_name,
+                            script_config,
+                        )
+                        .with_response(script_response.unwrap_or(serde_json::Value::Null));
+
+                        // Create new runtime and execute script
+                        let rt = tokio::runtime::Runtime::new()
+                            .map_err(|e| format!("Failed to create runtime: {}", e))?;
+
+                        rt.block_on(async {
+                            lua_engine
+                                .execute_script(&script_source, fresh_script_context)
+                                .await
+                        })
+                        .map_err(|e| format!("Script execution failed: {}", e))
+                    },
+                )
+                .join()
+                .map_err(|_| "Script execution thread panicked")?
+                .map_err(|e| e.into())
+            }
+            _ => Err(format!("Script language '{:?}' not supported", script.language).into()),
+        }
+    }
+
+    /// Create script context with validation data
+    fn create_script_context(
+        &self,
+        script: &ValidationScript,
+        data: &Value,
+        context: &ValidationContext,
+        script_name: &str,
+    ) -> ScriptContext {
+        // Use script-specific timeout if specified, otherwise use config timeout
+        let timeout_ms = script
+            .timeout_ms
+            .unwrap_or((self.config.timeout_seconds * 1000) as u64);
+
+        let script_config = ScriptConfig {
+            timeout_ms,
+            ..ScriptConfig::default()
+        };
+
+        // Create script context with request/response data and metadata
+        let mut script_data = serde_json::Map::new();
+        script_data.insert("response".to_string(), data.clone());
+        script_data.insert("method".to_string(), Value::String(context.method.clone()));
+        script_data.insert(
+            "request_id".to_string(),
+            context.request_id.clone().unwrap_or(Value::Null),
+        );
+
+        ScriptContext::new(
+            Value::Object(script_data),
+            script_name.to_string(),
+            context.method.clone(),
+            script_config,
+        )
+    }
+
+    /// Parse validation errors from script output
+    fn parse_script_validation_output(
+        &self,
+        result: &crate::script_engines::ScriptResult,
+    ) -> Result<Option<Vec<ValidationError>>, Box<dyn std::error::Error>> {
+        // If script returned structured validation output, parse it
+        if let Ok(output) =
+            serde_json::from_value::<serde_json::Map<String, Value>>(result.output.clone())
+        {
+            if let Some(validation_errors) = output.get("validation_errors") {
+                if let Ok(errors) = serde_json::from_value::<Vec<serde_json::Map<String, Value>>>(
+                    validation_errors.clone(),
+                ) {
+                    let mut parsed_errors = Vec::new();
+
+                    for error in errors {
+                        if let (Some(field), Some(expected), Some(actual)) = (
+                            error.get("field").and_then(|v| v.as_str()),
+                            error.get("expected").and_then(|v| v.as_str()),
+                            error.get("actual").and_then(|v| v.as_str()),
+                        ) {
+                            parsed_errors.push(ValidationError::FieldError {
+                                field: field.to_string(),
+                                expected: expected.to_string(),
+                                actual: actual.to_string(),
+                            });
+                        }
+                    }
+
+                    if !parsed_errors.is_empty() {
+                        return Ok(Some(parsed_errors));
+                    }
+                }
+            }
+        }
+
+        Ok(None)
+    }
 }
 
 impl CustomValidator for ScriptValidator {
@@ -87,8 +225,8 @@ impl CustomValidator for ScriptValidator {
 
     fn validate(
         &self,
-        _data: &Value,
-        _context: &ValidationContext,
+        data: &Value,
+        context: &ValidationContext,
     ) -> Result<Vec<ValidationError>, Box<dyn std::error::Error>> {
         let mut errors = Vec::new();
 
@@ -98,16 +236,40 @@ impl CustomValidator for ScriptValidator {
                 continue;
             }
 
-            // For the GREEN phase, simulate script execution based on script content
-            {
-                let source = &script.source;
-                if source.contains("error(") {
-                    // Script contains error() call - simulate failure
+            // Execute script with real LuaEngine instead of simulation
+            match self.execute_script(script, data, context, script_name) {
+                Ok(script_result) => {
+                    // Process script execution result
+                    if !script_result.success
+                        && (script.required || self.config.fail_on_script_error)
+                    {
+                        let error_message = script_result
+                            .error
+                            .as_ref()
+                            .map(|e| format!("{}", e))
+                            .unwrap_or_else(|| "script execution failed".to_string());
+
+                        errors.push(ValidationError::FieldError {
+                            field: format!("script:{}", script_name),
+                            expected: "script execution success".to_string(),
+                            actual: error_message,
+                        });
+                    }
+
+                    // Parse validation errors from script output if script returned validation results
+                    if let Some(validation_errors) =
+                        self.parse_script_validation_output(&script_result)?
+                    {
+                        errors.extend(validation_errors);
+                    }
+                }
+                Err(e) => {
+                    // Handle script execution errors
                     if script.required || self.config.fail_on_script_error {
                         errors.push(ValidationError::FieldError {
                             field: format!("script:{}", script_name),
                             expected: "script execution success".to_string(),
-                            actual: "script failed".to_string(),
+                            actual: format!("execution error: {}", e),
                         });
                     }
                 }

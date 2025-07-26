@@ -605,10 +605,12 @@ impl TestCaseExecutor {
         // Use timeout from ExecutorConfig, or script-specific timeout if specified
         let timeout_ms = script
             .timeout_ms
-            .unwrap_or_else(|| self.config.timeout.as_millis() as u64);
+            .unwrap_or(self.config.timeout.as_millis() as u64);
 
-        let mut script_config = ScriptConfig::default();
-        script_config.timeout_ms = timeout_ms;
+        let script_config = ScriptConfig {
+            timeout_ms,
+            ..ScriptConfig::default()
+        };
 
         ScriptContext::new(
             input.clone(),
@@ -714,7 +716,7 @@ mod tests {
     }
 
     // ========================================================================
-    // PHASE 1: ScriptManager Tests (Should FAIL until GREEN phase)
+    // Script Manager Integration Tests
     // ========================================================================
 
     #[test]
@@ -788,7 +790,7 @@ mod tests {
     }
 
     // ========================================================================
-    // PHASE 2: TestCaseExecutor Script Integration Tests (Should FAIL until GREEN phase)
+    // TestCaseExecutor Script Integration Tests
     // ========================================================================
 
     #[tokio::test]
@@ -956,7 +958,7 @@ mod tests {
     }
 
     // ========================================================================
-    // PHASE 3: Script Execution Context Tests (Should FAIL until GREEN phase)
+    // Script Execution Context Tests
     // ========================================================================
 
     #[tokio::test]
@@ -1025,7 +1027,7 @@ mod tests {
     }
 
     // ========================================================================
-    // PHASE 4: Metrics and Performance Tests (Should FAIL until GREEN phase)
+    // Metrics and Performance Tests
     // ========================================================================
 
     #[tokio::test]
@@ -1087,7 +1089,7 @@ mod tests {
     }
 
     // ========================================================================
-    // PHASE 5: Error Handling and Edge Cases (Should FAIL until GREEN phase)
+    // Error Handling and Edge Cases
     // ========================================================================
 
     #[tokio::test]
@@ -1177,7 +1179,7 @@ mod tests {
     }
 
     // ========================================================================
-    // PHASE 6: Integration with Existing Validation (Should FAIL until GREEN phase)
+    // Integration with Existing Validation
     // ========================================================================
 
     #[tokio::test]

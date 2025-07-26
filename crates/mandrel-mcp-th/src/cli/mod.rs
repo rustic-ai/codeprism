@@ -2221,7 +2221,7 @@ mod tests {
 
     // CI/CD Integration Tests
     #[test]
-    #[ignore] // FUTURE: Fix CI detection test - currently failing in local environment
+    #[ignore] // FUTURE(#330): Fix CI detection test - currently failing in local environment
     fn test_ci_system_detection() {
         // Store original environment state for proper cleanup
         let _original_env: Vec<_> = std::env::vars().collect();

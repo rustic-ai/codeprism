@@ -55,7 +55,7 @@ fn test_cli_run_command_file_not_found() {
 }
 
 #[tokio::test]
-#[ignore] // FUTURE: Fix flaky CLI integration test - fails in concurrent execution but passes individually
+#[ignore] // FUTURE(#331): Fix flaky CLI integration test - fails in concurrent execution but passes individually
 async fn test_cli_run_command_with_working_mcp_server() {
     // Setup test environment for MCP server
     std::fs::create_dir_all("/tmp/mcp-test-sandbox").expect("Failed to create test directory");

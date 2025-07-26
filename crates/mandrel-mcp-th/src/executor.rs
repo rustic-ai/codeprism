@@ -9,6 +9,7 @@ use crate::spec::{ExpectedOutput, TestCase, ValidationScript};
 use crate::validation::{
     ScriptExecutionPhase, ScriptManager, ValidationEngine, ValidationError, ValidationResult,
 };
+use crate::script_engines::{LuaEngine, ScriptConfig, ScriptContext};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum TestStatus {
@@ -137,6 +138,7 @@ pub struct TestCaseExecutor {
     validation_engine: ValidationEngine,
     config: ExecutorConfig,
     script_manager: Option<ScriptManager>,
+    lua_engine: Option<LuaEngine>,
 }
 
 impl std::fmt::Debug for TestCaseExecutor {
@@ -157,6 +159,7 @@ impl TestCaseExecutor {
             validation_engine: ValidationEngine::default(),
             config,
             script_manager: None,
+            lua_engine: None,
         }
     }
 
@@ -170,11 +173,15 @@ impl TestCaseExecutor {
             ExecutorError::ConfigError(format!("Failed to create script manager: {}", e))
         })?;
 
+        let lua_engine = LuaEngine::new(&ScriptConfig::default())
+            .map_err(|e| ExecutorError::ConfigError(format!("Failed to create LuaEngine: {}", e)))?;
+        
         Ok(Self {
             client,
             validation_engine: ValidationEngine::default(),
             config,
             script_manager: Some(script_manager),
+            lua_engine: Some(lua_engine),
         })
     }
 
@@ -559,6 +566,23 @@ impl TestCaseExecutor {
         } else {
             false
         }
+    }
+
+    /// Create a script context for execution
+    fn create_script_context(
+        &self,
+        script: &crate::spec::ValidationScript,
+        tool_name: &str,
+        input: &serde_json::Value,
+        _response: Option<&serde_json::Value>,
+    ) -> ScriptContext {
+        let script_config = ScriptConfig::default();
+        ScriptContext::new(
+            input.clone(),
+            script.name.clone(),
+            tool_name.to_string(),
+            script_config,
+        )
     }
 }
 

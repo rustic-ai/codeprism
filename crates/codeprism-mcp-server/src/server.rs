@@ -5,7 +5,7 @@ use rmcp::{
     handler::server::{router::tool::ToolRouter, tool::Parameters},
     model::*,
     service::RequestContext,
-    tool, tool_handler, tool_router, Error as McpError, RoleServer, ServerHandler, ServiceExt,
+    tool, tool_handler, tool_router, ErrorData as McpError, RoleServer, ServerHandler, ServiceExt,
 };
 use serde::Deserialize;
 use tracing::{debug, info, warn};

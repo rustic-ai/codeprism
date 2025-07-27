@@ -67,6 +67,7 @@ dashmap = "6.1"
 rayon = "1.10"
 regex = "1.11"
 rand = "0.8"
+schemars = "1.0"
 
 # Dev tools dependencies
 colored = "2.1"
@@ -91,4 +92,6 @@ opt-level = 3
 opt-level = 0
 
 [profile.test]
-opt-level = 2 
+opt-level = 2
+
+ 

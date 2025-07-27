@@ -46,7 +46,6 @@ tree-sitter-java = "0.23"
 tree-sitter-rust = "0.23"
 
 # Storage and messaging
-neo4rs = "0.8"
 rdkafka = { version = "0.36", features = ["cmake-build"] }
 prost = "0.13"
 prost-build = "0.13"
@@ -80,7 +79,7 @@ insta = { version = "1.40", features = ["yaml"] }
 proptest = "1.5"
 criterion = { version = "0.5", features = ["html_reports"] }
 testcontainers = "0.23"
-testcontainers-modules = { version = "0.11", features = ["neo4j", "kafka"] }
+testcontainers-modules = { version = "0.11", features = ["kafka"] }
 tempfile = "3.14"
 
 [profile.release]

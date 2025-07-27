@@ -18,20 +18,6 @@ jobs:
   core-analysis-tests:
     name: Core Analysis Engine
     runs-on: ubuntu-latest
-    services:
-      neo4j:
-        image: neo4j:5.15
-        env:
-          NEO4J_AUTH: neo4j/testpassword
-          NEO4J_PLUGINS: '["apoc"]'
-        ports:
-          - 7687:7687
-          - 7474:7474
-        options: >-
-          --health-cmd="cypher-shell -u neo4j -p testpassword 'RETURN 1'"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=10
 
     steps:
       - uses: actions/checkout@v4
@@ -66,25 +52,15 @@ jobs:
           echo "Testing code analysis algorithms..."
           cargo test --package codeprism-analysis
           
-      - name: Test graph storage with Neo4j
-        env:
-          NEO4J_URI: bolt://localhost:7687
-          NEO4J_USER: neo4j
-          NEO4J_PASSWORD: testpassword
+      - name: Test storage backends
         run: |
-          echo "Testing Neo4j graph storage integration..."
-          # Wait for Neo4j to be ready
-          timeout 60s bash -c 'until nc -z localhost 7687; do sleep 1; done'
+          echo "Testing storage backends (file, SQLite, in-memory)..."
           cargo test --package codeprism-storage --all-features
           
-      - name: Integration test - Code to graph pipeline
-        env:
-          NEO4J_URI: bolt://localhost:7687
-          NEO4J_USER: neo4j
-          NEO4J_PASSWORD: testpassword
+      - name: Integration test - Code analysis pipeline
         run: |
           echo "Testing complete code analysis pipeline..."
-          cargo test --test integration --all-features -- test_code_to_graph_pipeline
+          cargo test --test integration --all-features -- test_code_analysis_pipeline
 
   # MCP server and tools testing
   mcp-server-tests:
@@ -255,14 +231,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: [core-analysis-tests, mcp-server-tests, platform-compatibility, quality-security]
     
-    services:
-      neo4j:
-        image: neo4j:5.15
-        env:
-          NEO4J_AUTH: neo4j/testpassword
-        ports:
-          - 7687:7687
-          
     steps:
       - uses: actions/checkout@v4
       
@@ -270,13 +238,8 @@ jobs:
         uses: ./.github/actions/setup-rust
         
       - name: Full system integration test
-        env:
-          NEO4J_URI: bolt://localhost:7687
-          NEO4J_USER: neo4j
-          NEO4J_PASSWORD: testpassword
         run: |
           echo "Running full system integration test..."
-          timeout 60s bash -c 'until nc -z localhost 7687; do sleep 1; done'
           
           # Test complete pipeline: Parse -> Analyze -> Store -> Query
           cargo test --test full_integration_test --all-features
@@ -291,7 +254,7 @@ jobs:
           
           echo "✅ CodePrism CI validation complete"
           echo "   - Multi-language parsing: TESTED"  
-          echo "   - Graph storage (Neo4j): TESTED"
+          echo "   - File/SQLite storage: TESTED"
           echo "   - MCP server & 26 tools: TESTED"
           echo "   - Performance benchmarks: TESTED"
           echo "   - Cross-platform compatibility: TESTED"

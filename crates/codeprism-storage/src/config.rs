@@ -75,15 +75,6 @@ impl StorageConfig {
         }
     }
 
-    /// Create configuration for Neo4j storage
-    pub fn neo4j(connection_string: String) -> Self {
-        Self {
-            backend: StorageBackend::Neo4j,
-            connection_string: Some(connection_string),
-            ..Default::default()
-        }
-    }
-
     /// Set cache size in megabytes
     pub fn with_cache_size(mut self, size_mb: usize) -> Self {
         self.cache_size_mb = size_mb;

@@ -730,62 +730,6 @@ impl GraphStorage for SqliteGraphStorage {
     }
 }
 
-/// Placeholder implementation for Neo4j backend
-pub struct Neo4jGraphStorage;
-
-impl Neo4jGraphStorage {
-    pub async fn new(_connection_string: &Option<String>) -> Result<Self> {
-        Ok(Self)
-    }
-}
-
-#[async_trait]
-impl GraphStorage for Neo4jGraphStorage {
-    async fn store_graph(&self, _graph: &SerializableGraph) -> Result<()> {
-        anyhow::bail!("Neo4j backend not implemented yet")
-    }
-
-    async fn load_graph(&self, _repo_id: &str) -> Result<Option<SerializableGraph>> {
-        anyhow::bail!("Neo4j backend not implemented yet")
-    }
-
-    async fn update_nodes(&self, _repo_id: &str, _nodes: &[SerializableNode]) -> Result<()> {
-        anyhow::bail!("Neo4j backend not implemented yet")
-    }
-
-    async fn update_edges(&self, _repo_id: &str, _edges: &[SerializableEdge]) -> Result<()> {
-        anyhow::bail!("Neo4j backend not implemented yet")
-    }
-
-    async fn delete_nodes(&self, _repo_id: &str, _node_ids: &[String]) -> Result<()> {
-        anyhow::bail!("Neo4j backend not implemented yet")
-    }
-
-    async fn delete_edges(&self, _repo_id: &str, _edge_refs: &[EdgeReference]) -> Result<()> {
-        anyhow::bail!("Neo4j backend not implemented yet")
-    }
-
-    async fn get_graph_metadata(&self, _repo_id: &str) -> Result<Option<GraphMetadata>> {
-        anyhow::bail!("Neo4j backend not implemented yet")
-    }
-
-    async fn update_graph_metadata(&self, _repo_id: &str, _metadata: &GraphMetadata) -> Result<()> {
-        anyhow::bail!("Neo4j backend not implemented yet")
-    }
-
-    async fn list_repositories(&self) -> Result<Vec<String>> {
-        anyhow::bail!("Neo4j backend not implemented yet")
-    }
-
-    async fn delete_graph(&self, _repo_id: &str) -> Result<()> {
-        anyhow::bail!("Neo4j backend not implemented yet")
-    }
-
-    async fn graph_exists(&self, _repo_id: &str) -> Result<bool> {
-        anyhow::bail!("Neo4j backend not implemented yet")
-    }
-}
-
 /// In-memory analysis storage
 pub struct InMemoryAnalysisStorage {
     results: Arc<Mutex<HashMap<String, AnalysisResult>>>,

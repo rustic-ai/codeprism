@@ -142,7 +142,6 @@ pub enum StorageBackend {
     InMemory,
     File,
     Sqlite,
-    Neo4j,
 }
 
 /// Main storage manager that coordinates different storage backends
@@ -209,9 +208,6 @@ async fn create_graph_storage(config: &StorageConfig) -> Result<Box<dyn GraphSto
         )),
         StorageBackend::Sqlite => Ok(Box::new(
             backends::SqliteGraphStorage::new(&config.data_path).await?,
-        )),
-        StorageBackend::Neo4j => Ok(Box::new(
-            backends::Neo4jGraphStorage::new(&config.connection_string).await?,
         )),
     }
 }

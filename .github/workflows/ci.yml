@@ -201,9 +201,8 @@ jobs:
       - name: Run quality checks
         uses: ./.github/actions/quality-checks
         with:
-          clippy: true
-          fmt: true
-          audit: true
+          fail-fast: true
+          test-theater-check: true
           
       - name: Security audit
         run: |

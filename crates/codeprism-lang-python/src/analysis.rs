@@ -3055,8 +3055,7 @@ impl PythonAnalyzer {
                         severity: DependencyIssueSeverity::High,
                         affected_packages: vec![module_root.to_string()],
                         description: format!(
-                            "Module '{}' imported but not declared as dependency",
-                            module_root
+                            "Module '{module_root}' imported but not declared as dependency"
                         ),
                         recommendation: "Add missing dependency to requirements".to_string(),
                         auto_fixable: true,
@@ -3191,8 +3190,7 @@ impl PythonAnalyzer {
                         severity: severity_enum,
                         vulnerability_type: VulnerabilityCategory::CodeExecution,
                         description: format!(
-                            "Security vulnerability in {} {}",
-                            vuln_package, vuln_version
+                            "Security vulnerability in {vuln_package} {vuln_version}"
                         ),
                         references: vec![format!(
                             "https://cve.mitre.org/cgi-bin/cvename.cgi?name={}",
@@ -3235,7 +3233,7 @@ impl PythonAnalyzer {
     fn get_package_metadata(&self, package_name: &str) -> PackageMetadata {
         // Simplified metadata - in production, this would query PyPI API
         PackageMetadata {
-            description: format!("Package: {}", package_name),
+            description: format!("Package: {package_name}"),
             author: "Unknown".to_string(),
             license: "MIT".to_string(),
             homepage: None,
@@ -3328,8 +3326,8 @@ impl PythonAnalyzer {
         }
 
         // Check for circular imports (simplified)
-        if content.contains(&format!("from {} import", module_name))
-            && content.contains(&format!("import {}", module_name))
+        if content.contains(&format!("from {module_name} import"))
+            && content.contains(&format!("import {module_name}"))
         {
             issues.push(ImportIssue::CircularImport);
         }
@@ -3488,8 +3486,7 @@ impl PythonAnalyzer {
             .count();
         if unpinned_count > 0 {
             recommendations.push(format!(
-                "Pin {} unpinned dependencies for reproducible builds",
-                unpinned_count
+                "Pin {unpinned_count} unpinned dependencies for reproducible builds"
             ));
         }
 

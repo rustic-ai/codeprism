@@ -605,7 +605,7 @@ impl AstMapper {
         // Parse parameters
         if let Some(params_node) = node.child_by_field_name("parameters") {
             let params_str = self.extract_parameters_with_types(&params_node);
-            signature_parts.push(format!("({})", params_str));
+            signature_parts.push(format!("({params_str})"));
         } else {
             signature_parts.push("()".to_string());
         }
@@ -613,7 +613,7 @@ impl AstMapper {
         // Parse return type annotation
         if let Some(return_type_node) = node.child_by_field_name("return_type") {
             let return_type = self.get_node_text(&return_type_node);
-            signature_parts.push(format!(" -> {}", return_type));
+            signature_parts.push(format!(" -> {return_type}"));
         }
 
         if signature_parts.is_empty() {

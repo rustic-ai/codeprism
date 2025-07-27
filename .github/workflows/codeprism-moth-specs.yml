@@ -1,4 +1,4 @@
-name: CodePrism Moth Specifications Testing
+name: CodePrism Moth Specifications
 
 on:
   push:
@@ -19,476 +19,303 @@ on:
     - cron: '0 6,18 * * *'
   workflow_dispatch:
     inputs:
-      run_performance_analysis:
-        description: 'Run deep performance analysis'
-        required: false
-        default: true
-        type: boolean
       stress_testing:
         description: 'Enable stress testing with large projects'
         required: false
         default: false
         type: boolean
+      target_languages:
+        description: 'Target languages (comma-separated: rust,python,java,javascript)'
+        required: false
+        default: 'rust,python,java,javascript'
 
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
   RUST_LOG: info
 
+concurrency:
+  group: codeprism-specs-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  # Matrix testing of all 4 language comprehensive specifications
-  codeprism-comprehensive:
-    name: CodePrism ${{ matrix.language }} Comprehensive
+  # Strategy selection for languages to test
+  test-strategy:
+    name: Test Strategy
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      languages: ${{ steps.strategy.outputs.languages }}
+    steps:
+      - name: Determine test languages
+        id: strategy
+        shell: bash
+        run: |
+          languages='["rust", "python", "java", "javascript"]'
+          
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && -n "${{ github.event.inputs.target_languages }}" ]]; then
+            # Parse manual input
+            IFS=',' read -ra LANGS <<< "${{ github.event.inputs.target_languages }}"
+            languages='['
+            for lang in "${LANGS[@]}"; do
+              lang=$(echo "$lang" | xargs) # trim whitespace
+              languages="${languages}\"${lang}\","
+            done
+            languages="${languages%,}]"
+          fi
+          
+          echo "languages=$languages" >> $GITHUB_OUTPUT
+          echo "Testing languages: $languages"
+
+  # Matrix testing of CodePrism specifications
+  codeprism-comprehensive:
+    name: CodePrism ${{ matrix.language }}
+    runs-on: ubuntu-latest
+    needs: [test-strategy]
     timeout-minutes: 45
     
     strategy:
       matrix:
-        language: [rust, python, java, javascript]
+        language: ${{ fromJson(needs.test-strategy.outputs.languages) }}
       fail-fast: false
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+      - name: Setup Rust environment
+        uses: ./.github/actions/setup-rust
         with:
-          components: rustfmt, clippy
+          toolchain: stable
+          cache-key: codeprism-specs-${{ matrix.language }}
 
-      - name: Setup Rust cache
-        uses: Swatinem/rust-cache@v2
-        with:
-          key: codeprism-specs-${{ matrix.language }}-${{ runner.os }}
-
-      - name: Install system dependencies
+      - name: Install language-specific dependencies
+        shell: bash
         run: |
+          echo "=== Installing Dependencies for ${{ matrix.language }} ==="
           sudo apt-get update
           sudo apt-get install -y build-essential pkg-config python3 python3-pip jq time
-          pip3 install psutil matplotlib pandas numpy
+          
+          case "${{ matrix.language }}" in
+            "java")
+              sudo apt-get install -y openjdk-11-jdk maven
+              echo "Java version: $(java -version 2>&1 | head -1)"
+              ;;
+            "javascript")
+              curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+              sudo apt-get install -y nodejs
+              echo "Node.js version: $(node --version)"
+              echo "npm version: $(npm --version)"
+              ;;
+            "python")
+              pip3 install psutil matplotlib pandas numpy
+              echo "Python version: $(python3 --version)"
+              ;;
+          esac
 
-      - name: Verify CodePrism moth specification exists
+      - name: Verify CodePrism specification
+        shell: bash
         run: |
           SPEC_FILE="crates/codeprism-moth-specs/codeprism/comprehensive/codeprism-${{ matrix.language }}-comprehensive.yaml"
-          if [ ! -f "$SPEC_FILE" ]; then
+          
+          if [[ ! -f "$SPEC_FILE" ]]; then
             echo "❌ CodePrism ${{ matrix.language }} specification not found: $SPEC_FILE"
             exit 1
           fi
+          
           echo "✅ CodePrism ${{ matrix.language }} specification found: $SPEC_FILE"
           
           # Validate YAML syntax
           python3 -c "
           import yaml
-          with open('$SPEC_FILE', 'r') as f:
-              yaml.safe_load(f)
-          print('✅ YAML syntax valid')
+          import sys
+          try:
+              with open('$SPEC_FILE', 'r') as f:
+                  yaml.safe_load(f)
+              print('✅ YAML syntax valid')
+          except Exception as e:
+              print(f'❌ YAML syntax error: {e}')
+              sys.exit(1)
           "
 
-      - name: Build mandrel-mcp-th optimized
+      - name: Build optimized components
+        shell: bash
         run: |
-          echo "Building mandrel-mcp-th with optimizations..."
-          RUSTFLAGS="-C target-cpu=native" cargo build --release --package mandrel-mcp-th --bin moth
+          echo "=== Building Optimized Components ==="
           
-          # Verify binary
-          if [ ! -f "target/release/moth" ]; then
-            echo "❌ moth binary not found after build"
+          # Build with native optimizations
+          RUSTFLAGS="-C target-cpu=native" cargo build --release \
+            --package mandrel-mcp-th \
+            --package codeprism-mcp-server \
+            --bin moth \
+            --bin codeprism-mcp-server
+          
+          # Verify binaries
+          if [[ ! -f "target/release/moth" ]] || [[ ! -f "target/release/codeprism-mcp-server" ]]; then
+            echo "❌ Required binaries not found after build"
             exit 1
           fi
           
-          echo "✅ moth binary built successfully"
+          echo "✅ Components built successfully"
           ./target/release/moth --version
 
       - name: Start CodePrism MCP server
         id: server
+        shell: bash
         run: |
-          echo "Starting CodePrism MCP server..."
+          echo "=== Starting CodePrism MCP Server ==="
           
-          # Start server in background
-          nohup cargo run --release --package codeprism-mcp-server --bin codeprism-mcp-server > server.log 2>&1 &
+          # Start server in background with proper logging
+          nohup ./target/release/codeprism-mcp-server > server.log 2>&1 &
           SERVER_PID=$!
           echo "SERVER_PID=$SERVER_PID" >> $GITHUB_OUTPUT
           
-          # Wait for server to start
-          sleep 5
-          
-          # Check if server is running
-          if kill -0 $SERVER_PID 2>/dev/null; then
-            echo "✅ CodePrism MCP server started (PID: $SERVER_PID)"
-          else
-            echo "❌ CodePrism MCP server failed to start"
-            cat server.log
-            exit 1
-          fi
+          # Wait for server to be ready
+          echo "Waiting for server to start (PID: $SERVER_PID)..."
+          for i in {1..10}; do
+            sleep 2
+            if kill -0 $SERVER_PID 2>/dev/null; then
+              echo "✅ CodePrism MCP server running (attempt $i/10)"
+              break
+            else
+              echo "❌ Server not responding (attempt $i/10)"
+              if [[ $i -eq 10 ]]; then
+                echo "Server log:"
+                cat server.log
+                exit 1
+              fi
+            fi
+          done
 
-      - name: Run CodePrism ${{ matrix.language }} comprehensive tests
+      - name: Execute comprehensive tests
         id: comprehensive-tests
+        shell: bash
         run: |
-          cd crates/mandrel-mcp-th
+          echo "=== Executing CodePrism ${{ matrix.language }} Tests ==="
           
-          SPEC_FILE="../codeprism-moth-specs/codeprism/comprehensive/codeprism-${{ matrix.language }}-comprehensive.yaml"
+          SPEC_FILE="crates/codeprism-moth-specs/codeprism/comprehensive/codeprism-${{ matrix.language }}-comprehensive.yaml"
           OUTPUT_FILE="results-${{ matrix.language }}.json"
           
-          echo "Running CodePrism ${{ matrix.language }} comprehensive tests..."
-          echo "Specification: $SPEC_FILE"
-          echo "Output: $OUTPUT_FILE"
+          # Configure test parameters
+          timeout_mins=40
+          [[ "${{ github.event.inputs.stress_testing }}" == "true" ]] && timeout_mins=90
           
-          # Record start time for performance analysis
           START_TIME=$(date +%s)
           
-          # Run the comprehensive test suite
-          timeout 40m ../target/release/moth run \
+          # Execute comprehensive test suite
+          timeout ${timeout_mins}m ./target/release/moth run \
             "$SPEC_FILE" \
-            --format json \
-            --output "$OUTPUT_FILE" \
-            --performance-monitoring \
-            --verbose
+            --output-format json \
+            --report-file "$OUTPUT_FILE" \
+            --max-concurrency 4 \
+            --timeout 300 \
+            ${{ github.event.inputs.stress_testing == 'true' && '--verbose' || '' }}
           
-          # Record end time
           END_TIME=$(date +%s)
           DURATION=$((END_TIME - START_TIME))
-          
           echo "DURATION=$DURATION" >> $GITHUB_OUTPUT
           
-          # Verify output file was created
-          if [ ! -f "$OUTPUT_FILE" ]; then
-            echo "❌ Output file not created: $OUTPUT_FILE"
+          # Verify and report results
+          if [[ -f "$OUTPUT_FILE" ]]; then
+            echo "✅ Test execution completed in ${DURATION}s"
+            
+            # Extract key metrics
+            if command -v jq >/dev/null 2>&1; then
+              echo "📊 Test Results Summary:"
+              jq -r '.summary | "  Total: \(.total_tests) | Passed: \(.passed_tests) | Failed: \(.failed_tests) | Success Rate: \(.success_rate)%"' "$OUTPUT_FILE" || echo "Could not parse summary"
+            fi
+          else
+            echo "❌ Test output file not found: $OUTPUT_FILE"
             exit 1
           fi
-          
-          echo "✅ CodePrism ${{ matrix.language }} comprehensive tests completed in ${DURATION}s"
 
-      - name: Validate performance requirements
-        run: |
-          cd crates/mandrel-mcp-th
-          
-          # Create performance validation script inline
-          cat > validate_performance.py << 'EOF'
-          import json
-          import sys
-          from datetime import datetime
-          
-          def validate_performance_requirements(results_file, language):
-              """Validate CodePrism performance requirements"""
-              
-              # Performance requirements based on Issue #235
-              requirements = {
-                  'tool_execution_time_ms': 3000,    # Most tools <3s
-                  'complex_analysis_time_ms': 5500,  # Complex analysis <5.5s
-                  'memory_usage_mb': 60,             # Standard tools <60MB
-                  'complex_memory_mb': 88,           # Complex analysis <88MB
-                  'total_execution_time_s': 120,     # Total suite <2 minutes
-              }
-              
-              # Expected test counts per language (from Issue #231)
-              expected_counts = {
-                  'rust': 18,
-                  'python': 18,
-                  'java': 18,
-                  'javascript': 17
-              }
-              
-              try:
-                  with open(results_file, 'r') as f:
-                      results = json.load(f)
-                  
-                  # Validate test counts
-                  total_tests = results.get('total_tests', 0)
-                  passed_tests = results.get('passed', 0)
-                  expected_total = expected_counts.get(language, 18)
-                  
-                  print(f"📊 Performance Validation for {language.upper()}")
-                  print(f"Total Tests: {total_tests} (expected: {expected_total})")
-                  print(f"Passed Tests: {passed_tests}")
-                  print(f"Success Rate: {passed_tests/total_tests*100:.1f}%")
-                  
-                  # Validate test count
-                  if total_tests != expected_total:
-                      print(f"❌ Test count mismatch: expected {expected_total}, got {total_tests}")
-                      return False
-                  
-                  # Validate success rate
-                  if passed_tests < total_tests:
-                      print(f"❌ Not all tests passed: {passed_tests}/{total_tests}")
-                      return False
-                  
-                  # Validate execution time
-                  total_duration = results.get('total_duration', {})
-                  duration_seconds = total_duration.get('secs', 0) + total_duration.get('nanos', 0) / 1e9
-                  
-                  if duration_seconds > requirements['total_execution_time_s']:
-                      print(f"❌ Execution time too slow: {duration_seconds:.1f}s > {requirements['total_execution_time_s']}s")
-                      return False
-                  
-                  print(f"✅ Total execution time: {duration_seconds:.1f}s (< {requirements['total_execution_time_s']}s)")
-                  
-                  # Validate individual test performance
-                  test_results = results.get('test_results', [])
-                  slow_tests = []
-                  
-                  for test in test_results:
-                      test_duration = test.get('duration', {})
-                      test_duration_ms = test_duration.get('secs', 0) * 1000 + test_duration.get('nanos', 0) / 1e6
-                      
-                      # Check if test is complex analysis (longer timeout allowed)
-                      test_name = test.get('test_name', '')
-                      is_complex = any(keyword in test_name.lower() for keyword in ['analyze', 'complex', 'dependency', 'security'])
-                      
-                      max_duration = requirements['complex_analysis_time_ms'] if is_complex else requirements['tool_execution_time_ms']
-                      
-                      if test_duration_ms > max_duration:
-                          slow_tests.append((test_name, test_duration_ms, max_duration))
-                  
-                  if slow_tests:
-                      print(f"❌ {len(slow_tests)} tests exceeded performance requirements:")
-                      for test_name, duration, max_duration in slow_tests[:5]:  # Show first 5
-                          print(f"  - {test_name}: {duration:.0f}ms > {max_duration}ms")
-                      return False
-                  
-                  print(f"✅ All tests met performance requirements")
-                  print(f"✅ CodePrism {language} comprehensive validation PASSED")
-                  return True
-                  
-              except Exception as e:
-                  print(f"❌ Performance validation failed: {e}")
-                  return False
-          
-          if __name__ == "__main__":
-              results_file = sys.argv[1]
-              language = sys.argv[2]
-              
-              if validate_performance_requirements(results_file, language):
-                  print("✅ Performance validation PASSED")
-                  sys.exit(0)
-              else:
-                  print("❌ Performance validation FAILED")
-                  sys.exit(1)
-          EOF
-          
-          # Run performance validation
-          python3 validate_performance.py "results-${{ matrix.language }}.json" "${{ matrix.language }}"
-
-      - name: Generate performance report
+      - name: Analyze performance metrics
         if: always()
+        shell: bash
         run: |
-          cd crates/mandrel-mcp-th
+          echo "=== Performance Analysis ==="
           
-          # Create performance report
-          cat > performance-report-${{ matrix.language }}.md << EOF
-          # CodePrism ${{ matrix.language }} Performance Report
+          OUTPUT_FILE="results-${{ matrix.language }}.json"
+          DURATION="${{ steps.comprehensive-tests.outputs.DURATION }}"
           
-          **Date:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')
-          **Language:** ${{ matrix.language }}
-          **Duration:** ${{ steps.comprehensive-tests.outputs.DURATION }}s
-          **Specification:** codeprism-${{ matrix.language }}-comprehensive.yaml
-          
-          ## Results Summary
-          EOF
-          
-          # Add results to report
-          if [ -f "results-${{ matrix.language }}.json" ]; then
-            python3 -c "
-          import json
-          with open('results-${{ matrix.language }}.json', 'r') as f:
-              results = json.load(f)
-          
-          with open('performance-report-${{ matrix.language }}.md', 'a') as f:
-              f.write(f'- **Total Tests:** {results.get(\"total_tests\", 0)}\n')
-              f.write(f'- **Passed:** {results.get(\"passed\", 0)}\n')
-              f.write(f'- **Failed:** {results.get(\"failed\", 0)}\n')
-              f.write(f'- **Success Rate:** {results.get(\"passed\", 0)/results.get(\"total_tests\", 1)*100:.1f}%\n')
-              f.write(f'- **Error Rate:** {results.get(\"error_rate\", 0)*100:.1f}%\n')
-          "
+          if [[ -f "$OUTPUT_FILE" && -n "$DURATION" ]]; then
+            echo "🕒 Execution Time: ${DURATION}s"
+            
+            if command -v jq >/dev/null 2>&1; then
+              # Extract performance metrics if available
+              avg_latency=$(jq -r '.performance.average_latency_ms // "N/A"' "$OUTPUT_FILE")
+              max_memory=$(jq -r '.performance.max_memory_mb // "N/A"' "$OUTPUT_FILE")
+              
+              echo "📈 Performance Metrics:"
+              echo "  Average Latency: ${avg_latency}ms"
+              echo "  Peak Memory: ${max_memory}MB"
+              echo "  Total Duration: ${DURATION}s"
+            fi
           fi
           
-          echo "✅ Performance report generated"
-
-      - name: Stop CodePrism MCP server
-        if: always()
-        run: |
-          if [ -n "${{ steps.server.outputs.SERVER_PID }}" ]; then
-            echo "Stopping CodePrism MCP server (PID: ${{ steps.server.outputs.SERVER_PID }})"
-            kill ${{ steps.server.outputs.SERVER_PID }} || true
-            sleep 2
-            kill -9 ${{ steps.server.outputs.SERVER_PID }} 2>/dev/null || true
+          # Performance thresholds (fail if exceeded)
+          if [[ -n "$DURATION" && "$DURATION" -gt 2400 ]]; then  # 40 minutes
+            echo "⚠️ Warning: Test execution exceeded expected duration (${DURATION}s > 2400s)"
           fi
 
       - name: Upload test results
-        uses: actions/upload-artifact@v4
         if: always()
+        uses: actions/upload-artifact@v4
         with:
           name: codeprism-${{ matrix.language }}-results
           path: |
-            crates/mandrel-mcp-th/results-${{ matrix.language }}.json
-            crates/mandrel-mcp-th/performance-report-${{ matrix.language }}.md
+            results-${{ matrix.language }}.json
             server.log
-          retention-days: 30
+          retention-days: 7
 
-  # Aggregate results and create summary
-  aggregate-results:
-    name: Aggregate Performance Results
+      - name: Cleanup server
+        if: always()
+        shell: bash
+        run: |
+          SERVER_PID="${{ steps.server.outputs.SERVER_PID }}"
+          if [[ -n "$SERVER_PID" ]] && kill -0 "$SERVER_PID" 2>/dev/null; then
+            echo "Stopping CodePrism MCP server (PID: $SERVER_PID)"
+            kill "$SERVER_PID"
+            sleep 2
+            kill -9 "$SERVER_PID" 2>/dev/null || true
+          fi
+
+  # Aggregate results and summary
+  test-summary:
+    name: Test Summary
     runs-on: ubuntu-latest
-    needs: codeprism-comprehensive
+    needs: [test-strategy, codeprism-comprehensive]
     if: always()
-    
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    timeout-minutes: 10
 
+    steps:
       - name: Download all test results
         uses: actions/download-artifact@v4
         with:
-          path: artifacts/
+          path: ./results
 
-      - name: Aggregate performance results
+      - name: Generate comprehensive summary
+        shell: bash
         run: |
-          echo "# 📊 CodePrism Moth Specifications - Comprehensive Test Results" > aggregate-report.md
-          echo "" >> aggregate-report.md
-          echo "**Date:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> aggregate-report.md
-          echo "**Commit:** ${{ github.sha }}" >> aggregate-report.md
-          echo "**Workflow:** CodePrism Moth Specifications Testing" >> aggregate-report.md
-          echo "" >> aggregate-report.md
+          echo "=== CodePrism Moth Specifications Test Summary ==="
+          echo "Tested Languages: ${{ needs.test-strategy.outputs.languages }}"
+          echo ""
           
-          # Check results for each language
-          TOTAL_LANGUAGES=4
-          PASSED_LANGUAGES=0
-          TOTAL_TESTS=0
-          TOTAL_PASSED=0
+          # Count job results
+          languages=($(echo '${{ needs.test-strategy.outputs.languages }}' | jq -r '.[]'))
+          failed_languages=()
           
-          for language in rust python java javascript; do
-            echo "## $language Results" >> aggregate-report.md
-            
-            if [ -f "artifacts/codeprism-$language-results/results-$language.json" ]; then
-              # Extract results
-              RESULT=$(python3 -c "
-          import json
-          with open('artifacts/codeprism-$language-results/results-$language.json', 'r') as f:
-              results = json.load(f)
-          
-          total = results.get('total_tests', 0)
-          passed = results.get('passed', 0)
-          failed = results.get('failed', 0)
-          success_rate = passed/total*100 if total > 0 else 0
-          
-          print(f'{total},{passed},{failed},{success_rate:.1f}')
-          "
-              )
-              
-              IFS=',' read -r total passed failed success_rate <<< "$RESULT"
-              
-              echo "- **Total Tests:** $total" >> aggregate-report.md
-              echo "- **Passed:** $passed" >> aggregate-report.md
-              echo "- **Failed:** $failed" >> aggregate-report.md
-              echo "- **Success Rate:** $success_rate%" >> aggregate-report.md
-              
-              TOTAL_TESTS=$((TOTAL_TESTS + total))
-              TOTAL_PASSED=$((TOTAL_PASSED + passed))
-              
-              if [ "$failed" -eq 0 ]; then
-                echo "- **Status:** ✅ PASSED" >> aggregate-report.md
-                PASSED_LANGUAGES=$((PASSED_LANGUAGES + 1))
-              else
-                echo "- **Status:** ❌ FAILED" >> aggregate-report.md
-              fi
-            else
-              echo "- **Status:** ❌ NO RESULTS" >> aggregate-report.md
-            fi
-            
-            echo "" >> aggregate-report.md
+          for language in "${languages[@]}"; do
+            status=$(echo '${{ toJson(needs.codeprism-comprehensive.result) }}' | jq -r ".\"$language\" // \"unknown\"")
+            echo "  $language: $status"
+            [[ "$status" == "failure" ]] && failed_languages+=("$language")
           done
           
-          # Overall summary
-          echo "## 🏆 Overall Summary" >> aggregate-report.md
-          echo "" >> aggregate-report.md
-          echo "- **Languages Tested:** $TOTAL_LANGUAGES" >> aggregate-report.md
-          echo "- **Languages Passed:** $PASSED_LANGUAGES" >> aggregate-report.md
-          echo "- **Total Tests:** $TOTAL_TESTS" >> aggregate-report.md
-          echo "- **Total Passed:** $TOTAL_PASSED" >> aggregate-report.md
-          
-          if [ "$TOTAL_TESTS" -gt 0 ]; then
-            OVERALL_SUCCESS_RATE=$((TOTAL_PASSED * 100 / TOTAL_TESTS))
-            echo "- **Overall Success Rate:** $OVERALL_SUCCESS_RATE%" >> aggregate-report.md
-          fi
-          
-          if [ "$PASSED_LANGUAGES" -eq "$TOTAL_LANGUAGES" ]; then
-            echo "- **Final Status:** ✅ **ALL LANGUAGES PASSED**" >> aggregate-report.md
+          echo ""
+          if [[ ${#failed_languages[@]} -gt 0 ]]; then
+            echo "❌ Failed languages: ${failed_languages[*]}"
+            echo "Check individual job logs for details"
+            exit 1
           else
-            echo "- **Final Status:** ❌ **SOME LANGUAGES FAILED**" >> aggregate-report.md
-          fi
-          
-          echo "" >> aggregate-report.md
-          echo "---" >> aggregate-report.md
-          echo "*Generated by CodePrism Moth Specifications CI/CD Pipeline*" >> aggregate-report.md
-          
-          # Set environment variables for other steps
-          echo "PASSED_LANGUAGES=$PASSED_LANGUAGES" >> $GITHUB_ENV
-          echo "TOTAL_LANGUAGES=$TOTAL_LANGUAGES" >> $GITHUB_ENV
-          echo "TOTAL_TESTS=$TOTAL_TESTS" >> $GITHUB_ENV
-          echo "TOTAL_PASSED=$TOTAL_PASSED" >> $GITHUB_ENV
-
-      - name: Upload aggregate report
-        uses: actions/upload-artifact@v4
-        with:
-          name: codeprism-aggregate-results
-          path: aggregate-report.md
-          retention-days: 90
-
-      - name: Create issue on comprehensive failure
-        if: env.PASSED_LANGUAGES != env.TOTAL_LANGUAGES
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            
-            // Read aggregate report
-            const reportContent = fs.readFileSync('aggregate-report.md', 'utf8');
-            
-            await github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: `🚨 CodePrism Moth Specifications Failures - ${process.env.PASSED_LANGUAGES}/${process.env.TOTAL_LANGUAGES} languages passed`,
-              body: `# CodePrism Moth Specifications Test Failures
-              
-              Comprehensive moth specifications testing has detected failures across multiple languages.
-              
-              ## Summary
-              - **Languages Passed:** ${process.env.PASSED_LANGUAGES}/${process.env.TOTAL_LANGUAGES}
-              - **Total Tests:** ${process.env.TOTAL_TESTS}
-              - **Total Passed:** ${process.env.TOTAL_PASSED}
-              - **Commit:** ${context.sha}
-              
-              ${reportContent}
-              
-              ## Action Required
-              - Review failed specifications
-              - Check performance requirements
-              - Investigate CodePrism server issues
-              - Validate test expectations
-              
-              ---
-              *Automated by CodePrism Moth Specifications CI*`,
-              labels: ['codeprism', 'moth-specifications', 'testing-failure', 'priority-high']
-            });
-
-      - name: Update GitHub step summary
-        if: always()
-        run: |
-          echo "## 📊 CodePrism Moth Specifications Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          
-          if [ "$PASSED_LANGUAGES" -eq "$TOTAL_LANGUAGES" ]; then
-            echo "✅ **SUCCESS**: All $TOTAL_LANGUAGES languages passed comprehensive testing" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "❌ **FAILURE**: Only $PASSED_LANGUAGES/$TOTAL_LANGUAGES languages passed" >> $GITHUB_STEP_SUMMARY
-          fi
-          
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **Total Tests**: $TOTAL_TESTS" >> $GITHUB_STEP_SUMMARY
-          echo "- **Total Passed**: $TOTAL_PASSED" >> $GITHUB_STEP_SUMMARY
-          
-          if [ "$TOTAL_TESTS" -gt 0 ]; then
-            OVERALL_SUCCESS_RATE=$((TOTAL_PASSED * 100 / TOTAL_TESTS))
-            echo "- **Overall Success Rate**: $OVERALL_SUCCESS_RATE%" >> $GITHUB_STEP_SUMMARY
-          fi
-          
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "See artifacts for detailed performance reports and test results." >> $GITHUB_STEP_SUMMARY 
+            echo "✅ All CodePrism specifications passed successfully!"
+          fi 

@@ -1,0 +1,185 @@
+name: 'Code Quality Checks'
+description: 'Run comprehensive code quality checks including formatting, linting, and test validation'
+author: 'CodePrism Team'
+
+inputs:
+  rust-toolchain:
+    description: 'Rust toolchain to use for checks'
+    required: false
+    default: 'stable'
+  working-directory:
+    description: 'Working directory for quality checks'
+    required: false
+    default: '.'
+  fail-fast:
+    description: 'Whether to fail fast on first error'
+    required: false
+    default: 'false'
+  clippy-args:
+    description: 'Additional arguments for clippy'
+    required: false
+    default: '--all-features --all-targets --workspace -- -D warnings'
+  test-theater-check:
+    description: 'Whether to run test theater detection'
+    required: false
+    default: 'true'
+
+outputs:
+  fmt-status:
+    description: 'Formatting check status (passed/failed)'
+    value: ${{ steps.fmt-check.outputs.status }}
+  clippy-status:
+    description: 'Clippy check status (passed/failed)'
+    value: ${{ steps.clippy-check.outputs.status }}
+  test-theater-status:
+    description: 'Test theater check status (passed/failed)'
+    value: ${{ steps.test-theater.outputs.status }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Check Rust formatting
+      id: fmt-check
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        echo "=== Running Rust Formatting Check ==="
+        if cargo fmt --all -- --check; then
+          echo "✅ Formatting check passed"
+          echo "status=passed" >> $GITHUB_OUTPUT
+        else
+          echo "❌ Formatting check failed"
+          echo "status=failed" >> $GITHUB_OUTPUT
+          if [[ "${{ inputs.fail-fast }}" == "true" ]]; then
+            exit 1
+          fi
+        fi
+
+    - name: Run Clippy linting
+      id: clippy-check
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        echo "=== Running Clippy Linting ==="
+        echo "Clippy arguments: ${{ inputs.clippy-args }}"
+        if cargo clippy ${{ inputs.clippy-args }}; then
+          echo "✅ Clippy check passed"
+          echo "status=passed" >> $GITHUB_OUTPUT
+        else
+          echo "❌ Clippy check failed"
+          echo "status=failed" >> $GITHUB_OUTPUT
+          if [[ "${{ inputs.fail-fast }}" == "true" ]]; then
+            exit 1
+          fi
+        fi
+
+    - name: Check for test theater
+      id: test-theater
+      if: inputs.test-theater-check == 'true'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        echo "=== Running Test Theater Detection ==="
+        
+        # Check if the detection script exists
+        if [[ -f "scripts/detect-test-theater.py" ]]; then
+          echo "Running test theater detection script..."
+          if python scripts/detect-test-theater.py; then
+            echo "✅ No test theater detected"
+            echo "status=passed" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Test theater patterns detected"
+            echo "status=failed" >> $GITHUB_OUTPUT
+            if [[ "${{ inputs.fail-fast }}" == "true" ]]; then
+              exit 1
+            fi
+          fi
+        else
+          echo "⚠️ Test theater detection script not found, running basic checks..."
+          
+          # Basic test theater detection patterns
+          theater_patterns=(
+            "assert!(true)"
+            "assert_eq!(true, true)"
+            "// TODO.*test"
+            "fn test.*{ *}"
+            "\.unwrap\(\).*// Test"
+          )
+          
+          theater_found=false
+          for pattern in "${theater_patterns[@]}"; do
+            if grep -r "$pattern" tests/ src/ 2>/dev/null | grep -v ".git" | head -5; then
+              echo "❌ Potential test theater pattern found: $pattern"
+              theater_found=true
+            fi
+          done
+          
+          if [[ "$theater_found" == "true" ]]; then
+            echo "❌ Test theater patterns detected"
+            echo "status=failed" >> $GITHUB_OUTPUT
+            if [[ "${{ inputs.fail-fast }}" == "true" ]]; then
+              exit 1
+            fi
+          else
+            echo "✅ No obvious test theater patterns found"
+            echo "status=passed" >> $GITHUB_OUTPUT
+          fi
+        fi
+
+    - name: Run additional quality checks
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        echo "=== Running Additional Quality Checks ==="
+        
+        # Check for common code smells
+        echo "Checking for potential code smells..."
+        
+        # Check for excessive use of unwrap()
+        unwrap_count=$(grep -r "\.unwrap()" src/ 2>/dev/null | wc -l || echo "0")
+        if [[ $unwrap_count -gt 10 ]]; then
+          echo "⚠️ Warning: Found $unwrap_count uses of .unwrap() - consider using proper error handling"
+        else
+          echo "✅ Appropriate use of .unwrap() ($unwrap_count occurrences)"
+        fi
+        
+        # Check for TODO/FIXME comments
+        todo_count=$(grep -r "TODO\|FIXME" src/ 2>/dev/null | wc -l || echo "0")
+        if [[ $todo_count -gt 0 ]]; then
+          echo "ℹ️ Found $todo_count TODO/FIXME comments:"
+          grep -rn "TODO\|FIXME" src/ 2>/dev/null | head -5
+        else
+          echo "✅ No TODO/FIXME comments found"
+        fi
+        
+        # Check for large functions (basic heuristic)
+        echo "Checking for potentially large functions..."
+        large_funcs=$(grep -A 100 "^fn " src/**/*.rs 2>/dev/null | grep -c "^fn " || echo "0")
+        echo "ℹ️ Functions analyzed: $large_funcs"
+
+    - name: Quality summary
+      shell: bash
+      run: |
+        echo "=== Quality Checks Summary ==="
+        echo "Formatting: ${{ steps.fmt-check.outputs.status }}"
+        echo "Clippy: ${{ steps.clippy-check.outputs.status }}"
+        if [[ "${{ inputs.test-theater-check }}" == "true" ]]; then
+          echo "Test Theater: ${{ steps.test-theater.outputs.status }}"
+        fi
+        
+        # Determine overall status
+        overall_status="passed"
+        if [[ "${{ steps.fmt-check.outputs.status }}" == "failed" ]] || \
+           [[ "${{ steps.clippy-check.outputs.status }}" == "failed" ]] || \
+           [[ "${{ steps.test-theater.outputs.status }}" == "failed" ]]; then
+          overall_status="failed"
+        fi
+        
+        if [[ "$overall_status" == "passed" ]]; then
+          echo "🎉 All quality checks passed!"
+        else
+          echo "❌ Some quality checks failed"
+          if [[ "${{ inputs.fail-fast }}" == "true" ]]; then
+            exit 1
+          fi
+        fi 

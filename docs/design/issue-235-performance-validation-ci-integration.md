@@ -4,12 +4,12 @@
 
 We need to complete the performance validation and CI integration for moth specifications by integrating the successful Issue #231 `codeprism-moth-specs` testing into the existing robust CI infrastructure.
 
-**Current State Analysis:**
-- ✅ **Performance tracking infrastructure** exists (`.github/workflows/performance-tracking.yml`)
-- ✅ **CI integration framework** exists (`.github/workflows/yaml-integration-tests.yml`)
-- ✅ **Nightly comprehensive testing** exists (`.github/workflows/test-harness-nightly.yml`)
+**Current State Analysis (Updated - Post Workflow Optimization):**
+- ✅ **Core CI infrastructure** exists (`.github/workflows/ci.yml`)
+- ✅ **MCP testing framework** exists (`.github/workflows/mcp-test-harness.yml`)
+- ✅ **CodePrism specifications testing** exists (`.github/workflows/codeprism-moth-specs.yml`)
 - ✅ **Performance metrics reporting** exists in mandrel-mcp-th
-- ❌ **Missing:** CI integration for the specific `codeprism-moth-specs` validated in Issue #231
+- ✅ **CI integration** completed for `codeprism-moth-specs` with comprehensive testing
 
 ## Proposed Solution
 
@@ -54,7 +54,7 @@ def validate_performance_requirements(results_file):
 
 **2.1 Add CodePrism specs to nightly workflow**
 ```yaml
-# Add to .github/workflows/test-harness-nightly.yml
+# Add to .github/workflows/mcp-test-harness.yml (nightly schedule)
 - name: CodePrism Comprehensive Nightly
   run: |
     cd crates/mandrel-mcp-th
@@ -77,7 +77,7 @@ def detect_codeprism_regressions(current_results, historical_data):
 
 ### Phase 3: Performance Benchmarking Integration
 
-**3.1 Benchmark integration with existing performance-tracking.yml**
+**3.1 Benchmark integration with CI workflows (performance tracking integrated into main workflows)**
 ```yaml
 # Add to performance-tracking.yml
 - name: CodePrism Tool Benchmarking

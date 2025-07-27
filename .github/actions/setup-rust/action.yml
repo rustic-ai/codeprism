@@ -1,0 +1,100 @@
+name: 'Setup Rust Environment'
+description: 'Setup Rust toolchain with caching and common configurations'
+author: 'CodePrism Team'
+
+inputs:
+  toolchain:
+    description: 'Rust toolchain version (stable, beta, nightly, or specific version)'
+    required: false
+    default: 'stable'
+  components:
+    description: 'Additional components (rustfmt, clippy, etc.)'
+    required: false
+    default: 'rustfmt,clippy'
+  cache-key:
+    description: 'Additional cache key suffix for customization'
+    required: false
+    default: ''
+  working-directory:
+    description: 'Working directory for Rust operations'
+    required: false
+    default: '.'
+
+outputs:
+  cache-hit:
+    description: 'Whether there was a cache hit'
+    value: ${{ steps.cache.outputs.cache-hit }}
+  rustc-version:
+    description: 'Installed Rust compiler version'
+    value: ${{ steps.rustc-version.outputs.version }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: ${{ inputs.toolchain }}
+        components: ${{ inputs.components }}
+
+    - name: Get Rust version
+      id: rustc-version
+      shell: bash
+      run: |
+        rustc_version=$(rustc --version)
+        echo "version=${rustc_version}" >> $GITHUB_OUTPUT
+        echo "Installed: ${rustc_version}"
+
+    - name: Setup Rust cache
+      id: cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: ${{ inputs.working-directory }}
+        key: ${{ inputs.toolchain }}-${{ runner.os }}-${{ inputs.cache-key }}
+        shared-key: base
+        save-if: ${{ github.ref == 'refs/heads/main' }}
+
+    - name: Configure Cargo
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        # Set up common Cargo configurations
+        echo "Setting up Cargo configuration..."
+        
+        # Create .cargo directory if it doesn't exist
+        mkdir -p .cargo
+        
+        # Configure incremental compilation and parallel jobs
+        cat >> .cargo/config.toml << 'EOF'
+        [build]
+        incremental = true
+        jobs = 0  # Use all available cores
+        
+        [term]
+        color = "always"
+        
+        [net]
+        retry = 3
+        EOF
+        
+        echo "Cargo configuration complete"
+
+    - name: Verify installation
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        echo "=== Rust Environment Verification ==="
+        echo "Rust version: $(rustc --version)"
+        echo "Cargo version: $(cargo --version)"
+        echo "Rustup version: $(rustup --version)"
+        
+        if [[ "${{ inputs.components }}" == *"rustfmt"* ]]; then
+          echo "Rustfmt version: $(rustfmt --version)"
+        fi
+        
+        if [[ "${{ inputs.components }}" == *"clippy"* ]]; then
+          echo "Clippy version: $(cargo clippy --version)"
+        fi
+        
+        echo "Cache status: ${{ steps.cache.outputs.cache-hit && 'HIT' || 'MISS' }}"
+        echo "=====================================" 

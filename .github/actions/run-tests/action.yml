@@ -1,0 +1,290 @@
+name: 'Run Test Suite'
+description: 'Execute comprehensive test suite with coverage reporting and performance validation'
+author: 'CodePrism Team'
+
+inputs:
+  coverage:
+    description: 'Generate code coverage report'
+    required: false
+    default: 'false'
+  test-harness:
+    description: 'Include MCP test harness specific tests'
+    required: false 
+    default: 'false'
+  integration-tests:
+    description: 'Run integration tests'
+    required: false
+    default: 'true'
+  doc-tests:
+    description: 'Run documentation tests'
+    required: false
+    default: 'true'
+  benchmarks:
+    description: 'Run performance benchmarks'
+    required: false
+    default: 'false'
+  working-directory:
+    description: 'Working directory for test execution'
+    required: false
+    default: '.'
+  test-features:
+    description: 'Features to enable for testing'
+    required: false
+    default: '--all-features'
+  timeout-minutes:
+    description: 'Test timeout in minutes'
+    required: false
+    default: '30'
+  fail-fast:
+    description: 'Whether to fail fast on first test failure'
+    required: false
+    default: 'false'
+
+outputs:
+  test-status:
+    description: 'Overall test status (passed/failed)'
+    value: ${{ steps.test-summary.outputs.status }}
+  coverage-percentage:
+    description: 'Code coverage percentage'
+    value: ${{ steps.coverage.outputs.percentage }}
+  test-count:
+    description: 'Total number of tests executed'
+    value: ${{ steps.test-summary.outputs.count }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install test dependencies
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        echo "=== Installing Test Dependencies ==="
+        
+        # Install Node.js for MCP test harness if needed
+        if [[ "${{ inputs.test-harness }}" == "true" ]]; then
+          echo "Installing Node.js for MCP test harness..."
+          # Node.js should already be available in GitHub Actions
+          node --version
+          npm --version
+        fi
+        
+        # Install coverage tool if needed
+        if [[ "${{ inputs.coverage }}" == "true" ]]; then
+          echo "Installing cargo-tarpaulin for coverage..."
+          cargo install cargo-tarpaulin || echo "cargo-tarpaulin already installed"
+        fi
+        
+        echo "Dependencies installation complete"
+
+    - name: Run unit tests
+      id: unit-tests
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        echo "=== Running Unit Tests ==="
+        echo "Features: ${{ inputs.test-features }}"
+        echo "Timeout: ${{ inputs.timeout-minutes }} minutes"
+        
+        test_args="${{ inputs.test-features }} --workspace"
+        if [[ "${{ inputs.fail-fast }}" == "true" ]]; then
+          test_args="$test_args --"
+        fi
+        
+        echo "Running: cargo test $test_args"
+        if cargo test $test_args; then
+          echo "✅ Unit tests passed"
+          echo "status=passed" >> $GITHUB_OUTPUT
+        else
+          echo "❌ Unit tests failed"
+          echo "status=failed" >> $GITHUB_OUTPUT
+          if [[ "${{ inputs.fail-fast }}" == "true" ]]; then
+            exit 1
+          fi
+        fi
+
+    - name: Run integration tests
+      id: integration-tests
+      if: inputs.integration-tests == 'true'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        echo "=== Running Integration Tests ==="
+        
+        if cargo test --test '*' ${{ inputs.test-features }} --workspace; then
+          echo "✅ Integration tests passed"
+          echo "status=passed" >> $GITHUB_OUTPUT
+        else
+          echo "❌ Integration tests failed"
+          echo "status=failed" >> $GITHUB_OUTPUT
+          if [[ "${{ inputs.fail-fast }}" == "true" ]]; then
+            exit 1
+          fi
+        fi
+
+    - name: Run documentation tests
+      id: doc-tests
+      if: inputs.doc-tests == 'true'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        echo "=== Running Documentation Tests ==="
+        
+        if cargo test --doc ${{ inputs.test-features }} --workspace; then
+          echo "✅ Documentation tests passed"
+          echo "status=passed" >> $GITHUB_OUTPUT
+        else
+          echo "❌ Documentation tests failed"
+          echo "status=failed" >> $GITHUB_OUTPUT
+          if [[ "${{ inputs.fail-fast }}" == "true" ]]; then
+            exit 1
+          fi
+        fi
+
+    - name: Run MCP test harness tests
+      id: mcp-tests
+      if: inputs.test-harness == 'true'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        echo "=== Running MCP Test Harness Tests ==="
+        
+        # Run specific MCP test harness validation
+        if [[ -f "crates/mandrel-mcp-th/Cargo.toml" ]]; then
+          echo "Running mandrel-mcp-th specific tests..."
+          if cargo test -p mandrel-mcp-th ${{ inputs.test-features }}; then
+            echo "✅ MCP test harness tests passed"
+            echo "status=passed" >> $GITHUB_OUTPUT
+          else
+            echo "❌ MCP test harness tests failed"
+            echo "status=failed" >> $GITHUB_OUTPUT
+            if [[ "${{ inputs.fail-fast }}" == "true" ]]; then
+              exit 1
+            fi
+          fi
+        else
+          echo "⚠️ MCP test harness not found, skipping"
+          echo "status=skipped" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Generate code coverage
+      id: coverage
+      if: inputs.coverage == 'true'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        echo "=== Generating Code Coverage ==="
+        
+        # Run tarpaulin with memory limits to prevent allocation issues
+        if cargo tarpaulin \
+          --out Xml \
+          --out Html \
+          ${{ inputs.test-features }} \
+          --workspace \
+          --timeout 600 \
+          --exclude-files "target/*" \
+          --exclude-files "*/tests/*" \
+          --exclude-files "*/benches/*" \
+          --exclude-files "*/examples/*" \
+          --ignore-panics \
+          --skip-clean; then
+          
+          # Extract coverage percentage
+          if [[ -f "cobertura.xml" ]]; then
+            coverage_percent=$(grep -o 'line-rate="[0-9.]*"' cobertura.xml | head -1 | grep -o '[0-9.]*' | awk '{print int($1*100)}')
+            echo "Coverage: ${coverage_percent}%"
+            echo "percentage=${coverage_percent}" >> $GITHUB_OUTPUT
+          else
+            echo "percentage=0" >> $GITHUB_OUTPUT
+          fi
+          
+          echo "✅ Coverage generation successful"
+          echo "status=passed" >> $GITHUB_OUTPUT
+        else
+          echo "❌ Coverage generation failed, but continuing..."
+          echo "percentage=0" >> $GITHUB_OUTPUT
+          echo "status=failed" >> $GITHUB_OUTPUT
+          # Don't fail the job for coverage issues
+        fi
+
+    - name: Run benchmarks
+      id: benchmarks
+      if: inputs.benchmarks == 'true'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        echo "=== Running Performance Benchmarks ==="
+        
+        # Check if benchmarks exist
+        if ls benches/*.rs >/dev/null 2>&1 || find . -name "*.rs" -path "*/benches/*" | grep -q .; then
+          echo "Running benchmarks..."
+          if cargo bench --workspace; then
+            echo "✅ Benchmarks completed successfully"
+            echo "status=passed" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Benchmarks failed"
+            echo "status=failed" >> $GITHUB_OUTPUT
+            if [[ "${{ inputs.fail-fast }}" == "true" ]]; then
+              exit 1
+            fi
+          fi
+        else
+          echo "ℹ️ No benchmarks found, skipping"
+          echo "status=skipped" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Test summary
+      id: test-summary
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        echo "=== Test Execution Summary ==="
+        
+        # Collect test counts
+        unit_status="${{ steps.unit-tests.outputs.status }}"
+        integration_status="${{ steps.integration-tests.outputs.status }}"
+        doc_status="${{ steps.doc-tests.outputs.status }}"
+        mcp_status="${{ steps.mcp-tests.outputs.status }}"
+        coverage_status="${{ steps.coverage.outputs.status }}"
+        benchmark_status="${{ steps.benchmarks.outputs.status }}"
+        
+        echo "Unit Tests: $unit_status"
+        if [[ "${{ inputs.integration-tests }}" == "true" ]]; then
+          echo "Integration Tests: $integration_status"
+        fi
+        if [[ "${{ inputs.doc-tests }}" == "true" ]]; then
+          echo "Documentation Tests: $doc_status"
+        fi
+        if [[ "${{ inputs.test-harness }}" == "true" ]]; then
+          echo "MCP Tests: $mcp_status"
+        fi
+        if [[ "${{ inputs.coverage }}" == "true" ]]; then
+          echo "Coverage: $coverage_status (${{ steps.coverage.outputs.percentage }}%)"
+        fi
+        if [[ "${{ inputs.benchmarks }}" == "true" ]]; then
+          echo "Benchmarks: $benchmark_status"
+        fi
+        
+        # Determine overall status
+        overall_status="passed"
+        if [[ "$unit_status" == "failed" ]] || \
+           [[ "$integration_status" == "failed" ]] || \
+           [[ "$doc_status" == "failed" ]] || \
+           [[ "$mcp_status" == "failed" ]] || \
+           [[ "$benchmark_status" == "failed" ]]; then
+          overall_status="failed"
+        fi
+        
+        # Count total tests (approximation)
+        test_count=$(cargo test ${{ inputs.test-features }} --workspace -- --list 2>/dev/null | grep -c "test " || echo "unknown")
+        
+        echo "status=$overall_status" >> $GITHUB_OUTPUT
+        echo "count=$test_count" >> $GITHUB_OUTPUT
+        
+        if [[ "$overall_status" == "passed" ]]; then
+          echo "🎉 All test suites passed! ($test_count tests)"
+        else
+          echo "❌ Some test suites failed"
+          if [[ "${{ inputs.fail-fast }}" == "true" ]]; then
+            exit 1
+          fi
+        fi 

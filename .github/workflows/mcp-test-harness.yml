@@ -1,28 +1,10 @@
 name: MCP Test Harness
 
+# DISABLED: This workflow is disabled in favor of the focused CodePrism Moth Specs workflow.
+# The mandrel-mcp-th code is kept for potential future use, but CI only runs CodePrism specs.
+# This workflow can only be triggered manually if needed.
+
 on:
-  push:
-    branches: [ main, develop, rmcp-work ]
-    paths:
-      - 'crates/mandrel-mcp-th/**'
-      - 'crates/codeprism-mcp-server/**'
-      - 'crates/codeprism-moth-specs/**'
-      - 'test-projects/**'
-      - 'Cargo.toml'
-      - 'Cargo.lock'
-  pull_request:
-    branches: [ main, develop ]
-    paths:
-      - 'crates/mandrel-mcp-th/**'
-      - 'crates/codeprism-mcp-server/**'
-      - 'crates/codeprism-moth-specs/**'
-      - 'test-projects/**'
-      - '.github/workflows/**'
-  schedule:
-    # Nightly comprehensive testing at 2 AM UTC
-    - cron: '0 2 * * *'
-    # Twice daily CodePrism specs testing at 6 AM and 6 PM UTC
-    - cron: '0 6,18 * * *'
   workflow_dispatch:
     inputs:
       test_mode:
@@ -45,6 +27,30 @@ on:
         required: false
         default: false
         type: boolean
+# DISABLED TRIGGERS (uncomment to re-enable):
+# on:
+#   push:
+#     branches: [ main, develop, rmcp-work ]
+#     paths:
+#       - 'crates/mandrel-mcp-th/**'
+#       - 'crates/codeprism-mcp-server/**'
+#       - 'crates/codeprism-moth-specs/**'
+#       - 'test-projects/**'
+#       - 'Cargo.toml'
+#       - 'Cargo.lock'
+#   pull_request:
+#     branches: [ main, develop ]
+#     paths:
+#       - 'crates/mandrel-mcp-th/**'
+#       - 'crates/codeprism-mcp-server/**'
+#       - 'crates/codeprism-moth-specs/**'
+#       - 'test-projects/**'
+#       - '.github/workflows/**'
+#   schedule:
+#     # Nightly comprehensive testing at 2 AM UTC
+#     - cron: '0 2 * * *'
+#     # Twice daily CodePrism specs testing at 6 AM and 6 PM UTC
+#     - cron: '0 6,18 * * *'
 
 env:
   CARGO_TERM_COLOR: always

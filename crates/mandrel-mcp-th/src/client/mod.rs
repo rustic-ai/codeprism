@@ -226,22 +226,29 @@ impl McpClient {
 
     /// Connect using HTTP transport
     #[cfg(feature = "transport-streamable-http-client")]
-    async fn connect_http(&mut self, _url: &str) -> Result<()> {
-        // FUTURE: Implement HTTP transport once RMCP API stabilizes in next release
-        // The RMCP 0.3.0 API for HTTP transports is still evolving
-        Err(Error::connection(
-            "HTTP transport implementation pending - RMCP API configuration in progress"
-                .to_string(),
-        ))
+    async fn connect_http(&mut self, url: &str) -> Result<()> {
+        use rmcp::transport::streamable_http_client::StreamableHttpClientTransport;
+
+        let transport = StreamableHttpClientTransport::from_uri(url.to_string());
+
+        let service = ()
+            .serve(transport)
+            .await
+            .map_err(|e| Error::connection(format!("Failed to create MCP service: {}", e)))?;
+
+        self.service = Some(service);
+        Ok(())
     }
 
     /// Connect using SSE transport
     #[cfg(feature = "transport-sse-client")]
     async fn connect_sse(&mut self, _url: &str) -> Result<()> {
-        // FUTURE: Implement SSE transport once RMCP API stabilizes in next release
-        // The RMCP 0.3.0 API for SSE transports is still evolving
+        // SSE client requires reqwest::Client implementation for HTTP client interface
+        // The RMCP SSE transport expects a type implementing SseClient trait
+        // HTTP transport is recommended as it's simpler to configure
         Err(Error::connection(
-            "SSE transport implementation pending - RMCP API configuration in progress".to_string(),
+            "SSE transport requires reqwest::Client implementation - use HTTP transport instead"
+                .to_string(),
         ))
     }
 

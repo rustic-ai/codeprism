@@ -65,7 +65,9 @@ runs:
         mkdir -p .cargo
         
         # Configure incremental compilation and parallel jobs
+        echo "" >> .cargo/config.toml  # Add newline if file exists
         cat >> .cargo/config.toml << 'EOF'
+
         [build]
         incremental = true
         jobs = 0  # Use all available cores

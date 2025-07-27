@@ -1,0 +1,599 @@
+name: MCP Test Harness
+
+on:
+  push:
+    branches: [ main, develop, rmcp-work ]
+    paths:
+      - 'crates/mandrel-mcp-th/**'
+      - 'crates/codeprism-mcp-server/**'
+      - 'crates/codeprism-moth-specs/**'
+      - 'test-projects/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'crates/mandrel-mcp-th/**'
+      - 'crates/codeprism-mcp-server/**'
+      - 'crates/codeprism-moth-specs/**'
+      - 'test-projects/**'
+      - '.github/workflows/**'
+  schedule:
+    # Nightly comprehensive testing at 2 AM UTC
+    - cron: '0 2 * * *'
+    # Twice daily CodePrism specs testing at 6 AM and 6 PM UTC
+    - cron: '0 6,18 * * *'
+  workflow_dispatch:
+    inputs:
+      test_mode:
+        description: 'Test execution mode'
+        required: false
+        default: 'comprehensive'
+        type: choice
+        options:
+          - quick
+          - comprehensive
+          - stress
+          - codeprism-specs
+      stress_testing:
+        description: 'Enable stress testing'
+        required: false
+        default: false
+        type: boolean
+      performance_analysis:
+        description: 'Enable deep performance analysis'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  RUST_LOG: info
+
+concurrency:
+  group: mcp-test-harness-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Determine test strategy based on trigger and changes
+  strategy-selector:
+    name: Test Strategy Selection
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      test-mode: ${{ steps.strategy.outputs.test-mode }}
+      should-run-quick: ${{ steps.strategy.outputs.should-run-quick }}
+      should-run-comprehensive: ${{ steps.strategy.outputs.should-run-comprehensive }}
+      should-run-stress: ${{ steps.strategy.outputs.should-run-stress }}
+      should-run-codeprism: ${{ steps.strategy.outputs.should-run-codeprism }}
+      changed-components: ${{ steps.changes.outputs.changes }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Detect changes
+        uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            mandrel:
+              - 'crates/mandrel-mcp-th/**'
+            mcp-server:
+              - 'crates/codeprism-mcp-server/**'
+            moth-specs:
+              - 'crates/codeprism-moth-specs/**'
+            test-projects:
+              - 'test-projects/**'
+            workflows:
+              - '.github/workflows/**'
+
+      - name: Determine test strategy
+        id: strategy
+        shell: bash
+        run: |
+          echo "=== Determining Test Strategy ==="
+          
+          # Default values
+          test_mode="quick"
+          should_run_quick="false"
+          should_run_comprehensive="false"
+          should_run_stress="false"
+          should_run_codeprism="false"
+          
+          # Determine strategy based on trigger
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            test_mode="${{ github.event.inputs.test_mode }}"
+            echo "📋 Manual trigger: $test_mode"
+          elif [[ "${{ github.event_name }}" == "schedule" ]]; then
+            if [[ "${{ github.event.schedule }}" == "0 2 * * *" ]]; then
+              test_mode="stress"
+              echo "🌙 Nightly trigger: stress testing"
+            else
+              test_mode="codeprism-specs"
+              echo "🕕 Twice-daily trigger: CodePrism specs"
+            fi
+          elif [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/main" ]]; then
+            test_mode="comprehensive"
+            echo "🚀 Main branch push: comprehensive testing"
+          elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            test_mode="quick"
+            echo "🔄 Pull request: quick validation"
+          fi
+          
+          # Set execution flags based on mode
+          case "$test_mode" in
+            "quick")
+              should_run_quick="true"
+              ;;
+            "comprehensive")
+              should_run_comprehensive="true"
+              should_run_codeprism="true"
+              ;;
+            "stress")
+              should_run_stress="true"
+              should_run_comprehensive="true"
+              ;;
+            "codeprism-specs")
+              should_run_codeprism="true"
+              ;;
+          esac
+          
+          # Output strategy
+          echo "test-mode=$test_mode" >> $GITHUB_OUTPUT
+          echo "should-run-quick=$should_run_quick" >> $GITHUB_OUTPUT
+          echo "should-run-comprehensive=$should_run_comprehensive" >> $GITHUB_OUTPUT
+          echo "should-run-stress=$should_run_stress" >> $GITHUB_OUTPUT
+          echo "should-run-codeprism=$should_run_codeprism" >> $GITHUB_OUTPUT
+          
+          echo "📊 Selected strategy: $test_mode"
+          echo "  - Quick: $should_run_quick"
+          echo "  - Comprehensive: $should_run_comprehensive"
+          echo "  - Stress: $should_run_stress"
+          echo "  - CodePrism: $should_run_codeprism"
+
+  # Quick validation for PRs
+  quick-validation:
+    name: Quick MCP Validation
+    runs-on: ubuntu-latest
+    needs: [strategy-selector]
+    if: needs.strategy-selector.outputs.should-run-quick == 'true'
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust environment
+        uses: ./.github/actions/setup-rust
+        with:
+          toolchain: stable
+          cache-key: quick-mcp-validation
+
+      - name: Setup Node.js for MCP servers
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install MCP servers
+        shell: bash
+        run: |
+          echo "Installing MCP test servers..."
+          npm install -g @modelcontextprotocol/server-filesystem@latest
+          npm install -g @modelcontextprotocol/server-everything@latest
+
+      - name: Build MCP components
+        shell: bash
+        run: |
+          echo "Building MCP test harness..."
+          cargo build --release -p mandrel-mcp-th
+          cargo build --release -p codeprism-mcp-server
+
+      - name: Run quick MCP validation
+        shell: bash
+        run: |
+          echo "=== Quick MCP Validation ==="
+          
+          # Test filesystem server with our verified config
+          if [[ -f "crates/mandrel-mcp-th/examples/filesystem-server-mcp-compliant.yaml" ]]; then
+            echo "Testing filesystem MCP server..."
+            mkdir -p /tmp/mcp-test-sandbox
+            echo "Test file content" > /tmp/mcp-test-sandbox/test.txt
+            
+            cargo run --bin moth -- run \
+              crates/mandrel-mcp-th/examples/filesystem-server-mcp-compliant.yaml \
+              --max-concurrency 2 \
+              --timeout 30 \
+              --output-format json
+          fi
+          
+          # Test everything server with working config
+          if [[ -f "crates/mandrel-mcp-th/examples/everything-server-working.yaml" ]]; then
+            echo "Testing everything MCP server..."
+            cargo run --bin moth -- run \
+              crates/mandrel-mcp-th/examples/everything-server-working.yaml \
+              --max-concurrency 2 \
+              --timeout 30 \
+              --output-format json
+          fi
+
+  # Full testing for main branch
+  full-testing:
+    name: Full MCP Tests
+    runs-on: ubuntu-latest
+    needs: [strategy-selector]
+    if: needs.strategy-selector.outputs.should-run-comprehensive == 'true'
+    timeout-minutes: 45
+
+    strategy:
+      fail-fast: false
+      matrix:
+        test-category:
+          - core-tools-comprehensive
+          - search-analysis-comprehensive
+          - workflow-edge-cases-comprehensive
+          - integration-performance
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust environment
+        uses: ./.github/actions/setup-rust
+        with:
+          toolchain: stable
+          cache-key: comprehensive-${{ matrix.test-category }}
+
+      - name: Setup Node.js for MCP servers
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install test dependencies
+        shell: bash
+        run: |
+          echo "Installing test dependencies..."
+          
+          # Install MCP servers
+          npm install -g @modelcontextprotocol/server-filesystem@latest
+          npm install -g @modelcontextprotocol/server-everything@latest
+          npm install -g @modelcontextprotocol/server-memory@latest
+          
+          # Install analysis tools
+          sudo apt-get update
+          sudo apt-get install -y jq time hyperfine python3 python3-pip
+          pip3 install pyyaml jsonschema
+
+      - name: Build all MCP components
+        shell: bash
+        run: |
+          echo "Building all MCP components..."
+          cargo build --release --all-features
+          cargo build --release -p mandrel-mcp-th
+          cargo build --release -p codeprism-mcp-server
+
+      - name: Run tests
+        uses: ./.github/actions/run-tests
+        with:
+          test-harness: true
+          integration-tests: true
+          coverage: false
+          benchmarks: true
+
+      - name: Execute test category - ${{ matrix.test-category }}
+        shell: bash
+        run: |
+          echo "=== Executing ${{ matrix.test-category }} ==="
+          
+          case "${{ matrix.test-category }}" in
+            "core-tools-comprehensive")
+              echo "Running core tools comprehensive tests..."
+              # Run comprehensive MCP tool tests
+              cargo run --bin moth -- run \
+                crates/mandrel-mcp-th/examples/everything-server-working.yaml \
+                --max-concurrency 4 \
+                --timeout 60 \
+                --output-format json \
+                --report-file comprehensive-core-report.json
+              ;;
+              
+            "search-analysis-comprehensive")
+              echo "Running search and analysis tests..."
+              # Test with larger datasets and complex scenarios
+              if [[ -d "test-projects/python-sample" ]]; then
+                cargo run --bin moth -- run \
+                  crates/mandrel-mcp-th/examples/filesystem-server-mcp-compliant.yaml \
+                  --max-concurrency 3 \
+                  --timeout 90 \
+                  --output-format json
+              fi
+              ;;
+              
+            "workflow-edge-cases-comprehensive")
+              echo "Running workflow edge cases..."
+              # Test error handling and edge cases
+              cargo test --package mandrel-mcp-th --test '*' --all-features
+              ;;
+              
+            "integration-performance")
+              echo "Running integration performance tests..."
+              # Run performance benchmarks
+              if ls benches/*.rs >/dev/null 2>&1; then
+                cargo bench --package mandrel-mcp-th
+              fi
+              ;;
+          esac
+
+  # Stress testing (nightly)
+  stress-testing:
+    name: Stress Testing
+    runs-on: ubuntu-latest
+    needs: [strategy-selector]
+    if: needs.strategy-selector.outputs.should-run-stress == 'true'
+    timeout-minutes: 120
+
+    strategy:
+      fail-fast: false
+      matrix:
+        stress-category:
+          - concurrent-load
+          - memory-pressure
+          - large-datasets
+          - edge-case-bombardment
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust environment
+        uses: ./.github/actions/setup-rust
+        with:
+          toolchain: stable
+          cache-key: stress-${{ matrix.stress-category }}
+
+      - name: Install stress testing dependencies
+        shell: bash
+        run: |
+          echo "Installing stress testing dependencies..."
+          
+          sudo apt-get update
+          sudo apt-get install -y \
+            nodejs npm python3 python3-pip jq time hyperfine \
+            stress-ng htop psmisc procps valgrind
+          
+          # Install monitoring tools
+          pip3 install psutil memory-profiler pyyaml jsonschema
+          
+          # Install MCP servers
+          npm install -g @modelcontextprotocol/server-filesystem@latest
+          npm install -g @modelcontextprotocol/server-everything@latest
+
+      - name: Setup stress test environment
+        shell: bash
+        run: |
+          echo "Setting up stress test environment..."
+          
+          # Create large test datasets
+          mkdir -p test-projects/stress-test-large
+          cd test-projects/stress-test-large
+          
+                     # Generate large Python project for testing
+           for i in $(seq 1 20); do
+             mkdir -p "module_$i"
+             cat > "module_$i/__init__.py" << 'EOF'
+           """Large module for stress testing."""
+           import sys
+           import os
+           from typing import Dict, List, Optional, Union
+           
+           class LargeClass:
+               def __init__(self):
+                   self.data = {}
+                   
+               def process_data(self, input_data: Dict) -> List:
+                   result = []
+                   for key, value in input_data.items():
+                       if isinstance(value, str):
+                           result.append(value.upper())
+                       elif isinstance(value, int):
+                           result.append(value * 2)
+                   return result
+           EOF
+           done
+
+      - name: Build components for stress testing
+        shell: bash
+        run: |
+          echo "Building components for stress testing..."
+          cargo build --release --all-features
+          cargo build --release -p mandrel-mcp-th
+
+      - name: Execute stress test - ${{ matrix.stress-category }}
+        shell: bash
+        run: |
+          echo "=== Executing stress test: ${{ matrix.stress-category }} ==="
+          
+          case "${{ matrix.stress-category }}" in
+            "concurrent-load")
+              echo "Testing concurrent load handling..."
+              # Run multiple test instances concurrently
+              for i in {1..5}; do
+                cargo run --bin moth -- run \
+                  crates/mandrel-mcp-th/examples/everything-server-working.yaml \
+                  --max-concurrency 8 \
+                  --timeout 120 \
+                  --output-format json &
+              done
+              wait
+              ;;
+              
+            "memory-pressure")
+              echo "Testing under memory pressure..."
+              # Limit memory and test behavior
+              systemd-run --user --scope -p MemoryMax=512M \
+                cargo run --bin moth -- run \
+                  crates/mandrel-mcp-th/examples/filesystem-server-mcp-compliant.yaml \
+                  --max-concurrency 4 \
+                  --timeout 180
+              ;;
+              
+            "large-datasets")
+              echo "Testing with large datasets..."
+              # Test with large file structures
+              mkdir -p /tmp/large-mcp-test
+              find test-projects -name "*.py" -exec cp {} /tmp/large-mcp-test/ \;
+              
+              cargo run --bin moth -- run \
+                crates/mandrel-mcp-th/examples/filesystem-server-mcp-compliant.yaml \
+                --max-concurrency 6 \
+                --timeout 300
+              ;;
+              
+            "edge-case-bombardment")
+              echo "Testing edge case handling..."
+              # Run stress tests with unusual inputs
+              cargo test --package mandrel-mcp-th --all-features --release \
+                -- --test-threads 8 --nocapture
+              ;;
+          esac
+
+  # CodePrism specifications testing
+  codeprism-specs:
+    name: CodePrism ${{ matrix.language }} Specs
+    runs-on: ubuntu-latest
+    needs: [strategy-selector]
+    if: needs.strategy-selector.outputs.should-run-codeprism == 'true'
+    timeout-minutes: 45
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [rust, python, java, javascript]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust environment
+        uses: ./.github/actions/setup-rust
+        with:
+          toolchain: stable
+          cache-key: codeprism-${{ matrix.language }}
+
+      - name: Install language-specific dependencies
+        shell: bash
+        run: |
+          echo "Installing dependencies for ${{ matrix.language }}..."
+          
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config python3 python3-pip jq time
+          pip3 install psutil pyyaml jsonschema
+          
+          case "${{ matrix.language }}" in
+            "java")
+              sudo apt-get install -y openjdk-11-jdk maven
+              ;;
+            "javascript")
+              curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+              sudo apt-get install -y nodejs
+              ;;
+          esac
+
+      - name: Verify CodePrism specification
+        shell: bash
+        run: |
+          SPEC_FILE="crates/codeprism-moth-specs/codeprism/comprehensive/codeprism-${{ matrix.language }}-comprehensive.yaml"
+          
+          if [[ ! -f "$SPEC_FILE" ]]; then
+            echo "❌ CodePrism ${{ matrix.language }} specification not found: $SPEC_FILE"
+            exit 1
+          fi
+          
+          echo "✅ CodePrism ${{ matrix.language }} specification found: $SPEC_FILE"
+          
+          # Validate YAML syntax
+          python3 -c "
+          import yaml
+          import sys
+          try:
+              with open('$SPEC_FILE', 'r') as f:
+                  yaml.safe_load(f)
+              print('✅ YAML syntax valid')
+          except Exception as e:
+              print(f'❌ YAML syntax error: {e}')
+              sys.exit(1)
+          "
+
+      - name: Build CodePrism components
+        shell: bash
+        run: |
+          echo "Building CodePrism components..."
+          cargo build --release -p codeprism-mcp-server
+          cargo build --release -p mandrel-mcp-th
+
+      - name: Execute CodePrism ${{ matrix.language }} tests
+        shell: bash
+        run: |
+          echo "=== Executing CodePrism ${{ matrix.language }} Specification Tests ==="
+          
+          SPEC_FILE="crates/codeprism-moth-specs/codeprism/comprehensive/codeprism-${{ matrix.language }}-comprehensive.yaml"
+          
+          # Run the specification tests
+          cargo run --bin moth -- run "$SPEC_FILE" \
+            --max-concurrency 4 \
+            --timeout 120 \
+            --output-format json \
+            --report-file "codeprism-${{ matrix.language }}-report.json"
+          
+          # Validate results
+          if [[ -f "codeprism-${{ matrix.language }}-report.json" ]]; then
+            echo "📊 CodePrism ${{ matrix.language }} test results:"
+            jq '.summary' "codeprism-${{ matrix.language }}-report.json"
+          fi
+
+  # Summary and reporting
+  test-summary:
+    name: MCP Test Summary
+    runs-on: ubuntu-latest
+    needs: [strategy-selector, quick-validation, full-testing, stress-testing, codeprism-specs]
+    if: always()
+    timeout-minutes: 10
+
+    steps:
+      - name: Collect and summarize results
+        shell: bash
+        run: |
+          echo "=== MCP Test Harness Summary ==="
+          echo "Test Mode: ${{ needs.strategy-selector.outputs.test-mode }}"
+          echo ""
+          
+          # Collect job statuses
+          quick_status="${{ needs.quick-validation.result }}"
+          full_status="${{ needs.full-testing.result }}"
+          stress_status="${{ needs.stress-testing.result }}"
+          codeprism_status="${{ needs.codeprism-specs.result }}"
+          
+          echo "Job Results:"
+          [[ "${{ needs.strategy-selector.outputs.should-run-quick }}" == "true" ]] && echo "  Quick Validation: $quick_status"
+          [[ "${{ needs.strategy-selector.outputs.should-run-comprehensive }}" == "true" ]] && echo "  Full Testing: $full_status"
+          [[ "${{ needs.strategy-selector.outputs.should-run-stress }}" == "true" ]] && echo "  Stress Testing: $stress_status"
+          [[ "${{ needs.strategy-selector.outputs.should-run-codeprism }}" == "true" ]] && echo "  CodePrism Specs: $codeprism_status"
+          
+          # Determine overall status
+          failed_critical=0
+          [[ "$full_status" == "failure" ]] && ((failed_critical++))
+          [[ "$quick_status" == "failure" ]] && ((failed_critical++))
+          [[ "$codeprism_status" == "failure" ]] && ((failed_critical++))
+          
+          # Stress testing failures are reported but don't fail the pipeline
+          [[ "$stress_status" == "failure" ]] && echo "⚠️ Stress testing failed (informational only)"
+          
+          if [[ $failed_critical -gt 0 ]]; then
+            echo "❌ MCP Test Harness failed with $failed_critical critical failures"
+            exit 1
+          else
+            echo "✅ MCP Test Harness completed successfully!"
+          fi 

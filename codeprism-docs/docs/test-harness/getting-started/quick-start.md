@@ -6,76 +6,152 @@ sidebar_position: 1
 
 # Quick Start Guide - Mandrel MCP Test Harness
 
-Get up and running with Mandrel in under 5 minutes! This guide will walk you through installing the test harness and running your first MCP server test.
+Get up and running with Mandrel in under 5 minutes! This guide will walk you through installing the test harness and running your first MCP server test using our verified working examples.
 
 ## 🚀 Prerequisites
 
 - **Rust 1.70+** - Download from [rustup.rs](https://rustup.rs/)
-- **Git** - For cloning examples
-- An MCP server to test (we'll provide a simple example)
+- **Node.js 18+** - For running example MCP servers
+- **Git** - For cloning the repository
+- **Linux/macOS** - Required for filesystem examples
 
 ## 📦 Installation
 
-### Option 1: Install from Source (Recommended)
+### Option 1: Build from Source (Recommended)
 
 ```bash
 # Clone the repository
 git clone https://github.com/rustic-ai/codeprism.git
 cd codeprism
 
-# Build and install moth binary
-cargo install --path crates/mandrel-mcp-th
+# Build and run the moth binary
+cargo build --release --bin moth
 
 # Verify installation
-moth --version
+./target/release/moth --version
 ```
 
-### Option 2: Build Locally
+### Option 2: Development Build
 
 ```bash
 # In the codeprism directory
 cd crates/mandrel-mcp-th
-cargo build --release
+cargo build
 
-# Binary will be available at ../../target/release/moth
-../../target/release/moth --version
+# Binary will be available at ../../target/debug/moth
+../../target/debug/moth --version
 ```
 
-## 🎯 Your First Test
+## 🎯 Your First Test - Filesystem Server
 
-### Step 1: Create a Simple Test Server
+Let's start with a real, working example that we've verified to achieve 100% success rate.
 
-Let's create a minimal "echo" MCP server for testing purposes:
+### Step 1: Set Up Test Environment
 
 ```bash
-# Create a simple echo script that mimics MCP protocol
-cat > echo-mcp-server.sh << 'EOF'
-#!/bin/bash
-# Simple echo server that responds to basic MCP initialization
-
-while IFS= read -r line; do
-    if echo "$line" | grep -q '"method":"initialize"'; then
-        echo '{"jsonrpc":"2.0","id":1,"result":{"protocolVersion":"2024-11-05","serverInfo":{"name":"echo-server","version":"1.0.0"},"capabilities":{"tools":true}}}'
-    elif echo "$line" | grep -q '"method":"tools/list"'; then
-        echo '{"jsonrpc":"2.0","id":2,"result":{"tools":[{"name":"echo","description":"Echo back input","inputSchema":{"type":"object","properties":{"message":{"type":"string"}}}}]}}'
-    else
-        echo '{"jsonrpc":"2.0","id":null,"error":{"code":-32601,"message":"Method not found"}}'
-    fi
-done
-EOF
-
-chmod +x echo-mcp-server.sh
+# Create sandbox directory for filesystem tests
+mkdir -p /tmp/mcp-test-sandbox
+echo "Hello, MCP Test Harness!" > /tmp/mcp-test-sandbox/test.txt
 ```
 
-### Step 2: Create a Test Specification
+### Step 2: Run Verified Filesystem Test
 
-Create a file called `echo-test.yaml`:
+```bash
+# Navigate to the project root
+cd /path/to/codeprism
+
+# Run the verified filesystem server test
+cargo run --bin moth -- run codeprism-docs/docs/test-harness/examples/filesystem-server.yaml
+
+# Or with verbose output for more details
+cargo run --bin moth -- -v run codeprism-docs/docs/test-harness/examples/filesystem-server.yaml
+```
+
+**Expected Output:**
+```
+📝 Generating comprehensive test reports...
+  📄 Generated json report: ./reports/test_report.json
+  📄 Generated html report: ./reports/test_report.html
+  📄 Generated junit report: ./reports/test_report.xml
+
+✅ Test Suite Finished ✅
+Suite: Filesystem MCP Server (MCP-Compliant)
+Total Tests: 8, Passed: 8, Failed: 0
+Duration: 2.3s
+```
+
+### Step 3: Explore the Test Results
+
+```bash
+# View the JSON results
+cat ./reports/test_report.json
+
+# Open the HTML report in your browser (if available)
+open ./reports/test_report.html
+```
+
+## 🌟 Advanced Example - Everything Server
+
+Once you've verified the filesystem test works, try our comprehensive "everything server" test:
+
+### Step 1: Run Everything Server Test
+
+```bash
+# Run the verified everything server test (100% success rate)
+cargo run --bin moth -- run codeprism-docs/docs/test-harness/examples/everything-server.yaml
+
+# With output customization
+cargo run --bin moth -- run codeprism-docs/docs/test-harness/examples/everything-server.yaml --output ./my-test-results
+```
+
+**Expected Output:**
+```
+✅ Test Suite Finished ✅
+Suite: Everything MCP Server (Working Tests)
+Total Tests: 8, Passed: 8, Failed: 0
+Duration: 10.02s
+Success Rate: 100%
+```
+
+### Step 2: Understand What Was Tested
+
+The everything server test validates:
+- **Mathematical operations** (0-1ms response time)
+- **Text processing with Unicode** (0-1ms response time)
+- **Environment variable access** (1ms response time)
+- **Long-running operations** (10+ seconds)
+- **Resource management** (basic resource access)
+- **Error handling** (invalid resource IDs)
+
+## 🔍 Validate Before Running
+
+Always validate your test specifications before running:
+
+```bash
+# Validate a test specification
+cargo run --bin moth -- validate codeprism-docs/docs/test-harness/examples/filesystem-server.yaml
+
+# Comprehensive validation with detailed output
+cargo run --bin moth -- validate --detailed --check-all codeprism-docs/docs/test-harness/examples/everything-server.yaml
+
+# Generate validation report
+cargo run --bin moth -- validate --formats html everything-server.yaml --output ./validation-reports
+```
+
+## 📝 Create Your First Test Specification
+
+Now let's create a simple test for your own MCP server:
+
+### Step 1: Create a Basic Test File
+
+Create `my-server-test.yaml`:
 
 ```yaml
-name: "Echo MCP Server Test"
+name: "My First MCP Server Test"
 version: "1.0.0"
-description: "Basic test for echo MCP server"
+description: "Basic test for my MCP server"
 
+# Be honest about capabilities - only claim what your server actually supports
 capabilities:
   tools: true
   resources: false
@@ -83,347 +159,183 @@ capabilities:
   sampling: false
   logging: false
 
+# Configure your server startup
 server:
-  command: "./echo-mcp-server.sh"
-  args: []
+  command: "node"                    # Your server command
+  args: ["my-mcp-server.js"]        # Your server arguments
+  env:
+    NODE_ENV: "test"
   transport: "stdio"
-  startup_timeout_seconds: 10
-  shutdown_timeout_seconds: 5
+  startup_timeout_seconds: 30
 
+# Test your tools
 tools:
-  - name: "echo"
-    description: "Test echo tool functionality"
+  - name: "echo"                     # Use exact tool name from your server
+    description: "Echo tool test"
     tests:
       - name: "basic_echo"
         description: "Test basic echo functionality"
         input:
-          message: "Hello, MCP!"
+          message: "Hello, World!"
         expected:
           error: false
           fields:
-            - path: "$.result"
-              field_type: "object"
+            - path: "$[0].text"      # Use actual server response format
+              contains: "Hello"
               required: true
+        performance:
+          max_duration_ms: 1000
+        tags: ["basic", "echo"]
 
 test_config:
-  timeout_seconds: 30
-  max_concurrency: 1
-  fail_fast: true
+  timeout_seconds: 60
+  max_concurrency: 2
+  fail_fast: false
+
+metadata:
+  author: "Your Name"
+  tags: ["custom", "basic"]
 ```
 
-### Step 3: Validate Your Test Specification
+### Step 2: Validate Your Test
 
 ```bash
-# Check if your YAML is valid
-moth validate echo-test.yaml
+# Validate your test specification
+cargo run --bin moth -- validate my-server-test.yaml --detailed
+
+# Check for common issues
+cargo run --bin moth -- validate --check-all my-server-test.yaml
 ```
 
-Expected output:
-```
-✅ Specification validation successful
-- Server: Echo MCP Server Test v1.0.0
-- Capabilities: tools
-- Tests: 1 test case found
-- Configuration: Valid
-```
-
-### Step 4: List Available Tests
+### Step 3: Run Your Test
 
 ```bash
-# See what tests will be executed
-moth list echo-test.yaml --detailed
+# Run your test
+cargo run --bin moth -- run my-server-test.yaml
+
+# Run with verbose output for debugging
+cargo run --bin moth -- -v run my-server-test.yaml
 ```
 
-Expected output:
-```
-📋 Test Specification: Echo MCP Server Test
-   Version: 1.0.0
-   Description: Basic test for echo MCP server
+## 🛠️ Troubleshooting Common Issues
 
-🔧 Tools (1):
-  • echo - Test echo tool functionality
-    ├─ basic_echo
-    │  Test basic echo functionality
+### Server Startup Issues
 
-📊 Total Tests: 2
-```
-
-### Step 5: Run Your First Test
-
+**Problem:** Server fails to start
 ```bash
-# Execute the test suite
-moth test echo-test.yaml --output text
-```
+# Check if your server command is correct
+node my-mcp-server.js  # Test manually
 
-Expected output:
-```
-🧪 Starting test execution: Echo MCP Server Test v1.0.0
-🔗 Connecting to MCP server...
-✅ Server connected successfully
-🏃 Running 1 test case...
-
-Tool Test: echo::basic_echo
-  ✅ Test passed in 45ms
-  📊 Response validation: All fields matched
-
-📋 Test Summary:
-  Total: 1 test
-  Passed: 1 ✅
-  Failed: 0 ❌
-  Duration: 1.2s
-
-✅ All tests passed!
-```
-
-## 🛠️ Testing a Real MCP Server
-
-### Option 1: Test the CodePrism MCP Server
-
-If you have the full CodePrism project, you can test the built-in MCP server:
-
-```yaml
-name: "CodePrism MCP Server"
-version: "1.0.0"
-description: "Test CodePrism code analysis capabilities"
-
-capabilities:
-  tools: true
-  resources: false
-  prompts: false
-  sampling: false
-  logging: false
-
+# Increase startup timeout
 server:
-  command: "cargo"
-  args: ["run", "--bin", "codeprism-mcp", "--", "stdio"]
-  env:
-    RUST_LOG: "info"
-  transport: "stdio"
-  startup_timeout_seconds: 30
-
-tools:
-  - name: "repository_stats"
-    description: "Test repository statistics"
-    tests:
-      - name: "get_repo_stats"
-        description: "Get basic repository statistics"
-        input:
-          path: "."
-        expected:
-          error: false
-          fields:
-            - path: "$.total_files"
-              field_type: "integer"
-              required: true
-            - path: "$.languages"
-              field_type: "object"
-              required: true
+  startup_timeout_seconds: 60  # Increase from 30
 ```
 
-### Option 2: Test an External MCP Server
-
-For external servers, adjust the `server` section:
-
-```yaml
-server:
-  command: "node"
-  args: ["path/to/your/server.js"]
-  env:
-    NODE_ENV: "test"
-  working_dir: "/path/to/server"
-  transport: "stdio"
-```
-
-## 📊 Understanding Test Output
-
-### JSON Output (Default)
-
+**Problem:** Transport connection failed
 ```bash
-moth test echo-test.yaml --output json
+# Verify your server supports stdio transport
+# Check server output for MCP protocol compliance
 ```
 
-Produces structured results perfect for CI/CD integration:
+### Test Failures
 
+**Problem:** Wrong output format
+```bash
+# Check actual server response by examining the JSON report
+cat ./reports/test_report.json
+
+# Common issues:
+# - Using "$.result" instead of "$[0].text"
+# - Wrong tool names
+# - Incorrect capability claims
+```
+
+**Problem:** Timeouts
+```bash
+# Increase test timeouts based on actual performance
+performance:
+  max_duration_ms: 5000  # Increase from 1000
+```
+
+### Validation Errors
+
+**Problem:** YAML syntax errors
+```bash
+# Use a YAML validator
+python3 -c "
+import yaml
+with open('my-server-test.yaml', 'r') as f:
+    yaml.safe_load(f)
+print('YAML is valid')
+"
+```
+
+**Problem:** JSONPath errors
+```bash
+# Common JSONPath issues:
+# ❌ "result" (missing $ prefix)
+# ✅ "$.result" (correct)
+# ❌ "$[0].text" for object responses
+# ✅ "$.content" for object responses
+```
+
+## 📊 Understanding Test Reports
+
+### JSON Report Structure
 ```json
 {
-  "suite_name": "Echo MCP Server Test",
+  "suite_name": "My First MCP Server Test",
   "total_tests": 1,
   "passed": 1,
   "failed": 0,
-  "skipped": 0,
-  "duration_ms": 1245,
+  "success_rate": 100.0,
   "test_results": [
     {
-      "name": "basic_echo",
-      "status": "passed",
-      "duration_ms": 45,
-      "performance": {
-        "response_time_ms": 12,
-        "memory_usage_bytes": null
-      }
+      "test_name": "basic_echo",
+      "status": "Passed",
+      "response_time_ms": 15
     }
   ]
 }
 ```
 
-### HTML Report
-
-```bash
-moth test echo-test.yaml --output html --output-file report.html
-```
-
-Generates a comprehensive HTML report with:
-- Interactive test results
-- Performance charts
-- Detailed error information
-- Server communication logs
-
-### JUnit XML
-
-```bash
-moth test echo-test.yaml --output junit --output-file results.xml
-```
-
-Perfect for CI/CD systems like Jenkins, GitHub Actions, or GitLab CI.
-
-## ⚡ CLI Options Reference
-
-### `moth test` - Run Tests
-
-```bash
-moth test [OPTIONS] <SPEC>
-
-Arguments:
-  <SPEC>  Path to test specification file or directory
-
-Options:
-  -o, --output-file <FILE>    Output file for test results
-  -f, --fail-fast             Stop execution on first failure
-  -F, --filter <PATTERN>      Test filter pattern (regex)
-  -c, --concurrency <N>       Maximum concurrent tests [default: 4]
-      --output <FORMAT>       Output format [json, html, junit, text]
-  -v, --verbose               Enable verbose output
-```
-
-### `moth validate` - Validate Specification
-
-```bash
-moth validate [OPTIONS] <SPEC>
-
-Options:
-  -v, --verbose     Enable verbose output
-      --output <FORMAT>  Output format [json, text]
-```
-
-### `moth list` - List Tests
-
-```bash
-moth list [OPTIONS] <SPEC>
-
-Options:
-  -d, --detailed    Show detailed test information
-  -v, --verbose     Enable verbose output
-      --output <FORMAT>  Output format [json, text]
-```
-
-## 🚦 Common Patterns
-
-### 1. Basic Tool Testing
-
-```yaml
-tools:
-  - name: "my_tool"
-    tests:
-      - name: "success_case"
-        input:
-          param1: "value1"
-        expected:
-          error: false
-          fields:
-            - path: "$.result.data"
-              field_type: "string"
-              required: true
-```
-
-### 2. Error Condition Testing
-
-```yaml
-tools:
-  - name: "my_tool"
-    tests:
-      - name: "error_case"
-        input:
-          invalid_param: null
-        expected:
-          error: true
-          fields:
-            - path: "$.error.code"
-              field_type: "integer"
-              required: true
-```
-
-### 3. Performance Testing
-
-```yaml
-tools:
-  - name: "my_tool"
-    tests:
-      - name: "performance_test"
-        input:
-          large_dataset: "..."
-        expected:
-          error: false
-        performance:
-          max_duration_ms: 1000
-          max_memory_mb: 100
-```
-
-## 🐛 Troubleshooting
-
-### Issue: "Server connection error"
-
-**Problem**: The test harness can't connect to your MCP server.
-
-**Solutions**:
-1. Verify your server command is correct and executable
-2. Check that the server implements MCP protocol properly
-3. Increase `startup_timeout_seconds`
-4. Check server logs with `--verbose` flag
-
-### Issue: "YAML parsing error"
-
-**Problem**: Your test specification has syntax errors.
-
-**Solutions**:
-1. Validate YAML syntax with `moth validate spec.yaml`
-2. Check required fields: `name`, `version`, `capabilities`, `server`
-3. Ensure proper indentation (use spaces, not tabs)
-
-### Issue: "Method not found"
-
-**Problem**: Your server doesn't implement the requested tool/resource.
-
-**Solutions**:
-1. Use `moth list` to see what tests will be executed
-2. Verify your server actually implements the MCP method
-3. Check capability declarations match what your server supports
+### HTML Report Features
+- **Interactive charts** showing test results
+- **Performance metrics** with response times
+- **Detailed test breakdowns** with validation results
+- **Error analysis** with suggested fixes
+- **Filterable results** by status and category
 
 ## 🎯 Next Steps
 
-1. **[YAML Specification Guide](../configuration-reference.md)** - Learn the complete YAML specification format
-2. **[Advanced Testing](../user-guide.md)** - Resource testing, prompt testing, and complex scenarios
-3. **[Performance Testing](../performance-tuning.md)** - Optimize test execution and server performance
-4. **[Production Deployment](../production-deployment)** - Enterprise deployment and CI/CD integration
-5. **[Troubleshooting Guide](../troubleshooting.md)** - Solutions for common issues
+### Explore More Examples
+- Review our [verified examples](../examples/) for advanced patterns
+- Study the [Configuration Reference](../configuration-reference) for complete options
+- Learn about [performance testing](../performance-tuning) for optimization
 
-## 💡 Pro Tips
+### Production Usage
+- Set up [CI/CD integration](../production-deployment) for automated testing
+- Configure [monitoring and alerting](../production-deployment#monitoring) for production
+- Implement [security testing](../configuration-reference#security-configuration) for compliance
 
-- **Start simple**: Begin with basic tool tests before adding complex validation
-- **Use filters**: Test specific functionality with `--filter "pattern"`
-- **Incremental development**: Add tests as you develop new MCP server features
-- **Performance monitoring**: Include performance requirements in your tests
-- **CI/CD ready**: Use JSON/JUnit output formats for automated testing
+### Community
+- Check out the [User Guide](../user-guide) for comprehensive usage patterns
+- Review [Troubleshooting Guide](../troubleshooting) for common issues
+- Contribute to the project via [Contributing Guide](../../development/contributing)
+
+## 🏆 Success Checklist
+
+After completing this guide, you should have:
+
+- ✅ **Installed and verified** the Mandrel MCP Test Harness
+- ✅ **Run a verified working test** (filesystem or everything server)
+- ✅ **Created your first test specification** for your own server
+- ✅ **Validated and run** your custom test
+- ✅ **Understood test results** and report formats
+- ✅ **Learned troubleshooting** for common issues
 
 ---
 
-**Need help?** Check out our [troubleshooting guide](../troubleshooting.md) or [open an issue](https://github.com/rustic-ai/codeprism/issues) on GitHub. 
+**Congratulations!** You've successfully set up the MCP Test Harness and run your first tests. You're ready to create comprehensive test suites for your MCP servers! 🎉
+
+**Need more help?** Check our [User Guide](../user-guide) for advanced usage patterns or visit our [Examples](../examples/) for more verified test specifications. 

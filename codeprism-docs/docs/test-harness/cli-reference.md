@@ -17,84 +17,289 @@ moth [GLOBAL_OPTIONS] <COMMAND> [COMMAND_OPTIONS]
 ### Global Options
 
 ```bash
--v, --verbose          Enable verbose output
-    --output <FORMAT>  Output format [default: json] [possible values: json, html, junit, text]
--h, --help             Print help
--V, --version          Print version
+-v, --verbose...                 Enable verbose output (can be used multiple times)
+-q, --quiet                      Suppress non-essential output
+-p, --profile <PROFILE>          Use named configuration profile
+    --detect-ci                  Auto-detect CI environment and apply optimizations
+    --simulate-ci <CI_TYPE>      Override environment detection (for testing CI configurations locally)
+                                 [possible values: git-hub-actions, jenkins, git-lab-ci, circle-ci, 
+                                  travis, buildkite, team-city, azure-dev-ops]
+    --config-dir <CONFIG_DIR>    Configuration directory for profiles and settings 
+                                 [default: ~/.config/mandrel-mcp-th]
+-h, --help                       Print help
+-V, --version                    Print version
 ```
 
 ## Commands
 
-### `moth test` - Run Test Specifications
+### `moth run` - Execute Test Specifications
 
-Execute test specifications against MCP servers.
+Execute test specifications against MCP servers with comprehensive reporting.
 
 ```bash
-moth test [OPTIONS] <SPEC>
+moth run [OPTIONS] <CONFIG>
 ```
 
 #### Arguments
 
-- `<SPEC>` - Path to test specification file or directory
+- `<CONFIG>` - Path to test specification file (YAML format)
 
 #### Options
 
 ```bash
--o, --output-file <OUTPUT_FILE>  Output file for test results
--f, --fail-fast                  Stop execution on first failure
--F, --filter <FILTER>            Test filter pattern (regex)
--c, --concurrency <CONCURRENCY>  Maximum number of concurrent tests [default: 4]
--v, --verbose                    Enable verbose output
-    --output <OUTPUT>            Output format [default: json] [possible values: json, html, junit, text]
+-o, --output <DIRECTORY>    Output directory for generated reports [default: ./reports]
+    --parallel              Run tests in parallel (default behavior)
+    --fail-fast             Stop execution on first test failure
+-h, --help                  Print help
+```
+
+#### Examples
+
+```bash
+# Run tests with default reporting
+moth run my-server.yaml
+
+# Run tests with custom output directory
+moth run my-server.yaml --output ./test-results
+
+# Stop on first failure for quick debugging
+moth run my-server.yaml --fail-fast
+
+# Run with verbose output
+moth -v run my-server.yaml
+
+# Run with maximum verbosity
+moth -vvv run my-server.yaml
+```
+
+#### Generated Reports
+
+The `run` command automatically generates multiple report formats:
+
+- **JSON Report**: `test_report.json` - Machine-readable results
+- **HTML Report**: `test_report.html` - Interactive web report with charts
+- **JUnit XML**: `test_report.xml` - CI/CD integration format
+
+### `moth validate` - Validate Configuration Files
+
+Validate test specifications for syntax, schema compliance, and best practices.
+
+```bash
+moth validate [OPTIONS] <CONFIG>
+```
+
+#### Arguments
+
+- `<CONFIG>` - Configuration file to validate
+
+#### Options
+
+```bash
+    --strict                     Enable strict validation mode (fail on warnings)
+-o, --output <DIRECTORY>         Output directory for validation reports
+-f, --formats <FORMATS>          Report formats to generate [possible values: json, junit, html, markdown]
+    --check-jsonpath             Check JSONPath expressions in test cases
+    --check-schema               Validate JSON schema compliance
+    --check-protocol             Validate MCP protocol compliance
+    --check-all                  Enable all validation checks
+    --detailed                   Enable detailed validation diagnostics
+    --no-suggestions             Only validate, don't suggest fixes
 -h, --help                       Print help
 ```
 
 #### Examples
 
 ```bash
-# Run all tests from a specification file
-moth test my-server.yaml
+# Basic validation
+moth validate my-server.yaml
 
-# Run tests with JSON output to file
-moth test my-server.yaml --output json --output-file results.json
+# Strict validation with all checks
+moth validate --strict --check-all my-server.yaml
 
-# Run tests with HTML report generation
-moth test my-server.yaml --output html --output-file report.html
+# Generate detailed validation report
+moth validate --detailed --formats html my-server.yaml
 
-# Stop on first failure for quick debugging
-moth test my-server.yaml --fail-fast
-
-# Run only tests matching a pattern
-moth test my-server.yaml --filter "authentication.*"
-
-# Increase concurrency for faster execution
-moth test my-server.yaml --concurrency 8
-
-# Verbose output for debugging
-moth test my-server.yaml --verbose
-
-# Test all YAML files in a directory
-moth test test-specs/
+# Validate with specific checks
+moth validate --check-jsonpath --check-protocol my-server.yaml
 ```
 
-#### Output Formats
+### `moth report` - Generate Reports from Results
 
-##### JSON (Default)
+Generate or regenerate reports from existing test execution results.
+
+```bash
+moth report [OPTIONS] <RESULTS_DIR>
+```
+
+#### Arguments
+
+- `<RESULTS_DIR>` - Directory containing test execution results
+
+#### Examples
+
+```bash
+# Regenerate reports from existing results
+moth report ./reports
+
+# Generate specific format reports
+moth report --formats html,markdown ./reports
+```
+
+### `moth profile` - Configuration Profile Management
+
+Manage configuration profiles for different environments and setups.
+
+```bash
+moth profile <SUBCOMMAND>
+```
+
+#### Subcommands
+
+- `list` - List available profiles
+- `show <PROFILE>` - Show profile configuration
+- `create <PROFILE>` - Create new profile
+- `delete <PROFILE>` - Delete profile
+
+#### Examples
+
+```bash
+# List all profiles
+moth profile list
+
+# Show development profile
+moth profile show development
+
+# Use specific profile for testing
+moth --profile production run my-server.yaml
+```
+
+### `moth watch` - Auto-Generate Reports
+
+Watch files and automatically regenerate reports on changes.
+
+```bash
+moth watch [OPTIONS] <WATCH_DIR>
+```
+
+#### Arguments
+
+- `<WATCH_DIR>` - Directory to watch for changes
+
+#### Examples
+
+```bash
+# Watch for changes and auto-regenerate reports
+moth watch ./test-results
+
+# Watch with verbose output
+moth -v watch ./test-results
+```
+
+## Working with Real Examples
+
+### Filesystem Server Testing
+
+```bash
+# Test the filesystem MCP server
+moth run crates/mandrel-mcp-th/examples/filesystem-server-mcp-compliant.yaml
+
+# With verbose output to see detailed execution
+moth -v run crates/mandrel-mcp-th/examples/filesystem-server-mcp-compliant.yaml
+```
+
+### Everything Server Testing
+
+```bash
+# Test the everything MCP server (comprehensive test)
+moth run crates/mandrel-mcp-th/examples/everything-server-working.yaml
+
+# Validate the specification first
+moth validate crates/mandrel-mcp-th/examples/everything-server-working.yaml
+```
+
+## CI/CD Integration
+
+### GitHub Actions Integration
+
+```bash
+# Auto-detect GitHub Actions environment
+moth --detect-ci run my-server.yaml
+
+# Simulate GitHub Actions locally
+moth --simulate-ci github-actions run my-server.yaml
+```
+
+### Common CI Patterns
+
+```bash
+# Fail fast for quick CI feedback
+moth run --fail-fast my-server.yaml
+
+# Generate JUnit XML for CI integration
+moth run my-server.yaml  # JUnit XML automatically generated
+
+# Quiet mode for clean CI logs
+moth --quiet run my-server.yaml
+```
+
+## Exit Codes
+
+- **0**: All tests passed successfully
+- **1**: One or more tests failed
+- **2**: Configuration/validation error
+- **3**: Server startup failure
+- **4**: Runtime error (unexpected failure)
+
+## Performance Tips
+
+### Optimization for Large Test Suites
+
+```bash
+# Use parallel execution (default)
+moth run --parallel my-server.yaml
+
+# Custom configuration directory for faster profile loading
+moth --config-dir ./project-config run my-server.yaml
+
+# Reduce verbosity for faster execution
+moth --quiet run my-server.yaml
+```
+
+### Debugging Failed Tests
+
+```bash
+# Maximum verbosity for debugging
+moth -vvv run my-server.yaml
+
+# Stop on first failure and preserve artifacts
+moth run --fail-fast my-server.yaml
+
+# Validate configuration before running
+moth validate --detailed my-server.yaml
+```
+
+## Output Format Examples
+
+### JSON Report Structure
 ```json
 {
-  "suite_name": "My MCP Server",
-  "total_tests": 5,
-  "passed": 4,
-  "failed": 1,
+  "suite_name": "Everything MCP Server (Working Tests)",
+  "total_tests": 8,
+  "passed": 8,
+  "failed": 0,
   "skipped": 0,
-  "duration_ms": 2847,
+  "total_duration": {
+    "secs": 10,
+    "nanos": 17847712
+  },
+  "success_rate": 100.0,
   "test_results": [
     {
-      "name": "test_tool_basic",
-      "status": "passed",
-      "duration_ms": 156,
+      "test_name": "integer_addition",
+      "status": "Passed",
+      "response_time_ms": 0,
       "performance": {
-        "response_time_ms": 23,
+        "response_time_ms": 0,
         "memory_usage_bytes": null
       }
     }
@@ -102,400 +307,13 @@ moth test test-specs/
 }
 ```
 
-##### Text/Human-Readable
-```
-🧪 Starting test execution: My MCP Server v1.0.0
-🔗 Connecting to MCP server...
-✅ Server connected successfully
-🏃 Running 5 test cases...
-
-Tool Test: authenticate::basic_auth
-  ✅ Test passed in 156ms
-  📊 Response validation: All fields matched
-
-📋 Test Summary:
-  Total: 5 tests
-  Passed: 4 ✅
-  Failed: 1 ❌
-  Duration: 2.8s
-```
-
-##### JUnit XML
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="My MCP Server" tests="5" failures="1" time="2.847">
-  <testcase name="authenticate::basic_auth" time="0.156"/>
-  <testcase name="authenticate::invalid_token" time="0.089">
-    <failure message="Validation failed">Expected error response</failure>
-  </testcase>
-</testsuite>
-```
-
-##### HTML Report
-Generates interactive HTML report with:
-- Test execution summary
-- Individual test results with details
-- Performance charts
-- Server communication logs
-- Filterable and searchable results
-
-### `moth validate` - Validate Test Specifications
-
-Validate the syntax and structure of test specification files.
-
-```bash
-moth validate [OPTIONS] <SPEC>
-```
-
-#### Arguments
-
-- `<SPEC>` - Path to test specification file or directory
-
-#### Options
-
-```bash
--v, --verbose          Enable verbose output
-    --output <OUTPUT>  Output format [default: json] [possible values: json, text]
--h, --help             Print help
-```
-
-#### Examples
-
-```bash
-# Validate a single specification file
-moth validate my-server.yaml
-
-# Validate all specifications in a directory
-moth validate test-specs/
-
-# Verbose validation with detailed feedback
-moth validate my-server.yaml --verbose
-
-# JSON output for programmatic parsing
-moth validate my-server.yaml --output json
-```
-
-#### Output Examples
-
-##### Success (Text)
-```
-✅ Specification validation successful
-  Name: My MCP Server
-  Version: 1.0.0
-  Description: Test specification for my server
-  Tools: 3, Resources: 1, Prompts: 0
-  Server: node server.js
-```
-
-##### Error (Text)
-```
-❌ Specification validation failed: YAML parsing error: 
-server: missing field `command` at line 23 column 3
-```
-
-##### JSON Output
-```json
-{
-  "valid": true,
-  "specification": {
-    "name": "My MCP Server",
-    "version": "1.0.0",
-    "description": "Test specification for my server",
-    "tools": 3,
-    "resources": 1,
-    "prompts": 0,
-    "server_command": "node server.js"
-  }
-}
-```
-
-### `moth list` - List Available Tests
-
-List all tests defined in a specification without executing them.
-
-```bash
-moth list [OPTIONS] <SPEC>
-```
-
-#### Arguments
-
-- `<SPEC>` - Path to test specification file or directory
-
-#### Options
-
-```bash
--d, --detailed         Show detailed test information
--v, --verbose          Enable verbose output
-    --output <OUTPUT>  Output format [default: text] [possible values: json, text]
--h, --help             Print help
-```
-
-#### Examples
-
-```bash
-# List tests in a specification
-moth list my-server.yaml
-
-# Show detailed test information
-moth list my-server.yaml --detailed
-
-# JSON output for programmatic parsing
-moth list my-server.yaml --output json
-
-# List tests from all specs in directory
-moth list test-specs/ --detailed
-```
-
-#### Output Examples
-
-##### Basic Listing
-```
-📋 Test Specification: My MCP Server
-   Tools: 3 tests
-   Resources: 1 test
-   Total Tests: 4
-```
-
-##### Detailed Listing
-```
-📋 Test Specification: My MCP Server
-   Version: 1.0.0
-   Description: Test specification for my server
-
-🔧 Tools (3):
-  • authenticate - User authentication tool
-    ├─ basic_auth
-    │  Test basic authentication flow
-    ├─ invalid_token
-    │  Test invalid token handling
-
-  • get_user - User information retrieval
-    ├─ valid_user
-    │  Get valid user information
-
-📦 Resources (1):
-  • user_profile - User profile resource
-    ├─ get_profile
-    │  Retrieve user profile data
-
-📊 Total Tests: 4
-```
-
-##### JSON Output
-```json
-{
-  "specification": {
-    "name": "My MCP Server",
-    "version": "1.0.0",
-    "description": "Test specification for my server"
-  },
-  "total_tests": 4,
-  "tools": [
-    {
-      "name": "authenticate",
-      "description": "User authentication tool",
-      "tests": [
-        {
-          "name": "basic_auth",
-          "description": "Test basic authentication flow"
-        },
-        {
-          "name": "invalid_token",
-          "description": "Test invalid token handling"
-        }
-      ]
-    }
-  ],
-  "resources": [
-    {
-      "name": "user_profile",
-      "description": "User profile resource",
-      "tests": [
-        {
-          "name": "get_profile",
-          "description": "Retrieve user profile data"
-        }
-      ]
-    }
-  ]
-}
-```
-
-### `moth version` - Show Version Information
-
-Display version and build information for the moth binary.
-
-```bash
-moth version
-```
-
-#### Output
-
-```
-2025-07-04T17:49:39.940047Z  INFO Starting moth binary - Mandrel MCP Test Harness
-moth 0.1.0 - Mandrel MCP Test Harness
-MOdel context protocol Test Harness binary
-Built with official rmcp SDK
-Repository: https://github.com/rustic-ai/codeprism
-```
-
-## Common Usage Patterns
-
-### 1. Development Workflow
-
-```bash
-# Validate specification during development
-moth validate my-server.yaml
-
-# List tests to verify configuration
-moth list my-server.yaml --detailed
-
-# Run tests with immediate feedback
-moth test my-server.yaml --output text --verbose
-
-# Debug specific test failures
-moth test my-server.yaml --filter "problematic_test" --fail-fast --verbose
-```
-
-### 2. CI/CD Integration
-
-```bash
-# Run all tests with JUnit output for CI
-moth test my-server.yaml --output junit --output-file test-results.xml
-
-# Generate HTML report for artifact collection
-moth test my-server.yaml --output html --output-file test-report.html
-
-# Fail fast for quick feedback in CI
-moth test my-server.yaml --fail-fast
-```
-
-### 3. Performance Testing
-
-```bash
-# High concurrency for performance testing
-moth test performance-spec.yaml --concurrency 16
-
-# Filter to performance-specific tests
-moth test my-server.yaml --filter "performance.*"
-```
-
-### 4. Test Organization
-
-```bash
-# Test specific functionality
-moth test auth-tests.yaml
-moth test tool-tests.yaml
-moth test resource-tests.yaml
-
-# Test entire test suite directory
-moth test test-specs/
-
-# Validate all specifications before committing
-moth validate test-specs/
-```
-
-## Exit Codes
-
-| Code | Meaning |
-|------|---------|
-| 0    | Success - All tests passed or validation successful |
-| 1    | Test failures or validation errors |
-| 2    | Configuration or argument errors |
-| 3    | Server connection failures |
-| 4    | File I/O errors |
-
-## Environment Variables
-
-### `RUST_LOG`
-Controls logging verbosity for debugging:
-
-```bash
-# Enable debug logging
-RUST_LOG=debug moth test my-server.yaml
-
-# Enable trace logging for maximum detail
-RUST_LOG=trace moth test my-server.yaml
-
-# Filter logs to specific modules
-RUST_LOG=mandrel_mcp_th=debug moth test my-server.yaml
-```
-
-### `MOTH_CONFIG_DIR`
-Override default configuration directory:
-
-```bash
-export MOTH_CONFIG_DIR=/custom/config/path
-moth test my-server.yaml
-```
-
-## Error Handling
-
-### Common Error Patterns
-
-#### Connection Errors
-```
-❌ Server connection error: Failed to start server process: No such file or directory
-```
-**Solution**: Verify server command path and permissions
-
-#### Validation Errors
-```
-❌ Specification validation failed: YAML parsing error: server: missing field `command`
-```
-**Solution**: Check YAML syntax and required fields
-
-#### Test Execution Errors
-```
-❌ Test execution error: Timeout waiting for server response
-```
-**Solution**: Increase timeout values or check server performance
-
-### Debugging Commands
-
-```bash
-# Maximum verbosity for debugging
-moth test my-server.yaml --verbose --output text
-
-# Validate specification first
-moth validate my-server.yaml --verbose
-
-# Check what tests would run
-moth list my-server.yaml --detailed
-
-# Test single functionality
-moth test my-server.yaml --filter "specific_test" --fail-fast
-```
-
-## Best Practices
-
-### 1. Specification Organization
-- Use descriptive test names
-- Group related tests in logical tool/resource sections
-- Include performance requirements where appropriate
-- Validate specifications before committing
-
-### 2. Test Execution
-- Use `--fail-fast` during development for quick feedback
-- Use appropriate concurrency levels for your hardware
-- Generate HTML reports for comprehensive analysis
-- Filter tests for focused debugging
-
-### 3. CI/CD Integration
-- Always validate specifications in CI
-- Use JUnit output for integration with CI systems
-- Set appropriate timeouts for CI environments
-- Archive HTML reports as build artifacts
-
-### 4. Performance Monitoring
-- Include performance requirements in tests
-- Monitor test execution times over time
-- Use high concurrency for stress testing
-- Regular baseline performance validation
+### HTML Report Features
+- **Interactive charts** showing test results and performance metrics
+- **Detailed test breakdowns** with response times and validation results
+- **Error analysis** with suggested fixes
+- **Performance trends** and regression detection
+- **Filterable test results** by status, category, or performance
 
 ---
 
-**See Also:**
-- [Quick Start Guide](getting-started/quick-start) - Get started quickly
-- [Configuration Reference](configuration-reference.md) - Complete YAML specification
-- [Troubleshooting Guide](troubleshooting.md) - Common issues and solutions 
+**Need help with configuration?** Check out our [Configuration Reference](configuration-reference) for complete YAML specification format documentation. 

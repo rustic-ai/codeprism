@@ -109,7 +109,7 @@ moth test my-server.yaml --filter "performance.*"
 
 ✅ PASS: initialize
    Duration: 150ms
-   Server Response: {"protocolVersion": "2024-11-05", "capabilities": {...}}
+   Server Response: {"protocolVersion": "2025-06-18", "capabilities": {...}}
 
 ❌ FAIL: list_resources  
    Duration: 5000ms (TIMEOUT)

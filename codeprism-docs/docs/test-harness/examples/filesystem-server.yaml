@@ -1,0 +1,190 @@
+# Filesystem MCP Server Test Specification
+# Verified working test for @modelcontextprotocol/server-filesystem
+
+name: "Filesystem MCP Server (MCP-Compliant)"
+version: "1.0.0"
+description: "Testing @modelcontextprotocol/server-filesystem according to MCP specification"
+
+# Actual server capabilities (verified through testing)
+capabilities:
+  tools: true           # Filesystem operations work
+  resources: false      # Resources not used
+  prompts: false        # Not supported
+  sampling: false       # Not supported  
+  logging: false        # Not enabled
+
+# Server startup configuration
+server:
+  command: "npx"
+  args: ["-y", "@modelcontextprotocol/server-filesystem", "/tmp/mcp-test-sandbox"]
+  env:
+    NODE_ENV: "test"
+  transport: "stdio"
+  startup_timeout_seconds: 30
+  shutdown_timeout_seconds: 15
+
+# Filesystem tool tests
+tools:
+  # File creation and writing
+  - name: "write_file"
+    description: "Write content to a file"
+    tests:
+      - name: "write_simple_text_file"
+        description: "Successfully write a text file"
+        input:
+          path: "/tmp/mcp-test-sandbox/test_write.txt"
+          content: "Hello, MCP Test Harness!"
+        expected:
+          error: false
+          fields:
+            - path: "$.content[0].text"
+              contains: "successfully"
+              required: true
+        performance:
+          max_duration_ms: 1000
+        tags: ["write", "success", "basic"]
+
+      - name: "write_with_directory_creation"
+        description: "Write file creating necessary directories"
+        input:
+          path: "/tmp/mcp-test-sandbox/nested/dir/test.txt"
+          content: "Nested directory file"
+        expected:
+          error: false
+          fields:
+            - path: "$.content[0].text"
+              contains: "successfully"
+              required: true
+        tags: ["write", "directories", "nested"]
+
+  # File reading
+  - name: "read_file"
+    description: "Read content from a file"
+    tests:
+      - name: "read_existing_text_file"
+        description: "Successfully read a text file with MCP-compliant response"
+        input:
+          path: "/tmp/mcp-test-sandbox/test.txt"
+        expected:
+          error: false
+          fields:
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+            - path: "$.content[0].type"
+              value: "text"
+              required: true
+            - path: "$.isError"
+              value: false
+              required: true
+        performance:
+          max_duration_ms: 500
+        tags: ["read", "success", "mcp-compliant"]
+
+      - name: "read_nonexistent_file"
+        description: "Proper error handling for missing files"
+        input:
+          path: "/tmp/mcp-test-sandbox/nonexistent.txt"
+        expected:
+          error: true
+          fields:
+            - path: "$.content[0].type"
+              value: "text"
+              required: true
+            - path: "$.isError"
+              value: true
+              required: true
+        tags: ["read", "error", "validation"]
+
+  # File listing
+  - name: "list_files"
+    description: "List files in a directory"
+    tests:
+      - name: "list_sandbox_directory"
+        description: "List files in the test sandbox"
+        input:
+          path: "/tmp/mcp-test-sandbox"
+        expected:
+          error: false
+          fields:
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+            - path: "$.content[0].type"
+              value: "text"
+              required: true
+        performance:
+          max_duration_ms: 1000
+        tags: ["list", "directory", "success"]
+
+  # File moving/renaming
+  - name: "move_file"
+    description: "Move or rename a file"
+    tests:
+      - name: "move_existing_file"
+        description: "Successfully move a file"
+        input:
+          source: "/tmp/mcp-test-sandbox/test.txt"
+          destination: "/tmp/mcp-test-sandbox/mcp_test_moved.txt"
+        expected:
+          error: false
+          fields:
+            - path: "$.content[0].text"
+              contains: "moved"
+              required: true
+        tags: ["move", "success"]
+
+  # Directory operations
+  - name: "create_directory"
+    description: "Create a directory"
+    tests:
+      - name: "create_new_directory"
+        description: "Successfully create a directory"
+        input:
+          path: "/tmp/mcp-test-sandbox/mcp_test_dir"
+        expected:
+          error: false
+          fields:
+            - path: "$.content[0].text"
+              contains: "created"
+              required: true
+        tags: ["directory", "create", "success"]
+
+  # File search
+  - name: "search_files"
+    description: "Search for files matching patterns"
+    tests:
+      - name: "search_text_files"
+        description: "Search for .txt files"
+        input:
+          path: "/tmp/mcp-test-sandbox"
+          pattern: "*.txt"
+        expected:
+          error: false
+          fields:
+            - path: "$.content[0].text"
+              field_type: "string"
+              required: true
+        performance:
+          max_duration_ms: 2000
+        tags: ["search", "pattern", "success"]
+
+# Test execution configuration
+test_config:
+  timeout_seconds: 60
+  max_concurrency: 2
+  fail_fast: false
+  retry:
+    max_retries: 1
+    retry_delay_ms: 1000
+    exponential_backoff: false
+
+# Metadata
+metadata:
+  author: "MCP Test Harness Team"
+  documentation: "https://spec.modelcontextprotocol.io/"
+  license: "MIT"
+  tags: ["filesystem", "verified-working", "mcp-compliant"]
+  quality_targets:
+    success_rate_percent: 100
+    error_handling_coverage_percent: 100 

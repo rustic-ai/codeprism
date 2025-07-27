@@ -135,7 +135,7 @@ impl FileWatcher {
             },
             Config::default(),
         )
-        .map_err(|e| Error::watcher(format!("Failed to create watcher: {}", e)))?;
+        .map_err(|e| Error::watcher(format!("Failed to create watcher: {e}")))?;
 
         // Start event processor
         let debouncer_clone = Arc::clone(&debouncer);

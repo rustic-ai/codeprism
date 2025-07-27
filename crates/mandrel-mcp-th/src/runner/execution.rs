@@ -311,7 +311,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "Future work for Issue #227 - floating point precision issues in metrics calculations"]
     fn test_execution_stats() {
         let results = vec![
             ExecutionResult::success("test1".to_string(), Duration::from_millis(100)),
@@ -327,7 +326,18 @@ mod tests {
         assert_eq!(stats.total_executions, 3);
         assert_eq!(stats.successful_executions, 2);
         assert_eq!(stats.failed_executions, 1);
-        assert_eq!(stats.success_rate(), 66.66666666666667);
+
+        // Use tolerance-based comparison for floating point success rate
+        let expected_success_rate = 66.66666666666667;
+        let actual_success_rate = stats.success_rate();
+        assert!(
+            (actual_success_rate - expected_success_rate).abs() < 0.01,
+            "Success rate {:.10} should be approximately {:.10} (diff: {:.10})",
+            actual_success_rate,
+            expected_success_rate,
+            (actual_success_rate - expected_success_rate).abs()
+        );
+
         assert_eq!(stats.total_duration, Duration::from_millis(450));
         assert_eq!(stats.average_duration, Duration::from_millis(150));
     }

@@ -154,18 +154,31 @@ impl McpClient {
             self.config.command, self.config.args
         );
 
-        match &self.config.transport {
+        // Clone transport config to avoid borrowing issues
+        let transport = self.config.transport.clone();
+        match transport {
             Transport::Stdio => {
                 self.connect_stdio().await?;
             }
+            #[cfg(feature = "transport-streamable-http-client")]
+            Transport::Http { url } => {
+                self.connect_http(&url).await?;
+            }
+            #[cfg(not(feature = "transport-streamable-http-client"))]
             Transport::Http { url: _ } => {
                 return Err(Error::connection(
-                    "HTTP transport not yet supported - use stdio transport".to_string(),
+                    "HTTP transport not supported - enable 'transport-streamable-http-client' feature".to_string(),
                 ));
             }
+            #[cfg(feature = "transport-sse-client")]
+            Transport::Sse { url } => {
+                self.connect_sse(&url).await?;
+            }
+            #[cfg(not(feature = "transport-sse-client"))]
             Transport::Sse { url: _ } => {
                 return Err(Error::connection(
-                    "SSE transport not yet supported - use stdio transport".to_string(),
+                    "SSE transport not supported - enable 'transport-sse-client' feature"
+                        .to_string(),
                 ));
             }
         }
@@ -211,26 +224,31 @@ impl McpClient {
         Ok(())
     }
 
-    /// Connect using HTTP transport (FUTURE: requires HTTP transport feature)
-    #[allow(dead_code)]
+    /// Connect using HTTP transport
+    #[cfg(feature = "transport-streamable-http-client")]
     async fn connect_http(&mut self, _url: &str) -> Result<()> {
+        // FUTURE: Implement HTTP transport once RMCP API stabilizes in next release
+        // The RMCP 0.3.0 API for HTTP transports is still evolving
         Err(Error::connection(
-            "HTTP transport not yet implemented".to_string(),
+            "HTTP transport implementation pending - RMCP API configuration in progress"
+                .to_string(),
         ))
     }
 
-    /// Connect using SSE transport (FUTURE: requires SSE transport feature)
-    #[allow(dead_code)]
+    /// Connect using SSE transport
+    #[cfg(feature = "transport-sse-client")]
     async fn connect_sse(&mut self, _url: &str) -> Result<()> {
+        // FUTURE: Implement SSE transport once RMCP API stabilizes in next release
+        // The RMCP 0.3.0 API for SSE transports is still evolving
         Err(Error::connection(
-            "SSE transport not yet implemented".to_string(),
+            "SSE transport implementation pending - RMCP API configuration in progress".to_string(),
         ))
     }
 
     /// Discover server capabilities after connection
     async fn discover_capabilities(&mut self) -> Result<()> {
         if let Some(service) = &self.service {
-            let peer_info = service.peer().peer_info();
+            let peer_info = service.peer_info();
 
             if let Some(peer_info) = peer_info {
                 self.server_info = Some(ServerInfo {
@@ -304,7 +322,6 @@ impl McpClient {
 
         let service = self.service.as_ref().unwrap();
         let tools = service
-            .peer()
             .list_all_tools()
             .await
             .map_err(|e| Error::execution(format!("Failed to list tools: {}", e)))?;
@@ -337,7 +354,7 @@ impl McpClient {
         let service = self.service.as_ref().unwrap();
         let result = timeout(
             self.config.operation_timeout,
-            service.peer().call_tool(CallToolRequestParam {
+            service.call_tool(CallToolRequestParam {
                 name: name.to_string().into(),
                 arguments: arguments_map,
             }),
@@ -381,7 +398,6 @@ impl McpClient {
 
         let service = self.service.as_ref().unwrap();
         let resources = service
-            .peer()
             .list_all_resources()
             .await
             .map_err(|e| Error::execution(format!("Failed to list resources: {}", e)))?;
@@ -401,7 +417,7 @@ impl McpClient {
         let service = self.service.as_ref().unwrap();
         let result = timeout(
             self.config.operation_timeout,
-            service.peer().read_resource(ReadResourceRequestParam {
+            service.read_resource(ReadResourceRequestParam {
                 uri: uri.to_string(),
             }),
         )
@@ -421,7 +437,6 @@ impl McpClient {
 
         let service = self.service.as_ref().unwrap();
         let prompts = service
-            .peer()
             .list_all_prompts()
             .await
             .map_err(|e| Error::execution(format!("Failed to list prompts: {}", e)))?;
@@ -454,7 +469,7 @@ impl McpClient {
         let service = self.service.as_ref().unwrap();
         let result = timeout(
             self.config.operation_timeout,
-            service.peer().get_prompt(GetPromptRequestParam {
+            service.get_prompt(GetPromptRequestParam {
                 name: name.to_string(),
                 arguments: arguments_map,
             }),

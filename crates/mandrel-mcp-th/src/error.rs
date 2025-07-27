@@ -10,7 +10,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 pub enum Error {
     /// MCP protocol errors from the SDK
     #[error("MCP protocol error: {0}")]
-    Mcp(#[from] rmcp::Error),
+    Mcp(#[from] rmcp::ErrorData),
 
     /// Configuration related errors
     #[error("Configuration error: {0}")]

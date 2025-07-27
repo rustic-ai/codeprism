@@ -525,7 +525,6 @@ mod tests {
     use std::time::Duration;
 
     #[test]
-    #[ignore = "Future work for Issue #227 - floating point precision issues in metrics calculations"]
     fn test_test_suite_result_calculations() {
         let test_results = vec![
             TestResult::success("test1".to_string(), Duration::from_millis(100)),
@@ -554,8 +553,27 @@ mod tests {
             dependency_resolution: DependencyResolution::default(),
         };
 
-        assert_eq!(suite_result.success_rate(), 66.66666666666667);
-        assert_eq!(suite_result.failure_rate(), 33.333333333333336);
+        // Use tolerance-based comparisons for floating point percentages
+        let expected_success_rate = 66.66666666666667;
+        let actual_success_rate = suite_result.success_rate();
+        assert!(
+            (actual_success_rate - expected_success_rate).abs() < 0.01,
+            "Success rate {:.10} should be approximately {:.10} (diff: {:.10})",
+            actual_success_rate,
+            expected_success_rate,
+            (actual_success_rate - expected_success_rate).abs()
+        );
+
+        let expected_failure_rate = 33.333333333333336;
+        let actual_failure_rate = suite_result.failure_rate();
+        assert!(
+            (actual_failure_rate - expected_failure_rate).abs() < 0.01,
+            "Failure rate {:.10} should be approximately {:.10} (diff: {:.10})",
+            actual_failure_rate,
+            expected_failure_rate,
+            (actual_failure_rate - expected_failure_rate).abs()
+        );
+
         assert!(!suite_result.all_passed());
         assert!(suite_result.has_failures());
         assert_eq!(suite_result.failed_tests().len(), 1);

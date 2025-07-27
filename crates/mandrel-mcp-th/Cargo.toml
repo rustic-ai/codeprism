@@ -19,14 +19,25 @@ test = false
 default = ["cli"]
 cli = []
 testing = []
+transport-streamable-http-client = []
+transport-sse-client = []
 
 [dependencies]
 # Official MCP Rust SDK
-rmcp = { git = "https://github.com/modelcontextprotocol/rust-sdk", branch = "main", features = ["client", "transport-child-process"] }
+rmcp = { version = "0.3.0", features = [
+    "client", 
+    "transport-child-process",
+    "transport-sse-client",
+    "transport-streamable-http-client", 
+    "reqwest"
+] }
 
 # Core async runtime
 tokio = { version = "1.0", features = ["full"] }
 futures = "0.3"
+
+# HTTP client for MCP transports
+reqwest = { version = "0.12", features = ["json"] }
 
 # CLI framework
 clap = { version = "4.4", features = ["derive", "env"] }

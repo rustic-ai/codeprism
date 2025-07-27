@@ -60,7 +60,13 @@ jobs:
       - name: Integration test - Code analysis pipeline
         run: |
           echo "Testing complete code analysis pipeline..."
-          cargo test --test integration --all-features -- test_code_analysis_pipeline
+          # Test core parsing and analysis functionality across language adapters
+          cargo test --package codeprism-core --all-features
+          cargo test --package codeprism-analysis --all-features
+          cargo test --package codeprism-lang-rust --all-features
+          cargo test --package codeprism-lang-python --all-features
+          cargo test --package codeprism-lang-js --all-features
+          cargo test --package codeprism-lang-java --all-features
 
   # MCP server and tools testing
   mcp-server-tests:

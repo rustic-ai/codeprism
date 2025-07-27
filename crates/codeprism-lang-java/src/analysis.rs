@@ -2028,7 +2028,7 @@ impl JavaAnalyzer {
 
             // Extract framework security recommendations
             for rec in &comprehensive.security_analysis.recommendations {
-                security_issues.push(format!("Recommendation: {}", rec));
+                security_issues.push(format!("Recommendation: {rec}"));
             }
         }
 

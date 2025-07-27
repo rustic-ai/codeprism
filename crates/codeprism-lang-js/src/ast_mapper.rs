@@ -587,7 +587,7 @@ impl AstMapper {
         // Parse parameters
         if let Some(params_node) = node.child_by_field_name("parameters") {
             let params_str = self.extract_parameters_with_types(&params_node);
-            signature_parts.push(format!("({})", params_str));
+            signature_parts.push(format!("({params_str})"));
         } else {
             signature_parts.push("()".to_string());
         }
@@ -595,7 +595,7 @@ impl AstMapper {
         // Parse return type annotation (TypeScript specific)
         if let Some(return_type_node) = node.child_by_field_name("return_type") {
             let return_type = self.get_node_text(&return_type_node);
-            signature_parts.push(format!(": {}", return_type));
+            signature_parts.push(format!(": {return_type}"));
         }
 
         if signature_parts.len() > 1 {
@@ -632,7 +632,8 @@ impl AstMapper {
                         }
 
                         if let Some(type_node) = child.child_by_field_name("type") {
-                            param_parts.push(format!(": {}", self.get_node_text(&type_node)));
+                            let type_text = self.get_node_text(&type_node);
+                            param_parts.push(format!(": {type_text}"));
                         }
 
                         if !param_parts.is_empty() {
@@ -645,7 +646,8 @@ impl AstMapper {
                             let mut param_parts = vec![self.get_node_text(&left_node)];
 
                             if let Some(right_node) = child.child_by_field_name("right") {
-                                param_parts.push(format!(" = {}", self.get_node_text(&right_node)));
+                                let right_text = self.get_node_text(&right_node);
+                                param_parts.push(format!(" = {right_text}"));
                             }
 
                             params.push(param_parts.join(""));
@@ -654,7 +656,8 @@ impl AstMapper {
                     "rest_pattern" => {
                         // Rest parameter: ...args
                         if let Some(argument_node) = child.child_by_field_name("argument") {
-                            params.push(format!("...{}", self.get_node_text(&argument_node)));
+                            let argument_text = self.get_node_text(&argument_node);
+                            params.push(format!("...{argument_text}"));
                         } else {
                             params.push(format!(
                                 "...{}",

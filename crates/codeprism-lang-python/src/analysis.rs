@@ -2721,7 +2721,10 @@ impl PythonAnalyzer {
                                 feature_type,
                                 python_version: pattern.python_version.clone(),
                                 usage_count: 1,
-                                description: format!("Modern type feature: {}", pattern.name),
+                                description: format!(
+                                    "Modern type feature: {name}",
+                                    name = pattern.name
+                                ),
                                 is_best_practice: true,
                             });
                         }
@@ -2893,9 +2896,11 @@ impl PythonAnalyzer {
                             let version_spec = captures
                                 .get(2)
                                 .and_then(|m| {
-                                    captures
-                                        .get(3)
-                                        .map(|v| format!("{}{}", m.as_str(), v.as_str()))
+                                    captures.get(3).map(|v| {
+                                        let m_str = m.as_str();
+                                        let v_str = v.as_str();
+                                        format!("{m_str}{v_str}")
+                                    })
                                 })
                                 .unwrap_or_else(|| "*".to_string());
 
@@ -3026,7 +3031,10 @@ impl PythonAnalyzer {
                     issue_type: DependencyIssueType::UnusedDependency,
                     severity: DependencyIssueSeverity::Low,
                     affected_packages: vec![dep.name.clone()],
-                    description: format!("Dependency '{}' declared but not imported", dep.name),
+                    description: format!(
+                        "Dependency '{name}' declared but not imported",
+                        name = dep.name
+                    ),
                     recommendation: "Remove unused dependency or add import statement".to_string(),
                     auto_fixable: false,
                 });
@@ -3071,7 +3079,10 @@ impl PythonAnalyzer {
                     issue_type: DependencyIssueType::UnpinnedVersion,
                     severity: DependencyIssueSeverity::Medium,
                     affected_packages: vec![dep.name.clone()],
-                    description: format!("Dependency '{}' has no version constraint", dep.name),
+                    description: format!(
+                        "Dependency '{name}' has no version constraint",
+                        name = dep.name
+                    ),
                     recommendation: "Pin dependency versions for reproducible builds".to_string(),
                     auto_fixable: false,
                 });
@@ -3086,7 +3097,7 @@ impl PythonAnalyzer {
                     issue_type: DependencyIssueType::DeprecatedPackage,
                     severity: DependencyIssueSeverity::Medium,
                     affected_packages: vec![dep.name.clone()],
-                    description: format!("Package '{}' is deprecated", dep.name),
+                    description: format!("Package '{name}' is deprecated", name = dep.name),
                     recommendation: "Consider migrating to modern alternatives".to_string(),
                     auto_fixable: false,
                 });
@@ -3499,10 +3510,7 @@ impl PythonAnalyzer {
 
         let unused_imports = import_analysis.iter().filter(|i| i.is_unused).count();
         if unused_imports > 0 {
-            recommendations.push(format!(
-                "Remove {} unused import statements",
-                unused_imports
-            ));
+            recommendations.push(format!("Remove {unused_imports} unused import statements"));
         }
 
         let star_imports = import_analysis
@@ -3511,8 +3519,7 @@ impl PythonAnalyzer {
             .count();
         if star_imports > 0 {
             recommendations.push(format!(
-                "Replace {} star imports with specific imports",
-                star_imports
+                "Replace {star_imports} star imports with specific imports"
             ));
         }
 
@@ -3914,7 +3921,7 @@ impl PythonAnalyzer {
         let mut fields = Vec::new();
 
         // Look for field annotations in the class
-        let field_regex = Regex::new(&format!(r"class\s+{}.*?(\w+):\s*(\w+)", class_name)).unwrap();
+        let field_regex = Regex::new(&format!(r"class\s+{class_name}.*?(\w+):\s*(\w+)")).unwrap();
         for captures in field_regex.captures_iter(content) {
             if captures.len() >= 3 {
                 let field_name = captures.get(1).unwrap().as_str().to_string();
@@ -4815,7 +4822,7 @@ impl PythonAnalyzer {
                     feature_type: feature_type.clone(),
                     python_version: version.to_string(),
                     usage_count: count,
-                    description: format!("Modern async feature: {}", pattern_str),
+                    description: format!("Modern async feature: {pattern_str}"),
                     is_best_practice: true,
                 });
             }
@@ -5238,7 +5245,7 @@ impl PythonAnalyzer {
                 issue_type: TypeSafetyIssueType::AnyTypeOveruse,
                 severity: TypeSafetySeverity::Warning,
                 location: "Multiple locations".to_string(),
-                description: format!("Found {} uses of Any type", any_count),
+                description: format!("Found {any_count} uses of Any type"),
                 recommendation: "Consider using more specific type hints".to_string(),
             });
         }
@@ -5256,7 +5263,7 @@ impl PythonAnalyzer {
                 issue_type: TypeSafetyIssueType::MissingTypeHints,
                 severity: TypeSafetySeverity::Warning,
                 location: "Function definitions".to_string(),
-                description: format!("{} functions missing return type hints", missing_hints),
+                description: format!("{missing_hints} functions missing return type hints"),
                 recommendation: "Add return type annotations to functions".to_string(),
             });
         }
@@ -5268,7 +5275,7 @@ impl PythonAnalyzer {
                 issue_type: TypeSafetyIssueType::TypeIgnoreOveruse,
                 severity: TypeSafetySeverity::Info,
                 location: "Multiple locations".to_string(),
-                description: format!("Found {} type: ignore comments", ignore_count),
+                description: format!("Found {ignore_count} type: ignore comments"),
                 recommendation: "Review and fix type issues instead of ignoring them".to_string(),
             });
         }

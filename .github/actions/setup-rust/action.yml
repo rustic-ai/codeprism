@@ -70,7 +70,7 @@ runs:
 
         [build]
         incremental = true
-        jobs = 0  # Use all available cores
+        # jobs = 0 is invalid, omit to use all available cores
         
         [term]
         color = "always"

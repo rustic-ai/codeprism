@@ -712,6 +712,7 @@ mod tests {
             } else {
                 Some(script_refs.iter().map(|s| s.to_string()).collect())
             },
+            test_config: None,
         }
     }
 
@@ -1202,11 +1203,8 @@ mod tests {
                 fields: vec![crate::spec::FieldValidation {
                     path: "$.result".to_string(),
                     value: Some(json!(5)),
-                    field_type: None,
                     required: true,
-                    pattern: None,
-                    min: None,
-                    max: None,
+                    ..Default::default()
                 }],
                 ..Default::default()
             },

@@ -814,18 +814,13 @@ mod tests {
                 "expected_result": true
             }),
             expected: ExpectedOutput {
-                error: false,
-                error_code: None,
-                error_message_contains: None,
-                schema_file: None,
-                schema: None,
-                fields: vec![],
-                allow_extra_fields: true,
+                ..Default::default()
             },
             performance: None,
             skip: false,
             tags: vec![],
             validation_scripts: Some(vec!["test_script".to_string()]),
+            test_config: None,
         }
     }
 

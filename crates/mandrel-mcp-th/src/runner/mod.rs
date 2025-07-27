@@ -501,6 +501,7 @@ impl TestSuiteRunner {
             test_config: None,
             metadata: None,
             validation_scripts: None,
+            script_config: None,
         };
 
         // 3. Execute tests with the resolved dependencies

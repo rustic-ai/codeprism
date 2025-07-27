@@ -716,22 +716,15 @@ mod tests {
             value: Some(serde_json::Value::String("test_tool".to_string())),
             field_type: Some("string".to_string()),
             required: true,
-            pattern: None,
-            min: None,
-            max: None,
+            ..Default::default()
         }
     }
 
     // Helper function to create test expected output
     fn create_test_expected_output() -> ExpectedOutput {
         ExpectedOutput {
-            error: false,
-            error_code: None,
-            error_message_contains: None,
-            schema_file: None,
-            schema: None,
             fields: vec![create_test_field_validation()],
-            allow_extra_fields: true,
+            ..Default::default()
         }
     }
 
@@ -852,12 +845,9 @@ mod tests {
         let response = create_test_response();
         let validation = FieldValidation {
             path: "$.tools[0].name".to_string(),
-            value: None,
             field_type: Some("string".to_string()),
             required: true,
-            pattern: None,
-            min: None,
-            max: None,
+            ..Default::default()
         };
 
         let result = engine.validate_field(&response, &validation).unwrap();
@@ -872,12 +862,9 @@ mod tests {
         let response = create_test_response();
         let validation = FieldValidation {
             path: "$.tools[0].name".to_string(),
-            value: None,
-            field_type: None,
             required: true,
             pattern: Some("test_.*".to_string()),
-            min: None,
-            max: None,
+            ..Default::default()
         };
 
         let result = engine.validate_field(&response, &validation).unwrap();
@@ -892,12 +879,10 @@ mod tests {
         let response = json!({"count": 5});
         let validation = FieldValidation {
             path: "$.count".to_string(),
-            value: None,
-            field_type: None,
             required: true,
-            pattern: None,
             min: Some(1.0),
             max: Some(10.0),
+            ..Default::default()
         };
 
         let result = engine.validate_field(&response, &validation).unwrap();
@@ -912,12 +897,8 @@ mod tests {
         let response = json!({"status": "success"}); // Missing required field
         let validation = FieldValidation {
             path: "$.required_field".to_string(),
-            value: None,
-            field_type: None,
             required: true,
-            pattern: None,
-            min: None,
-            max: None,
+            ..Default::default()
         };
 
         let result = engine.validate_field(&response, &validation).unwrap();
@@ -1083,12 +1064,8 @@ mod tests {
         // Add a failing validation
         expected.fields.push(FieldValidation {
             path: "$.nonexistent".to_string(),
-            value: None,
-            field_type: None,
             required: true,
-            pattern: None,
-            min: None,
-            max: None,
+            ..Default::default()
         });
 
         let result = engine
@@ -1112,21 +1089,13 @@ mod tests {
         // Add multiple failing validations
         expected.fields.push(FieldValidation {
             path: "$.error1".to_string(),
-            value: None,
-            field_type: None,
             required: true,
-            pattern: None,
-            min: None,
-            max: None,
+            ..Default::default()
         });
         expected.fields.push(FieldValidation {
             path: "$.error2".to_string(),
-            value: None,
-            field_type: None,
             required: true,
-            pattern: None,
-            min: None,
-            max: None,
+            ..Default::default()
         });
 
         let result = engine

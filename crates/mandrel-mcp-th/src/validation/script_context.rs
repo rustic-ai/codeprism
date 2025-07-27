@@ -483,18 +483,13 @@ mod tests {
             dependencies: None,
             input: serde_json::json!({"a": 5, "b": 3}),
             expected: ExpectedOutput {
-                error: false,
-                error_code: None,
-                error_message_contains: None,
-                schema_file: None,
-                schema: None,
-                fields: vec![],
-                allow_extra_fields: true,
+                ..Default::default()
             },
             performance: None,
             skip: false,
             tags: vec!["math".to_string(), "basic".to_string()],
             validation_scripts: Some(vec!["math_validator".to_string()]),
+            test_config: None,
         }
     }
 

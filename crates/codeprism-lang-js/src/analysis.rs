@@ -1419,7 +1419,7 @@ impl JavaScriptAnalyzer {
     }
 
     fn extract_hook_dependencies(&self, content: &str, hook_name: &str) -> Vec<String> {
-        let pattern = format!(r"{}[^;]*?\[([^\]]*)\]", hook_name);
+        let pattern = format!(r"{hook_name}[^;]*?\[([^\]]*)\]");
         if let Ok(regex) = Regex::new(&pattern) {
             if let Some(captures) = regex.captures(content) {
                 let deps = captures.get(1).unwrap().as_str();
@@ -1458,7 +1458,7 @@ impl JavaScriptAnalyzer {
 
         let mut found_methods = Vec::new();
         for method in lifecycle_methods {
-            let pattern = format!(r"{}s*\(", method);
+            let pattern = format!(r"{method}s*\(");
             if Regex::new(&pattern)?.is_match(content) {
                 found_methods.push(method.to_string());
             }

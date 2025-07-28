@@ -2018,12 +2018,12 @@ impl JavaAnalyzer {
 
             // Extract performance notes
             for issue in &comprehensive.performance_analysis.performance_issues {
-                performance_notes.push(format!("{:?}: {}", issue.issue_type, issue.description));
+                performance_notes.push(format!("{:?}: {}", issue.issue_type, &issue.description));
             }
 
             // Extract modern features
             for lambda in &comprehensive.modern_features.lambda_expressions {
-                modern_features.push(format!("Lambda expression: {}", lambda.expression));
+                modern_features.push(format!("Lambda expression: {}", &lambda.expression));
             }
 
             // Extract framework security recommendations
@@ -2905,7 +2905,7 @@ impl JavaAnalyzer {
 
     // Helper methods
     fn find_subclasses(&self, content: &str, class_name: &str) -> Vec<String> {
-        let regex = Regex::new(&format!(r"class\s+(\w+)\s+extends\s+{}", class_name)).unwrap();
+        let regex = Regex::new(&format!(r"class\s+(\w+)\s+extends\s+{class_name}")).unwrap();
         regex
             .captures_iter(content)
             .filter_map(|cap| cap.get(1).map(|m| m.as_str().to_string()))
@@ -2930,7 +2930,7 @@ impl JavaAnalyzer {
     }
 
     fn find_superclass(&self, content: &str, class_name: &str) -> Option<String> {
-        let regex = Regex::new(&format!(r"class\s+{}\s+extends\s+(\w+)", class_name)).unwrap();
+        let regex = Regex::new(&format!(r"class\s+{class_name}\s+extends\s+(\w+)")).unwrap();
         regex
             .captures(content)
             .and_then(|cap| cap.get(1).map(|m| m.as_str().to_string()))
@@ -2975,7 +2975,7 @@ impl JavaAnalyzer {
             "observer" => {
                 "Observer pattern defines one-to-many dependency between objects".to_string()
             }
-            _ => format!("{} pattern detected", pattern_type),
+            _ => format!("{pattern_type} pattern detected"),
         }
     }
 
@@ -3547,8 +3547,8 @@ impl JavaAnalyzer {
             let proper_encapsulation = match access_modifier {
                 AccessModifier::Private => {
                     // Check if there are corresponding getter/setter methods
-                    let getter_pattern = format!(r"(?i)get{}", field_name);
-                    let setter_pattern = format!(r"(?i)set{}", field_name);
+                    let getter_pattern = format!(r"(?i)get{field_name}");
+                    let setter_pattern = format!(r"(?i)set{field_name}");
                     let has_getter = Regex::new(&getter_pattern)
                         .unwrap()
                         .is_match(&class_content);
@@ -3701,7 +3701,7 @@ impl JavaAnalyzer {
         let class_content = self.extract_class_content(content, class_name);
 
         // Check if class is declared as final
-        let is_final_class = class_content.contains(&format!("final class {}", class_name));
+        let is_final_class = class_content.contains(&format!("final class {class_name}"));
 
         // Find all fields and check immutability
         let field_regex = Regex::new(
@@ -3807,7 +3807,7 @@ impl JavaAnalyzer {
     }
 
     fn find_implementing_classes(&self, content: &str, interface_name: &str) -> Vec<String> {
-        let regex = Regex::new(&format!(r"class\s+(\w+).*implements.*{}", interface_name)).unwrap();
+        let regex = Regex::new(&format!(r"class\s+(\w+).*implements.*{interface_name}")).unwrap();
         regex
             .captures_iter(content)
             .filter_map(|cap| cap.get(1).map(|m| m.as_str().to_string()))
@@ -4189,7 +4189,7 @@ impl JavaAnalyzer {
                 violations.push(SOLIDViolation {
                     principle: SOLIDPrinciple::OpenClosed,
                     class_name: "Switch statement".to_string(),
-                    description: format!("Large switch statement with {} cases", case_count),
+                    description: format!("Large switch statement with {case_count} cases"),
                     severity: ViolationSeverity::Medium,
                     recommendation: "Consider using polymorphism or strategy pattern instead"
                         .to_string(),
@@ -4423,7 +4423,7 @@ impl JavaAnalyzer {
         let mut dependencies = Vec::new();
 
         // Find class boundaries
-        let class_start = content.find(&format!("class {}", class_name));
+        let class_start = content.find(&format!("class {class_name}"));
         if class_start.is_none() {
             return dependencies;
         }
@@ -4501,7 +4501,7 @@ impl JavaAnalyzer {
         // Check for circular dependencies (simplified check)
         if content.contains("@Autowired")
             && dependency_type.contains("Service")
-            && content.contains(&format!("class {}Service", field_name))
+            && content.contains(&format!("class {field_name}Service"))
         {
             issues.push("Potential circular dependency detected".to_string());
         }
@@ -4517,7 +4517,7 @@ impl JavaAnalyzer {
     }
 
     fn count_constructors(&self, content: &str, class_name: &str) -> usize {
-        let constructor_regex = Regex::new(&format!(r"public\s+{}\s*\(", class_name)).unwrap();
+        let constructor_regex = Regex::new(&format!(r"public\s+{class_name}\s*\(")).unwrap();
         constructor_regex.find_iter(content).count()
     }
 
@@ -5292,7 +5292,7 @@ impl JavaAnalyzer {
             "path_traversal" => "Potential path traversal vulnerability".to_string(),
             "weak_cryptography" => "Weak cryptographic algorithm detected".to_string(),
             "insecure_randomness" => "Insecure random number generation".to_string(),
-            _ => format!("Security issue: {}", vulnerability_type),
+            _ => format!("Security issue: {vulnerability_type}"),
         }
     }
 
@@ -5540,10 +5540,10 @@ impl JavaAnalyzer {
             let variable_name = captures.get(2).unwrap().as_str().to_string();
 
             // Determine usage context
-            let usage_pattern = if content.contains(&format!("return {};", variable_name)) {
+            let usage_pattern = if content.contains(&format!("return {variable_name};")) {
                 OptionalUsagePattern::ReturnValue
-            } else if content.contains(&format!("{}.map(", variable_name))
-                || content.contains(&format!("{}.flatMap(", variable_name))
+            } else if content.contains(&format!("{variable_name}.map("))
+                || content.contains(&format!("{variable_name}.flatMap("))
             {
                 OptionalUsagePattern::ChainedCalls
             } else {
@@ -5552,10 +5552,10 @@ impl JavaAnalyzer {
 
             // Check for anti-patterns
             let mut anti_patterns = Vec::new();
-            if content.contains(&format!("{}.get()", variable_name)) {
+            if content.contains(&format!("{variable_name}.get()")) {
                 anti_patterns.push(OptionalAntiPattern::CallingGet);
             }
-            if content.contains(&format!("{}.isPresent()", variable_name)) {
+            if content.contains(&format!("{variable_name}.isPresent()")) {
                 anti_patterns.push(OptionalAntiPattern::UsingIsPresent);
             }
 
@@ -5565,7 +5565,7 @@ impl JavaAnalyzer {
             }
 
             optional_usages.push(OptionalUsageInfo {
-                usage_context: format!("Optional<{}> usage", optional_type),
+                usage_context: format!("Optional<{optional_type}> usage"),
                 optional_type,
                 usage_pattern,
                 anti_patterns,
@@ -5842,9 +5842,9 @@ impl JavaAnalyzer {
             let initializer = captures.get(2).unwrap().as_str().trim();
 
             // Determine usage context
-            let usage_context = if content.contains(&format!("for (var {}", var_name)) {
+            let usage_context = if content.contains(&format!("for (var {var_name}")) {
                 VarUsageContext::ForLoop
-            } else if content.contains(&format!("try (var {}", var_name)) {
+            } else if content.contains(&format!("try (var {var_name}")) {
                 VarUsageContext::TryWithResources
             } else if initializer.contains("->") {
                 VarUsageContext::LambdaParameter
@@ -5987,7 +5987,7 @@ impl JavaAnalyzer {
         ];
 
         for (factory_method, collection_type) in factory_patterns {
-            let pattern = format!(r"{}\s*\(([^)]*)\)", factory_method);
+            let pattern = format!(r"{factory_method}\s*\(([^)]*)\)");
             let factory_regex = Regex::new(&pattern).unwrap();
 
             for captures in factory_regex.captures_iter(content) {
@@ -6110,13 +6110,13 @@ impl JavaAnalyzer {
     fn extract_date_time_patterns(&self, content: &str, api_name: &str) -> Vec<String> {
         let mut patterns = Vec::new();
 
-        if content.contains(&format!("{}.now()", api_name)) {
+        if content.contains(&format!("{api_name}.now()")) {
             patterns.push("Current time creation".to_string());
         }
-        if content.contains(&format!("{}.of(", api_name)) {
+        if content.contains(&format!("{api_name}.of(")) {
             patterns.push("Specific time creation".to_string());
         }
-        if content.contains(&format!("{}.parse(", api_name)) {
+        if content.contains(&format!("{api_name}.parse(")) {
             patterns.push("String parsing".to_string());
         }
         if content.contains(".format(") {

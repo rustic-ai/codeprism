@@ -2094,8 +2094,8 @@ impl JavaAnalyzer {
             };
 
             // Check if class is abstract
-            let is_abstract = content.contains(&format!("abstract class {}", class_name));
-            let is_final = content.contains(&format!("final class {}", class_name));
+            let is_abstract = content.contains(&format!("abstract class {class_name}"));
+            let is_final = content.contains(&format!("final class {class_name}"));
 
             hierarchies.push(ClassHierarchyInfo {
                 class_name: class_name.clone(),
@@ -2588,13 +2588,13 @@ impl JavaAnalyzer {
 
         for (algorithm, cwe, severity) in weak_algorithms {
             if content.contains(algorithm)
-                || content.contains(&format!("getInstance(\"{}\")", algorithm))
+                || content.contains(&format!("getInstance(\"{algorithm}\")"))
             {
                 vulnerabilities.push(SecurityVulnerability {
                     vulnerability_type: SecurityVulnerabilityType::WeakCryptography,
                     severity,
                     location: "Cryptographic operations".to_string(),
-                    description: format!("Use of weak cryptographic algorithm {} detected", algorithm),
+                    description: format!("Use of weak cryptographic algorithm {algorithm} detected"),
                     cwe_id: Some(cwe.to_string()),
                     recommendation: "Use strong algorithms like AES-GCM, SHA-256, SHA-512, or bcrypt for password hashing".to_string(),
                 });

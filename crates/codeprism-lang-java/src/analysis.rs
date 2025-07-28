@@ -2938,8 +2938,7 @@ impl JavaAnalyzer {
 
     fn extract_class_modifiers(&self, content: &str, class_name: &str) -> Vec<String> {
         let regex = Regex::new(&format!(
-            r"((?:public|private|protected|abstract|final|static)\s+)*class\s+{}",
-            class_name
+            r"((?:public|private|protected|abstract|final|static)\s+)*class\s+{class_name}"
         ))
         .unwrap();
         regex
@@ -3604,8 +3603,7 @@ impl JavaAnalyzer {
                     .collect::<String>()
             );
             let getter_pattern = format!(
-                r"(?m)^\s*(?:public|protected)\s+\w+(?:<[^>]+>)?\s+{}\s*\(\s*\)",
-                getter_name
+                r"(?m)^\s*(?:public|protected)\s+\w+(?:<[^>]+>)?\s+{getter_name}\s*\(\s*\)"
             );
             let has_getter = Regex::new(&getter_pattern)
                 .unwrap()
@@ -3623,8 +3621,7 @@ impl JavaAnalyzer {
                     .collect::<String>()
             );
             let setter_pattern = format!(
-                r"(?m)^\s*(?:public|protected)\s+(?:void|{0})\s+{1}\s*\([^)]+\)",
-                class_name, setter_name
+                r"(?m)^\s*(?:public|protected)\s+(?:void|{class_name})\s+{setter_name}\s*\([^)]+\)"
             );
             let has_setter = Regex::new(&setter_pattern)
                 .unwrap()
@@ -3637,8 +3634,7 @@ impl JavaAnalyzer {
             // Check for validation in setter (basic pattern matching)
             let validation_in_setter = if has_setter {
                 let setter_content_pattern = format!(
-                    r"(?s){}[^{{]*\{{[^}}]*(?:if|throw|validate|check|assert)[^}}]*\}}",
-                    setter_name
+                    r"(?s){setter_name}[^{{]*\{{[^}}]*(?:if|throw|validate|check|assert)[^}}]*\}}"
                 );
                 Regex::new(&setter_content_pattern)
                     .unwrap()
@@ -4163,10 +4159,9 @@ impl JavaAnalyzer {
                 violations.push(SOLIDViolation {
                     principle: SOLIDPrinciple::SingleResponsibility,
                     class_name: class_name.clone(),
-                    description: format!(
-                        "Class {} has {} different types of responsibilities",
-                        class_name, responsibility_count
-                    ),
+                                    description: format!(
+                    "Class {class_name} has {responsibility_count} different types of responsibilities"
+                ),
                     severity: if responsibility_count > 3 {
                         ViolationSeverity::High
                     } else {
@@ -4209,8 +4204,7 @@ impl JavaAnalyzer {
                     principle: SOLIDPrinciple::InterfaceSegregation,
                     class_name: interface_name.clone(),
                     description: format!(
-                        "Interface {} has {} methods, which is too many",
-                        interface_name, method_count
+                        "Interface {interface_name} has {method_count} methods, which is too many"
                     ),
                     severity: if method_count > 10 {
                         ViolationSeverity::High
@@ -4254,8 +4248,7 @@ impl JavaAnalyzer {
                     principle: SOLIDPrinciple::DependencyInversion,
                     class_name: class_name.clone(),
                     description: format!(
-                        "Direct instantiation of {} appears {} times",
-                        class_name, count
+                        "Direct instantiation of {class_name} appears {count} times"
                     ),
                     severity: ViolationSeverity::Medium,
                     recommendation:
@@ -4304,8 +4297,7 @@ impl JavaAnalyzer {
         for (annotation, component_type) in component_patterns {
             // Find all occurrences of the annotation
             let annotation_regex = Regex::new(&format!(
-                r"{}(?:\([^)]*\))?\s+(?:public\s+)?class\s+(\w+)",
-                annotation
+                r"{annotation}(?:\([^)]*\))?\s+(?:public\s+)?class\s+(\w+)"
             ))?;
 
             for captures in annotation_regex.captures_iter(content) {
@@ -4402,8 +4394,7 @@ impl JavaAnalyzer {
 
         // Find the class definition and extract all annotations above it
         let class_regex = Regex::new(&format!(
-            r"((?:@\w+(?:\([^)]*\))?\s*)*)\s*(?:public\s+)?class\s+{}",
-            class_name
+            r"((?:@\w+(?:\([^)]*\))?\s*)*)\s*(?:public\s+)?class\s+{class_name}"
         ))
         .unwrap();
 
@@ -4447,8 +4438,7 @@ impl JavaAnalyzer {
     fn extract_component_scope(&self, content: &str, class_name: &str) -> String {
         // Look for @Scope annotation
         let scope_regex = Regex::new(&format!(
-            r#"@Scope\s*\(\s*["']([^"']+)["']\s*\).*?class\s+{}"#,
-            class_name
+            r#"@Scope\s*\(\s*["']([^"']+)["']\s*\).*?class\s+{class_name}"#
         ))
         .unwrap();
 
@@ -4462,8 +4452,7 @@ impl JavaAnalyzer {
     fn extract_class_content(&self, content: &str, class_name: &str) -> String {
         // Find class definition and extract content between braces
         let class_regex = Regex::new(&format!(
-            r"class\s+{}\s*\{{([^{{}}]*(?:\{{[^{{}}]*\}}[^{{}}]*)*)\}}",
-            class_name
+            r"class\s+{class_name}\s*\{{([^{{}}]*(?:\{{[^{{}}]*\}}[^{{}}]*)*)\}}"
         ))
         .unwrap();
 
@@ -4476,11 +4465,8 @@ impl JavaAnalyzer {
 
     fn assess_di_best_practices(&self, content: &str, field_name: &str) -> bool {
         // Check if field is final (constructor injection) or properly encapsulated
-        let field_regex = Regex::new(&format!(
-            r"(?:private\s+)?(?:final\s+)?\w+\s+{}",
-            field_name
-        ))
-        .unwrap();
+        let field_regex =
+            Regex::new(&format!(r"(?:private\s+)?(?:final\s+)?\w+\s+{field_name}")).unwrap();
 
         if let Some(field_match) = field_regex.find(content) {
             let field_def = field_match.as_str();
@@ -5679,8 +5665,7 @@ impl JavaAnalyzer {
 
             // Find implemented interfaces
             let implements_regex = Regex::new(&format!(
-                r"record\s+{}\s*\([^)]*\)\s*implements\s+([\w\s,]+)",
-                record_name
+                r"record\s+{record_name}\s*\([^)]*\)\s*implements\s+([\w\s,]+)"
             ))?;
             let implements_interfaces = if let Some(captures) = implements_regex.captures(content) {
                 captures

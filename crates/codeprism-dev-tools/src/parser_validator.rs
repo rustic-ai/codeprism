@@ -270,17 +270,16 @@ impl fmt::Display for ValidationError {
             } => {
                 write!(
                     f,
-                    "Span overlap between nodes {} and {} at bytes {}..{}",
-                    node1_id, node2_id, overlap_start, overlap_end
+                    "Span overlap between nodes {node1_id} and {node2_id} at bytes {overlap_start}..{overlap_end}"
                 )
             }
             ValidationError::InvalidEdge {
                 edge_id, reason, ..
             } => {
-                write!(f, "Invalid edge {}: {}", edge_id, reason)
+                write!(f, "Invalid edge {edge_id}: {reason}")
             }
             ValidationError::UnreachableNode { node_id, node_type } => {
-                write!(f, "Unreachable node {} (type: {})", node_id, node_type)
+                write!(f, "Unreachable node {node_id} (type: {node_type})")
             }
             ValidationError::TextCoverageGap {
                 start_byte,
@@ -289,8 +288,7 @@ impl fmt::Display for ValidationError {
             } => {
                 write!(
                     f,
-                    "Text coverage gap at bytes {}..{} (size: {})",
-                    start_byte, end_byte, gap_size
+                    "Text coverage gap at bytes {start_byte}..{end_byte} (size: {gap_size})"
                 )
             }
             ValidationError::InvalidSpan {
@@ -301,8 +299,7 @@ impl fmt::Display for ValidationError {
             } => {
                 write!(
                     f,
-                    "Invalid span for node {} ({}..{}): {}",
-                    node_id, start_byte, end_byte, reason
+                    "Invalid span for node {node_id} ({start_byte}..{end_byte}): {reason}"
                 )
             }
         }
@@ -319,8 +316,7 @@ impl fmt::Display for ValidationWarning {
             } => {
                 write!(
                     f,
-                    "Small span for node {} (size: {}, expected: ≥{})",
-                    node_id, span_size, min_expected
+                    "Small span for node {node_id} (size: {span_size}, expected: ≥{min_expected})"
                 )
             }
             ValidationWarning::DeepNesting {
@@ -330,8 +326,7 @@ impl fmt::Display for ValidationWarning {
             } => {
                 write!(
                     f,
-                    "Deep nesting in node {} (depth: {}, recommended: ≤{})",
-                    node_id, depth, max_recommended
+                    "Deep nesting in node {node_id} (depth: {depth}, recommended: ≤{max_recommended})"
                 )
             }
         }

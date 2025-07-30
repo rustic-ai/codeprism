@@ -118,8 +118,7 @@ impl JsonPathEvaluator {
                         })?;
                     } else {
                         return Err(JsonPathError::InvalidExpression(format!(
-                            "Invalid array index: {}",
-                            index_str
+                            "Invalid array index: {index_str}"
                         )));
                     }
                 } else {
@@ -132,8 +131,7 @@ impl JsonPathEvaluator {
             Ok(vec![current.clone()])
         } else {
             Err(JsonPathError::InvalidExpression(format!(
-                "Unsupported JSONPath: {}",
-                path
+                "Unsupported JSONPath: {path}"
             )))
         }
     }
@@ -232,10 +230,7 @@ impl JsonPathEvaluator {
                     } else {
                         (
                             false,
-                            Some(format!(
-                                "String '{}' does not match pattern '{}'",
-                                s, pattern
-                            )),
+                            Some(format!("String '{s}' does not match pattern '{pattern}'")),
                         )
                     }
                 } else {
@@ -257,8 +252,7 @@ impl JsonPathEvaluator {
                         (
                             false,
                             Some(format!(
-                                "Expected type {:?}, got {:?}",
-                                expected_type, actual_type
+                                "Expected type {expected_type:?}, got {actual_type:?}"
                             )),
                         )
                     }

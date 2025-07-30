@@ -67,24 +67,21 @@ impl DependencyResolver {
                 // Rule 1: No empty names
                 if dependency.is_empty() {
                     return Err(Error::dependency(format!(
-                        "Empty dependency name for test '{}'",
-                        test_name
+                        "Empty dependency name for test '{test_name}'"
                     )));
                 }
 
                 // Rule 2: No self-dependencies
                 if dependency == test_name {
                     return Err(Error::dependency(format!(
-                        "Self-dependency detected for test '{}'",
-                        test_name
+                        "Self-dependency detected for test '{test_name}'"
                     )));
                 }
 
                 // Rule 3: Dependency must exist
                 if !test_cases.contains_key(dependency) {
                     return Err(Error::dependency(format!(
-                        "Unknown dependency '{}' for test '{}'",
-                        dependency, test_name
+                        "Unknown dependency '{dependency}' for test '{test_name}'"
                     )));
                 }
             }

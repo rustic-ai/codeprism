@@ -525,8 +525,7 @@ impl ReportGenerator {
                 };
 
                 markdown.push_str(&format!(
-                    "| {} | {} | {} | {} |\n",
-                    test_name, status_icon, duration_str, details
+                    "| {test_name} | {status_icon} | {duration_str} | {details} |\n"
                 ));
             }
             markdown.push('\n');

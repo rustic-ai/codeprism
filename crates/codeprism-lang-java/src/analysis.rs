@@ -6478,8 +6478,7 @@ public class UserController {
         assert_ne!(score, 75, "Score should not be the hardcoded value of 75");
         assert!(
             (50..=100).contains(&score),
-            "Score should be in valid range 50-100, got {}",
-            score
+            "Score should be in valid range 50-100, got {score}"
         );
 
         // Additional validation: Empty code should get a different score
@@ -6547,20 +6546,15 @@ public class PoorExample {
         // Scores should be in valid range
         assert!(
             (0..=100).contains(&good_score),
-            "Good code score out of range: {}",
-            good_score
+            "Good code score out of range: {good_score}"
         );
         assert!(
             (0..=100).contains(&poor_score),
-            "Poor code score out of range: {}",
-            poor_score
+            "Poor code score out of range: {poor_score}"
         );
 
         // Good code should generally score higher than poor code
         // (This might not always be true with complex scoring, but it's a reasonable expectation)
-        println!(
-            "Good code score: {}, Poor code score: {}",
-            good_score, poor_score
-        );
+        println!("Good code score: {good_score}, Poor code score: {poor_score}");
     }
 }

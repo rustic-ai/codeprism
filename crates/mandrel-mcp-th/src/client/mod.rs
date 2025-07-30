@@ -590,8 +590,7 @@ impl ServerProcess {
                     Ok(())
                 }
                 Ok(Err(e)) => Err(Error::connection(format!(
-                    "Error waiting for process to exit: {}",
-                    e
+                    "Error waiting for process to exit: {e}"
                 ))),
                 Err(_) => {
                     warn!("Server process did not exit within timeout, forcing termination");

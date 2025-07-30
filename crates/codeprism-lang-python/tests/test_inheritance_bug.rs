@@ -195,7 +195,7 @@ fn test_debug_tree_structure() {
 
     let result = parse_python_code(source);
 
-    println!("Debug tree structure for: {}", source);
+    println!("Debug tree structure for: {source}");
     println!("Nodes found:");
     for node in &result.nodes {
         println!(

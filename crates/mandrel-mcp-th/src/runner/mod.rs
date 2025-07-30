@@ -353,8 +353,7 @@ impl TestSuiteRunner {
                         // Acquire semaphore permit to respect max_concurrency
                         let _permit = semaphore.acquire().await.map_err(|e| {
                             crate::error::Error::execution(format!(
-                                "Failed to acquire semaphore: {}",
-                                e
+                                "Failed to acquire semaphore: {e}"
                             ))
                         })?;
 
@@ -520,8 +519,7 @@ impl TestSuiteRunner {
             .find(|tc| tc.name == test_name)
             .ok_or_else(|| {
                 crate::error::Error::execution(format!(
-                    "Test case '{}' not found in test suite",
-                    test_name
+                    "Test case '{test_name}' not found in test suite"
                 ))
             })
     }

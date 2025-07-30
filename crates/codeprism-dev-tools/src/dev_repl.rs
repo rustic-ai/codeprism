@@ -135,7 +135,7 @@ impl DevRepl {
                     self.print_result(&result);
                 }
                 Err(e) => {
-                    eprintln!("Error reading command: {}", e);
+                    eprintln!("Error reading command: {e}");
                     break;
                 }
             }
@@ -468,10 +468,7 @@ impl DevRepl {
         let output_desc = output.as_deref().unwrap_or("stdout");
         ReplResult {
             success: true,
-            output: format!(
-                "Export to {:?} format -> {} (not yet implemented)",
-                format, output_desc
-            ),
+            output: format!("Export to {format:?} format -> {output_desc} (not yet implemented)"),
             error: None,
         }
     }
@@ -480,10 +477,7 @@ impl DevRepl {
     async fn handle_compare(&self, old_source: &str, new_source: &str) -> ReplResult {
         ReplResult {
             success: true,
-            output: format!(
-                "Compare '{}' vs '{}' (not yet implemented)",
-                old_source, new_source
-            ),
+            output: format!("Compare '{old_source}' vs '{new_source}' (not yet implemented)"),
             error: None,
         }
     }

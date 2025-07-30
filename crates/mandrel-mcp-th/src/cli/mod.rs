@@ -646,9 +646,8 @@ impl CliApp {
             html.push_str(&format!(
                 r#"
     <div class="category">
-        <div class="category-header">{}</div>
-"#,
-                category
+        <div class="category-header">{category}</div>
+"#
             ));
 
             if result.is_valid && result.errors.is_empty() && result.warnings.is_empty() {
@@ -753,16 +752,14 @@ impl CliApp {
 
         let mut junit = format!(
             r#"<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="Configuration Validation" tests="{}" failures="{}" errors="0" time="0">
-"#,
-            total_tests, failures
+<testsuite name="Configuration Validation" tests="{total_tests}" failures="{failures}" errors="0" time="0">
+"#
         );
 
         for (category, result) in validation_results {
             if result.is_valid {
                 junit.push_str(&format!(
-                    r#"    <testcase name="{}" classname="validation" time="0"/>"#,
-                    category
+                    r#"    <testcase name="{category}" classname="validation" time="0"/>"#
                 ));
             } else {
                 let error_messages: Vec<String> =
@@ -878,8 +875,7 @@ impl CliApp {
         match select(test_data, path) {
             Ok(_) => Ok(()),
             Err(e) => Err(crate::error::Error::validation(format!(
-                "Invalid JSONPath '{}': {}",
-                path, e
+                "Invalid JSONPath '{path}': {e}"
             ))),
         }
     }
@@ -2606,8 +2602,7 @@ impl ProfileManager {
 
         if !profile_path.exists() {
             return Err(crate::error::Error::execution(format!(
-                "Profile '{}' not found at {:?}",
-                name, profile_path
+                "Profile '{name}' not found at {profile_path:?}"
             )));
         }
 
@@ -2652,8 +2647,7 @@ impl ProfileManager {
 
         if !profile_path.exists() {
             return Err(crate::error::Error::execution(format!(
-                "Profile '{}' not found at {:?}",
-                name, profile_path
+                "Profile '{name}' not found at {profile_path:?}"
             )));
         }
 
@@ -2677,8 +2671,7 @@ impl ProfileManager {
             if !parent.exists() {
                 std::fs::create_dir_all(parent).map_err(|e| {
                     crate::error::Error::execution(format!(
-                        "Failed to create output directory: {}",
-                        e
+                        "Failed to create output directory: {e}"
                     ))
                 })?;
             }
@@ -2695,8 +2688,7 @@ impl ProfileManager {
     pub fn import_profile(&self, import_path: &PathBuf) -> Result<()> {
         if !import_path.exists() {
             return Err(crate::error::Error::execution(format!(
-                "Import file not found: {:?}",
-                import_path
+                "Import file not found: {import_path:?}"
             )));
         }
 

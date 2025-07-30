@@ -1,6 +1,8 @@
 // Binary to verify ValidationScript GREEN phase implementation
 // This demonstrates our enhanced data structure works correctly
 
+#![allow(clippy::uninlined_format_args)]
+
 use mandrel_mcp_th::spec::{ExecutionPhase, ScriptLanguage, ValidationScript};
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]

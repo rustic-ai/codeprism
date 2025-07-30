@@ -323,7 +323,7 @@ pub mod utils {
         } else {
             let minutes = total_ms / 60_000;
             let seconds = (total_ms % 60_000) as f64 / 1000.0;
-            format!("{}m {:.1}s", minutes, seconds)
+            format!("{minutes}m {seconds:.1}s")
         }
     }
 }

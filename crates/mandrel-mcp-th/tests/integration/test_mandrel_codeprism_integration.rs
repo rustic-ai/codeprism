@@ -3,6 +3,8 @@
 //! Comprehensive integration tests that validate the execution of CodePrism specifications
 //! against the actual CodePrism MCP server. These tests ensure:
 //! - Tools perform meaningful analysis (not mock responses)
+
+#![allow(clippy::uninlined_format_args)]
 //! - Real data validation across multiple programming languages
 //! - Performance requirements are met
 //! - Error handling works correctly

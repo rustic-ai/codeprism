@@ -276,7 +276,7 @@ impl GraphVizExporter {
                 .node_type_colors
                 .get(&node_type_str)
             {
-                attributes.push(format!("fillcolor=\"{}\"", color));
+                attributes.push(format!("fillcolor=\"{color}\""));
             }
 
             // Highlight if requested
@@ -390,7 +390,7 @@ impl GraphVizExporter {
                 .edge_type_colors
                 .get(&edge_type_str)
             {
-                attributes.push(format!("color=\"{}\"", color));
+                attributes.push(format!("color=\"{color}\""));
             }
 
             // Highlight if requested
@@ -402,10 +402,7 @@ impl GraphVizExporter {
 
             // Write edge
             if attributes.is_empty() {
-                dot.push_str(&format!(
-                    "  {} {} {};\n",
-                    source_id, edge_connector, target_id
-                ));
+                dot.push_str(&format!("  {source_id} {edge_connector} {target_id};\n"));
             } else {
                 dot.push_str(&format!(
                     "  {} {} {} [{}];\n",
@@ -498,7 +495,7 @@ impl GraphVizExporter {
             }
         }
 
-        dot.push_str(&format!("  {} [label=\"{}\"];\n", node_id, label));
+        dot.push_str(&format!("  {node_id} [label=\"{label}\"];\n"));
 
         // Add edges to children
         for i in 0..node.child_count() {

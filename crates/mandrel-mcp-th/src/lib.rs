@@ -3,6 +3,8 @@
 //! A modern, comprehensive testing framework for MCP (Model Context Protocol) servers
 //! built on the official Rust SDK. MOTH provides validation, compliance testing,
 //! and detailed reporting for MCP server implementations.
+
+#![allow(clippy::uninlined_format_args)]
 //!
 //! ## Features
 //!

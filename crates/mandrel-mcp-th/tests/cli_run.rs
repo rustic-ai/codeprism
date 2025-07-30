@@ -1,5 +1,7 @@
 //! Integration tests for the `moth run` command.
 
+#![allow(clippy::uninlined_format_args)]
+
 use assert_cmd::prelude::*;
 use predicates::prelude::*;
 use std::process::Command;

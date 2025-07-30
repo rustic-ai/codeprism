@@ -312,10 +312,7 @@ impl AstDiff {
 
         if (old_depth as i32 - new_depth as i32).abs() > 2 {
             differences.push(DiffType::StructuralChange {
-                description: format!(
-                    "Significant tree depth change: {} -> {}",
-                    old_depth, new_depth
-                ),
+                description: format!("Significant tree depth change: {old_depth} -> {new_depth}"),
                 impact: if (old_depth as i32 - new_depth as i32).abs() > 5 {
                     StructuralImpact::High
                 } else {
@@ -593,16 +590,13 @@ impl DiffReport {
                 old_type,
                 new_type,
             } => {
-                format!(
-                    "Modified edge {} -> {} ({} -> {})",
-                    source, target, old_type, new_type
-                )
+                format!("Modified edge {source} -> {target} ({old_type} -> {new_type})")
             }
             DiffType::StructuralChange {
                 description,
                 impact,
             } => {
-                format!("Structural change ({:?}): {}", impact, description)
+                format!("Structural change ({impact:?}): {description}")
             }
         }
     }

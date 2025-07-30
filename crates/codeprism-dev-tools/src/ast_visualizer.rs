@@ -598,7 +598,7 @@ impl fmt::Display for AstStatistics {
 
         for (node_type, count) in types.iter().take(10) {
             // Show top 10
-            writeln!(f, "    {}: {}", node_type, count)?;
+            writeln!(f, "    {node_type}: {count}")?;
         }
 
         if types.len() > 10 {

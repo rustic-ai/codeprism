@@ -117,8 +117,7 @@ impl TemplateRenderer {
         )
         .map_err(|e| {
             Error::execution(format!(
-                "Failed to register executive-summary template: {}",
-                e
+                "Failed to register executive-summary template: {e}"
             ))
         })?;
 
@@ -129,8 +128,7 @@ impl TemplateRenderer {
         )
         .map_err(|e| {
             Error::execution(format!(
-                "Failed to register technical-detailed template: {}",
-                e
+                "Failed to register technical-detailed template: {e}"
             ))
         })?;
 
@@ -207,8 +205,7 @@ impl TemplateRenderer {
         for pattern in unsafe_patterns {
             if content.contains(pattern) {
                 return Err(Error::validation(format!(
-                    "Unsafe template operation '{}' not allowed",
-                    pattern
+                    "Unsafe template operation '{pattern}' not allowed"
                 )));
             }
         }

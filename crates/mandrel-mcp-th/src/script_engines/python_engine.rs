@@ -69,7 +69,7 @@ impl PythonEngine {
             memory_tracker
                 .snapshot()
                 .map_err(|e| ScriptError::MemoryTrackingError {
-                    message: format!("Failed to take initial memory snapshot: {}", e),
+                    message: format!("Failed to take initial memory snapshot: {e}"),
                 })?;
 
         // Create the Python script with context injection
@@ -88,7 +88,7 @@ impl PythonEngine {
             memory_tracker
                 .snapshot()
                 .map_err(|e| ScriptError::MemoryTrackingError {
-                    message: format!("Failed to take final memory snapshot: {}", e),
+                    message: format!("Failed to take final memory snapshot: {e}"),
                 })?;
 
         let memory_delta = memory_tracker.calculate_delta(&memory_before, &memory_after);
@@ -106,7 +106,7 @@ impl PythonEngine {
                 duration_ms,
                 memory_used_mb,
                 error: Some(ScriptError::ExecutionError {
-                    message: format!("Python execution failed: {}", exec_error),
+                    message: format!("Python execution failed: {exec_error}"),
                 }),
             }),
             Err(_) => Ok(ScriptResult {
@@ -137,7 +137,7 @@ impl PythonEngine {
             }
         }))
         .map_err(|e| ScriptError::ExecutionError {
-            message: format!("Failed to serialize context: {}", e),
+            message: format!("Failed to serialize context: {e}"),
         })?;
 
         // Convert JSON nulls to Python None for proper syntax
@@ -153,16 +153,15 @@ import json
 import sys
 
 # Injected context data
-context = {}
+context = {python_context}
 
 def log(level, message):
     """Logging function for validation scripts"""
     print(f"[{{level}}] {{message}}", file=sys.stderr)
 
 # User script execution
-{}
-"#,
-            python_context, script
+{script}
+"#
         ))
     }
 

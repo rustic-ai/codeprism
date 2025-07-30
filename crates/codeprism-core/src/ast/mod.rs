@@ -490,7 +490,15 @@ mod tests {
         // Empty path
         let span = Span::new(0, 10, 1, 1, 1, 11);
         let id1 = NodeId::new("repo", Path::new(""), &span, &NodeKind::Module);
-        assert!(!id1.to_hex().is_empty());
+        assert!(
+            !id1.to_hex().is_empty(),
+            "Node ID hex representation should not be empty"
+        );
+        assert_eq!(
+            id1.to_hex().len(),
+            64,
+            "Node ID hex should be 64 characters (32 bytes * 2)"
+        );
 
         // Path with special characters
         let id2 = NodeId::new(
@@ -499,11 +507,27 @@ mod tests {
             &span,
             &NodeKind::Module,
         );
-        assert!(!id2.to_hex().is_empty());
+        assert!(
+            !id2.to_hex().is_empty(),
+            "Node ID with special chars should have valid hex"
+        );
+        assert_eq!(
+            id2.to_hex().len(),
+            64,
+            "Node ID hex should be 64 characters"
+        );
 
         // Unicode in path
         let id3 = NodeId::new("repo", Path::new("src/文件.js"), &span, &NodeKind::Module);
-        assert!(!id3.to_hex().is_empty());
+        assert!(
+            !id3.to_hex().is_empty(),
+            "Node ID with Unicode should have valid hex"
+        );
+        assert_eq!(
+            id3.to_hex().len(),
+            64,
+            "Node ID hex should be 64 characters"
+        );
     }
 
     #[test]
@@ -541,11 +565,23 @@ mod tests {
     fn test_span_utilities() {
         let span = Span::new(10, 20, 2, 3, 5, 15);
         assert_eq!(span.len(), 10);
-        assert!(!span.is_empty());
+        assert!(
+            !span.is_empty(),
+            "Span with non-zero range should not be empty"
+        );
+        assert_eq!(span.start, 0, "Span should start at position 0");
+        assert_eq!(span.end, 10, "Span should end at position 10");
 
         let empty_span = Span::new(10, 10, 2, 2, 5, 5);
         assert_eq!(empty_span.len(), 0);
-        assert!(empty_span.is_empty());
+        assert!(
+            empty_span.is_empty(),
+            "Span with same start and end should be empty"
+        );
+        assert_eq!(
+            empty_span.start, empty_span.end,
+            "Empty span should have equal start and end"
+        );
     }
 
     #[test]

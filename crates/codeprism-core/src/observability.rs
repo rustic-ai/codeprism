@@ -627,7 +627,7 @@ mod tests {
             })
             .await;
 
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Observability operation should succeed");
         assert_eq!(result.unwrap(), "success");
 
         // Check performance metrics

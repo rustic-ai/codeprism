@@ -586,7 +586,7 @@ mod tests {
         let content = "# Title\n\nThis is a test document.";
 
         let result = manager.index_file(file_path, content);
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Search operation should succeed");
 
         // Verify the file was indexed
         let node = manager.get_node(file_path);
@@ -603,7 +603,7 @@ mod tests {
         let content = "// Comment\nfunction test() { return 42; }";
 
         let result = manager.index_file(file_path, content);
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Search operation should succeed");
 
         // Verify the file was indexed as source code
         let node = manager.get_node(file_path);
@@ -742,7 +742,7 @@ mod tests {
 
         // Remove the file
         let result = manager.remove_file(file_path);
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Search operation should succeed");
         assert!(manager.get_node(file_path).is_none());
     }
 

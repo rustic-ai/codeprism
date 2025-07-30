@@ -435,7 +435,7 @@ mod tests {
         let config = RepositoryConfig::new("test_repo".to_string(), temp_dir.path());
 
         let result = manager.register_repository(config);
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Repository operation should succeed");
         assert_eq!(manager.list_repositories().len(), 1);
     }
 

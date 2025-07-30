@@ -566,7 +566,7 @@ mod tests {
             })
             .await;
 
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Resilience operation should succeed");
         assert_eq!(result.unwrap(), "success");
         assert_eq!(attempts.load(std::sync::atomic::Ordering::SeqCst), 2);
     }
@@ -618,7 +618,7 @@ mod tests {
             })
             .await;
 
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Resilience operation should succeed");
         assert_eq!(result.unwrap(), "success");
         assert!(manager.is_healthy());
     }

@@ -4013,7 +4013,9 @@ impl JavaAnalyzer {
         }
 
         // Penalty for excessive switch statements (indicates violation of OCP)
-        let switch_count = content.matches("switch").count();
+        // Parse actual switch statements rather than counting string occurrences
+        let switch_pattern = Regex::new(r"switch\s*\([^)]+\)\s*\{").unwrap();
+        let switch_count = switch_pattern.find_iter(content).count();
         if switch_count > 2 {
             score -= (switch_count as i32 - 2) * 5;
         }
@@ -4025,8 +4027,9 @@ impl JavaAnalyzer {
         // Liskov Substitution Principle - analyze inheritance usage
         let mut score = 70; // Base score
 
-        // Look for proper use of @Override
-        let override_count = content.matches("@Override").count();
+        // Look for proper use of @Override - count actual annotations
+        let override_pattern = Regex::new(r"@Override\s+(?:public|protected|private)\s+").unwrap();
+        let override_count = override_pattern.find_iter(content).count();
         let method_count = Regex::new(r"(?:public|protected)\s+\w+\s+\w+\s*\(")
             .unwrap()
             .find_iter(content)
@@ -4060,7 +4063,9 @@ impl JavaAnalyzer {
 
         for captures in interface_regex.captures_iter(content) {
             let interface_content = captures.get(2).unwrap().as_str();
-            let method_count = interface_content.matches("(").count(); // Rough method count
+            // Count actual method declarations in interface
+            let method_pattern = Regex::new(r"\w+\s+\w+\s*\([^)]*\)\s*;").unwrap();
+            let method_count = method_pattern.find_iter(interface_content).count();
 
             // Score based on interface size (smaller interfaces are better)
             let interface_score = match method_count {
@@ -4112,8 +4117,9 @@ impl JavaAnalyzer {
             score += 15;
         }
 
-        // Penalty for new keyword usage (tight coupling)
-        let new_count = content.matches(" new ").count();
+        // Penalty for new keyword usage (tight coupling) - count actual instantiations
+        let new_pattern = Regex::new(r"\bnew\s+\w+\s*\(").unwrap();
+        let new_count = new_pattern.find_iter(content).count();
         if new_count > 3 {
             // Allow some new usages for value objects, etc.
             score -= (new_count as i32 - 3) * 3;
@@ -4178,7 +4184,9 @@ impl JavaAnalyzer {
         let switch_regex = Regex::new(r"switch\s*\([^)]+\)\s*\{([^}]+)\}")?;
         for captures in switch_regex.captures_iter(content) {
             let switch_content = captures.get(1).unwrap().as_str();
-            let case_count = switch_content.matches("case ").count();
+            // Count actual case statements with proper pattern matching
+            let case_pattern = Regex::new(r"case\s+[^:]+:").unwrap();
+            let case_count = case_pattern.find_iter(switch_content).count();
 
             if case_count > 5 {
                 violations.push(SOLIDViolation {
@@ -4197,7 +4205,9 @@ impl JavaAnalyzer {
         for captures in interface_regex.captures_iter(content) {
             let interface_name = captures.get(1).unwrap().as_str().to_string();
             let interface_content = captures.get(2).unwrap().as_str();
-            let method_count = interface_content.matches("(").count();
+            // Count actual method declarations in interface
+            let method_pattern = Regex::new(r"\w+\s+\w+\s*\([^)]*\)\s*;").unwrap();
+            let method_count = method_pattern.find_iter(interface_content).count();
 
             if method_count > 7 {
                 violations.push(SOLIDViolation {

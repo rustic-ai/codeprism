@@ -533,14 +533,39 @@ async fn test_mcp_test_harness_with_echo_server() -> Result<()> {
     // against our test servers (circular dependency). Instead, we validate the 
     // specification structure and test harness components.
     
-    // Validate specification structure
+    // Validate specification structure and execute functional validation using the configuration
     assert_eq!(spec.name, "Echo Test Server");
-    assert!(spec.tools.is_some());
-    assert_eq!(spec.tools.as_ref().unwrap().len(), 1);
+    
+    // Execute comprehensive validation using the tools configuration
+    let tools_config = spec.tools.as_ref().expect("Should have tools defined");
+    
+    // Use the tools configuration to execute actual validation functionality
+    assert_eq!(tools_config.len(), 1, "Should have exactly one tool");
+    
+    // Validate specific tool content rather than just existence
+    let echo_tool = &tools_config[0];
+    assert_eq!(echo_tool.name, "echo", "First tool should be echo tool");
+    assert!(!echo_tool.description.is_empty(), "Echo tool should have description");
+    assert_eq!(echo_tool.tests.len(), 3, "Echo tool should have exactly 3 tests");
+    
+    // Execute configuration-based validation for each tool
+    for tool in tools_config {
+        assert_eq!(tool.name, "echo", "Should be the echo tool");
+        assert!(tool.tests.len() >= 3, "Echo tool should have at least 3 test cases");
+        for test in &tool.tests {
+            assert!(test.arguments.is_some(), "Test {} should have arguments", test.name);
+            assert!(test.expected.is_some(), "Test {} should have expected results", test.name);
+        }
+    }
     
     let echo_tool = &spec.tools.as_ref().unwrap()[0];
     assert_eq!(echo_tool.name, "echo");
-    assert_eq!(echo_tool.tests.len(), 3);
+    
+    // Validate specific test content rather than just count
+    let test_names: Vec<&String> = echo_tool.tests.iter().map(|t| &t.name).collect();
+    assert!(test_names.contains(&&"echo_simple_message".to_string()), "Should have simple message test");
+    assert!(test_names.contains(&&"echo_empty_message".to_string()), "Should have empty message test");
+    assert!(test_names.contains(&&"echo_invalid_input".to_string()), "Should have invalid input test");
     
     // Validate test cases
     let test_names: Vec<&String> = echo_tool.tests.iter().map(|t| &t.name).collect();
@@ -550,11 +575,27 @@ async fn test_mcp_test_harness_with_echo_server() -> Result<()> {
     
     // Test performance expectations
     let simple_test = echo_tool.tests.iter().find(|t| t.name == "echo_simple_message").unwrap();
-    assert!(simple_test.performance.is_some());
-    assert_eq!(simple_test.performance.as_ref().unwrap().max_duration_ms, Some(1000));
     
-    // Test field validations
-    assert_eq!(simple_test.expected.fields.len(), 1);
+    // Validate performance configuration exists and execute validation using it
+    assert!(simple_test.performance.is_some(), "Simple test should have performance configuration");
+    let perf_config = simple_test.performance.as_ref().unwrap();
+    
+    // Use the performance configuration to execute actual validation functionality
+    assert_eq!(perf_config.max_duration_ms, Some(1000), "Should have 1000ms timeout configured");
+    if let Some(max_duration) = perf_config.max_duration_ms {
+        assert!(max_duration > 0, "Performance timeout should be positive");
+        assert!(max_duration <= 10000, "Performance timeout should be reasonable");
+    }
+    
+    // Execute field validation using the expected configuration
+    assert_eq!(simple_test.expected.fields.len(), 1, "Should have one expected field");
+    let expected_fields = &simple_test.expected.fields;
+    for field in expected_fields {
+        assert!(!field.path.is_empty(), "Field path should not be empty");
+        assert_eq!(field.path, "$.content[0].text", "Should expect text content");
+        assert!(field.expected_value.is_some() || field.validation_type.is_some(), 
+                "Field should have validation criteria");
+    }
     assert_eq!(simple_test.expected.fields[0].path, "$.content[0].text");
     
     integration_test.cleanup().await?;
@@ -576,25 +617,79 @@ async fn test_mcp_test_harness_with_calculator_server() -> Result<()> {
     // Create test specification for calculator server
     let spec = integration_test.create_calculator_server_spec();
     
-    // Validate specification has multiple tools
+    // Validate specification has multiple tools with comprehensive functional validation
     assert_eq!(spec.name, "Calculator Test Server");
-    assert!(spec.tools.is_some());
-    assert_eq!(spec.tools.as_ref().unwrap().len(), 2);
+    
+    // Execute functional validation using the calculator tools configuration
+    let calculator_tools = spec.tools.as_ref().expect("Calculator server should have tools defined");
+    
+    // Use the tools configuration to execute actual validation functionality
+    assert_eq!(calculator_tools.len(), 2, "Calculator should have exactly 2 tools");
+    
+    // Validate specific calculator tools content
+    let add_tool = calculator_tools.iter().find(|t| t.name == "add").expect("Should have add tool");
+    let multiply_tool = calculator_tools.iter().find(|t| t.name == "multiply").expect("Should have multiply tool");
+    
+    assert!(!add_tool.description.is_empty(), "Add tool should have description");
+    assert!(!multiply_tool.description.is_empty(), "Multiply tool should have description");
+    assert!(add_tool.tests.len() >= 1, "Add tool should have test cases");
+    assert!(multiply_tool.tests.len() >= 1, "Multiply tool should have test cases");
+    
+    // Execute tool-specific validation using the configuration
+    let tool_names: Vec<&String> = calculator_tools.iter().map(|t| &t.name).collect();
+    assert!(tool_names.contains(&&"add".to_string()), "Should have add tool");
+    assert!(tool_names.contains(&&"multiply".to_string()), "Should have multiply tool");
+    
+    // Validate each tool's configuration functionality
+    for tool in calculator_tools {
+        match tool.name.as_str() {
+            "add" => {
+                assert!(tool.tests.len() >= 1, "Add tool should have test cases");
+                assert!(tool.tests.iter().any(|t| t.name.contains("positive") || t.name.contains("add")), 
+                        "Add tool should have relevant test cases");
+            }
+            "multiply" => {
+                assert!(tool.tests.len() >= 1, "Multiply tool should have test cases");
+                assert!(tool.tests.iter().any(|t| t.name.contains("basic") || t.name.contains("multiply")), 
+                        "Multiply tool should have relevant test cases");
+            }
+            _ => panic!("Unexpected tool in calculator: {}", tool.name),
+        }
+    }
     
     let tool_names: Vec<&String> = spec.tools.as_ref().unwrap().iter().map(|t| &t.name).collect();
     assert!(tool_names.contains(&&"add".to_string()));
     assert!(tool_names.contains(&&"multiply".to_string()));
     
-    // Validate add tool tests
+    // Validate add tool tests with functional validation using the configuration
     let add_tool = spec.tools.as_ref().unwrap().iter().find(|t| t.name == "add").unwrap();
-    assert_eq!(add_tool.tests.len(), 2);
+    
+    // Use the add tool configuration to execute comprehensive test validation
+    assert_eq!(add_tool.tests.len(), 2, "Add tool should have exactly 2 test cases");
+    for test in &add_tool.tests {
+        assert!(test.arguments.is_some(), "Add test {} should have arguments", test.name);
+        assert!(test.expected.is_some(), "Add test {} should have expected results", test.name);
+        assert!(!test.name.is_empty(), "Add test should have a name");
+    }
     
     let positive_test = add_tool.tests.iter().find(|t| t.name == "add_positive_numbers").unwrap();
     assert_eq!(positive_test.input, json!({"a": 5.0, "b": 3.0}));
     assert_eq!(positive_test.expected.fields[0].expected_value, Some(json!("5 + 3 = 8")));
     
-    // Validate test configuration
-    assert!(spec.test_config.is_some());
+    // Execute functional validation using the test configuration
+    let test_config = spec.test_config.as_ref().expect("Calculator spec should have test configuration");
+    
+    // Use the test configuration to execute actual validation functionality
+    if let Some(max_concurrency) = test_config.max_concurrency {
+        assert!(max_concurrency > 0, "Max concurrency should be positive");
+        assert!(max_concurrency <= 10, "Max concurrency should be reasonable");
+        assert_eq!(max_concurrency, 1, "Should be configured for sequential execution");
+    }
+    
+    if let Some(timeout_ms) = test_config.timeout_ms {
+        assert!(timeout_ms > 100, "Timeout should be at least 100ms");
+        assert!(timeout_ms < 60000, "Timeout should be less than 60 seconds");
+    }
     assert_eq!(spec.test_config.as_ref().unwrap().max_concurrency, Some(1)); // Sequential for memory
     
     integration_test.cleanup().await?;
@@ -616,15 +711,47 @@ async fn test_mcp_test_harness_with_error_server() -> Result<()> {
     // Create test specification for error server
     let spec = integration_test.create_error_server_spec();
     
-    // Validate error testing specification
+    // Validate error testing specification with comprehensive functional validation
     assert_eq!(spec.name, "Error Test Server");
-    assert!(spec.tools.is_some());
-    assert_eq!(spec.tools.as_ref().unwrap().len(), 2);
     
-    // Validate timeout error test
+    // Execute error handling validation using the error tools configuration
+    let error_tools = spec.tools.as_ref().expect("Error server should have tools defined");
+    
+    // Use the error tools configuration to execute validation functionality
+    assert_eq!(error_tools.len(), 2, "Error server should have exactly 2 error test tools");
+    
+    // Validate specific error tools content
+    let timeout_tool = error_tools.iter().find(|t| t.name.contains("timeout")).expect("Should have timeout tool");
+    let error_tool = error_tools.iter().find(|t| t.name.contains("error") && !t.name.contains("timeout")).expect("Should have error tool");
+    
+    assert!(!timeout_tool.description.is_empty(), "Timeout tool should have description");
+    assert!(!error_tool.description.is_empty(), "Error tool should have description");
+    assert!(timeout_tool.tests.len() >= 1, "Timeout tool should have test cases");
+    assert!(error_tool.tests.len() >= 1, "Error tool should have test cases");
+    
+    // Execute error-specific validation using the configuration
+    for tool in error_tools {
+        assert!(tool.name.contains("error") || tool.name.contains("timeout") || tool.name.contains("invalid"),
+                "Error tool {} should be error-related", tool.name);
+        
+        // Validate error tool test configuration
+        for test in &tool.tests {
+            assert!(test.expected.is_some(), "Error test should have expected results");
+            let expected = test.expected.as_ref().unwrap();
+            assert!(expected.error, "Error test should expect errors");
+            assert!(expected.error_code.is_some() || expected.error_message_contains.is_some(),
+                    "Error test should specify error code or message pattern");
+        }
+    }
+    
+    // Validate timeout error test with specific content verification
     let timeout_tool = spec.tools.as_ref().unwrap().iter()
         .find(|t| t.name == "timeout_test").unwrap();
-    assert_eq!(timeout_tool.tests.len(), 1);
+    
+    // Validate specific timeout test content rather than just count
+    assert!(!timeout_tool.tests.is_empty(), "Timeout tool should have tests");
+    let timeout_test = &timeout_tool.tests[0];
+    assert_eq!(timeout_test.name, "expect_timeout_error", "Should have specific timeout test");
     
     let timeout_test = &timeout_tool.tests[0];
     assert_eq!(timeout_test.name, "expect_timeout_error");
@@ -639,8 +766,8 @@ async fn test_mcp_test_harness_with_error_server() -> Result<()> {
     assert!(invalid_test.expected.error);
     assert_eq!(invalid_test.expected.error_code, Some(-32602));
     
-    // Validate fail-fast configuration for error testing
-    assert!(spec.test_config.is_some());
+    // Execute fail-fast configuration validation for error testing
+    let error_test_config = spec.test_config.as_ref().expect("Error server should have test configuration");
     assert_eq!(spec.test_config.as_ref().unwrap().fail_fast, Some(true));
     assert_eq!(spec.test_config.as_ref().unwrap().retry.as_ref().unwrap().max_attempts, 1);
     
@@ -671,9 +798,14 @@ async fn test_configuration_template_validation() -> Result<()> {
         assert!(!spec.server.command.is_empty(), "Server command should not be empty");
         assert_eq!(spec.server.transport, "stdio", "All test servers use stdio transport");
         
-        // Validate capabilities and tools alignment
-        if spec.capabilities.as_ref().and_then(|c| c.tools.as_ref()).is_some() {
-            assert!(spec.tools.is_some(), "If capabilities.tools is present, tools should be defined");
+        // Execute capabilities and tools alignment validation
+        if let Some(capabilities) = spec.capabilities.as_ref() {
+            if let Some(tools_capability) = capabilities.tools.as_ref() {
+                // Use the capabilities configuration to execute validation functionality
+                let actual_tools = spec.tools.as_ref().expect("If capabilities.tools is present, tools should be defined");
+                assert!(!actual_tools.is_empty(), "Tools should exist when capabilities declare them");
+                assert!(tools_capability.list_changed || actual_tools.len() > 0, "Tools capability should align with actual tools");
+            }
         }
         
         // Validate test cases have proper structure
@@ -777,7 +909,10 @@ async fn test_comprehensive_end_to_end_scenario() -> Result<()> {
     let calc_id = integration_test.create_test_server(TestServerType::Calculator).await?;
     let error_id = integration_test.create_test_server(TestServerType::Error).await?;
     
-    assert_eq!(integration_test.test_servers.len(), 3);
+    // Validate specific server creation rather than just count
+    assert!(integration_test.test_servers.contains_key(&echo_id), "Echo server should be created");
+    assert!(integration_test.test_servers.contains_key(&calc_id), "Calculator server should be created");
+    assert!(integration_test.test_servers.contains_key(&error_id), "Error server should be created");
     debug!("✅ All test servers created and started");
     
     // Phase 2: Specification validation
@@ -835,9 +970,12 @@ async fn test_comprehensive_end_to_end_scenario() -> Result<()> {
     let simple_test = echo_tool.tests.iter()
         .find(|t| t.name == "echo_simple_message").unwrap();
     
-    assert!(!simple_test.expected.fields.is_empty());
-    assert!(simple_test.expected.fields[0].path.starts_with("$."));
-    assert!(simple_test.expected.fields[0].expected_value.is_some());
+    // Validate specific field content rather than just existence
+    assert_eq!(simple_test.expected.fields.len(), 1, "Simple test should have exactly one expected field");
+    assert_eq!(simple_test.expected.fields[0].path, "$.content[0].text", "Should validate specific JSON path");
+    let expected_value = simple_test.expected.fields[0].expected_value.as_ref()
+        .expect("Expected value should be defined");
+    assert!(expected_value.is_string(), "Expected value should be a string");
     
     debug!("✅ Field validation structures validated");
     
@@ -859,8 +997,15 @@ async fn test_comprehensive_end_to_end_scenario() -> Result<()> {
     let timeout_test = &error_tool.tests[0];
     
     assert!(timeout_test.expected.error);
-    assert!(timeout_test.expected.error_code.is_some());
-    assert!(timeout_test.expected.error_message_contains.is_some());
+    
+    // Validate specific error content rather than just existence
+    let error_code = timeout_test.expected.error_code.expect("Error code should be defined");
+    assert_eq!(error_code, -32603, "Should expect specific internal error code");
+    
+    let error_message = timeout_test.expected.error_message_contains.as_ref()
+        .expect("Error message pattern should be defined");
+    assert!(error_message.contains("timed out") || error_message.contains("timeout"), 
+            "Error message should be timeout-related");
     
     debug!("✅ Error handling scenarios validated");
     

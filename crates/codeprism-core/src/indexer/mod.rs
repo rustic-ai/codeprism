@@ -605,10 +605,51 @@ mod tests {
     #[test]
     fn test_memory_estimation() {
         let (indexer, _temp_dir) = create_test_indexer();
-        let result = IndexingResult::new("test".to_string());
+        let mut result = IndexingResult::new("test".to_string());
 
-        let _memory = indexer.estimate_memory_usage(&result);
-        // Memory usage is always >= 0 for usize type, test passes
+        // Test with empty result - should return 0 for truly empty result
+        let empty_memory = indexer.estimate_memory_usage(&result);
+        assert_eq!(
+            empty_memory, 0,
+            "Empty result should have zero estimated memory"
+        );
+
+        // Add some test data to result to verify memory calculation works
+        use crate::patch::AstPatch;
+        use std::path::PathBuf;
+
+        // Add a test patch with simulated data
+        let patch = AstPatch::new("test_repo".to_string(), "abc123".to_string());
+
+        // Simulate having some nodes and edges in the patch for memory estimation
+        // We don't need actual Node/Edge structs since memory estimation only counts Vec lengths
+        // The estimate_memory_usage function calculates:
+        // total += patch.nodes_add.len() * 200;
+        // total += patch.edges_add.len() * 50;
+        // So we just need to add some items to test the calculation
+
+        // Add a test failed file to also test that path
+        result.failed_files.push((
+            PathBuf::from("test_file.rs"),
+            crate::error::Error::parse("test_file.rs", "test error"),
+        ));
+
+        result.patches.push(patch);
+        result.stats.files_processed = 10;
+        result.stats.nodes_created = 100;
+        result.stats.edges_created = 50;
+
+        let populated_memory = indexer.estimate_memory_usage(&result);
+        assert!(
+            populated_memory > empty_memory,
+            "Memory usage should increase with patches and failed files: {populated_memory} > {empty_memory}"
+        );
+
+        // Should have: 1 patch overhead (100) + 1 failed file (200) = 300 bytes minimum
+        assert!(
+            populated_memory >= 300,
+            "Should account for patch and failed file overhead, got {populated_memory} bytes"
+        );
     }
 
     #[test]

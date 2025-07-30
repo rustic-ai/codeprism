@@ -364,7 +364,14 @@ mod tests {
     #[test]
     fn test_parser_benchmarks() {
         let results = ParserBenchmarks::run_all_benchmarks();
-        assert!(!results.is_empty());
+        assert!(!results.is_empty(), "Should generate benchmark results");
+        
+        // Validate actual benchmark content
+        for result in &results {
+            assert!(!result.test_name.is_empty(), "Benchmark should have a name");
+            assert!(result.duration_ms >= 0.0, "Duration should be non-negative");
+            assert!(result.memory_usage_mb >= 0.0, "Memory usage should be non-negative");
+        }
         
         // Verify all benchmarks pass
         for result in &results {
@@ -395,28 +402,48 @@ mod tests {
     fn test_real_python_parsing() {
         let code = "def hello():\n    return 'world'";
         let result = ParserBenchmarks::parse_python_code(code);
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Python parsing should succeed for valid code");
+        
+        // Validate actual parsing results
+        let parse_result = result.unwrap();
+        assert!(parse_result.nodes > 0, "Should detect AST nodes in parsed code");
+        assert!(parse_result.duration_ms >= 0.0, "Parsing time should be measured");
     }
 
     #[test]
     fn test_real_javascript_parsing() {
         let code = "function hello() { return 'world'; }";
         let result = ParserBenchmarks::parse_javascript_code(code);
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "JavaScript parsing should succeed for valid code");
+        
+        // Validate actual parsing results
+        let parse_result = result.unwrap();
+        assert!(parse_result.nodes > 0, "Should detect AST nodes in parsed code");
+        assert!(parse_result.duration_ms >= 0.0, "Parsing time should be measured");
     }
 
     #[test]
     fn test_real_rust_parsing() {
         let code = "fn hello() -> &'static str { \"world\" }";
         let result = ParserBenchmarks::parse_rust_code(code);
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Rust parsing should succeed for valid code");
+        
+        // Validate actual parsing results
+        let parse_result = result.unwrap();
+        assert!(parse_result.nodes > 0, "Should detect AST nodes in parsed code");
+        assert!(parse_result.duration_ms >= 0.0, "Parsing time should be measured");
     }
 
     #[test]
     fn test_real_java_parsing() {
         let code = "public class Test { public void hello() {} }";
         let result = ParserBenchmarks::parse_java_code(code);
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Java parsing should succeed for valid code");
+        
+        // Validate actual parsing results
+        let parse_result = result.unwrap();
+        assert!(parse_result.nodes > 0, "Should detect AST nodes in parsed code");
+        assert!(parse_result.duration_ms >= 0.0, "Parsing time should be measured");
     }
 
     #[test]

@@ -960,10 +960,26 @@ mod tests {
             .analyze_content(code, &["time_complexity".to_string()], "low")
             .unwrap();
 
-        assert!(!issues.is_empty());
-        assert!(issues
+        assert!(
+            !issues.is_empty(),
+            "Should detect performance issues in quadruple nested loop"
+        );
+
+        // Validate specific detection of quadruple nested loop
+        let nested_loop_issue = issues
             .iter()
-            .any(|i| i.issue_type == "Quadruple Nested Loop"));
+            .find(|i| i.issue_type == "Quadruple Nested Loop")
+            .expect("Should detect quadruple nested loop issue");
+
+        assert!(
+            nested_loop_issue.severity == "high" || nested_loop_issue.severity == "critical",
+            "Quadruple nested loop should be high/critical severity, got: {}",
+            nested_loop_issue.severity
+        );
+        assert!(
+            !nested_loop_issue.description.is_empty(),
+            "Issue should have meaningful description"
+        );
     }
 
     #[test]
@@ -975,7 +991,26 @@ mod tests {
             .analyze_content(code, &["time_complexity".to_string()], "low")
             .unwrap();
 
-        assert!(!issues.is_empty());
+        assert!(!issues.is_empty(), "Should detect exponential recursion");
+
+        // Validate we detected the actual exponential recursion pattern
+        let recursion_issue = issues
+            .iter()
+            .find(|i| i.issue_type.contains("Recursion") || i.issue_type.contains("Exponential"))
+            .expect("Should detect recursion-related performance issue");
+
+        assert!(
+            recursion_issue.severity == "high" || recursion_issue.severity == "critical",
+            "Exponential recursion should be high severity"
+        );
+        assert!(
+            recursion_issue.description.contains("fibonacci")
+                || recursion_issue
+                    .description
+                    .to_lowercase()
+                    .contains("recursion"),
+            "Description should reference the actual issue"
+        );
     }
 
     #[test]

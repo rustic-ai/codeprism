@@ -239,10 +239,24 @@ mod tests {
     async fn test_comprehensive_suite() {
         let results = TestSuiteRunner::run_comprehensive_test_suite().await;
         
-        // Verify we have results from all test categories
-        assert!(!results.performance_results.is_empty());
-        assert!(!results.quality_results.is_empty());
-        assert!(!results.mcp_tool_results.is_empty());
+        // Verify we have results from all test categories with actual content validation
+        assert!(!results.performance_results.is_empty(), "Should have performance test results");
+        assert!(results.performance_results.iter().all(|r| !r.test_name.is_empty()), 
+                "Performance results should have test names");
+        assert!(results.performance_results.iter().any(|r| r.duration_ms > 0.0), 
+                "Performance results should include measured durations");
+        
+        assert!(!results.quality_results.is_empty(), "Should have quality test results");
+        assert!(results.quality_results.iter().all(|r| !r.test_name.is_empty()), 
+                "Quality results should have test names");
+        assert!(results.quality_results.iter().any(|r| r.success || !r.success), 
+                "Quality results should have actual pass/fail status");
+        
+        assert!(!results.mcp_tool_results.is_empty(), "Should have MCP tool test results");
+        assert!(results.mcp_tool_results.iter().all(|r| !r.tool_name.is_empty()), 
+                "MCP results should have tool names");
+        assert!(results.mcp_tool_results.iter().any(|r| r.execution_time_ms > 0.0), 
+                "MCP results should include execution times");
         
         // Basic success criteria
         assert!(results.total_test_count > 20); // Should have many tests

@@ -146,19 +146,37 @@ mod tests {
 
     #[test]
     fn test_performance_result_creation() {
+        // Test successful result creation
         let result = PerformanceResult::new("test", Duration::from_millis(100), true);
-        assert_eq!(result.test_name, "test");
-        assert_eq!(result.duration, Duration::from_millis(100));
-        assert!(result.success);
+        assert_eq!(result.test_name, "test", "Should store test name correctly");
+        assert_eq!(result.duration, Duration::from_millis(100), "Should store duration correctly");
+        assert!(result.success, "Should store success status correctly");
+        
+        // Test failed result creation
+        let failed_result = PerformanceResult::new("failed_test", Duration::from_millis(50), false);
+        assert_eq!(failed_result.test_name, "failed_test", "Should handle failed test names");
+        assert!(!failed_result.success, "Should correctly store failure status");
+        assert!(failed_result.duration.as_millis() > 0, "Should record non-zero duration");
     }
 
     #[test]
     fn test_performance_harness() {
         let mut harness = PerformanceTestHarness::new();
         
+        // Test successful test execution
         harness.run_test("simple_test", || Ok(()));
         
-        assert_eq!(harness.results().len(), 1);
-        assert!(harness.results()[0].success);
+        // Validate actual test execution and results
+        assert_eq!(harness.results().len(), 1, "Should have one test result");
+        
+        let result = &harness.results()[0];
+        assert!(result.success, "Test should be marked as successful");
+        assert_eq!(result.test_name, "simple_test", "Should capture test name");
+        assert!(result.duration.as_millis() >= 0, "Should measure execution time");
+        
+        // Test failed test execution
+        harness.run_test("failing_test", || Err("test error".into()));
+        assert_eq!(harness.results().len(), 2, "Should have two test results");
+        assert!(!harness.results()[1].success, "Failed test should be marked as unsuccessful");
     }
 } 

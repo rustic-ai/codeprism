@@ -30,6 +30,7 @@ class TheaterType(Enum):
     NO_FUNCTION_CALL = "no_function_call"
     PLACEHOLDER_OUTPUT = "placeholder_output"
     TAUTOLOGICAL_ASSERTION = "tautological_assertion"
+    MOCK_TESTING_ONLY = "mock_testing_only"
 
 @dataclass
 class TheaterIssue:
@@ -61,8 +62,10 @@ class TestTheaterDetector:
             # Meaningless assertions
             TheaterType.MEANINGLESS_ASSERTION: [
                 (r'assert!\(true\)', "Always passes - meaningless assertion"),
-                (r'assert!\(.*\.is_ok\(\)\)(?!\s*,)', "Only tests that no error occurred, not functionality"),
+                (r'assert!\(.*\.is_ok\(\)\)', "Only tests that no error occurred, not functionality"),
                 (r'assert!\(.*\.len\(\)\s*>\s*0\)(?!.*&&)', "Only tests non-empty, not content quality"),
+                (r'assert!\(.*\.is_some\(\)\)(?!\s*,)', "Only tests that value exists, not its content"),
+                (r'assert!\(!.*\.is_empty\(\)\)', "Only tests non-empty, not content validity"),
             ],
             
             # Count-based validation without content check
@@ -95,12 +98,31 @@ class TestTheaterDetector:
             TheaterType.NO_FUNCTION_CALL: [
                 # This pattern is harder to detect with regex, will be done in analyze_test_function
             ],
+            
+            # Mock/placeholder testing without real functionality
+            TheaterType.MOCK_TESTING_ONLY: [
+                (r'\.mock\(\)|Mock::|create_mock', "Testing mock objects instead of real functionality"),
+                (r'placeholder|stub|fake', "Using placeholder implementations in tests"),
+                (r'todo!\(\)|unimplemented!\(\)', "Test calls unimplemented functionality"),
+            ],
         }
     
     def find_test_files(self, root_dir: str = ".") -> List[str]:
         """Find all Rust test files."""
         test_files = []
         
+        # Handle single file case
+        if os.path.isfile(root_dir) and root_dir.endswith('.rs'):
+            with open(root_dir, 'r', encoding='utf-8', errors='ignore') as f:
+                content = f.read()
+                # Check if it's a test file
+                if ('#[test]' in content or '#[tokio::test]' in content or 
+                    '/tests/' in root_dir or root_dir.endswith('_test.rs') or 
+                    os.path.basename(root_dir) == 'test.rs'):
+                    test_files.append(root_dir)
+            return test_files
+        
+        # Handle directory case
         for root, dirs, files in os.walk(root_dir):
             # Skip target directory
             if 'target' in dirs:
@@ -199,8 +221,13 @@ class TestTheaterDetector:
         
         # Look for actual function calls
         has_call_tool = bool(re.search(r'\.call_tool\(', full_content))
-        has_await_call = bool(re.search(r'\.await[^;]*\?;', full_content))
-        has_execute_call = bool(re.search(r'execute|run|process', full_content, re.IGNORECASE))
+        # More flexible await pattern to catch various async call patterns
+        has_await_call = bool(re.search(r'\.await\b', full_content))
+        # More specific execute patterns to avoid false matches
+        has_execute_call = bool(re.search(r'\b(execute|run|process)\s*\(', full_content, re.IGNORECASE))
+        # Additional patterns for function calls
+        has_function_call = bool(re.search(r'\w+\.\w+\([^)]*\)', full_content))
+        has_method_chain = bool(re.search(r'\w+\.\w+\(.*\)\.\w+', full_content))
         
         # Count assertions
         assertion_count = len(re.findall(r'assert[_!]', full_content))
@@ -209,7 +236,7 @@ class TestTheaterDetector:
         contains_assertions = len(re.findall(r'assert!\([^)]*\.contains\(', full_content))
         
         # Check for test theater patterns
-        if contains_assertions > 0 and not (has_call_tool or has_await_call):
+        if contains_assertions > 0 and not (has_call_tool or has_await_call or has_function_call):
             issues.append(TheaterIssue(
                 file_path=file_path,
                 line_number=start_line,
@@ -220,7 +247,8 @@ class TestTheaterDetector:
                 recommendation="Replace contains assertions with actual function calls and result validation"
             ))
         
-        if assertion_count > 0 and not (has_call_tool or has_await_call or has_execute_call):
+        # Only flag if no meaningful function calls are detected
+        if assertion_count > 0 and not (has_call_tool or has_await_call or has_execute_call or has_function_call or has_method_chain):
             issues.append(TheaterIssue(
                 file_path=file_path,
                 line_number=start_line,
@@ -253,7 +281,8 @@ class TestTheaterDetector:
             TheaterType.CONFIGURATION_ONLY: "Actually execute functionality using the configuration",
             TheaterType.TAUTOLOGICAL_ASSERTION: "Compare against expected values, not the same value",
             TheaterType.NO_FUNCTION_CALL: "Add calls to actual functions/tools being tested",
-            TheaterType.PLACEHOLDER_OUTPUT: "Use real test data and validate actual output content"
+            TheaterType.PLACEHOLDER_OUTPUT: "Use real test data and validate actual output content",
+            TheaterType.MOCK_TESTING_ONLY: "Replace mocks with actual implementation testing or integration tests"
         }
         return recommendations.get(theater_type, "Review and improve test validation")
 

@@ -91,7 +91,13 @@ mod tests {
             McpToolBenchmarks::benchmark_trace_path()
         });
         
-        assert_eq!(harness.results().len(), 1);
-        assert!(harness.results()[0].success);
+        // Validate benchmark results with detailed verification
+        assert_eq!(harness.results().len(), 1, "Should have one benchmark result");
+        
+        let result = &harness.results()[0];
+        assert!(result.success, "Trace path benchmark should succeed");
+        assert_eq!(result.test_name, "test_trace_path", "Should have correct test name");
+        assert!(result.duration.as_millis() > 0, "Benchmark should measure execution time");
+        assert!(result.duration.as_millis() < 10000, "Benchmark should complete within 10 seconds");
     }
 } 

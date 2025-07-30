@@ -153,10 +153,19 @@ mod tests {
         harness.run_coverage_test("high_coverage", || Ok(85.0));
         harness.run_coverage_test("low_coverage", || Ok(60.0));
         
-        assert_eq!(harness.results().len(), 2);
-        assert!(harness.results()[0].success);
-        assert!(!harness.results()[1].success);
+        // Validate test results with detailed verification
+        assert_eq!(harness.results().len(), 2, "Should have results for both coverage tests");
         
-        assert_eq!(harness.overall_coverage(), Some(72.5));
+        let results = harness.results();
+        assert!(results[0].success, "High coverage test should pass threshold");
+        assert!(!results[1].success, "Low coverage test should fail threshold");
+        
+        // Verify result details
+        assert_eq!(results[0].test_name, "high_coverage", "First test should have correct name");
+        assert_eq!(results[1].test_name, "low_coverage", "Second test should have correct name");
+        assert!(results[0].coverage_percentage >= 75.0, "High coverage should meet threshold");
+        assert!(results[1].coverage_percentage < 75.0, "Low coverage should be below threshold");
+        
+        assert_eq!(harness.overall_coverage(), Some(72.5), "Overall coverage should be average of test results");
     }
 } 

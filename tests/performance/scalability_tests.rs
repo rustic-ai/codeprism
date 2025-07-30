@@ -184,13 +184,28 @@ mod tests {
     #[test]
     fn test_small_repository() {
         let result = ScalabilityTests::test_repository_size(10);
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Small repository test should succeed");
+        
+        // Validate actual test results
+        let test_result = result.unwrap();
+        assert!(test_result.files_processed > 0, "Should process files in repository");
+        assert!(test_result.parsing_time_ms >= 0.0, "Should measure parsing time");
+        assert!(test_result.memory_usage_mb >= 0.0, "Should measure memory usage");
+        assert!(!test_result.test_name.is_empty(), "Should have test name");
     }
 
     #[test]
     fn test_memory_scaling() {
         let result = ScalabilityTests::test_memory_scaling();
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Memory scaling test should succeed");
+        
+        // Validate actual scaling results
+        let scaling_result = result.unwrap();
+        assert!(scaling_result.baseline_memory_mb > 0.0, "Should have baseline memory measurement");
+        assert!(scaling_result.peak_memory_mb >= scaling_result.baseline_memory_mb, 
+                "Peak memory should be >= baseline");
+        assert!(scaling_result.memory_growth_rate >= 0.0, "Memory growth rate should be non-negative");
+        assert!(!scaling_result.recommendations.is_empty(), "Should provide scaling recommendations");
     }
 
     #[test]

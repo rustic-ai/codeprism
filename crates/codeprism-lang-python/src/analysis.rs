@@ -4154,8 +4154,9 @@ impl PythonAnalyzer {
 
     /// Calculate context nesting level
     fn calculate_context_nesting_level(&self, content: &str, _context_match: &str) -> usize {
-        // Count nested with statements (simplified)
-        let with_count = content.matches("with").count();
+        // Count actual with statement patterns
+        let with_pattern = Regex::new(r"\bwith\s+[^:]+:").unwrap();
+        let with_count = with_pattern.find_iter(content).count();
         if with_count > 3 {
             3 // Cap at 3 for simplicity
         } else {
@@ -4175,7 +4176,9 @@ impl PythonAnalyzer {
 
     /// Helper methods for f-string analysis
     fn assess_fstring_complexity(&self, expression: &str) -> FStringComplexity {
-        let brace_count = expression.matches('{').count();
+        // Count actual f-string expression braces
+        let brace_pattern = Regex::new(r"\{[^}]+\}").unwrap();
+        let brace_count = brace_pattern.find_iter(expression).count();
         let has_function_calls = expression.contains('(');
         let has_format_spec = expression.contains(':');
 
@@ -4401,9 +4404,13 @@ impl PythonAnalyzer {
         content: &str,
         _generator_match: &str,
     ) -> GeneratorComplexity {
-        let yield_count = content.matches("yield").count();
+        // Count actual yield statements with proper pattern matching
+        let yield_pattern = Regex::new(r"\byield\s+").unwrap();
+        let yield_count = yield_pattern.find_iter(content).count();
         let has_complex_logic = content.contains("if") && content.contains("for");
-        let has_nested_loops = content.matches("for").count() > 1;
+        // Count actual for loops
+        let for_pattern = Regex::new(r"\bfor\s+\w+\s+in\s+").unwrap();
+        let has_nested_loops = for_pattern.find_iter(content).count() > 1;
 
         match (yield_count, has_complex_logic, has_nested_loops) {
             (1, false, false) => GeneratorComplexity::Simple,
@@ -4414,8 +4421,10 @@ impl PythonAnalyzer {
     }
 
     fn analyze_yield_usage(&self, content: &str, _generator_match: &str) -> YieldAnalysis {
+        // Count actual yield statements
+        let yield_pattern = Regex::new(r"\byield\s+").unwrap();
         YieldAnalysis {
-            yield_count: content.matches("yield").count(),
+            yield_count: yield_pattern.find_iter(content).count(),
             has_yield_from: content.contains("yield from"),
             has_send_values: content.contains(".send("),
             has_throw_values: content.contains(".throw("),
@@ -4745,8 +4754,11 @@ impl PythonAnalyzer {
     fn detect_async_security_issues(&self, content: &str, issues: &mut Vec<AsyncSecurityIssue>) {
         // Detect missing timeouts
         let await_pattern = Regex::new(r"await\s+").unwrap();
-        let timeout_count = content.matches("asyncio.wait_for").count()
-            + content.matches("asyncio.timeout").count();
+        // Count actual timeout function calls with proper pattern matching
+        let wait_for_pattern = Regex::new(r"\basyncio\.wait_for\s*\(").unwrap();
+        let timeout_pattern = Regex::new(r"\basyncio\.timeout\s*\(").unwrap();
+        let timeout_count = wait_for_pattern.find_iter(content).count()
+            + timeout_pattern.find_iter(content).count();
         let await_count = await_pattern.find_iter(content).count();
 
         if await_count > timeout_count + 2 {
@@ -4857,9 +4869,14 @@ impl PythonAnalyzer {
     }
 
     fn assess_async_complexity(&self, _content: &str, function_match: &str) -> AsyncComplexity {
-        let await_count = function_match.matches("await").count();
-        let try_count = function_match.matches("try").count();
-        let gather_count = function_match.matches("gather").count();
+        // Count actual async patterns with proper parsing
+        let await_pattern = Regex::new(r"\bawait\s+").unwrap();
+        let try_pattern = Regex::new(r"\btry\s*:").unwrap();
+        let gather_pattern = Regex::new(r"\basyncio\.gather\s*\(").unwrap();
+
+        let await_count = await_pattern.find_iter(function_match).count();
+        let try_count = try_pattern.find_iter(function_match).count();
+        let gather_count = gather_pattern.find_iter(function_match).count();
 
         match (await_count, try_count, gather_count) {
             (0..=1, 0, 0) => AsyncComplexity::Simple,
@@ -5238,7 +5255,9 @@ impl PythonAnalyzer {
 
     fn detect_type_safety_issues(&self, content: &str, issues: &mut Vec<TypeSafetyIssue>) {
         // Detect Any type overuse
-        let any_count = content.matches("Any").count();
+        // Count actual Any type usage with proper pattern
+        let any_pattern = Regex::new(r"\bAny\b").unwrap();
+        let any_count = any_pattern.find_iter(content).count();
         if any_count > 5 {
             issues.push(TypeSafetyIssue {
                 issue_type: TypeSafetyIssueType::AnyTypeOveruse,
@@ -5268,7 +5287,9 @@ impl PythonAnalyzer {
         }
 
         // Detect type: ignore overuse
-        let ignore_count = content.matches("# type: ignore").count();
+        // Count actual type ignore comments with proper pattern
+        let ignore_pattern = Regex::new(r"#\s*type:\s*ignore").unwrap();
+        let ignore_count = ignore_pattern.find_iter(content).count();
         if ignore_count > 3 {
             issues.push(TypeSafetyIssue {
                 issue_type: TypeSafetyIssueType::TypeIgnoreOveruse,
@@ -5717,8 +5738,22 @@ mod tests {
         let code = "@app.route('/test')\ndef test_view():\n    pass";
         let decorators = analyzer.analyze_decorators(code).unwrap();
 
-        assert!(!decorators.is_empty());
-        assert!(decorators.iter().any(|d| d.name == "Flask Route"));
+        assert!(!decorators.is_empty(), "Should detect decorator in code");
+
+        // Validate specific decorator detection
+        let flask_decorator = decorators
+            .iter()
+            .find(|d| d.name == "Flask Route")
+            .expect("Should detect Flask route decorator");
+
+        assert!(
+            !flask_decorator.parameters.is_empty(),
+            "Flask route should have path parameter"
+        );
+        assert!(
+            flask_decorator.parameters.contains(&"'/test'".to_string()),
+            "Should capture the route path"
+        );
     }
 
     #[test]
@@ -5728,8 +5763,23 @@ mod tests {
         let code = "class TestClass(BaseClass, metaclass=RegistryMeta):\n    pass";
         let metaclasses = analyzer.analyze_metaclasses(code).unwrap();
 
-        assert!(!metaclasses.is_empty());
-        assert!(metaclasses.iter().any(|m| m.name == "TestClass"));
+        assert!(!metaclasses.is_empty(), "Should detect metaclass usage");
+
+        // Validate specific metaclass detection
+        let test_metaclass = metaclasses
+            .iter()
+            .find(|m| m.name == "TestClass")
+            .expect("Should detect TestClass with metaclass");
+
+        // The metaclass analysis categorizes this as "common" pattern, not the literal type name
+        assert_eq!(
+            test_metaclass.metaclass_type, "common",
+            "Should categorize metaclass pattern correctly"
+        );
+        assert!(
+            !test_metaclass.impact.is_empty(),
+            "Should analyze metaclass impact"
+        );
     }
 
     #[test]

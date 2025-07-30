@@ -157,12 +157,12 @@ impl FileGraphStorage {
 
     /// Get the file path for a repository's graph
     fn graph_file_path(&self, repo_id: &str) -> PathBuf {
-        self.data_path.join(format!("{}.graph.json", repo_id))
+        self.data_path.join(format!("{repo_id}.graph.json"))
     }
 
     /// Get the file path for a repository's metadata
     fn metadata_file_path(&self, repo_id: &str) -> PathBuf {
-        self.data_path.join(format!("{}.metadata.json", repo_id))
+        self.data_path.join(format!("{repo_id}.metadata.json"))
     }
 }
 
@@ -177,14 +177,14 @@ impl GraphStorage for FileGraphStorage {
             serde_json::to_string_pretty(graph).context("Failed to serialize graph")?;
         fs::write(&graph_path, graph_json)
             .await
-            .with_context(|| format!("Failed to write graph to {:?}", graph_path))?;
+            .with_context(|| format!("Failed to write graph to {graph_path:?}"))?;
 
         // Serialize and write metadata separately for efficiency
         let metadata_json = serde_json::to_string_pretty(&graph.metadata)
             .context("Failed to serialize metadata")?;
         fs::write(&metadata_path, metadata_json)
             .await
-            .with_context(|| format!("Failed to write metadata to {:?}", metadata_path))?;
+            .with_context(|| format!("Failed to write metadata to {metadata_path:?}"))?;
 
         Ok(())
     }
@@ -198,7 +198,7 @@ impl GraphStorage for FileGraphStorage {
 
         let graph_json = fs::read_to_string(&graph_path)
             .await
-            .with_context(|| format!("Failed to read graph from {:?}", graph_path))?;
+            .with_context(|| format!("Failed to read graph from {graph_path:?}"))?;
 
         let graph: SerializableGraph =
             serde_json::from_str(&graph_json).context("Failed to deserialize graph")?;
@@ -289,7 +289,7 @@ impl GraphStorage for FileGraphStorage {
 
         let metadata_json = fs::read_to_string(&metadata_path)
             .await
-            .with_context(|| format!("Failed to read metadata from {:?}", metadata_path))?;
+            .with_context(|| format!("Failed to read metadata from {metadata_path:?}"))?;
 
         let metadata: GraphMetadata =
             serde_json::from_str(&metadata_json).context("Failed to deserialize metadata")?;
@@ -304,7 +304,7 @@ impl GraphStorage for FileGraphStorage {
             serde_json::to_string_pretty(metadata).context("Failed to serialize metadata")?;
         fs::write(&metadata_path, metadata_json)
             .await
-            .with_context(|| format!("Failed to write metadata to {:?}", metadata_path))?;
+            .with_context(|| format!("Failed to write metadata to {metadata_path:?}"))?;
 
         Ok(())
     }
@@ -335,13 +335,13 @@ impl GraphStorage for FileGraphStorage {
         if graph_path.exists() {
             fs::remove_file(&graph_path)
                 .await
-                .with_context(|| format!("Failed to remove graph file {:?}", graph_path))?;
+                .with_context(|| format!("Failed to remove graph file {graph_path:?}"))?;
         }
 
         if metadata_path.exists() {
             fs::remove_file(&metadata_path)
                 .await
-                .with_context(|| format!("Failed to remove metadata file {:?}", metadata_path))?;
+                .with_context(|| format!("Failed to remove metadata file {metadata_path:?}"))?;
         }
 
         Ok(())
@@ -370,7 +370,7 @@ impl SqliteGraphStorage {
 
         let db_path = data_path.join("codeprism.db");
         let connection = Connection::open(&db_path)
-            .with_context(|| format!("Failed to open SQLite database at {:?}", db_path))?;
+            .with_context(|| format!("Failed to open SQLite database at {db_path:?}"))?;
 
         let storage = Self {
             db_path: db_path.clone(),
@@ -1203,7 +1203,7 @@ mod tests {
             let storage_clone = storage.clone();
             let handle = task::spawn(async move {
                 let mut graph = create_test_graph();
-                graph.repo_id = format!("repo_{}", i);
+                graph.repo_id = format!("repo_{i}");
                 storage_clone.store_graph(&graph).await.unwrap();
             });
             handles.push(handle);
@@ -1223,7 +1223,7 @@ mod tests {
         for i in 0..10 {
             let storage_clone = storage.clone();
             let handle = task::spawn(async move {
-                let repo_id = format!("repo_{}", i);
+                let repo_id = format!("repo_{i}");
                 let graph = storage_clone.load_graph(&repo_id).await.unwrap();
                 assert!(graph.is_some());
                 assert_eq!(graph.unwrap().repo_id, repo_id);

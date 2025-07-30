@@ -96,13 +96,13 @@ impl ScriptValidationEngine {
 
         // Create the actual engines - this is what we need to test
         let js_engine = JavaScriptEngine::new(&script_config).map_err(|e| {
-            crate::error::Error::validation(format!("Failed to create JavaScript engine: {:?}", e))
+            crate::error::Error::validation(format!("Failed to create JavaScript engine: {e:?}"))
         })?;
         let python_engine = PythonEngine::new(&script_config).map_err(|e| {
-            crate::error::Error::validation(format!("Failed to create Python engine: {:?}", e))
+            crate::error::Error::validation(format!("Failed to create Python engine: {e:?}"))
         })?;
         let lua_engine = LuaEngine::new(&script_config).map_err(|e| {
-            crate::error::Error::validation(format!("Failed to create Lua engine: {:?}", e))
+            crate::error::Error::validation(format!("Failed to create Lua engine: {e:?}"))
         })?;
 
         Ok(Self {
@@ -145,7 +145,7 @@ impl ScriptValidationEngine {
                         success: false,
                         output: serde_json::Value::Null,
                         error: Some(crate::script_engines::types::ScriptError::ExecutionError {
-                            message: format!("Script execution failed: {}", e),
+                            message: format!("Script execution failed: {e}"),
                         }),
                         logs: vec![],
                         duration_ms: 0,
@@ -202,21 +202,21 @@ impl ScriptValidationEngine {
                 .execute_script(&script.source, engine_context)
                 .await
                 .map_err(|e| {
-                    crate::error::Error::validation(format!("JavaScript execution failed: {:?}", e))
+                    crate::error::Error::validation(format!("JavaScript execution failed: {e:?}"))
                 })?,
             crate::spec::ScriptLanguage::Python => self
                 .python_engine
                 .execute_script(&script.source, engine_context)
                 .await
                 .map_err(|e| {
-                    crate::error::Error::validation(format!("Python execution failed: {:?}", e))
+                    crate::error::Error::validation(format!("Python execution failed: {e:?}"))
                 })?,
             crate::spec::ScriptLanguage::Lua => self
                 .lua_engine
                 .execute_script(&script.source, engine_context)
                 .await
                 .map_err(|e| {
-                    crate::error::Error::validation(format!("Lua execution failed: {:?}", e))
+                    crate::error::Error::validation(format!("Lua execution failed: {e:?}"))
                 })?,
         };
 

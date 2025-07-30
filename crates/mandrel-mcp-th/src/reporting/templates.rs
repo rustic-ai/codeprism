@@ -64,7 +64,7 @@ impl TemplateRenderer {
 
         self.engine
             .render(template_name, &tera_context)
-            .map_err(|e| Error::execution(format!("Template rendering failed: {}", e)))
+            .map_err(|e| Error::execution(format!("Template rendering failed: {e}")))
     }
 
     /// Render inline template
@@ -80,7 +80,7 @@ impl TemplateRenderer {
 
         self.engine
             .render_str(content, &tera_context)
-            .map_err(|e| Error::execution(format!("Inline template rendering failed: {}", e)))
+            .map_err(|e| Error::execution(format!("Inline template rendering failed: {e}")))
     }
 
     /// Create Tera context from template context
@@ -107,7 +107,7 @@ impl TemplateRenderer {
         // Professional template
         tera.add_raw_template("professional", include_str!("templates/professional.html"))
             .map_err(|e| {
-                Error::execution(format!("Failed to register professional template: {}", e))
+                Error::execution(format!("Failed to register professional template: {e}"))
             })?;
 
         // Executive summary template
@@ -136,7 +136,7 @@ impl TemplateRenderer {
 
         // Minimal template
         tera.add_raw_template("minimal", include_str!("templates/minimal.html"))
-            .map_err(|e| Error::execution(format!("Failed to register minimal template: {}", e)))?;
+            .map_err(|e| Error::execution(format!("Failed to register minimal template: {e}")))?;
 
         Ok(())
     }
@@ -151,7 +151,7 @@ impl TemplateRenderer {
                     let duration = Duration::from_nanos(duration_nanos);
                     let ms = duration.as_millis();
                     if ms < 1000 {
-                        Ok(tera::Value::String(format!("{}ms", ms)))
+                        Ok(tera::Value::String(format!("{ms}ms")))
                     } else {
                         Ok(tera::Value::String(format!(
                             "{:.2}s",
@@ -169,7 +169,7 @@ impl TemplateRenderer {
             "format_percentage",
             |value: &tera::Value, _args: &HashMap<String, tera::Value>| {
                 if let Some(percentage) = value.as_f64() {
-                    Ok(tera::Value::String(format!("{:.1}%", percentage)))
+                    Ok(tera::Value::String(format!("{percentage:.1}%")))
                 } else {
                     Ok(tera::Value::String("N/A".to_string()))
                 }

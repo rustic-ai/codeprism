@@ -735,7 +735,7 @@ mod tests {
         // Create high error rate scenario
         for i in 0..20 {
             let error = TestHarnessError::Network(NetworkError::ConnectionTimeout {
-                endpoint: format!("test-{}", i),
+                endpoint: format!("test-{i}"),
                 timeout_ms: 1000,
             });
             analyzer.record_error(&error, ErrorContext::new("test"));

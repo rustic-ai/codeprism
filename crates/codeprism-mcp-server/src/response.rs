@@ -77,7 +77,7 @@ pub fn create_error_response(error_message: &str, error_code: Option<&str>) -> C
     // Create error content (using the same dual format approach)
     let error_text = Content::text(
         serde_json::to_string_pretty(&error_data)
-            .unwrap_or_else(|_| format!(r#"{{"status":"error","message":"{}"}}"#, error_message)),
+            .unwrap_or_else(|_| format!(r#"{{"status":"error","message":"{error_message}"}}"#)),
     );
 
     let mut content_list = vec![error_text];

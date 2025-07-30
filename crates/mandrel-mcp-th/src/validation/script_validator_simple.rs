@@ -109,7 +109,7 @@ impl ScriptValidator {
                         };
 
                         let lua_engine = LuaEngine::new(&script_config)
-                            .map_err(|e| format!("Failed to create LuaEngine: {}", e))?;
+                            .map_err(|e| format!("Failed to create LuaEngine: {e}"))?;
 
                         // Recreate script context inside thread
                         let fresh_script_context = ScriptContext::new(
@@ -122,14 +122,14 @@ impl ScriptValidator {
 
                         // Create new runtime and execute script
                         let rt = tokio::runtime::Runtime::new()
-                            .map_err(|e| format!("Failed to create runtime: {}", e))?;
+                            .map_err(|e| format!("Failed to create runtime: {e}"))?;
 
                         rt.block_on(async {
                             lua_engine
                                 .execute_script(&script_source, fresh_script_context)
                                 .await
                         })
-                        .map_err(|e| format!("Script execution failed: {}", e))
+                        .map_err(|e| format!("Script execution failed: {e}"))
                     },
                 )
                 .join()
@@ -246,11 +246,11 @@ impl CustomValidator for ScriptValidator {
                         let error_message = script_result
                             .error
                             .as_ref()
-                            .map(|e| format!("{}", e))
+                            .map(|e| format!("{e}"))
                             .unwrap_or_else(|| "script execution failed".to_string());
 
                         errors.push(ValidationError::FieldError {
-                            field: format!("script:{}", script_name),
+                            field: format!("script:{script_name}"),
                             expected: "script execution success".to_string(),
                             actual: error_message,
                         });
@@ -267,9 +267,9 @@ impl CustomValidator for ScriptValidator {
                     // Handle script execution errors
                     if script.required || self.config.fail_on_script_error {
                         errors.push(ValidationError::FieldError {
-                            field: format!("script:{}", script_name),
+                            field: format!("script:{script_name}"),
                             expected: "script execution success".to_string(),
-                            actual: format!("execution error: {}", e),
+                            actual: format!("execution error: {e}"),
                         });
                     }
                 }

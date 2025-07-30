@@ -396,7 +396,7 @@ pub enum ExportFormat {
 fn parse_key_val(s: &str) -> Result<(String, String), String> {
     let parts: Vec<&str> = s.splitn(2, '=').collect();
     if parts.len() != 2 {
-        return Err(format!("Invalid key=value format: {}", s));
+        return Err(format!("Invalid key=value format: {s}"));
     }
     Ok((parts[0].to_string(), parts[1].to_string()))
 }

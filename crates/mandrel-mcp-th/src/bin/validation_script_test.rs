@@ -74,7 +74,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let json = serde_json::to_string_pretty(&script)?;
     println!("  ✓ Successfully serialized ValidationScript to JSON:");
-    println!("{}", json);
+    println!("{json}");
 
     // Test 4: JSON deserialization
     println!("\n✅ Test 4: JSON Deserialization Test");

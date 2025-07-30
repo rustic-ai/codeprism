@@ -109,12 +109,12 @@ impl JsonPathEvaluator {
                     let index_str = part.split('[').nth(1).unwrap().trim_end_matches(']');
 
                     current = current.get(field_name).ok_or_else(|| {
-                        JsonPathError::PathNotFound(format!("Field {} not found", field_name))
+                        JsonPathError::PathNotFound(format!("Field {field_name} not found"))
                     })?;
 
                     if let Ok(index) = index_str.parse::<usize>() {
                         current = current.get(index).ok_or_else(|| {
-                            JsonPathError::PathNotFound(format!("Array index {} not found", index))
+                            JsonPathError::PathNotFound(format!("Array index {index} not found"))
                         })?;
                     } else {
                         return Err(JsonPathError::InvalidExpression(format!(
@@ -124,7 +124,7 @@ impl JsonPathEvaluator {
                     }
                 } else {
                     current = current.get(part).ok_or_else(|| {
-                        JsonPathError::PathNotFound(format!("Field {} not found", part))
+                        JsonPathError::PathNotFound(format!("Field {part} not found"))
                     })?;
                 }
             }
@@ -153,7 +153,7 @@ impl JsonPathEvaluator {
                 } else {
                     (
                         false,
-                        Some(format!("Path {} does not exist or is null", path)),
+                        Some(format!("Path {path} does not exist or is null")),
                     )
                 }
             }
@@ -165,7 +165,7 @@ impl JsonPathEvaluator {
                 } else {
                     (
                         false,
-                        Some(format!("Path {} should not exist but was found", path)),
+                        Some(format!("Path {path} should not exist but was found")),
                     )
                 }
             }
@@ -174,7 +174,7 @@ impl JsonPathEvaluator {
                 if values.is_empty() {
                     (
                         false,
-                        Some(format!("Path {} not found for equality check", path)),
+                        Some(format!("Path {path} not found for equality check")),
                     )
                 } else if values[0] == *expected {
                     (true, None)
@@ -190,7 +190,7 @@ impl JsonPathEvaluator {
                 if values.is_empty() || values[0] != *expected {
                     (true, None) // Not found or not equal means success
                 } else {
-                    (false, Some(format!("Value should not equal {}", expected)))
+                    (false, Some(format!("Value should not equal {expected}")))
                 }
             }
 
@@ -198,7 +198,7 @@ impl JsonPathEvaluator {
                 if values.is_empty() {
                     (
                         false,
-                        Some(format!("Path {} not found for contains check", path)),
+                        Some(format!("Path {path} not found for contains check")),
                     )
                 } else if let Value::String(s) = &values[0] {
                     if s.contains(substring) {
@@ -206,7 +206,7 @@ impl JsonPathEvaluator {
                     } else {
                         (
                             false,
-                            Some(format!("String '{}' does not contain '{}'", s, substring)),
+                            Some(format!("String '{s}' does not contain '{substring}'")),
                         )
                     }
                 } else {
@@ -221,7 +221,7 @@ impl JsonPathEvaluator {
                 if values.is_empty() {
                     (
                         false,
-                        Some(format!("Path {} not found for pattern check", path)),
+                        Some(format!("Path {path} not found for pattern check")),
                     )
                 } else if let Value::String(s) = &values[0] {
                     // Simple pattern matching - just check if pattern is contained
@@ -248,10 +248,7 @@ impl JsonPathEvaluator {
 
             PathConstraint::HasType(expected_type) => {
                 if values.is_empty() {
-                    (
-                        false,
-                        Some(format!("Path {} not found for type check", path)),
-                    )
+                    (false, Some(format!("Path {path} not found for type check")))
                 } else {
                     let actual_type = self.value_to_json_type(&values[0]);
                     if actual_type == *expected_type {
@@ -272,7 +269,7 @@ impl JsonPathEvaluator {
                 if values.is_empty() {
                     (
                         false,
-                        Some(format!("Path {} not found for range check", path)),
+                        Some(format!("Path {path} not found for range check")),
                     )
                 } else if let Value::Number(n) = &values[0] {
                     if let Some(value) = n.as_f64() {
@@ -281,7 +278,7 @@ impl JsonPathEvaluator {
                         } else {
                             (
                                 false,
-                                Some(format!("Value {} not in range {}..{}", value, min, max)),
+                                Some(format!("Value {value} not in range {min}..{max}")),
                             )
                         }
                     } else {
@@ -299,7 +296,7 @@ impl JsonPathEvaluator {
                 if values.is_empty() {
                     (
                         false,
-                        Some(format!("Path {} not found for array length check", path)),
+                        Some(format!("Path {path} not found for array length check")),
                     )
                 } else if let Value::Array(arr) = &values[0] {
                     let len = arr.len();
@@ -352,7 +349,7 @@ impl JsonPathEvaluator {
     fn constraint_to_expected_value(&self, constraint: &PathConstraint) -> Option<Value> {
         match constraint {
             PathConstraint::Equals(value) => Some(value.clone()),
-            PathConstraint::HasType(json_type) => Some(Value::String(format!("{:?}", json_type))),
+            PathConstraint::HasType(json_type) => Some(Value::String(format!("{json_type:?}"))),
             _ => None,
         }
     }

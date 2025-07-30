@@ -286,7 +286,7 @@ impl ErrorContext {
 
         if let Some(ref trace) = self.trace_info {
             if let Some(ref trace_id) = trace.trace_id {
-                parts.push(format!("trace_id: {}", trace_id));
+                parts.push(format!("trace_id: {trace_id}"));
             }
         }
 

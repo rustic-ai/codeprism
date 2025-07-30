@@ -160,7 +160,7 @@ impl SchemaValidator {
                 violations: vec![SchemaViolation {
                     instance_path: "".to_string(),
                     schema_path: "".to_string(),
-                    message: format!("Schema compilation failed: {}", e),
+                    message: format!("Schema compilation failed: {e}"),
                     violation_type: ViolationType::Custom,
                     severity: ValidationSeverity::Error,
                 }],

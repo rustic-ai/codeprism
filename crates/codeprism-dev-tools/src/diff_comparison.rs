@@ -578,14 +578,14 @@ impl DiffReport {
                 target,
                 edge_type,
             } => {
-                format!("Added edge {} -> {} ({})", source, target, edge_type)
+                format!("Added edge {source} -> {target} ({edge_type})")
             }
             DiffType::EdgeRemoved {
                 source,
                 target,
                 edge_type,
             } => {
-                format!("Removed edge {} -> {} ({})", source, target, edge_type)
+                format!("Removed edge {source} -> {target} ({edge_type})")
             }
             DiffType::EdgeModified {
                 source,

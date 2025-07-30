@@ -365,7 +365,7 @@ impl PerformanceProfiler {
             bottlenecks.push(PerformanceBottleneck {
                 area: "Parse Time".to_string(),
                 severity: BottleneckSeverity::High,
-                description: format!("Average parse time is {:.1}ms", avg_parse_time),
+                description: format!("Average parse time is {avg_parse_time:.1}ms"),
                 impact_percent: 80.0,
                 suggestion: "Consider optimizing parser grammar or using incremental parsing"
                     .to_string(),
@@ -385,7 +385,7 @@ impl PerformanceProfiler {
             bottlenecks.push(PerformanceBottleneck {
                 area: "Memory Usage".to_string(),
                 severity: BottleneckSeverity::Medium,
-                description: format!("Peak memory usage is {:.1}MB", peak_memory),
+                description: format!("Peak memory usage is {peak_memory:.1}MB"),
                 impact_percent: 40.0,
                 suggestion: "Consider streaming parsing or memory pooling".to_string(),
             });
@@ -574,7 +574,7 @@ impl ProfilingReport {
         if !self.recommendations.is_empty() {
             output.push_str("\n## Recommendations:\n");
             for rec in &self.recommendations {
-                output.push_str(&format!("- {}\n", rec));
+                output.push_str(&format!("- {rec}\n"));
             }
         }
 

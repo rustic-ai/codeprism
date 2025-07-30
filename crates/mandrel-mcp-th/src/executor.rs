@@ -170,12 +170,11 @@ impl TestCaseExecutor {
         scripts: Vec<crate::spec::ValidationScript>,
     ) -> Result<Self, ExecutorError> {
         let script_manager = ScriptManager::new(scripts).map_err(|e| {
-            ExecutorError::ConfigError(format!("Failed to create script manager: {}", e))
+            ExecutorError::ConfigError(format!("Failed to create script manager: {e}"))
         })?;
 
-        let lua_engine = LuaEngine::new(&ScriptConfig::default()).map_err(|e| {
-            ExecutorError::ConfigError(format!("Failed to create LuaEngine: {}", e))
-        })?;
+        let lua_engine = LuaEngine::new(&ScriptConfig::default())
+            .map_err(|e| ExecutorError::ConfigError(format!("Failed to create LuaEngine: {e}")))?;
 
         Ok(Self {
             client,
@@ -352,7 +351,7 @@ impl TestCaseExecutor {
         // Check connection status first (scope the lock)
         let is_connected = {
             let client = self.client.lock().map_err(|e| {
-                ExecutorError::ConnectionError(format!("Failed to acquire client lock: {}", e))
+                ExecutorError::ConnectionError(format!("Failed to acquire client lock: {e}"))
             })?;
             client.is_connected()
         };
@@ -386,7 +385,7 @@ impl TestCaseExecutor {
         #[allow(clippy::await_holding_lock)]
         let call_result = tokio::time::timeout(timeout_duration, async move {
             let client = client_clone.lock().map_err(|e| {
-                crate::error::Error::connection(format!("Failed to acquire client lock: {}", e))
+                crate::error::Error::connection(format!("Failed to acquire client lock: {e}"))
             })?;
             client.call_tool(&tool_name_owned, arguments).await
         })
@@ -394,11 +393,11 @@ impl TestCaseExecutor {
         .map_err(|_| ExecutorError::TimeoutError {
             timeout_ms: timeout_duration.as_millis() as u64,
         })?
-        .map_err(|e| ExecutorError::ToolCallError(format!("Tool call failed: {}", e)))?;
+        .map_err(|e| ExecutorError::ToolCallError(format!("Tool call failed: {e}")))?;
 
         // Convert CallToolResult to JSON
         let response_json = serde_json::to_value(call_result).map_err(|e| {
-            ExecutorError::ToolCallError(format!("Failed to serialize response: {}", e))
+            ExecutorError::ToolCallError(format!("Failed to serialize response: {e}"))
         })?;
 
         // Extract the result field from JSON-RPC response for validation
@@ -423,7 +422,7 @@ impl TestCaseExecutor {
         self.validation_engine
             .validate_response(response, expected)
             .await
-            .map_err(|e| ExecutorError::ValidationError(format!("Validation failed: {}", e)))
+            .map_err(|e| ExecutorError::ValidationError(format!("Validation failed: {e}")))
     }
 
     /// Collect performance metrics
@@ -540,7 +539,7 @@ impl TestCaseExecutor {
                         // Convert ScriptError to ValidationError
                         result.error.map_or(vec![], |script_error| {
                             vec![ValidationError::SchemaError {
-                                message: format!("Script execution failed: {}", script_error),
+                                message: format!("Script execution failed: {script_error}"),
                             }]
                         })
                     };
@@ -563,7 +562,7 @@ impl TestCaseExecutor {
                 }
                 Err(script_error) => {
                     // Handle script execution errors
-                    let error_message = format!("Script execution error: {}", script_error);
+                    let error_message = format!("Script execution error: {script_error}");
                     let errors = vec![ValidationError::SchemaError {
                         message: error_message.clone(),
                     }];
@@ -573,7 +572,7 @@ impl TestCaseExecutor {
                         success: false,
                         execution_time: start_time.elapsed(),
                         errors,
-                        logs: vec![format!("ERROR: {}", error_message)],
+                        logs: vec![format!("ERROR: {error_message}")],
                         phase: phase.clone(),
                     }
                 }

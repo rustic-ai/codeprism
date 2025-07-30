@@ -306,16 +306,14 @@ impl ApiSurfaceAnalyzer {
 
             if documentation_coverage < 80.0 {
                 recommendations.push(format!(
-                    "API documentation coverage is {:.1}%. Consider documenting more public APIs.",
-                    documentation_coverage
+                    "API documentation coverage is {documentation_coverage:.1}%. Consider documenting more public APIs."
                 ));
             }
         }
 
         if deprecated_elements > 0 {
             recommendations.push(format!(
-                "{} deprecated API elements found. Plan migration strategy for users.",
-                deprecated_elements
+                "{deprecated_elements} deprecated API elements found. Plan migration strategy for users."
             ));
         }
 
@@ -326,8 +324,7 @@ impl ApiSurfaceAnalyzer {
             .count();
         if high_risk_elements > 0 {
             recommendations.push(format!(
-                "{} high-risk API elements detected. Changes to these may break compatibility.",
-                high_risk_elements
+                "{high_risk_elements} high-risk API elements detected. Changes to these may break compatibility."
             ));
         }
 

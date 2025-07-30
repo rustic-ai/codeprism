@@ -555,8 +555,7 @@ impl ConfigProfileManager {
             Ok(())
         } else {
             Err(crate::Error::server_init(format!(
-                "Profile '{}' not found",
-                name
+                "Profile '{name}' not found"
             )))
         }
     }
@@ -672,8 +671,8 @@ impl ConfigProfileManager {
             profile.caching.cache_dir = PathBuf::from(cache_dir);
         }
 
-        profile.name = format!("{}_env", profile_name);
-        profile.description = format!("Environment-configured {} profile", profile_name);
+        profile.name = format!("{profile_name}_env");
+        profile.description = format!("Environment-configured {profile_name} profile");
 
         Ok(profile)
     }

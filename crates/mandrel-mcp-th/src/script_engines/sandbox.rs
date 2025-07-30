@@ -153,7 +153,7 @@ impl ResourceMonitor {
             .monitoring_active
             .lock()
             .map_err(|e| ScriptError::ExecutionError {
-                message: format!("Failed to start monitoring: {}", e),
+                message: format!("Failed to start monitoring: {e}"),
             })? = true;
 
         let limits = self.limits.clone();
@@ -271,7 +271,7 @@ impl ResourceMonitor {
             .monitoring_active
             .lock()
             .map_err(|e| ScriptError::ExecutionError {
-                message: format!("Failed to cleanup resources: {}", e),
+                message: format!("Failed to cleanup resources: {e}"),
             })? = false;
         Ok(())
     }
@@ -330,7 +330,7 @@ impl SandboxManager {
         tokio::fs::create_dir_all(&temp_dir)
             .await
             .map_err(|e| ScriptError::ExecutionError {
-                message: format!("Failed to create sandbox directory: {}", e),
+                message: format!("Failed to create sandbox directory: {e}"),
             })?;
 
         self.temp_sandbox_dir = Some(temp_dir);
@@ -368,7 +368,7 @@ impl SandboxManager {
             tokio::fs::remove_dir_all(temp_dir)
                 .await
                 .map_err(|e| ScriptError::ExecutionError {
-                    message: format!("Failed to cleanup sandbox: {}", e),
+                    message: format!("Failed to cleanup sandbox: {e}"),
                 })?;
             self.temp_sandbox_dir = None;
         }
@@ -469,7 +469,7 @@ mod tests {
                     true
                 }
                 other_error => {
-                    panic!("Expected resource limit error, got: {:?}", other_error);
+                    panic!("Expected resource limit error, got: {other_error:?}");
                 }
             }
         } else {

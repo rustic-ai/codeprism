@@ -792,7 +792,7 @@ impl DuplicateAnalyzer {
         let types2: HashSet<_> = ast2.children.iter().map(|child| &child.node_type).collect();
 
         for common_type in types1.intersection(&types2) {
-            patterns.push(format!("structural_{}", common_type));
+            patterns.push(format!("structural_{common_type}"));
         }
 
         patterns
@@ -814,7 +814,7 @@ impl DuplicateAnalyzer {
             if score1 > 0 && score2 > 0 {
                 let similarity = (score1.min(score2) as f64) / (score1.max(score2) as f64);
                 if similarity > 0.5 {
-                    patterns.push(format!("semantic_{}", pattern_type));
+                    patterns.push(format!("semantic_{pattern_type}"));
                 }
             }
         }

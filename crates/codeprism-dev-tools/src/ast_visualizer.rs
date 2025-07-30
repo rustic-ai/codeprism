@@ -148,7 +148,7 @@ impl AstVisualizer {
 
         // Create the current line prefix
         let connector = if is_last { "└── " } else { "├── " };
-        let node_prefix = format!("{}{}", prefix, connector);
+        let node_prefix = format!("{prefix}{connector}");
 
         // Format the node type
         let node_type = self.format_node_type(node.kind());
@@ -194,8 +194,7 @@ impl AstVisualizer {
 
         // Write the formatted node
         output.push_str(&format!(
-            "{}{}{}{}{}\n",
-            node_prefix, node_type, position_info, byte_range_info, text_content
+            "{node_prefix}{node_type}{position_info}{byte_range_info}{text_content}\n"
         ));
 
         // Process children
@@ -259,7 +258,7 @@ impl AstVisualizer {
                     String::new()
                 };
 
-                output.push_str(&format!("{}{}{}\n", indent, node_type, position_info));
+                output.push_str(&format!("{indent}{node_type}{position_info}\n"));
             }
 
             if cursor.goto_first_child() {
@@ -674,7 +673,7 @@ mod tests {
         stats.node_type_counts.insert("function".to_string(), 10);
         stats.node_type_counts.insert("identifier".to_string(), 30);
 
-        let output = format!("{}", stats);
+        let output = format!("{stats}");
         assert!(output.contains("Total nodes: 100"));
         assert!(output.contains("Named nodes: 80"));
         assert!(output.contains("Maximum depth: 5"));

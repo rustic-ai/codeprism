@@ -124,7 +124,7 @@ impl MemoryTracker {
 
         let status = fs::read_to_string("/proc/self/status").map_err(|e| {
             MemoryError::MeasurementFailed {
-                message: format!("Failed to read /proc/self/status: {}", e),
+                message: format!("Failed to read /proc/self/status: {e}"),
             }
         })?;
 
@@ -175,7 +175,7 @@ fn parse_memory_line(line: &str) -> Result<u64, MemoryError> {
     let parts: Vec<&str> = line.split_whitespace().collect();
     if parts.len() < 2 {
         return Err(MemoryError::InvalidData {
-            message: format!("Invalid memory line format: {}", line),
+            message: format!("Invalid memory line format: {line}"),
         });
     }
 
@@ -339,7 +339,7 @@ mod tests {
             "Delta: RSS={} bytes, Heap={} bytes",
             delta.rss_delta_bytes, delta.heap_delta_bytes
         );
-        eprintln!("Memory used: {} MB", mb_used);
+        eprintln!("Memory used: {mb_used} MB");
 
         // Memory tracking may not always detect heap allocations accurately on all platforms
         // This test verifies the memory tracking infrastructure works, even if no change is detected

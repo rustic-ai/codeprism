@@ -270,7 +270,7 @@ impl TestSuiteRunner {
                         test_name: test_name.clone(),
                         success: false,
                         duration: start_time.elapsed().unwrap_or(Duration::from_millis(0)),
-                        error_message: Some(format!("Test execution failed: {}", e)),
+                        error_message: Some(format!("Test execution failed: {e}")),
                         retry_attempts: 0,
                         start_time,
                         end_time: SystemTime::now(),
@@ -424,7 +424,7 @@ impl TestSuiteRunner {
                         let panic_result = TestResult::failure(
                             "panicked".to_string(),
                             std::time::Duration::default(),
-                            format!("Task panicked: {}", e),
+                            format!("Task panicked: {e}"),
                         );
 
                         if self.config.fail_fast {
@@ -648,12 +648,12 @@ mod tests {
         };
 
         let mut client = McpClient::new(server_config).await.map_err(|e| {
-            crate::error::Error::connection(format!("Failed to create MCP client: {}", e))
+            crate::error::Error::connection(format!("Failed to create MCP client: {e}"))
         })?;
 
         // CRITICAL: Actually connect to the MCP server
         client.connect().await.map_err(|e| {
-            crate::error::Error::connection(format!("Failed to connect to MCP server: {}", e))
+            crate::error::Error::connection(format!("Failed to connect to MCP server: {e}"))
         })?;
 
         let shared_client = Arc::new(std::sync::Mutex::new(client));
@@ -721,14 +721,14 @@ mod tests {
 
         // Always ensure test directory exists (create if missing, but don't delete if exists)
         fs::create_dir_all(test_dir).map_err(|e| {
-            crate::error::Error::validation(format!("Failed to create test directory: {}", e))
+            crate::error::Error::validation(format!("Failed to create test directory: {e}"))
         })?;
 
         // Always ensure test.txt file exists (create if missing, but don't overwrite if exists)
         let test_file = test_dir.join("test.txt");
         if !test_file.exists() {
             fs::write(&test_file, "Hello, MCP test world!").map_err(|e| {
-                crate::error::Error::validation(format!("Failed to create test file: {}", e))
+                crate::error::Error::validation(format!("Failed to create test file: {e}"))
             })?;
         }
 
@@ -1151,7 +1151,7 @@ tools:
             error
         );
 
-        println!("✅ Invalid YAML correctly rejected: {}", error);
+        println!("✅ Invalid YAML correctly rejected: {error}");
     }
 
     #[tokio::test]

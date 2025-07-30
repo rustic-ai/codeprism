@@ -434,8 +434,7 @@ impl ValidationEngine {
                 if let Some(expected) = &validation.value {
                     is_valid = actual_value == *expected;
                     if !is_valid {
-                        error_message =
-                            Some(format!("Expected {}, got {}", expected, actual_value));
+                        error_message = Some(format!("Expected {expected}, got {actual_value}"));
                     }
                 }
             }
@@ -452,8 +451,7 @@ impl ValidationEngine {
                     is_valid = actual_type == expected_type;
                     if !is_valid {
                         error_message = Some(format!(
-                            "Expected type {}, got type {}",
-                            expected_type, actual_type
+                            "Expected type {expected_type}, got type {actual_type}"
                         ));
                     }
                 }
@@ -464,10 +462,8 @@ impl ValidationEngine {
                         // Simple pattern matching (basic contains check for now)
                         is_valid = s.contains(&pattern.replace(".*", ""));
                         if !is_valid {
-                            error_message = Some(format!(
-                                "Value '{}' does not match pattern '{}'",
-                                s, pattern
-                            ));
+                            error_message =
+                                Some(format!("Value '{s}' does not match pattern '{pattern}'"));
                         }
                     } else {
                         is_valid = false;
@@ -483,14 +479,14 @@ impl ValidationEngine {
                     if let Some(min) = validation.min {
                         if value < min {
                             is_valid = false;
-                            error_message = Some(format!("Value {} below minimum {}", value, min));
+                            error_message = Some(format!("Value {value} below minimum {min}"));
                         }
                     }
 
                     if let Some(max) = validation.max {
                         if value > max {
                             is_valid = false;
-                            error_message = Some(format!("Value {} above maximum {}", value, max));
+                            error_message = Some(format!("Value {value} above maximum {max}"));
                         }
                     }
                 } else {
@@ -572,8 +568,7 @@ impl ValidationEngine {
                     [] => {
                         // No results found - this is not necessarily an error for optional fields
                         Err(crate::error::Error::validation(format!(
-                            "JSONPath '{}' returned no results",
-                            path
+                            "JSONPath '{path}' returned no results"
                         )))
                     }
                     [single_result] => {
@@ -589,8 +584,7 @@ impl ValidationEngine {
                 }
             }
             Err(err) => Err(crate::error::Error::validation(format!(
-                "JSONPath evaluation failed for '{}': {}",
-                path, err
+                "JSONPath evaluation failed for '{path}': {err}"
             ))),
         }
     }

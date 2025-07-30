@@ -473,7 +473,7 @@ impl CodePrismMcpServer {
             Err(e) => {
                 serde_json::json!({
                     "status": "error",
-                    "message": format!("Path finding failed: {}", e),
+                    "message": format!("Path finding failed: {e}"),
                     "query": {
                         "source": params.source,
                         "target": params.target,
@@ -509,7 +509,7 @@ impl CodePrismMcpServer {
             "reads" => DependencyType::Reads,
             "writes" => DependencyType::Writes,
             _ => {
-                let error_msg = format!("Invalid dependency type: {}. Must be one of: direct, calls, imports, reads, writes", dep_type_str);
+                let error_msg = format!("Invalid dependency type: {dep_type_str}. Must be one of: direct, calls, imports, reads, writes");
                 return Ok(CallToolResult::error(vec![Content::text(error_msg)]));
             }
         };
@@ -568,7 +568,7 @@ impl CodePrismMcpServer {
             Err(e) => {
                 serde_json::json!({
                     "status": "error",
-                    "message": format!("Dependency finding failed: {}", e),
+                    "message": format!("Dependency finding failed: {e}"),
                     "query": {
                         "target": params.target,
                         "dependency_type": dep_type_str
@@ -656,7 +656,7 @@ impl CodePrismMcpServer {
             Err(e) => {
                 serde_json::json!({
                     "status": "error",
-                    "message": format!("Reference finding failed: {}", e),
+                    "message": format!("Reference finding failed: {e}"),
                     "query": {
                         "symbol_id": params.symbol_id,
                         "include_definitions": include_defs,
@@ -854,7 +854,7 @@ impl CodePrismMcpServer {
                     "module" => kinds.push(NodeKind::Module),
                     "method" => kinds.push(NodeKind::Method),
                     _ => {
-                        let error_msg = format!("Invalid symbol type: {}. Must be one of: function, class, variable, module, method", sym_type);
+                        let error_msg = format!("Invalid symbol type: {sym_type}. Must be one of: function, class, variable, module, method");
                         return Ok(CallToolResult::error(vec![Content::text(error_msg)]));
                     }
                 }
@@ -875,7 +875,7 @@ impl CodePrismMcpServer {
                 } else if let Some(mixin) = filter.strip_prefix("mixin:") {
                     parsed_filters.push(InheritanceFilter::UsesMixin(mixin.to_string()));
                 } else {
-                    let error_msg = format!("Invalid inheritance filter: {}. Must be one of: inherits_from:<class>, metaclass:<class>, mixin:<class>", filter);
+                    let error_msg = format!("Invalid inheritance filter: {filter}. Must be one of: inherits_from:<class>, metaclass:<class>, mixin:<class>");
                     return Ok(CallToolResult::error(vec![Content::text(error_msg)]));
                 }
             }
@@ -933,7 +933,7 @@ impl CodePrismMcpServer {
             Err(e) => {
                 serde_json::json!({
                     "status": "error",
-                    "message": format!("Symbol search failed: {}", e),
+                    "message": format!("Symbol search failed: {e}"),
                     "query": {
                         "pattern": params.pattern,
                         "symbol_types": params.symbol_types,
@@ -989,7 +989,7 @@ impl CodePrismMcpServer {
                             "total_files": scan_result.total_files,
                             "scan_duration_ms": scan_result.duration_ms,
                             "files_by_language": scan_result.files_by_language.iter()
-                                .map(|(lang, files)| (format!("{:?}", lang), files.len()))
+                                .map(|(lang, files)| (format!("{lang:?}"), files.len()))
                                 .collect::<std::collections::HashMap<String, usize>>()
                         },
                         "graph_statistics": {
@@ -997,7 +997,7 @@ impl CodePrismMcpServer {
                             "total_edges": graph_stats.total_edges,
                             "total_files": graph_stats.total_files,
                             "nodes_by_kind": graph_stats.nodes_by_kind.iter()
-                                .map(|(kind, count)| (format!("{:?}", kind), *count))
+                                .map(|(kind, count)| (format!("{kind:?}"), *count))
                                 .collect::<std::collections::HashMap<String, usize>>()
                         }
                     })
@@ -1005,7 +1005,7 @@ impl CodePrismMcpServer {
                 Err(e) => {
                     serde_json::json!({
                         "status": "error",
-                        "message": format!("Failed to scan repository: {}", e),
+                        "message": format!("Failed to scan repository: {e}"),
                         "repository": {
                             "name": repo_name,
                             "path": repo_path.display().to_string()
@@ -1064,7 +1064,7 @@ impl CodePrismMcpServer {
             Err(e) => {
                 let error_result = serde_json::json!({
                     "status": "error",
-                    "message": format!("Dependency analysis failed: {}", e),
+                    "message": format!("Dependency analysis failed: {e}"),
                     "target": params.target,
                     "dependency_type": dependency_type_str,
                     "max_depth": max_depth,
@@ -1117,7 +1117,7 @@ impl CodePrismMcpServer {
 
         // Add file type filters if provided
         if let Some(ref file_types) = params.file_types {
-            let file_patterns = file_types.iter().map(|ext| format!("*.{}", ext)).collect();
+            let file_patterns = file_types.iter().map(|ext| format!("*.{ext}")).collect();
             query_builder = query_builder.include_files(file_patterns);
         }
 
@@ -1165,7 +1165,7 @@ impl CodePrismMcpServer {
             Err(e) => {
                 serde_json::json!({
                     "status": "error",
-                    "message": format!("Content search failed: {}", e),
+                    "message": format!("Content search failed: {e}"),
                     "query": {
                         "query": params.query,
                         "file_types": params.file_types,
@@ -1200,10 +1200,8 @@ impl CodePrismMcpServer {
                 // Valid pattern types
             }
             _ => {
-                let error_msg = format!(
-                    "Invalid pattern type: {}. Must be 'regex' or 'glob'",
-                    p_type
-                );
+                let error_msg =
+                    format!("Invalid pattern type: {p_type}. Must be 'regex' or 'glob'");
                 return Ok(CallToolResult::error(vec![Content::text(error_msg)]));
             }
         }
@@ -1267,7 +1265,7 @@ impl CodePrismMcpServer {
                     Err(e) => {
                         serde_json::json!({
                             "status": "error",
-                            "message": format!("Regex pattern search failed: {}", e),
+                            "message": format!("Regex pattern search failed: {e}"),
                             "pattern": params.pattern,
                             "pattern_type": "regex"
                         })
@@ -1326,7 +1324,7 @@ impl CodePrismMcpServer {
                     Err(e) => {
                         serde_json::json!({
                             "status": "error",
-                            "message": format!("Glob pattern search failed: {}", e),
+                            "message": format!("Glob pattern search failed: {e}"),
                             "pattern": params.pattern,
                             "pattern_type": "glob"
                         })
@@ -1765,7 +1763,7 @@ impl CodePrismMcpServer {
                 Err(e) => {
                     serde_json::json!({
                         "status": "error",
-                        "message": format!("Failed to analyze file complexity: {}", e),
+                        "message": format!("Failed to analyze file complexity: {e}"),
                         "target": params.target
                     })
                 }
@@ -1873,7 +1871,7 @@ impl CodePrismMcpServer {
             Err(e) => {
                 let error_result = serde_json::json!({
                     "status": "error",
-                    "message": format!("Control flow analysis failed: {}", e),
+                    "message": format!("Control flow analysis failed: {e}"),
                     "target": params.target,
                     "analysis_types": analysis_types,
                     "max_depth": max_depth
@@ -1921,7 +1919,7 @@ impl CodePrismMcpServer {
             Err(e) => {
                 serde_json::json!({
                     "status": "error",
-                    "message": format!("Code quality analysis failed: {}", e),
+                    "message": format!("Code quality analysis failed: {e}"),
                     "target": params.target
                 })
             }
@@ -2005,7 +2003,7 @@ impl CodePrismMcpServer {
                 Err(e) => {
                     serde_json::json!({
                         "status": "error",
-                        "message": format!("Failed to analyze performance: {}", e),
+                        "message": format!("Failed to analyze performance: {e}"),
                         "target": params.target
                     })
                 }
@@ -2130,7 +2128,7 @@ impl CodePrismMcpServer {
             Err(e) => {
                 serde_json::json!({
                     "status": "error",
-                    "message": format!("JavaScript analysis failed: {}", e),
+                    "message": format!("JavaScript analysis failed: {e}"),
                     "target": params.target
                 })
             }
@@ -2218,7 +2216,7 @@ impl CodePrismMcpServer {
                 Err(e) => {
                     serde_json::json!({
                         "status": "error",
-                        "message": format!("Failed to analyze security: {}", e),
+                        "message": format!("Failed to analyze security: {e}"),
                         "target": params.target
                     })
                 }
@@ -2356,7 +2354,7 @@ impl CodePrismMcpServer {
             Err(e) => {
                 serde_json::json!({
                     "status": "error",
-                    "message": format!("Specialized analysis failed: {}", e),
+                    "message": format!("Specialized analysis failed: {e}"),
                     "target": params.target
                 })
             }
@@ -2408,7 +2406,7 @@ impl CodePrismMcpServer {
                 self.generate_general_guidance(&params.target, include_examples, &priority_level)
             }
             _ => {
-                let error_msg = format!("Invalid guidance type: {}. Must be one of: complexity, performance, security, workflow, general", guidance_type);
+                let error_msg = format!("Invalid guidance type: {guidance_type}. Must be one of: complexity, performance, security, workflow, general");
                 return Ok(CallToolResult::error(vec![Content::text(error_msg)]));
             }
         };
@@ -2418,7 +2416,7 @@ impl CodePrismMcpServer {
             Err(e) => {
                 serde_json::json!({
                     "status": "error",
-                    "message": format!("Guidance generation failed: {}", e),
+                    "message": format!("Guidance generation failed: {e}"),
                     "target": params.target,
                     "guidance_type": guidance_type
                 })
@@ -2460,7 +2458,7 @@ impl CodePrismMcpServer {
             Err(e) => {
                 serde_json::json!({
                     "status": "error",
-                    "message": format!("Optimization analysis failed: {}", e),
+                    "message": format!("Optimization analysis failed: {e}"),
                     "target": params.target,
                     "optimization_types": optimization_types
                 })
@@ -2771,10 +2769,8 @@ impl CodePrismMcpServer {
                                     processed_count += 1;
                                 }
                                 Err(e) => {
-                                    let error_msg = format!(
-                                        "Failed to analyze complexity for {}: {}",
-                                        target, e
-                                    );
+                                    let error_msg =
+                                        format!("Failed to analyze complexity for {target}: {e}");
                                     errors.push(error_msg.clone());
 
                                     if fail_fast {
@@ -2834,8 +2830,7 @@ impl CodePrismMcpServer {
                                         }
                                         Err(e) => {
                                             let error_msg = format!(
-                                                "Failed to analyze performance for {}: {}",
-                                                target, e
+                                                "Failed to analyze performance for {target}: {e}"
                                             );
                                             errors.push(error_msg.clone());
 
@@ -2861,8 +2856,7 @@ impl CodePrismMcpServer {
                                     }
                                 }
                                 Err(e) => {
-                                    let error_msg =
-                                        format!("Failed to read file {}: {}", target, e);
+                                    let error_msg = format!("Failed to read file {target}: {e}");
                                     errors.push(error_msg.clone());
 
                                     batch_results.push(serde_json::json!({
@@ -2918,8 +2912,7 @@ impl CodePrismMcpServer {
                                         }
                                         Err(e) => {
                                             let error_msg = format!(
-                                                "Failed to analyze security for {}: {}",
-                                                target, e
+                                                "Failed to analyze security for {target}: {e}"
                                             );
                                             errors.push(error_msg.clone());
 
@@ -2933,8 +2926,7 @@ impl CodePrismMcpServer {
                                     }
                                 }
                                 Err(e) => {
-                                    let error_msg =
-                                        format!("Failed to read file {}: {}", target, e);
+                                    let error_msg = format!("Failed to read file {target}: {e}");
                                     errors.push(error_msg.clone());
 
                                     batch_results.push(serde_json::json!({
@@ -2977,7 +2969,7 @@ impl CodePrismMcpServer {
                                     let regex = match regex::Regex::new(pattern) {
                                         Ok(r) => r,
                                         Err(e) => {
-                                            errors.push(format!("Invalid regex pattern: {}", e));
+                                            errors.push(format!("Invalid regex pattern: {e}"));
                                             continue;
                                         }
                                     };
@@ -3012,8 +3004,7 @@ impl CodePrismMcpServer {
                                     processed_count += 1;
                                 }
                                 Err(e) => {
-                                    let error_msg =
-                                        format!("Failed to read file {}: {}", target, e);
+                                    let error_msg = format!("Failed to read file {target}: {e}");
                                     errors.push(error_msg.clone());
 
                                     batch_results.push(serde_json::json!({
@@ -3112,7 +3103,7 @@ impl CodePrismMcpServer {
             .to_string();
 
         let repo_config = RepositoryConfig::new(repo_id.clone(), &repo_path)
-            .with_name(format!("Repository: {}", repo_id))
+            .with_name(format!("Repository: {repo_id}"))
             .with_description(format!(
                 "CodePrism MCP Server repository at {}",
                 repo_path.display()
@@ -3128,7 +3119,7 @@ impl CodePrismMcpServer {
                 manager
                     .register_repository(repo_config.clone())
                     .map_err(|e| {
-                        crate::Error::server_init(format!("Failed to register repository: {}", e))
+                        crate::Error::server_init(format!("Failed to register repository: {e}"))
                     })?;
                 info!("Registered repository with manager: {}", repo_id);
             }
@@ -3139,7 +3130,7 @@ impl CodePrismMcpServer {
                 new_manager
                     .register_repository(repo_config.clone())
                     .map_err(|e| {
-                        crate::Error::server_init(format!("Failed to register repository: {}", e))
+                        crate::Error::server_init(format!("Failed to register repository: {e}"))
                     })?;
                 self.repository_manager = Arc::new(new_manager);
                 info!(
@@ -3209,7 +3200,7 @@ impl CodePrismMcpServer {
                     .index_repository(&repo_id, Some(progress_reporter.clone()))
                     .await
                     .map_err(|e| {
-                        crate::Error::server_init(format!("Failed to index repository: {}", e))
+                        crate::Error::server_init(format!("Failed to index repository: {e}"))
                     })?;
 
                 // Replace the repository manager
@@ -3367,7 +3358,7 @@ impl CodePrismMcpServer {
         let service = self
             .serve(stdio())
             .await
-            .map_err(|e| crate::Error::server_init(format!("Failed to start MCP server: {}", e)))?;
+            .map_err(|e| crate::Error::server_init(format!("Failed to start MCP server: {e}")))?;
 
         info!("MCP server is ready to accept connections");
 
@@ -3375,7 +3366,7 @@ impl CodePrismMcpServer {
         service
             .waiting()
             .await
-            .map_err(|e| crate::Error::server_init(format!("Server error: {}", e)))?;
+            .map_err(|e| crate::Error::server_init(format!("Server error: {e}")))?;
 
         info!("MCP server shut down successfully");
         Ok(())
@@ -3538,7 +3529,7 @@ impl CodePrismMcpServer {
         // Metadata matching
         if let serde_json::Value::Object(metadata_obj) = &node.metadata {
             for (key, value) in metadata_obj {
-                let metadata_text = format!("{}: {}", key, value).to_lowercase();
+                let metadata_text = format!("{key}: {value}").to_lowercase();
                 if metadata_text.contains(&concept_lower) {
                     relevance += 0.1;
                 }
@@ -3609,12 +3600,12 @@ impl CodePrismMcpServer {
         }
 
         for prefix in &prefixes {
-            variations.push(format!("{}{}", prefix, concept));
+            variations.push(format!("{prefix}{concept}"));
         }
 
         // Add regex patterns for flexible matching
         if concept_lower.len() > 3 {
-            variations.push(format!(".*{}.*", concept_lower));
+            variations.push(format!(".*{concept_lower}.*"));
         }
 
         variations
@@ -4735,7 +4726,7 @@ impl CodePrismMcpServer {
             Err(_) => {
                 return Ok(serde_json::json!({
                     "status": "error",
-                    "message": format!("Invalid target symbol ID format: {}. Expected hexadecimal string.", target)
+                    "message": format!("Invalid target symbol ID format: {target}. Expected hexadecimal string.")
                 }));
             }
         };
@@ -4746,7 +4737,7 @@ impl CodePrismMcpServer {
             None => {
                 return Ok(serde_json::json!({
                     "status": "error",
-                    "message": format!("Target symbol not found: {}", target)
+                    "message": format!("Target symbol not found: {target}")
                 }));
             }
         };
@@ -5093,8 +5084,7 @@ impl CodePrismMcpServer {
         };
 
         insights.push(format!(
-            "Average dependencies per symbol: {:.1}",
-            avg_deps_per_symbol
+            "Average dependencies per symbol: {avg_deps_per_symbol:.1}"
         ));
 
         if avg_deps_per_symbol > 8.0 {
@@ -5142,7 +5132,7 @@ impl CodePrismMcpServer {
         } else {
             return Ok(serde_json::json!({
                 "status": "error",
-                "message": format!("Target '{}' not found. Provide a file path, symbol ID, or glob pattern.", target)
+                "message": format!("Target '{target}' not found. Provide a file path, symbol ID, or glob pattern.")
             }));
         };
 
@@ -5164,7 +5154,7 @@ impl CodePrismMcpServer {
         if file_nodes.is_empty() {
             return Ok(serde_json::json!({
                 "status": "error",
-                "message": format!("No symbols found in file: {}", file_path)
+                "message": format!("No symbols found in file: {file_path}")
             }));
         }
 
@@ -5216,7 +5206,7 @@ impl CodePrismMcpServer {
             Err(_) => {
                 return Ok(serde_json::json!({
                     "status": "error",
-                    "message": format!("Invalid symbol ID format: {}", symbol_id)
+                    "message": format!("Invalid symbol ID format: {symbol_id}")
                 }));
             }
         };
@@ -5227,7 +5217,7 @@ impl CodePrismMcpServer {
             None => {
                 return Ok(serde_json::json!({
                     "status": "error",
-                    "message": format!("Symbol not found: {}", symbol_id)
+                    "message": format!("Symbol not found: {symbol_id}")
                 }));
             }
         };

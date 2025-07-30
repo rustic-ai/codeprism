@@ -103,7 +103,7 @@ impl ScriptManager {
         };
 
         let validator = ScriptValidator::new(vec![script.clone()], phase, config).map_err(|e| {
-            ScriptManagerError::ValidationError(format!("Failed to create validator: {}", e))
+            ScriptManagerError::ValidationError(format!("Failed to create validator: {e}"))
         })?;
 
         Ok(Arc::new(validator))
@@ -142,7 +142,7 @@ mod tests {
                 _ => crate::spec::ExecutionPhase::After,
             }),
             required,
-            source: format!("-- Test script: {}", name),
+            source: format!("-- Test script: {name}"),
             timeout_ms: None,
         }
     }

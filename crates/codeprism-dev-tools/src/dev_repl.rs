@@ -359,8 +359,7 @@ impl DevRepl {
                 success: false,
                 output: String::new(),
                 error: Some(format!(
-                    "Unknown command: '{}'. Type 'help' for available commands.",
-                    input
+                    "Unknown command: '{input}'. Type 'help' for available commands."
                 )),
             },
         }
@@ -374,7 +373,7 @@ impl DevRepl {
 
         ReplResult {
             success: true,
-            output: format!("Parsed source: '{}' (mock implementation)", source),
+            output: format!("Parsed source: '{source}' (mock implementation)"),
             error: None,
         }
     }
@@ -393,7 +392,7 @@ impl DevRepl {
             Err(e) => ReplResult {
                 success: false,
                 output: String::new(),
-                error: Some(format!("Failed to load file '{}': {}", file_path, e)),
+                error: Some(format!("Failed to load file '{file_path}': {e}")),
             },
         }
     }
@@ -405,7 +404,7 @@ impl DevRepl {
                 if let Some(ref source) = self.current_source {
                     ReplResult {
                         success: true,
-                        output: format!("AST for source (simplified):\n{}", source),
+                        output: format!("AST for source (simplified):\n{source}"),
                         error: None,
                     }
                 } else {
@@ -431,7 +430,7 @@ impl DevRepl {
             }
             _ => ReplResult {
                 success: true,
-                output: format!("Show {:?} - not yet implemented", what),
+                output: format!("Show {what:?} - not yet implemented"),
                 error: None,
             },
         }
@@ -444,7 +443,7 @@ impl DevRepl {
                 self.prompt = value.to_string();
                 ReplResult {
                     success: true,
-                    output: format!("Prompt set to '{}'", value),
+                    output: format!("Prompt set to '{value}'"),
                     error: None,
                 }
             }
@@ -452,14 +451,14 @@ impl DevRepl {
                 self.language = Some(value.to_string());
                 ReplResult {
                     success: true,
-                    output: format!("Language set to '{}'", value),
+                    output: format!("Language set to '{value}'"),
                     error: None,
                 }
             }
             _ => ReplResult {
                 success: false,
                 output: String::new(),
-                error: Some(format!("Unknown option: '{}'", option)),
+                error: Some(format!("Unknown option: '{option}'")),
             },
         }
     }
@@ -493,7 +492,7 @@ impl DevRepl {
     async fn handle_profile(&mut self, command: &str) -> ReplResult {
         ReplResult {
             success: true,
-            output: format!("Profile command '{}' (not yet implemented)", command),
+            output: format!("Profile command '{command}' (not yet implemented)"),
             error: None,
         }
     }

@@ -70,7 +70,7 @@ impl CustomValidator for ContentLengthValidator {
                             if let Some(text_str) = text.as_str() {
                                 if text_str.len() > self.max_length {
                                     errors.push(ValidationError::FieldError {
-                                        field: format!("result.content[{}].text", i),
+                                        field: format!("result.content[{i}].text"),
                                         expected: format!("length <= {}", self.max_length),
                                         actual: format!("length = {}", text_str.len()),
                                     });
@@ -120,7 +120,7 @@ impl CustomValidator for ResponseTimeValidator {
                     errors.push(ValidationError::FieldError {
                         field: "response_time".to_string(),
                         expected: format!("<= {} ms", self.max_duration_ms),
-                        actual: format!("{} ms", duration),
+                        actual: format!("{duration} ms"),
                     });
                 }
             }
@@ -164,7 +164,7 @@ impl CustomValidator for SecurityValidator {
             if data_str.contains(pattern) {
                 errors.push(ValidationError::FieldError {
                     field: "response_content".to_string(),
-                    expected: format!("no occurrences of '{}'", pattern),
+                    expected: format!("no occurrences of '{pattern}'"),
                     actual: "contains forbidden pattern".to_string(),
                 });
             }

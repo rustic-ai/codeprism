@@ -118,7 +118,7 @@ impl LoggingSystem {
             TestHarnessError::Configuration(
                 crate::error_handling::errors::ConfigurationError::InvalidConfig {
                     field: "logging".to_string(),
-                    message: format!("Failed to set global subscriber: {}", e),
+                    message: format!("Failed to set global subscriber: {e}"),
                     provided_value: None,
                 },
             )
@@ -145,7 +145,7 @@ impl LoggingSystem {
             TestHarnessError::Reporting(
                 crate::error_handling::errors::ReportingError::GenerationFailed {
                     format: "error_summary".to_string(),
-                    message: format!("Failed to acquire error collector lock: {}", e),
+                    message: format!("Failed to acquire error collector lock: {e}"),
                     output_path: None,
                 },
             )
@@ -161,7 +161,7 @@ impl LoggingSystem {
             TestHarnessError::Reporting(
                 crate::error_handling::errors::ReportingError::GenerationFailed {
                     format: "error_statistics".to_string(),
-                    message: format!("Failed to acquire error collector lock: {}", e),
+                    message: format!("Failed to acquire error collector lock: {e}"),
                     output_path: None,
                 },
             )

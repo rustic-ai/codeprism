@@ -444,7 +444,7 @@ impl SpecificationLoader {
         // Read file content
         let content = tokio::fs::read_to_string(&resolved_path)
             .await
-            .map_err(|e| crate::error::Error::spec(format!("Failed to read file: {}", e)))?;
+            .map_err(|e| crate::error::Error::spec(format!("Failed to read file: {e}")))?;
 
         // Parse YAML content
         self.parse_yaml(&content)
@@ -462,10 +462,10 @@ impl SpecificationLoader {
         let mut specs = Vec::new();
         let mut dir = tokio::fs::read_dir(path)
             .await
-            .map_err(|e| crate::error::Error::spec(format!("Failed to read directory: {}", e)))?;
+            .map_err(|e| crate::error::Error::spec(format!("Failed to read directory: {e}")))?;
 
         while let Some(entry) = dir.next_entry().await.map_err(|e| {
-            crate::error::Error::spec(format!("Failed to read directory entry: {}", e))
+            crate::error::Error::spec(format!("Failed to read directory entry: {e}"))
         })? {
             let file_path = entry.path();
             if file_path.is_file() {

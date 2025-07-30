@@ -66,12 +66,12 @@ impl CliApp {
         // 1. Load existing test results from the input file
         println!("📖 Loading test results from: {}", args.input.display());
         let test_results_content = tokio::fs::read_to_string(&args.input).await.map_err(|e| {
-            crate::error::Error::config(format!("Failed to read test results file: {}", e))
+            crate::error::Error::config(format!("Failed to read test results file: {e}"))
         })?;
 
         let suite_result: TestSuiteResult =
             serde_json::from_str(&test_results_content).map_err(|e| {
-                crate::error::Error::config(format!("Failed to parse test results JSON: {}", e))
+                crate::error::Error::config(format!("Failed to parse test results JSON: {e}"))
             })?;
 
         // 2. Create ReportConfig with advanced settings
@@ -144,7 +144,7 @@ impl CliApp {
             tokio::fs::write(&organized_path, report_content)
                 .await
                 .map_err(|e| {
-                    crate::error::Error::execution(format!("Failed to write report: {}", e))
+                    crate::error::Error::execution(format!("Failed to write report: {e}"))
                 })?;
 
             println!(
@@ -278,7 +278,7 @@ impl CliApp {
         // 2. Create validation engines
         let cli_validator = ValidationEngine::new()?;
         let mcp_validator = crate::validation::McpValidationEngine::new().map_err(|e| {
-            crate::error::Error::validation(format!("Failed to create MCP validator: {}", e))
+            crate::error::Error::validation(format!("Failed to create MCP validator: {e}"))
         })?;
 
         // 3. Determine which validation checks to perform
@@ -423,7 +423,7 @@ impl CliApp {
             .validate_response(&sample_response, &validation_spec)
             .await
             .map_err(|e| {
-                crate::error::Error::validation(format!("MCP protocol validation failed: {}", e))
+                crate::error::Error::validation(format!("MCP protocol validation failed: {e}"))
             })
     }
 
@@ -523,7 +523,7 @@ impl CliApp {
         // Create output directory if it doesn't exist
         if !output_dir.exists() {
             tokio::fs::create_dir_all(output_dir).await.map_err(|e| {
-                crate::error::Error::execution(format!("Failed to create output directory: {}", e))
+                crate::error::Error::execution(format!("Failed to create output directory: {e}"))
             })?;
         }
 
@@ -537,7 +537,7 @@ impl CliApp {
             tokio::fs::write(&output_path, report_content)
                 .await
                 .map_err(|e| {
-                    crate::error::Error::execution(format!("Failed to write report: {}", e))
+                    crate::error::Error::execution(format!("Failed to write report: {e}"))
                 })?;
 
             println!(
@@ -657,7 +657,7 @@ impl CliApp {
                 if !result.errors.is_empty() {
                     html.push_str("        <div class=\"errors\"><strong>Errors:</strong><ul>");
                     for error in &result.errors {
-                        html.push_str(&format!("<li>{}</li>", error));
+                        html.push_str(&format!("<li>{error}</li>"));
                     }
                     html.push_str("</ul></div>");
                 }
@@ -665,7 +665,7 @@ impl CliApp {
                 if !result.warnings.is_empty() {
                     html.push_str("        <div class=\"warnings\"><strong>Warnings:</strong><ul>");
                     for warning in &result.warnings {
-                        html.push_str(&format!("<li>{}</li>", warning));
+                        html.push_str(&format!("<li>{warning}</li>"));
                     }
                     html.push_str("</ul></div>");
                 }
@@ -715,7 +715,7 @@ impl CliApp {
         );
 
         for (category, result) in validation_results {
-            markdown.push_str(&format!("### {}\n\n", category));
+            markdown.push_str(&format!("### {category}\n\n"));
 
             if result.is_valid && result.errors.is_empty() && result.warnings.is_empty() {
                 markdown.push_str("✅ No issues found\n\n");
@@ -723,7 +723,7 @@ impl CliApp {
                 if !result.errors.is_empty() {
                     markdown.push_str("#### Errors\n\n");
                     for error in &result.errors {
-                        markdown.push_str(&format!("- ❌ {}\n", error));
+                        markdown.push_str(&format!("- ❌ {error}\n"));
                     }
                     markdown.push('\n');
                 }
@@ -731,7 +731,7 @@ impl CliApp {
                 if !result.warnings.is_empty() {
                     markdown.push_str("#### Warnings\n\n");
                     for warning in &result.warnings {
-                        markdown.push_str(&format!("- ⚠️ {}\n", warning));
+                        markdown.push_str(&format!("- ⚠️ {warning}\n"));
                     }
                     markdown.push('\n');
                 }
@@ -791,8 +791,8 @@ impl CliApp {
     ) -> (bool, i32) {
         println!("\n📊 Validation Summary:");
         println!("Categories validated: {}", validation_results.len());
-        println!("Total errors: {}", total_errors);
-        println!("Total warnings: {}", total_warnings);
+        println!("Total errors: {total_errors}");
+        println!("Total warnings: {total_warnings}");
 
         let has_errors = total_errors > 0;
         let has_warnings = total_warnings > 0;
@@ -850,7 +850,7 @@ impl CliApp {
 
         for (category, result) in validation_results {
             if !result.errors.is_empty() || !result.warnings.is_empty() {
-                println!("  📋 {}:", category);
+                println!("  📋 {category}:");
 
                 for error in &result.errors {
                     if error.message.contains("JSONPath") {
@@ -958,7 +958,7 @@ impl CliApp {
                 let profile = profile_manager.load_profile(&load_args.name)?;
                 println!("✅ Profile '{}' loaded successfully", load_args.name);
                 let description = profile.description.as_deref().unwrap_or("No description");
-                println!("  Description: {}", description);
+                println!("  Description: {description}");
                 println!("  Formats: {:?}", self.profile_formats_summary(&profile));
 
                 if load_args.global {
@@ -980,10 +980,10 @@ impl CliApp {
                             Ok(profile) => {
                                 let desc =
                                     profile.description.unwrap_or("No description".to_string());
-                                println!("  📄 {} - {}", profile_name, desc);
+                                println!("  📄 {profile_name} - {desc}");
                             }
                             Err(_) => {
-                                println!("  ❌ {} (corrupted)", profile_name);
+                                println!("  ❌ {profile_name} (corrupted)");
                             }
                         }
                     }
@@ -1031,7 +1031,7 @@ impl CliApp {
                 println!("✅ Profile imported successfully");
 
                 if let Some(name) = &import_args.name {
-                    println!("  Imported as: {}", name);
+                    println!("  Imported as: {name}");
                 }
 
                 Ok(0)
@@ -1156,7 +1156,7 @@ impl CliApp {
     fn display_profile_details(&self, profile: &ConfigProfile, detailed: bool) {
         println!("Name: {}", profile.name);
         if let Some(desc) = &profile.description {
-            println!("Description: {}", desc);
+            println!("Description: {desc}");
         }
 
         println!(
@@ -1178,7 +1178,7 @@ impl CliApp {
             if !profile.environment_vars.is_empty() {
                 println!("Environment Variables:");
                 for (key, value) in &profile.environment_vars {
-                    println!("  {}: {}", key, value);
+                    println!("  {key}: {value}");
                 }
             }
         }
@@ -1256,7 +1256,7 @@ mod tests {
             }
         });
         let mut file = fs::File::create(file_path).expect("Failed to create test-results.json");
-        write!(file, "{}", minimal_json).expect("Failed to write to test-results.json");
+        write!(file, "{minimal_json}").expect("Failed to write to test-results.json");
 
         // Test with controlled arguments instead of parsing real command line
         let cli = Cli::parse_from(["mandrel-mcp-th", "report", "--input", file_path]);
@@ -1894,7 +1894,7 @@ mod tests {
         for profile_name in &profiles {
             let profile = ConfigProfile {
                 name: profile_name.to_string(),
-                description: Some(format!("Test profile: {}", profile_name)),
+                description: Some(format!("Test profile: {profile_name}")),
                 report_config: ReportConfig::default(),
                 file_management: FileManagerConfig::default(),
                 branding: None,
@@ -2409,7 +2409,7 @@ impl WatchManager {
         // Create file watcher with configured debounce duration
         let file_watcher = FileWatcher::with_debounce(Duration::from_millis(config.debounce_ms))
             .map_err(|e| {
-                crate::error::Error::execution(format!("Failed to create file watcher: {}", e))
+                crate::error::Error::execution(format!("Failed to create file watcher: {e}"))
             })?;
 
         Ok(WatchManager {
@@ -2432,8 +2432,7 @@ impl WatchManager {
                         .watch_dir(parent, self.config.output_directory.clone())
                         .map_err(|e| {
                             crate::error::Error::execution(format!(
-                                "Failed to watch directory: {}",
-                                e
+                                "Failed to watch directory: {e}"
                             ))
                         })?;
                 }
@@ -2442,7 +2441,7 @@ impl WatchManager {
                 self.file_watcher
                     .watch_dir(&path, self.config.output_directory.clone())
                     .map_err(|e| {
-                        crate::error::Error::execution(format!("Failed to watch directory: {}", e))
+                        crate::error::Error::execution(format!("Failed to watch directory: {e}"))
                     })?;
             }
         }
@@ -2526,9 +2525,7 @@ impl WatchManager {
 
         tokio::fs::write(&output_file, "Generated report content")
             .await
-            .map_err(|e| {
-                crate::error::Error::execution(format!("Failed to write report: {}", e))
-            })?;
+            .map_err(|e| crate::error::Error::execution(format!("Failed to write report: {e}")))?;
 
         tracing::info!("Report generated: {}", output_file.display());
         Ok(())
@@ -2580,10 +2577,7 @@ impl ProfileManager {
         // Create profiles directory if it doesn't exist
         if !profiles_directory.exists() {
             std::fs::create_dir_all(&profiles_directory).map_err(|e| {
-                crate::error::Error::execution(format!(
-                    "Failed to create profiles directory: {}",
-                    e
-                ))
+                crate::error::Error::execution(format!("Failed to create profiles directory: {e}"))
             })?;
         }
 
@@ -2596,11 +2590,11 @@ impl ProfileManager {
             .join(format!("{}.yaml", profile.name));
 
         let yaml_content = serde_yml::to_string(profile).map_err(|e| {
-            crate::error::Error::execution(format!("Failed to serialize profile: {}", e))
+            crate::error::Error::execution(format!("Failed to serialize profile: {e}"))
         })?;
 
         std::fs::write(&profile_path, yaml_content).map_err(|e| {
-            crate::error::Error::execution(format!("Failed to write profile file: {}", e))
+            crate::error::Error::execution(format!("Failed to write profile file: {e}"))
         })?;
 
         tracing::info!("Saved profile '{}' to {:?}", profile.name, profile_path);
@@ -2608,7 +2602,7 @@ impl ProfileManager {
     }
 
     pub fn load_profile(&self, name: &str) -> Result<ConfigProfile> {
-        let profile_path = self.profiles_directory.join(format!("{}.yaml", name));
+        let profile_path = self.profiles_directory.join(format!("{name}.yaml"));
 
         if !profile_path.exists() {
             return Err(crate::error::Error::execution(format!(
@@ -2618,11 +2612,11 @@ impl ProfileManager {
         }
 
         let yaml_content = std::fs::read_to_string(&profile_path).map_err(|e| {
-            crate::error::Error::execution(format!("Failed to read profile file: {}", e))
+            crate::error::Error::execution(format!("Failed to read profile file: {e}"))
         })?;
 
         let profile: ConfigProfile = serde_yml::from_str(&yaml_content).map_err(|e| {
-            crate::error::Error::execution(format!("Failed to parse profile YAML: {}", e))
+            crate::error::Error::execution(format!("Failed to parse profile YAML: {e}"))
         })?;
 
         tracing::info!("Loaded profile '{}' from {:?}", name, profile_path);
@@ -2633,12 +2627,12 @@ impl ProfileManager {
         let mut profiles = Vec::new();
 
         let entries = std::fs::read_dir(&self.profiles_directory).map_err(|e| {
-            crate::error::Error::execution(format!("Failed to read profiles directory: {}", e))
+            crate::error::Error::execution(format!("Failed to read profiles directory: {e}"))
         })?;
 
         for entry in entries {
             let entry = entry.map_err(|e| {
-                crate::error::Error::execution(format!("Failed to read directory entry: {}", e))
+                crate::error::Error::execution(format!("Failed to read directory entry: {e}"))
             })?;
 
             let path = entry.path();
@@ -2654,7 +2648,7 @@ impl ProfileManager {
     }
 
     pub fn delete_profile(&self, name: &str) -> Result<()> {
-        let profile_path = self.profiles_directory.join(format!("{}.yaml", name));
+        let profile_path = self.profiles_directory.join(format!("{name}.yaml"));
 
         if !profile_path.exists() {
             return Err(crate::error::Error::execution(format!(
@@ -2664,7 +2658,7 @@ impl ProfileManager {
         }
 
         std::fs::remove_file(&profile_path).map_err(|e| {
-            crate::error::Error::execution(format!("Failed to delete profile file: {}", e))
+            crate::error::Error::execution(format!("Failed to delete profile file: {e}"))
         })?;
 
         tracing::info!("Deleted profile '{}' from {:?}", name, profile_path);
@@ -2675,7 +2669,7 @@ impl ProfileManager {
         let profile = self.load_profile(name)?;
 
         let yaml_content = serde_yml::to_string(&profile).map_err(|e| {
-            crate::error::Error::execution(format!("Failed to serialize profile: {}", e))
+            crate::error::Error::execution(format!("Failed to serialize profile: {e}"))
         })?;
 
         // Create output directory if it doesn't exist
@@ -2691,7 +2685,7 @@ impl ProfileManager {
         }
 
         std::fs::write(output_path, yaml_content).map_err(|e| {
-            crate::error::Error::execution(format!("Failed to write export file: {}", e))
+            crate::error::Error::execution(format!("Failed to write export file: {e}"))
         })?;
 
         tracing::info!("Exported profile '{}' to {:?}", name, output_path);
@@ -2707,11 +2701,11 @@ impl ProfileManager {
         }
 
         let yaml_content = std::fs::read_to_string(import_path).map_err(|e| {
-            crate::error::Error::execution(format!("Failed to read import file: {}", e))
+            crate::error::Error::execution(format!("Failed to read import file: {e}"))
         })?;
 
         let profile: ConfigProfile = serde_yml::from_str(&yaml_content).map_err(|e| {
-            crate::error::Error::execution(format!("Failed to parse import YAML: {}", e))
+            crate::error::Error::execution(format!("Failed to parse import YAML: {e}"))
         })?;
 
         // Save the imported profile
@@ -2789,7 +2783,7 @@ impl ValidationEngine {
         if let Err(e) = std::fs::metadata(path) {
             errors.push(ValidationError {
                 field: "permissions".to_string(),
-                message: format!("Cannot read file metadata: {}", e),
+                message: format!("Cannot read file metadata: {e}"),
                 location: Some(path.to_string_lossy().to_string()),
             });
         }
@@ -2825,7 +2819,7 @@ impl ValidationEngine {
                         Err(e) => {
                             errors.push(ValidationError {
                                 field: "json_format".to_string(),
-                                message: format!("Invalid JSON format: {}", e),
+                                message: format!("Invalid JSON format: {e}"),
                                 location: Some("file_content".to_string()),
                             });
                         }
@@ -2844,7 +2838,7 @@ impl ValidationEngine {
                     if let Err(e) = serde_yml::from_str::<serde_yml::Value>(&content) {
                         errors.push(ValidationError {
                             field: "yaml_format".to_string(),
-                            message: format!("Invalid YAML format: {}", e),
+                            message: format!("Invalid YAML format: {e}"),
                             location: Some("file_content".to_string()),
                         });
                     }
@@ -2859,7 +2853,7 @@ impl ValidationEngine {
             _ => {
                 warnings.push(ValidationWarning {
                     field: "file_extension".to_string(),
-                    message: format!("Unexpected file extension: '{}'", extension),
+                    message: format!("Unexpected file extension: '{extension}'"),
                     suggestion: Some("Expected .json, .yaml, or .yml files".to_string()),
                 });
                 suggestions.push(
@@ -2874,7 +2868,7 @@ impl ValidationEngine {
             if size_mb > 10.0 {
                 warnings.push(ValidationWarning {
                     field: "file_size".to_string(),
-                    message: format!("Large file size: {:.2}MB", size_mb),
+                    message: format!("Large file size: {size_mb:.2}MB"),
                     suggestion: Some("Consider splitting large test configurations".to_string()),
                 });
             }
@@ -2978,7 +2972,7 @@ impl ValidationEngine {
             if !Self::is_valid_color_format(color) {
                 errors.push(ValidationError {
                     field: "branding.primary_color".to_string(),
-                    message: format!("Invalid color format: '{}'", color),
+                    message: format!("Invalid color format: '{color}'"),
                     location: Some("branding_config".to_string()),
                 });
                 suggestions.push("Use hex format (e.g., 'ff6600') or CSS color names".to_string());
@@ -2989,7 +2983,7 @@ impl ValidationEngine {
             if !Self::is_valid_color_format(color) {
                 errors.push(ValidationError {
                     field: "branding.secondary_color".to_string(),
-                    message: format!("Invalid color format: '{}'", color),
+                    message: format!("Invalid color format: '{color}'"),
                     location: Some("branding_config".to_string()),
                 });
             }
@@ -3000,7 +2994,7 @@ impl ValidationEngine {
             if !logo_path_buf.exists() {
                 errors.push(ValidationError {
                     field: "branding.logo_path".to_string(),
-                    message: format!("Logo file does not exist: {}", logo_path),
+                    message: format!("Logo file does not exist: {logo_path}"),
                     location: Some("branding_config".to_string()),
                 });
             }
@@ -3052,7 +3046,7 @@ impl ValidationEngine {
             if value.is_empty() {
                 warnings.push(ValidationWarning {
                     field: "custom_fields".to_string(),
-                    message: format!("Custom field '{}' has empty value", key),
+                    message: format!("Custom field '{key}' has empty value"),
                     suggestion: Some("Consider removing empty custom fields".to_string()),
                 });
             }

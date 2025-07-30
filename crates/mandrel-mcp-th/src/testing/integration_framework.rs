@@ -27,9 +27,7 @@ impl IntegrationTestFramework {
         let config_content = self.generate_tool_config(tool_name)?;
 
         // Write config to temporary file
-        let temp_config = self
-            .test_data_dir
-            .join(format!("{}_config.yaml", tool_name));
+        let temp_config = self.test_data_dir.join(format!("{tool_name}_config.yaml"));
         std::fs::create_dir_all(&self.test_data_dir)?;
         std::fs::write(&temp_config, config_content)?;
 

@@ -255,7 +255,7 @@ impl ProtocolValidator {
                         "Required field '{}' missing from {} result",
                         required_field, method
                     ),
-                    field_path: Some(format!("result.{}", required_field)),
+                    field_path: Some(format!("result.{required_field}")),
                     expected: Some("present".to_string()),
                     actual: Some("missing".to_string()),
                 });
@@ -275,7 +275,7 @@ impl ProtocolValidator {
                 issues.push(ProtocolIssue {
                     category: ProtocolCategory::McpMethodCompliance,
                     severity: ValidationSeverity::Warning,
-                    message: format!("Unknown MCP method: {}", method),
+                    message: format!("Unknown MCP method: {method}"),
                     field_path: None,
                     expected: Some("known MCP method".to_string()),
                     actual: Some(method.to_string()),
@@ -298,7 +298,7 @@ impl ProtocolValidator {
                     message: "tools field must be an array".to_string(),
                     field_path: Some("result.tools".to_string()),
                     expected: Some("array".to_string()),
-                    actual: Some(format!("{:?}", tools)),
+                    actual: Some(format!("{tools:?}")),
                 });
             } else {
                 // Validate each tool definition
@@ -324,7 +324,7 @@ impl ProtocolValidator {
                     message: "content field must be an array".to_string(),
                     field_path: Some("result.content".to_string()),
                     expected: Some("array".to_string()),
-                    actual: Some(format!("{:?}", content)),
+                    actual: Some(format!("{content:?}")),
                 });
             }
         }
@@ -338,7 +338,7 @@ impl ProtocolValidator {
                     message: "isError field must be a boolean".to_string(),
                     field_path: Some("result.isError".to_string()),
                     expected: Some("boolean".to_string()),
-                    actual: Some(format!("{:?}", is_error)),
+                    actual: Some(format!("{is_error:?}")),
                 });
             }
         }
@@ -358,7 +358,7 @@ impl ProtocolValidator {
                     message: "resources field must be an array".to_string(),
                     field_path: Some("result.resources".to_string()),
                     expected: Some("array".to_string()),
-                    actual: Some(format!("{:?}", resources)),
+                    actual: Some(format!("{resources:?}")),
                 });
             }
         }
@@ -378,7 +378,7 @@ impl ProtocolValidator {
                     message: "contents field must be an array".to_string(),
                     field_path: Some("result.contents".to_string()),
                     expected: Some("array".to_string()),
-                    actual: Some(format!("{:?}", contents)),
+                    actual: Some(format!("{contents:?}")),
                 });
             }
         }
@@ -398,7 +398,7 @@ impl ProtocolValidator {
                     message: "prompts field must be an array".to_string(),
                     field_path: Some("result.prompts".to_string()),
                     expected: Some("array".to_string()),
-                    actual: Some(format!("{:?}", prompts)),
+                    actual: Some(format!("{prompts:?}")),
                 });
             }
         }
@@ -418,7 +418,7 @@ impl ProtocolValidator {
                     message: "messages field must be an array".to_string(),
                     field_path: Some("result.messages".to_string()),
                     expected: Some("array".to_string()),
-                    actual: Some(format!("{:?}", messages)),
+                    actual: Some(format!("{messages:?}")),
                 });
             }
         }
@@ -434,10 +434,10 @@ impl ProtocolValidator {
             issues.push(ProtocolIssue {
                 category: ProtocolCategory::FieldType,
                 severity: ValidationSeverity::Error,
-                message: format!("Tool at index {} must be an object", index),
-                field_path: Some(format!("result.tools[{}]", index)),
+                message: format!("Tool at index {index} must be an object"),
+                field_path: Some(format!("result.tools[{index}]")),
                 expected: Some("object".to_string()),
-                actual: Some(format!("{:?}", tool)),
+                actual: Some(format!("{tool:?}")),
             });
             return issues;
         }
@@ -449,8 +449,8 @@ impl ProtocolValidator {
                 issues.push(ProtocolIssue {
                     category: ProtocolCategory::FieldMissing,
                     severity: ValidationSeverity::Error,
-                    message: format!("Tool at index {} missing required field '{}'", index, field),
-                    field_path: Some(format!("result.tools[{}].{}", index, field)),
+                    message: format!("Tool at index {index} missing required field '{field}'"),
+                    field_path: Some(format!("result.tools[{index}].{field}")),
                     expected: Some("present".to_string()),
                     actual: Some("missing".to_string()),
                 });
@@ -471,7 +471,7 @@ impl ProtocolValidator {
                 message: "Capabilities must be an object".to_string(),
                 field_path: Some("capabilities".to_string()),
                 expected: Some("object".to_string()),
-                actual: Some(format!("{:?}", capabilities)),
+                actual: Some(format!("{capabilities:?}")),
             });
             return issues;
         }
@@ -485,7 +485,7 @@ impl ProtocolValidator {
                     message: "tools capability must be an object".to_string(),
                     field_path: Some("capabilities.tools".to_string()),
                     expected: Some("object".to_string()),
-                    actual: Some(format!("{:?}", tools)),
+                    actual: Some(format!("{tools:?}")),
                 });
             }
         }

@@ -168,7 +168,7 @@ export default UserProfile;
         let test_code_content = r#"
 // Security concerns: SQL injection vulnerability
 fn unsafe_query(user_input: &str) -> String {
-    format!("SELECT * FROM users WHERE name = '{}'", user_input)
+    format!("SELECT * FROM users WHERE name = '{user_input}'")
 }
 
 // Concurrency issue: potential race condition

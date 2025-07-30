@@ -213,7 +213,7 @@ impl AnalysisReport {
             } else {
                 output.push_str("❌ Validation errors found:\n");
                 for error in validation.errors() {
-                    output.push_str(&format!("  - {}\n", error));
+                    output.push_str(&format!("  - {error}\n"));
                 }
             }
             output.push('\n');
@@ -317,7 +317,7 @@ pub mod utils {
         let total_ms = duration.as_millis();
 
         if total_ms < 1000 {
-            format!("{}ms", total_ms)
+            format!("{total_ms}ms")
         } else if total_ms < 60_000 {
             format!("{:.2}s", duration.as_secs_f64())
         } else {

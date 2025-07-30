@@ -61,8 +61,8 @@ impl FileManager {
         let timestamp = self.generate_timestamp();
         let extension = format.file_extension();
         let filename = match timestamp {
-            Some(ts) => format!("{}_{}.{}", suite_name, ts, extension),
-            None => format!("{}.{}", suite_name, extension),
+            Some(ts) => format!("{suite_name}_{ts}.{extension}"),
+            None => format!("{suite_name}.{extension}"),
         };
 
         path.push(filename);

@@ -212,13 +212,13 @@ impl McpClient {
         }
 
         let transport = rmcp::transport::TokioChildProcess::new(cmd)
-            .map_err(|e| Error::connection(format!("Failed to create stdio transport: {}", e)))?;
+            .map_err(|e| Error::connection(format!("Failed to create stdio transport: {e}")))?;
 
         // Create service using the correct pattern
         let service = ()
             .serve(transport)
             .await
-            .map_err(|e| Error::connection(format!("Failed to create MCP service: {}", e)))?;
+            .map_err(|e| Error::connection(format!("Failed to create MCP service: {e}")))?;
 
         self.service = Some(service);
         Ok(())
@@ -234,7 +234,7 @@ impl McpClient {
         let service = ()
             .serve(transport)
             .await
-            .map_err(|e| Error::connection(format!("Failed to create MCP service: {}", e)))?;
+            .map_err(|e| Error::connection(format!("Failed to create MCP service: {e}")))?;
 
         self.service = Some(service);
         Ok(())
@@ -291,7 +291,7 @@ impl McpClient {
             service
                 .cancel()
                 .await
-                .map_err(|e| Error::connection(format!("Failed to cancel service: {}", e)))?;
+                .map_err(|e| Error::connection(format!("Failed to cancel service: {e}")))?;
         }
 
         // Stop server process if running
@@ -331,7 +331,7 @@ impl McpClient {
         let tools = service
             .list_all_tools()
             .await
-            .map_err(|e| Error::execution(format!("Failed to list tools: {}", e)))?;
+            .map_err(|e| Error::execution(format!("Failed to list tools: {e}")))?;
 
         debug!("Listed {} tools", tools.len());
         Ok(tools)
@@ -368,7 +368,7 @@ impl McpClient {
         )
         .await
         .map_err(|_| Error::execution("Tool call timeout"))?
-        .map_err(|e| Error::execution(format!("Tool call failed: {}", e)))?;
+        .map_err(|e| Error::execution(format!("Tool call failed: {e}")))?;
 
         debug!("Tool call result: {:?}", result);
         Ok(result)
@@ -407,7 +407,7 @@ impl McpClient {
         let resources = service
             .list_all_resources()
             .await
-            .map_err(|e| Error::execution(format!("Failed to list resources: {}", e)))?;
+            .map_err(|e| Error::execution(format!("Failed to list resources: {e}")))?;
 
         debug!("Listed {} resources", resources.len());
         Ok(resources)
@@ -430,7 +430,7 @@ impl McpClient {
         )
         .await
         .map_err(|_| Error::execution("Resource read timeout"))?
-        .map_err(|e| Error::execution(format!("Resource read failed: {}", e)))?;
+        .map_err(|e| Error::execution(format!("Resource read failed: {e}")))?;
 
         debug!("Resource read result: {:?}", result);
         Ok(result)
@@ -446,7 +446,7 @@ impl McpClient {
         let prompts = service
             .list_all_prompts()
             .await
-            .map_err(|e| Error::execution(format!("Failed to list prompts: {}", e)))?;
+            .map_err(|e| Error::execution(format!("Failed to list prompts: {e}")))?;
 
         debug!("Listed {} prompts", prompts.len());
         Ok(prompts)
@@ -483,7 +483,7 @@ impl McpClient {
         )
         .await
         .map_err(|_| Error::execution("Prompt get timeout"))?
-        .map_err(|e| Error::execution(format!("Prompt get failed: {}", e)))?;
+        .map_err(|e| Error::execution(format!("Prompt get failed: {e}")))?;
 
         debug!("Prompt get result: {:?}", result);
         Ok(result)
@@ -562,7 +562,7 @@ impl ServerProcess {
         // Spawn the process
         let child = cmd
             .spawn()
-            .map_err(|e| Error::connection(format!("Failed to start server process: {}", e)))?;
+            .map_err(|e| Error::connection(format!("Failed to start server process: {e}")))?;
 
         info!("Server process started with PID: {:?}", child.id());
 

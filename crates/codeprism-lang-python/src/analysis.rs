@@ -3204,8 +3204,7 @@ impl PythonAnalyzer {
                             "Security vulnerability in {vuln_package} {vuln_version}"
                         ),
                         references: vec![format!(
-                            "https://cve.mitre.org/cgi-bin/cvename.cgi?name={}",
-                            cve_id
+                            "https://cve.mitre.org/cgi-bin/cvename.cgi?name={cve_id}"
                         )],
                         published_date: Some("2020-01-01".to_string()),
                         last_modified: Some("2020-01-01".to_string()),

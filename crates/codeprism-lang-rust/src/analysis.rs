@@ -162,10 +162,7 @@ impl RustAnalyzer {
                 patterns.push(OwnershipPattern {
                     pattern_type: OwnershipPatternType::MultipleMutableBorrows,
                     location: function_node.span.clone(),
-                    description: format!(
-                        "Function has {} mutable borrows, potential for borrowing conflicts",
-                        mut_borrow_count
-                    ),
+                    description: format!("Function has {mut_borrow_count} mutable borrows, potential for borrowing conflicts"),
                     suggestion: Some(
                         "Consider refactoring to reduce mutable borrows or use interior mutability"
                             .to_string(),
@@ -355,8 +352,7 @@ impl RustAnalyzer {
                     issue_type: PerformanceIssueType::StringConcatenation,
                     location: function_node.span.clone(),
                     description: format!(
-                        "Multiple string operations detected: {} push operations",
-                        string_pushes
+                        "Multiple string operations detected: {string_pushes} push operations"
                     ),
                     suggestion: Some(
                         "Consider using String::with_capacity() or format! macro".to_string(),
@@ -383,8 +379,7 @@ impl RustAnalyzer {
                     issue_type: PerformanceIssueType::StringConcatenation,
                     location: function_node.span.clone(),
                     description: format!(
-                        "Multiple string operations detected: {} push_str calls",
-                        push_str_count
+                        "Multiple string operations detected: {push_str_count} push_str calls"
                     ),
                     suggestion: Some(
                         "Consider using String::with_capacity() or format! macro".to_string(),

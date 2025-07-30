@@ -451,7 +451,7 @@ mod tests {
 
         // Create tests with consistent timing for good efficiency
         for i in 0..3 {
-            let test_name = format!("test{}", i);
+            let test_name = format!("test{i}");
             collector.start_test(&test_name);
             thread::sleep(Duration::from_millis(10)); // Consistent timing
             collector.end_test(&test_name, true, None);

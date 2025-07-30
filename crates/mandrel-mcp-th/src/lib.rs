@@ -122,7 +122,7 @@ pub fn is_dev_version() -> bool {
 
 /// Returns the user agent string for HTTP requests
 pub fn user_agent() -> String {
-    format!("mandrel-mcp-th/{}", VERSION)
+    format!("mandrel-mcp-th/{VERSION}")
 }
 
 /// Configuration for logging

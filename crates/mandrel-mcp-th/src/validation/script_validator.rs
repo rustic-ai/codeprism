@@ -102,7 +102,7 @@ impl ScriptValidator {
         
         let lua_engine = LuaEngine::new(&script_config)
             .map_err(|e| ScriptError::ConfigurationError {
-                message: format!("Failed to create LuaEngine: {}", e),
+                message: format!("Failed to create LuaEngine: {e}"),
             })?;
 
         Ok(Self {
@@ -202,7 +202,7 @@ impl ScriptValidator {
                     Some(vec![ValidationError::FieldError {
                         field: "script_execution".to_string(),
                         expected: "successful script execution".to_string(),
-                        actual: format!("Script execution error: {}", script_error),
+                        actual: format!("Script execution error: {script_error}"),
                     }])
                 } else {
                     // Don't fail validation on script errors

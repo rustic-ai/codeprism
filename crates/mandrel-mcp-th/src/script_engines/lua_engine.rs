@@ -182,7 +182,7 @@ impl LuaEngine {
             lua.load("io = nil; os.remove = nil; os.execute = nil; os.rename = nil; require = nil")
                 .exec()
                 .map_err(|e| ScriptError::ExecutionError {
-                    message: format!("Failed to apply filesystem restrictions: {}", e),
+                    message: format!("Failed to apply filesystem restrictions: {e}"),
                 })?;
         }
 
@@ -191,7 +191,7 @@ impl LuaEngine {
             lua.load("socket = nil; http = nil; net = nil")
                 .exec()
                 .map_err(|e| ScriptError::ExecutionError {
-                    message: format!("Failed to apply network restrictions: {}", e),
+                    message: format!("Failed to apply network restrictions: {e}"),
                 })?;
         }
 
@@ -268,7 +268,7 @@ impl LuaEngine {
             memory_tracker
                 .snapshot()
                 .map_err(|e| ScriptError::MemoryTrackingError {
-                    message: format!("Failed to take initial memory snapshot: {}", e),
+                    message: format!("Failed to take initial memory snapshot: {e}"),
                 })?;
 
         // Inject context into Lua environment
@@ -290,7 +290,7 @@ impl LuaEngine {
             memory_tracker
                 .snapshot()
                 .map_err(|e| ScriptError::MemoryTrackingError {
-                    message: format!("Failed to take final memory snapshot: {}", e),
+                    message: format!("Failed to take final memory snapshot: {e}"),
                 })?;
 
         // Calculate memory usage
@@ -452,7 +452,7 @@ impl LuaEngine {
             .lua
             .create_table()
             .map_err(|e| ScriptError::ExecutionError {
-                message: format!("Failed to create context table: {}", e),
+                message: format!("Failed to create context table: {e}"),
             })?;
 
         // Inject request data
@@ -460,12 +460,12 @@ impl LuaEngine {
             self.lua
                 .to_value(&context.request)
                 .map_err(|e| ScriptError::SerializationError {
-                    message: format!("Failed to serialize request: {}", e),
+                    message: format!("Failed to serialize request: {e}"),
                 })?;
         context_table
             .set("request", request_value)
             .map_err(|e| ScriptError::ExecutionError {
-                message: format!("Failed to set request: {}", e),
+                message: format!("Failed to set request: {e}"),
             })?;
 
         // Inject response data (if available)
@@ -474,17 +474,17 @@ impl LuaEngine {
                 self.lua
                     .to_value(response)
                     .map_err(|e| ScriptError::SerializationError {
-                        message: format!("Failed to serialize response: {}", e),
+                        message: format!("Failed to serialize response: {e}"),
                     })?;
             context_table.set("response", response_value).map_err(|e| {
                 ScriptError::ExecutionError {
-                    message: format!("Failed to set response: {}", e),
+                    message: format!("Failed to set response: {e}"),
                 }
             })?;
         } else {
             context_table.set("response", LuaValue::Nil).map_err(|e| {
                 ScriptError::ExecutionError {
-                    message: format!("Failed to set response to nil: {}", e),
+                    message: format!("Failed to set response to nil: {e}"),
                 }
             })?;
         }
@@ -494,22 +494,22 @@ impl LuaEngine {
             .lua
             .create_table()
             .map_err(|e| ScriptError::ExecutionError {
-                message: format!("Failed to create metadata table: {}", e),
+                message: format!("Failed to create metadata table: {e}"),
             })?;
         metadata_table
             .set("test_name", context.metadata.test_name.clone())
             .map_err(|e| ScriptError::ExecutionError {
-                message: format!("Failed to set test_name: {}", e),
+                message: format!("Failed to set test_name: {e}"),
             })?;
         metadata_table
             .set("tool_name", context.metadata.tool_name.clone())
             .map_err(|e| ScriptError::ExecutionError {
-                message: format!("Failed to set tool_name: {}", e),
+                message: format!("Failed to set tool_name: {e}"),
             })?;
         context_table
             .set("metadata", metadata_table)
             .map_err(|e| ScriptError::ExecutionError {
-                message: format!("Failed to set metadata: {}", e),
+                message: format!("Failed to set metadata: {e}"),
             })?;
 
         // Add helper functions
@@ -520,19 +520,19 @@ impl LuaEngine {
                 Ok(())
             })
             .map_err(|e| ScriptError::ExecutionError {
-                message: format!("Failed to create log function: {}", e),
+                message: format!("Failed to create log function: {e}"),
             })?;
         context_table
             .set("log", log_fn)
             .map_err(|e| ScriptError::ExecutionError {
-                message: format!("Failed to set log function: {}", e),
+                message: format!("Failed to set log function: {e}"),
             })?;
 
         // Set global context
         globals
             .set("context", context_table)
             .map_err(|e| ScriptError::ExecutionError {
-                message: format!("Failed to set global context: {}", e),
+                message: format!("Failed to set global context: {e}"),
             })?;
 
         Ok(())
@@ -553,7 +553,7 @@ impl LuaEngine {
                         LuaValue::Number(n) => n.to_string(),
                         LuaValue::Boolean(b) => b.to_string(),
                         LuaValue::Nil => "nil".to_string(),
-                        _ => format!("{:?}", val),
+                        _ => format!("{val:?}"),
                     })
                     .collect();
 
@@ -563,14 +563,14 @@ impl LuaEngine {
                 Ok(())
             })
             .map_err(|e| ScriptError::ExecutionError {
-                message: format!("Failed to create custom print function: {}", e),
+                message: format!("Failed to create custom print function: {e}"),
             })?;
 
         let globals = self.lua.globals();
         globals
             .set("print", custom_print)
             .map_err(|e| ScriptError::ExecutionError {
-                message: format!("Failed to set custom print function: {}", e),
+                message: format!("Failed to set custom print function: {e}"),
             })?;
 
         Ok(())
@@ -618,7 +618,7 @@ impl LuaEngine {
             self.lua
                 .from_value(lua_value)
                 .map_err(|e| ScriptError::SerializationError {
-                    message: format!("Failed to deserialize result: {}", e),
+                    message: format!("Failed to deserialize result: {e}"),
                 })?;
 
         Ok(ScriptResult {
@@ -1461,9 +1461,9 @@ mod tests {
         let overhead_ratio = avg_time_with_logs / avg_time_without_logs.max(1.0); // Avoid division by zero
 
         println!("Log capture performance test:");
-        println!("  With logs: {:.2}ms", avg_time_with_logs);
-        println!("  Without logs: {:.2}ms", avg_time_without_logs);
-        println!("  Overhead ratio: {:.2}x", overhead_ratio);
+        println!("  With logs: {avg_time_with_logs:.2}ms");
+        println!("  Without logs: {avg_time_without_logs:.2}ms");
+        println!("  Overhead ratio: {overhead_ratio:.2}x");
 
         // Allow up to 3x overhead for log capture (generous allowance for testing variability)
         assert!(

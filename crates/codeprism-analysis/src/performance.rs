@@ -487,9 +487,9 @@ impl PerformanceAnalyzer {
                 let function_name = func_name.as_str().to_string();
 
                 // Check if the function actually calls itself by searching for the function name in the content
-                if content.contains(&format!("{}(", function_name)) {
+                if content.contains(&format!("{function_name}(")) {
                     // Count occurrences to determine if it's likely recursive
-                    let call_count = content.matches(&format!("{}(", function_name)).count();
+                    let call_count = content.matches(&format!("{function_name}(")).count();
                     if call_count > 1 {
                         // Function definition + at least one call
                         // Analyze recursion depth and complexity
@@ -643,7 +643,7 @@ impl PerformanceAnalyzer {
 
     fn get_line_info(&self, content: &str, position: usize) -> String {
         let line_num = content[..position].matches('\n').count() + 1;
-        format!("Line: {}, Position: {}", line_num, position)
+        format!("Line: {line_num}, Position: {position}")
     }
 
     /// Enhanced complexity threshold checking

@@ -26,7 +26,7 @@ impl JavaScriptEngine {
     /// Create new JavaScript engine with configuration
     pub fn new(config: &ScriptConfig) -> Result<Self, ScriptError> {
         let runtime = Runtime::new().map_err(|e| ScriptError::ExecutionError {
-            message: format!("Failed to create QuickJS runtime: {}", e),
+            message: format!("Failed to create QuickJS runtime: {e}"),
         })?;
 
         Ok(Self {
@@ -50,7 +50,7 @@ impl JavaScriptEngine {
             memory_tracker
                 .snapshot()
                 .map_err(|e| ScriptError::MemoryTrackingError {
-                    message: format!("Failed to take initial memory snapshot: {}", e),
+                    message: format!("Failed to take initial memory snapshot: {e}"),
                 })?;
 
         // Create context and execute with timeout using spawn_blocking for sync QuickJS ops
@@ -59,25 +59,25 @@ impl JavaScriptEngine {
         let _config = self.config.clone();
 
         let execution_future = tokio::task::spawn_blocking(move || {
-            let runtime = Runtime::new().map_err(|e| format!("Runtime creation failed: {}", e))?;
+            let runtime = Runtime::new().map_err(|e| format!("Runtime creation failed: {e}"))?;
             let ctx =
-                Context::full(&runtime).map_err(|e| format!("Context creation failed: {}", e))?;
+                Context::full(&runtime).map_err(|e| format!("Context creation failed: {e}"))?;
 
             ctx.with(|ctx| {
                 // Inject context into JavaScript global scope
                 Self::inject_context_static(&ctx, &context)
-                    .map_err(|e| format!("Context injection failed: {}", e))?;
+                    .map_err(|e| format!("Context injection failed: {e}"))?;
 
                 // Execute the script
                 let result: rquickjs::Value = ctx
                     .eval(script.as_str())
-                    .map_err(|e| format!("Script execution failed: {}", e))?;
+                    .map_err(|e| format!("Script execution failed: {e}"))?;
 
                 // Convert QuickJS value to JSON
                 Self::convert_js_value_to_json_static(&ctx, result)
-                    .map_err(|e| format!("JSON conversion failed: {}", e))
+                    .map_err(|e| format!("JSON conversion failed: {e}"))
             })
-            .map_err(|e| format!("QuickJS with block failed: {}", e))
+            .map_err(|e| format!("QuickJS with block failed: {e}"))
         });
 
         let js_result = timeout(
@@ -91,7 +91,7 @@ impl JavaScriptEngine {
             memory_tracker
                 .snapshot()
                 .map_err(|e| ScriptError::MemoryTrackingError {
-                    message: format!("Failed to take final memory snapshot: {}", e),
+                    message: format!("Failed to take final memory snapshot: {e}"),
                 })?;
 
         let memory_delta = memory_tracker.calculate_delta(&memory_before, &memory_after);
@@ -115,7 +115,7 @@ impl JavaScriptEngine {
                 duration_ms,
                 memory_used_mb,
                 error: Some(ScriptError::ExecutionError {
-                    message: format!("Task execution failed: {}", e),
+                    message: format!("Task execution failed: {e}"),
                 }),
             }),
             Err(_) => Ok(ScriptResult {
@@ -137,47 +137,47 @@ impl JavaScriptEngine {
         context: &ScriptContext,
     ) -> Result<(), String> {
         let context_obj = rquickjs::Object::new(ctx.clone())
-            .map_err(|e| format!("Object creation failed: {}", e))?;
+            .map_err(|e| format!("Object creation failed: {e}"))?;
 
         // Add request data - convert JSON to JavaScript value
         let request_val: rquickjs::Value = ctx
             .json_parse(context.request.to_string())
-            .map_err(|e| format!("Request JSON parse failed: {}", e))?;
+            .map_err(|e| format!("Request JSON parse failed: {e}"))?;
         context_obj
             .set("request", request_val)
-            .map_err(|e| format!("Request set failed: {}", e))?;
+            .map_err(|e| format!("Request set failed: {e}"))?;
 
         // Add response data if available
         if let Some(ref response) = context.response {
             let response_val: rquickjs::Value = ctx
                 .json_parse(response.to_string())
-                .map_err(|e| format!("Response JSON parse failed: {}", e))?;
+                .map_err(|e| format!("Response JSON parse failed: {e}"))?;
             context_obj
                 .set("response", response_val)
-                .map_err(|e| format!("Response set failed: {}", e))?;
+                .map_err(|e| format!("Response set failed: {e}"))?;
         }
 
         // Add metadata
         context_obj
             .set("test_case", context.metadata.test_name.clone())
-            .map_err(|e| format!("Test case set failed: {}", e))?;
+            .map_err(|e| format!("Test case set failed: {e}"))?;
         context_obj
             .set("tool", context.metadata.tool_name.clone())
-            .map_err(|e| format!("Tool set failed: {}", e))?;
+            .map_err(|e| format!("Tool set failed: {e}"))?;
 
         // Add simple log function
         let log_fn = rquickjs::Function::new(ctx.clone(), |level: String, message: String| {
             tracing::info!("JS Log [{}]: {}", level, message);
         })
-        .map_err(|e| format!("Log function creation failed: {}", e))?;
+        .map_err(|e| format!("Log function creation failed: {e}"))?;
         context_obj
             .set("log", log_fn)
-            .map_err(|e| format!("Log function set failed: {}", e))?;
+            .map_err(|e| format!("Log function set failed: {e}"))?;
 
         // Set the context object as global
         ctx.globals()
             .set("context", context_obj)
-            .map_err(|e| format!("Context global set failed: {}", e))?;
+            .map_err(|e| format!("Context global set failed: {e}"))?;
 
         Ok(())
     }
@@ -190,13 +190,13 @@ impl JavaScriptEngine {
         // Use JSON.stringify to convert to string, then parse as JSON
         let json_rquickjs_string = ctx
             .json_stringify(&value)
-            .map_err(|e| format!("JSON stringify failed: {}", e))?
+            .map_err(|e| format!("JSON stringify failed: {e}"))?
             .unwrap_or_else(|| rquickjs::String::from_str(ctx.clone(), "null").unwrap());
         let json_string = json_rquickjs_string
             .to_string()
-            .map_err(|e| format!("String conversion failed: {}", e))?;
+            .map_err(|e| format!("String conversion failed: {e}"))?;
 
-        serde_json::from_str(&json_string).map_err(|e| format!("JSON parse failed: {}", e))
+        serde_json::from_str(&json_string).map_err(|e| format!("JSON parse failed: {e}"))
     }
 
     /// Extract successful result from JavaScript execution

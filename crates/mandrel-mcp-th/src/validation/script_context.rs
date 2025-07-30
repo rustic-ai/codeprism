@@ -129,7 +129,7 @@ impl ScriptContext {
             .as_secs();
 
         let execution_id = format!("exec_{}_{}", current_time, rand::random::<u32>());
-        let session_id = format!("session_{}", current_time);
+        let session_id = format!("session_{current_time}");
 
         Self {
             test_case,
@@ -209,15 +209,14 @@ impl ScriptContext {
         Ok(format!(
             r#"
 // Context object with test data and helper functions
-const context = {};
+const context = {context_json};
 
 // Helper functions for JavaScript validation scripts
-{}
+{helpers}
 
 // Make context globally available
 globalThis.context = context;
-"#,
-            context_json, helpers
+"#
         ))
     }
 
@@ -237,12 +236,11 @@ globalThis.context = context;
             r#"
 # Context object with test data and helper functions
 import json
-context = {}
+context = {python_context}
 
 # Helper functions for Python validation scripts
-{}
-"#,
-            python_context, helpers
+{helpers}
+"#
         ))
     }
 
@@ -254,15 +252,14 @@ context = {}
         Ok(format!(
             r#"
 -- Context table with test data and helper functions
-local context = {}
+local context = {lua_context}
 
 -- Helper functions for Lua validation scripts
-{}
+{helpers}
 
 -- Make context globally available
 _G.context = context
-"#,
-            lua_context, helpers
+"#
         ))
     }
 
@@ -440,7 +437,7 @@ impl Default for SessionData {
             .as_secs();
 
         Self {
-            session_id: format!("session_{}", current_time),
+            session_id: format!("session_{current_time}"),
             variables: HashMap::new(),
             metrics: SessionMetrics::default(),
             config: HashMap::new(),

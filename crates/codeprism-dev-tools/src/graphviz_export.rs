@@ -287,7 +287,7 @@ impl GraphVizExporter {
 
             // Write node
             if attributes.is_empty() {
-                dot.push_str(&format!("  {};\n", node_id));
+                dot.push_str(&format!("  {node_id};\n"));
             } else {
                 dot.push_str(&format!("  {} [{}];\n", node_id, attributes.join(", ")));
             }
@@ -317,7 +317,7 @@ impl GraphVizExporter {
         dot.push_str("  // Clustered nodes by file\n");
 
         for (i, (file_path, file_nodes)) in file_groups.iter().enumerate() {
-            dot.push_str(&format!("  subgraph cluster_{} {{\n", i));
+            dot.push_str(&format!("  subgraph cluster_{i} {{\n"));
             dot.push_str(&format!(
                 "    label=\"{}\";\n",
                 self.escape_label(file_path)
@@ -504,7 +504,7 @@ impl GraphVizExporter {
         for i in 0..node.child_count() {
             if let Some(child) = node.child(i) {
                 let child_id = format!("syntax_{}_{}", depth + 1, child.start_byte());
-                dot.push_str(&format!("  {} -> {};\n", node_id, child_id));
+                dot.push_str(&format!("  {node_id} -> {child_id};\n"));
                 self.export_syntax_node_recursive(dot, &child, source, depth + 1)?;
             }
         }

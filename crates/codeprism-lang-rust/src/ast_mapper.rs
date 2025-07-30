@@ -541,7 +541,7 @@ impl AstMapper {
         let macro_call_node = Node::new(
             &self.repo_id,
             NodeKind::Call,
-            format!("{}!", macro_name),
+            format!("{macro_name}!"),
             self.language,
             self.file_path.clone(),
             span,
@@ -623,7 +623,7 @@ impl AstMapper {
         };
 
         let impl_name = if let Some(trait_name) = &trait_name {
-            format!("{} for {}", trait_name, type_name)
+            format!("{trait_name} for {type_name}")
         } else {
             type_name.clone()
         };
@@ -1208,13 +1208,12 @@ impl AstMapper {
 
         // Look for explicit lifetime bounds in where clauses or bounds
         let bound_pattern =
-            regex::Regex::new(&format!(r"'{}:\s*'([a-zA-Z_][a-zA-Z0-9_]*)", lifetime_name))
-                .unwrap();
+            regex::Regex::new(&format!(r"'{lifetime_name}:\s*'([a-zA-Z_][a-zA-Z0-9_]*)")).unwrap();
         for capture in bound_pattern.captures_iter(type_text) {
             if let Some(bound_lifetime) = capture.get(1) {
                 constraints.push(LifetimeConstraint {
                     constraint_type: LifetimeConstraintType::Outlives,
-                    source_lifetime: format!("'{}", lifetime_name),
+                    source_lifetime: format!("'{lifetime_name}"),
                     target_lifetime: format!("'{}", bound_lifetime.as_str()),
                     source: ConstraintSource::Explicit,
                 });
@@ -1222,10 +1221,10 @@ impl AstMapper {
         }
 
         // Infer constraints from reference nesting
-        if type_text.contains(&format!("&'{}&&", lifetime_name)) {
+        if type_text.contains(&format!("&'{lifetime_name}&&")) {
             constraints.push(LifetimeConstraint {
                 constraint_type: LifetimeConstraintType::Contains,
-                source_lifetime: format!("'{}", lifetime_name),
+                source_lifetime: format!("'{lifetime_name}"),
                 target_lifetime: "'_".to_string(),
                 source: ConstraintSource::Inferred,
             });

@@ -393,7 +393,7 @@ impl ReportGenerator {
 
         // Check if we have custom branding
         if let Some(company_name) = &self.config.branding.company_name {
-            markdown.push_str(&format!("**Report by:** {}\n\n", company_name));
+            markdown.push_str(&format!("**Report by:** {company_name}\n\n"));
         }
 
         // Check for technical template
@@ -669,7 +669,7 @@ impl ReportGenerator {
             markdown.push_str("- Performance metrics enabled\n");
             markdown.push_str("- Validation details included\n");
             if let Some(color) = &self.config.branding.primary_color {
-                markdown.push_str(&format!("- Primary color: {}\n", color));
+                markdown.push_str(&format!("- Primary color: {color}\n"));
                 if color == "#ff6600" {
                     markdown.push_str("- Theme: orange\n");
                 }

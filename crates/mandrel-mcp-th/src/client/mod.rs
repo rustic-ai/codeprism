@@ -669,10 +669,10 @@ mod tests {
         let config = create_test_config();
         let client = McpClient::new(config).await;
 
-        assert!(client.is_ok());
+        assert!(client.is_ok(), "Client creation should succeed");
         let client = client.unwrap();
         assert_eq!(client.connection_state(), &ConnectionState::Disconnected);
-        assert!(!client.is_connected());
+        assert!(!client.is_connected(), "New client should not be connected");
         assert!(client.server_info().is_none());
     }
 
@@ -684,19 +684,19 @@ mod tests {
 
         // Initial state
         assert_eq!(client.connection_state(), &ConnectionState::Disconnected);
-        assert!(!client.is_connected());
+        assert!(!client.is_connected(), "New client should not be connected");
 
         // Connect - NOTE: This will fail with echo command as it's not an MCP server
         let result = client.connect().await;
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
         assert_eq!(client.connection_state(), &ConnectionState::Connected);
         assert!(client.is_connected());
 
         // Disconnect
         let result = client.disconnect().await;
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
         assert_eq!(client.connection_state(), &ConnectionState::Disconnected);
-        assert!(!client.is_connected());
+        assert!(!client.is_connected(), "New client should not be connected");
     }
 
     #[tokio::test]
@@ -711,7 +711,7 @@ mod tests {
 
         // Second connection should succeed (no-op)
         let result = client.connect().await;
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
         assert!(client.is_connected());
 
         client.disconnect().await.unwrap();
@@ -728,12 +728,12 @@ mod tests {
 
         // First disconnect
         client.disconnect().await.unwrap();
-        assert!(!client.is_connected());
+        assert!(!client.is_connected(), "New client should not be connected");
 
         // Second disconnect should succeed (no-op)
         let result = client.disconnect().await;
-        assert!(result.is_ok());
-        assert!(!client.is_connected());
+        assert!(result.is_ok(), "Operation should succeed");
+        assert!(!client.is_connected(), "New client should not be connected");
     }
 
     #[tokio::test]
@@ -742,7 +742,7 @@ mod tests {
         let client = McpClient::new(config).await.unwrap();
 
         // All operations should fail when disconnected
-        assert!(!client.is_connected());
+        assert!(!client.is_connected(), "New client should not be connected");
 
         let result = client.list_tools().await;
         assert!(result.is_err());
@@ -761,7 +761,7 @@ mod tests {
         assert!(matches!(result.unwrap_err(), Error::Connection(_)));
 
         let result = client.health_check().await;
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
         assert!(!result.unwrap()); // Should return false when disconnected
     }
 
@@ -777,19 +777,19 @@ mod tests {
 
         // All operations succeed with connection validated - PLANNED(#189): actual MCP communication
         let result = client.list_tools().await;
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
 
         let result = client.call_tool("test", None).await;
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
 
         let result = client.list_resources().await;
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
 
         let result = client.read_resource("test://uri").await;
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
 
         let result = client.health_check().await;
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
         assert!(result.unwrap()); // Should return true when connected
 
         client.disconnect().await.unwrap();
@@ -805,7 +805,7 @@ mod tests {
 
         // Stop the process
         let result = process.stop().await;
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
 
         // Process should no longer be running
         assert!(!process.is_running());
@@ -819,7 +819,7 @@ mod tests {
         assert!(process.is_running());
 
         let result = process.stop().await;
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
     }
 
     #[test]

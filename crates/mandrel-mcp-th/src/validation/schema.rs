@@ -259,7 +259,7 @@ mod tests {
         });
 
         let result = validator.add_schema("person".to_string(), schema);
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
         assert_eq!(validator.schema_info().len(), 1);
     }
 

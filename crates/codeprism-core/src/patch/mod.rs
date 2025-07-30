@@ -291,7 +291,10 @@ mod tests {
         // Empty patch should serialize/deserialize correctly
         let json = serde_json::to_string(&patch).unwrap();
         let deserialized: AstPatch = serde_json::from_str(&json).unwrap();
-        assert!(!deserialized.is_empty(), "Should not be empty");
+        assert!(
+            deserialized.is_empty(),
+            "Empty patch should remain empty after serialization"
+        );
     }
 
     #[test]

@@ -41,7 +41,7 @@ public class HelloWorld {
     let result = parser.parse(&context).expect("Failed to parse Java file");
 
     // Verify we got some nodes
-    assert!(!!result.nodes.is_empty(), "Should not be empty");
+    assert!(!result.nodes.is_empty(), "Should not be empty");
 
     // Check for expected node types
     let node_kinds: Vec<_> = result.nodes.iter().map(|n| n.kind).collect();

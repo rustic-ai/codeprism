@@ -188,7 +188,7 @@ mod tests {
         }
 
         let result = returns_result();
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
         assert_eq!(result.unwrap(), "success");
     }
 }

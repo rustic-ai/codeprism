@@ -134,7 +134,7 @@ mod tests {
     #[test]
     fn test_mcp_validation_engine_creation() {
         let engine = McpValidationEngine::new();
-        assert!(engine.is_ok());
+        assert!(engine.is_ok(), "Operation should succeed");
     }
 
     #[test]
@@ -200,7 +200,7 @@ mod tests {
         });
 
         let result = engine.validate_response(&response, &spec).await;
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
 
         let _validation_result = result.unwrap();
         // Note: This will likely show validation issues until we implement the sub-modules
@@ -232,7 +232,7 @@ mod tests {
         temp_file.write_all(spec_content.as_bytes()).unwrap();
 
         let result = engine.load_validation_spec_from_file(temp_file.path());
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
 
         let spec = result.unwrap();
         assert_eq!(spec.protocol_requirements.method, "tools/list");
@@ -261,6 +261,6 @@ mod tests {
         );
 
         let result = engine.precompile_schemas(schemas);
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
     }
 }

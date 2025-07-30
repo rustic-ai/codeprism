@@ -1035,9 +1035,29 @@ mod tests {
             .comprehensive_analysis(code, Some("python"))
             .unwrap();
 
-        assert!(result.get("summary").is_some());
-        assert!(result.get("issues").is_some());
-        assert!(result.get("recommendations").is_some());
+        assert!(
+            result.get("summary").is_some(),
+            "Result should have summary"
+        );
+        let summary = result.get("summary").unwrap();
+        assert!(
+            !summary.as_str().unwrap_or("").is_empty(),
+            "Summary should not be empty"
+        );
+
+        assert!(result.get("issues").is_some(), "Result should have issues");
+        let issues = result.get("issues").unwrap();
+        assert!(issues.is_array(), "Issues should be an array");
+
+        assert!(
+            result.get("recommendations").is_some(),
+            "Result should have recommendations"
+        );
+        let recommendations = result.get("recommendations").unwrap();
+        assert!(
+            recommendations.is_array(),
+            "Recommendations should be an array"
+        );
     }
 
     #[test]

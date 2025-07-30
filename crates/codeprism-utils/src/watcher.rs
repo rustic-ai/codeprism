@@ -222,13 +222,13 @@ mod tests {
     #[tokio::test]
     async fn test_file_watcher_creation() {
         let watcher = FileWatcher::new();
-        assert!(watcher.is_ok());
+        assert!(watcher.is_ok(), "Operation should succeed");
     }
 
     #[tokio::test]
     async fn test_file_watcher_with_custom_debounce() {
         let watcher = FileWatcher::with_debounce(Duration::from_millis(200));
-        assert!(watcher.is_ok());
+        assert!(watcher.is_ok(), "Operation should succeed");
     }
 
     #[tokio::test]
@@ -257,7 +257,7 @@ mod tests {
         let mut watcher = FileWatcher::new().unwrap();
 
         let result = watcher.watch_dir(temp_dir.path(), temp_dir.path().to_path_buf());
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
     }
 
     #[tokio::test]
@@ -266,10 +266,10 @@ mod tests {
         let mut watcher = FileWatcher::new().unwrap();
 
         let result = watcher.watch_dir(temp_dir.path(), temp_dir.path().to_path_buf());
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
 
         let result = watcher.unwatch(temp_dir.path());
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
     }
 
     #[tokio::test]
@@ -291,10 +291,10 @@ mod tests {
         let mut watcher = FileWatcher::new().unwrap();
 
         let result1 = watcher.watch_dir(temp_dir1.path(), temp_dir1.path().to_path_buf());
-        assert!(result1.is_ok());
+        assert!(result1.is_ok(), "Operation should succeed");
 
         let result2 = watcher.watch_dir(temp_dir2.path(), temp_dir2.path().to_path_buf());
-        assert!(result2.is_ok());
+        assert!(result2.is_ok(), "Operation should succeed");
 
         let watched_paths = watcher.watched_paths.lock().unwrap();
         assert_eq!(watched_paths.len(), 2, "Should have 2 items");

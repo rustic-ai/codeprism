@@ -991,7 +991,7 @@ server:
         };
 
         let result = loader.validate_specification(&valid_spec);
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
     }
 
     #[test]

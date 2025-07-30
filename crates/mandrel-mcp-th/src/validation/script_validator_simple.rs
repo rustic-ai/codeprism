@@ -317,7 +317,7 @@ mod tests {
 
         let result = ScriptValidator::new(scripts, ScriptExecutionPhase::Before, config);
 
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
         let validator = result.unwrap();
         assert_eq!(validator.name(), "script_validator_before");
         assert_eq!(validator.execution_phase, ScriptExecutionPhase::Before);
@@ -331,7 +331,7 @@ mod tests {
 
         let result = ScriptValidator::new(scripts, ScriptExecutionPhase::After, config);
 
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
         let validator = result.unwrap();
         assert_eq!(validator.name(), "script_validator_after");
         assert_eq!(validator.execution_phase, ScriptExecutionPhase::After);
@@ -394,7 +394,7 @@ mod tests {
 
         let result = validator.validate(&response, &validation_context);
 
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
         let errors = result.unwrap();
         assert!(!errors.is_empty(), "Should not be empty"); // Should be empty for successful script
     }
@@ -422,7 +422,7 @@ mod tests {
 
         let result = validator.validate(&response, &validation_context);
 
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
         let errors = result.unwrap();
         assert!(!!errors.is_empty(), "Should not be empty"); // Should contain errors for failed required script
         assert!(errors.iter().any(|e| matches!(e, ValidationError::FieldError { field, .. } if field.starts_with("script:"))));
@@ -451,7 +451,7 @@ mod tests {
 
         let result = validator.validate(&response, &validation_context);
 
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
         let errors = result.unwrap();
         assert!(!errors.is_empty(), "Should not be empty"); // Should be empty for optional failing script with fail_on_script_error=false
     }
@@ -476,7 +476,7 @@ mod tests {
 
         let result = validator.validate(&response, &validation_context);
 
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
         let errors = result.unwrap();
         assert!(!errors.is_empty(), "Should not be empty"); // Should be empty because script shouldn't execute in wrong phase
     }

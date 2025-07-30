@@ -569,7 +569,7 @@ mod tests {
             .execute_with_retry(operation, "test_operation")
             .await;
 
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
         assert_eq!(result.unwrap(), 42);
         assert_eq!(call_count.load(std::sync::atomic::Ordering::SeqCst), 1);
     }
@@ -606,7 +606,7 @@ mod tests {
             .execute_with_retry(operation, "test_operation")
             .await;
 
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
         assert_eq!(result.unwrap(), 42);
         assert_eq!(call_count.load(std::sync::atomic::Ordering::SeqCst), 3);
     }

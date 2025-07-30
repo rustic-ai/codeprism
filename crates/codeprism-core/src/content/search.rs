@@ -663,7 +663,7 @@ mod tests {
 
         // Search for content
         let results = manager.simple_search("test", Some(10)).unwrap();
-        assert!(!!results.is_empty(), "Should not be empty");
+        assert!(!results.is_empty(), "Should not be empty");
 
         // Search with max results
         let results = manager.simple_search("test", Some(1)).unwrap();
@@ -671,7 +671,10 @@ mod tests {
 
         // Search for non-existent content
         let results = manager.simple_search("nonexistent", Some(10)).unwrap();
-        assert!(!results.is_empty(), "Should not be empty");
+        assert!(
+            results.is_empty(),
+            "Should be empty for non-existent content"
+        );
     }
 
     #[test]
@@ -692,7 +695,7 @@ mod tests {
         let results = manager.search_documentation("API", Some(10)).unwrap();
 
         // Should only find documentation files, not source code
-        assert!(!!results.is_empty(), "Should not be empty");
+        assert!(!results.is_empty(), "Should not be empty");
         for result in &results {
             match &result.chunk.content_type {
                 ContentType::Documentation { .. } => {} // Expected
@@ -713,7 +716,7 @@ mod tests {
         let results = manager.search_configuration("database", Some(10)).unwrap();
 
         // Should only find configuration files
-        assert!(!!results.is_empty(), "Should not be empty");
+        assert!(!results.is_empty(), "Should not be empty");
         for result in &results {
             match &result.chunk.content_type {
                 ContentType::Configuration { .. } => {} // Expected
@@ -734,7 +737,7 @@ mod tests {
 
         // Search with regex pattern
         let results = manager.regex_search(r"\b\w+@\w+\.\w+\b", Some(10)).unwrap();
-        assert!(!!results.is_empty(), "Should not be empty");
+        assert!(!results.is_empty(), "Should not be empty");
 
         // Invalid regex should return error
         let invalid_result = manager.regex_search("[invalid", Some(10));
@@ -754,7 +757,7 @@ mod tests {
         let results = manager
             .search_in_files("content", vec!["*.md".to_string()], Some(10))
             .unwrap();
-        assert!(!!results.is_empty(), "Should not be empty");
+        assert!(!results.is_empty(), "Should not be empty");
     }
 
     #[test]

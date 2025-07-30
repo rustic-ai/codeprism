@@ -372,7 +372,7 @@ mod tests {
     #[test]
     fn test_jsonpath_evaluator_creation() {
         let evaluator = JsonPathEvaluator::new();
-        assert!(evaluator.is_ok());
+        assert!(evaluator.is_ok(), "Operation should succeed");
     }
 
     #[test]

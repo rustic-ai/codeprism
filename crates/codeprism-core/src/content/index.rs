@@ -901,7 +901,19 @@ mod tests {
         let _ = index.add_node(node);
 
         // Verify it exists
-        assert!(index.get_node(file_path).is_some());
+        assert!(
+            index.get_node(file_path).is_some(),
+            "Node should exist after adding"
+        );
+        let retrieved_node = index.get_node(file_path).unwrap();
+        assert_eq!(
+            retrieved_node.file_path, file_path,
+            "Retrieved node should have correct path"
+        );
+        assert!(
+            !retrieved_node.chunks.is_empty(),
+            "Retrieved node should have chunks"
+        );
 
         // Remove it
         let result = index.remove_node(file_path);

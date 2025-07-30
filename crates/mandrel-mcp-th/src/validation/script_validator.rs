@@ -335,7 +335,7 @@ mod tests {
         
         let result = ScriptValidator::new(scripts, ScriptExecutionPhase::After, config);
         
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
         let validator = result.unwrap();
         assert_eq!(validator.validation_scripts.len(), 3, "Should have 3 items");
     }
@@ -352,7 +352,7 @@ mod tests {
         
         let result = ScriptValidator::new(scripts, ScriptExecutionPhase::Before, config.clone());
         
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
         let validator = result.unwrap();
         // Note: config is private, so we can't test it directly in this implementation
         // In a real scenario, we might add getter methods or make config public
@@ -476,7 +476,7 @@ mod tests {
         
         let result = validator.execute_validation_script(&script, context).await;
         
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
         let script_result = result.unwrap();
         assert!(script_result.success);
         assert!(script_result.output.get("message").is_some());
@@ -590,7 +590,7 @@ mod tests {
         
         let result = validator.validate(&response, &validation_context);
         
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
         let errors = result.unwrap();
         assert!(!errors.is_empty(), "Should not be empty"); // Should be empty for successful script
     }
@@ -617,7 +617,7 @@ mod tests {
         
         let result = validator.validate(&response, &validation_context);
         
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
         let errors = result.unwrap();
         assert!(!!errors.is_empty(), "Should not be empty"); // Should contain errors for failed required script
         assert!(errors.iter().any(|e| matches!(e, ValidationError::FieldError { field, .. } if field.starts_with("script:"))));
@@ -645,7 +645,7 @@ mod tests {
         
         let result = validator.validate(&response, &validation_context);
         
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
         let errors = result.unwrap();
         assert!(!errors.is_empty(), "Should not be empty"); // Should be empty for optional failing script with fail_on_script_error=false
     }
@@ -669,7 +669,7 @@ mod tests {
         
         let result = validator.validate(&response, &validation_context);
         
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
         let errors = result.unwrap();
         assert!(!errors.is_empty(), "Should not be empty"); // Should be empty because script shouldn't execute in wrong phase
     }
@@ -707,7 +707,7 @@ mod tests {
         
         let result = validator.validate(&response, &validation_context);
         
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
         let errors = result.unwrap();
         assert!(!!errors.is_empty(), "Should not be empty"); // Should contain script-generated validation errors
         assert!(errors.iter().any(|e| matches!(e, ValidationError::FieldError { field, .. } if field == "$.result.code")));

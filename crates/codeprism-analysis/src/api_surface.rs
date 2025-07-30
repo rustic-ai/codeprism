@@ -463,12 +463,12 @@ mod tests {
             .find(|e| e.name == "test_function")
             .expect("Should have test_function");
         assert!(
-            !test_func.signature.is_empty(),
+            test_func.signature.is_some() && !test_func.signature.as_ref().unwrap().is_empty(),
             "Function should have signature"
         );
         assert!(
-            test_func.line_number > 0,
-            "Function should have valid line number"
+            !test_func.element_type.is_empty(),
+            "Function should have element type"
         );
     }
 

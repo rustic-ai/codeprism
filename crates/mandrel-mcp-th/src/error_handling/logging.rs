@@ -359,14 +359,14 @@ mod tests {
         let config = LoggingConfig::default();
         let logging_system = LoggingSystem::initialize(config);
 
-        assert!(logging_system.is_ok());
+        assert!(logging_system.is_ok(), "Operation should succeed");
 
         // Test that logging works
         info!("Test log message");
 
         let system = logging_system.unwrap();
         let stats = system.get_error_statistics();
-        assert!(stats.is_ok());
+        assert!(stats.is_ok(), "Operation should succeed");
     }
 
     #[test]

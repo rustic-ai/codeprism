@@ -728,7 +728,7 @@ mod tests {
 
         // This will fail until we implement ScriptManager
         let result = ScriptManager::new(scripts);
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
 
         let manager = result.unwrap();
         assert_eq!(manager.available_scripts.len(), 2, "Should have 2 items");
@@ -805,7 +805,7 @@ mod tests {
 
         // This will fail until we implement with_scripts constructor
         let result = TestCaseExecutor::with_scripts(client, config, scripts);
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
 
         let executor = result.unwrap();
         assert!(executor.script_manager.is_some(), "Should have value");
@@ -826,7 +826,7 @@ mod tests {
 
         // This will fail until we implement script execution
         let result = executor.execute_test_case("test_tool", &test_case).await;
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
 
         let test_result = result.unwrap();
         assert_eq!(test_result.script_results.len(), 1, "Should have 1 items");
@@ -852,7 +852,7 @@ mod tests {
             create_test_case_with_scripts("test_with_before_script", vec!["before_validator"]);
 
         let result = executor.execute_test_case("test_tool", &test_case).await;
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
 
         let test_result = result.unwrap();
         assert_eq!(test_result.script_results.len(), 1, "Should have 1 items");
@@ -882,7 +882,7 @@ mod tests {
         );
 
         let result = executor.execute_test_case("test_tool", &test_case).await;
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
 
         let test_result = result.unwrap();
         assert_eq!(test_result.script_results.len(), 2, "Should have 2 items");
@@ -918,7 +918,7 @@ mod tests {
             create_test_case_with_scripts("test_required_failure", vec!["failing_required_script"]);
 
         let result = executor.execute_test_case("test_tool", &test_case).await;
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
 
         let test_result = result.unwrap();
         assert!(!test_result.success); // Test should fail due to required script failure
@@ -948,7 +948,7 @@ mod tests {
             create_test_case_with_scripts("test_optional_failure", vec!["failing_optional_script"]);
 
         let result = executor.execute_test_case("test_tool", &test_case).await;
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
 
         let test_result = result.unwrap();
         // Test should still succeed despite optional script failure
@@ -980,7 +980,7 @@ mod tests {
         };
 
         let result = executor.execute_test_case("math_tool", &test_case).await;
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
 
         let test_result = result.unwrap();
         // Verify that script was executed with proper context
@@ -1019,7 +1019,7 @@ mod tests {
         let test_case = create_test_case_with_scripts("response_test", vec!["response_validator"]);
 
         let result = executor.execute_test_case("test_tool", &test_case).await;
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
 
         let test_result = result.unwrap();
         assert!(test_result.success); // Script should pass with response data
@@ -1044,7 +1044,7 @@ mod tests {
         let test_case = create_test_case_with_scripts("metrics_test", vec!["metrics_script"]);
 
         let result = executor.execute_test_case("test_tool", &test_case).await;
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
 
         let test_result = result.unwrap();
 
@@ -1071,7 +1071,7 @@ mod tests {
             create_test_case_with_scripts("multi_metrics", vec!["script1", "script2", "script3"]);
 
         let result = executor.execute_test_case("test_tool", &test_case).await;
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
 
         let test_result = result.unwrap();
 
@@ -1117,7 +1117,7 @@ mod tests {
         let test_case = create_test_case_with_scripts("timeout_test", vec!["timeout_script"]);
 
         let result = executor.execute_test_case("test_tool", &test_case).await;
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
 
         let test_result = result.unwrap();
         // Script should fail due to timeout, but test continues since it's optional
@@ -1169,7 +1169,7 @@ mod tests {
         };
 
         let result = executor.execute_test_case("test_tool", &test_case).await;
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
 
         let test_result = result.unwrap();
         // Should work exactly as before - no script results
@@ -1218,7 +1218,7 @@ mod tests {
         };
 
         let result = executor.execute_test_case("add_tool", &test_case).await;
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
 
         let test_result = result.unwrap();
 

@@ -304,8 +304,7 @@ impl JsonPathEvaluator {
                         (
                             false,
                             Some(format!(
-                                "Array length {} not in range {}..{}",
-                                len, min_len, max_str
+                                "Array length {len} not in range {min_len}..{max_str}"
                             )),
                         )
                     }

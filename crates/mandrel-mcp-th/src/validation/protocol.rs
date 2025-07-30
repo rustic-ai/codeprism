@@ -252,8 +252,7 @@ impl ProtocolValidator {
                     category: ProtocolCategory::FieldMissing,
                     severity: ValidationSeverity::Error,
                     message: format!(
-                        "Required field '{}' missing from {} result",
-                        required_field, method
+                        "Required field '{required_field}' missing from {method} result"
                     ),
                     field_path: Some(format!("result.{required_field}")),
                     expected: Some("present".to_string()),

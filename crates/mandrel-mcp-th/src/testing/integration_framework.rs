@@ -77,9 +77,9 @@ impl IntegrationTestFramework {
         let test_project = "test-projects/rust-test-project";
 
         let config = format!(
-            r#"name: "Test {} Tool"
+            r#"name: "Test {tool_name} Tool"
 version: "1.0.0"
-description: "Integration test for {} tool"
+description: "Integration test for {tool_name} tool"
 
 capabilities:
   tools: true
@@ -99,13 +99,13 @@ server:
   shutdown_timeout_seconds: 10
 
 tools:
-  - name: "{}"
-    description: "Test {} tool functionality"
+  - name: "{tool_name}"
+    description: "Test {tool_name} tool functionality"
     tests:
-      - name: "basic_{}_test"
-        description: "Basic functionality test for {}"
+      - name: "basic_{tool_name}_test"
+        description: "Basic functionality test for {tool_name}"
         input:
-          project_path: "{}"
+          project_path: "{test_project}"
           language: "rust"
         expected:
           error: false
@@ -113,8 +113,7 @@ tools:
           max_duration_ms: 10000
           max_memory_mb: 100
         tags: ["integration", "tool_test"]
-"#,
-            tool_name, tool_name, tool_name, tool_name, tool_name, tool_name, test_project
+"#
         );
 
         Ok(config)

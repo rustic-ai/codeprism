@@ -290,12 +290,17 @@ mod tests {
 
         // Test find_by_id
         let found = repo.find_by_id(&user_id).await.unwrap();
-        assert!(found.is_some());
+        assert!(found.is_some(), "Should find user by ID");
+        let found_user = found.unwrap();
+        assert_eq!(found_user.name(), "Test User", "Found user should have correct name");
+        assert_eq!(found_user.email(), "test@example.com", "Found user should have correct email");
         assert_eq!(found.unwrap().name(), "Test User");
 
         // Test find_all
         let all_users = repo.find_all().await.unwrap();
-        assert_eq!(all_users.len(), 1);
+        assert_eq!(all_users.len(), 1, "Should have exactly 1 user in repository");
+        assert_eq!(all_users[0].name(), "Test User", "User in repository should have correct name");
+        assert!(all_users[0].is_active(), "User should be active by default");
 
         // Test delete
         let deleted = repo.delete(&user_id).await.unwrap();
@@ -319,11 +324,19 @@ mod tests {
 
         let active_filter = ActiveUserFilter;
         let filtered = active_filter.apply(users.clone());
-        assert_eq!(filtered.len(), 2);
+        assert_eq!(filtered.len(), 2, "Should have 2 active users after filtering");
+        // Verify the filtered users are actually active
+        assert!(filtered.iter().all(|u| u.is_active()), "All filtered users should be active");
+        let names: Vec<&str> = filtered.iter().map(|u| u.name()).collect();
+        assert!(names.contains(&"Active User"), "Should contain Active User");
+        assert!(names.contains(&"Young User"), "Should contain Young User");
 
         let age_filter = AgeRangeFilter::new(22, 28);
         let age_filtered = age_filter.apply(users);
-        assert_eq!(age_filtered.len(), 1);
+        assert_eq!(age_filtered.len(), 1, "Should have 1 user in age range 22-28");
+        let filtered_user = &age_filtered[0];
+        assert!(filtered_user.age() >= 22 && filtered_user.age() <= 28, "Filtered user should be within age range");
+        assert_eq!(filtered_user.name(), "Active User", "Filtered user should be Active User");
         assert_eq!(age_filtered[0].age(), 25);
     }
 } 

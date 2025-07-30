@@ -159,7 +159,12 @@ mod tests {
         let result = service.batch_process(users).await.unwrap();
         assert_eq!(result.successful, 2);
         assert_eq!(result.failed, 1);
-        assert!(!result.errors.is_empty());
+        assert!(!result.errors.is_empty(), "Batch processing should report errors for invalid users");
+        
+        // Verify the errors contain meaningful information about validation failures
+        assert_eq!(result.errors.len(), 1, "Should have exactly 1 error for the invalid user");
+        let error = &result.errors[0];
+        assert!(error.contains("validation") || error.contains("invalid"), "Error should describe validation failure: {}", error);
     }
 
     #[tokio::test]
@@ -176,8 +181,12 @@ mod tests {
         service.process_user(user).await.unwrap();
 
         let found = service.find_user_by_name("Findable User").await.unwrap();
-        assert!(found.is_some());
-        assert_eq!(found.unwrap().name(), "Findable User");
+        assert!(found.is_some(), "Should find user by name");
+        let found_user = found.unwrap();
+        assert_eq!(found_user.name(), "Findable User", "Found user should have correct name");
+        assert_eq!(found_user.email(), "findable@example.com", "Found user should have correct email");
+        assert_eq!(found_user.age(), 25, "Found user should have correct age");
+        // This assertion is now redundant as we verify it above
 
         let not_found = service.find_user_by_name("Non-existent User").await.unwrap();
         assert!(not_found.is_none());

@@ -244,7 +244,29 @@ mod tests {
 
         for error in errors {
             let error_string = error.to_string();
-            assert!(!error_string.is_empty());
+            assert!(!error_string.is_empty(), "Error string should not be empty");
+            
+            // Verify error strings contain meaningful information
+            match error {
+                ValidationError::Required { field } => {
+                    assert!(error_string.contains(&field), "Error should contain field name: {}", field);
+                    assert!(error_string.contains("required"), "Error should indicate requirement");
+                },
+                ValidationError::InvalidFormat { field } => {
+                    assert!(error_string.contains(&field), "Error should contain field name: {}", field);
+                    assert!(error_string.contains("format"), "Error should mention format issue");
+                },
+                ValidationError::TooShort { field, min } => {
+                    assert!(error_string.contains(&field), "Error should contain field name: {}", field);
+                    assert!(error_string.contains(&min.to_string()), "Error should contain minimum length: {}", min);
+                },
+                ValidationError::OutOfRange { field, min, max } => {
+                    assert!(error_string.contains(&field), "Error should contain field name: {}", field);
+                    assert!(error_string.contains(&min.to_string()), "Error should contain min value: {}", min);
+                    assert!(error_string.contains(&max.to_string()), "Error should contain max value: {}", max);
+                },
+                _ => {}
+            }
         }
     }
 } 

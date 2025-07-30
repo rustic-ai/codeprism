@@ -569,8 +569,8 @@ mod tests {
             !span.is_empty(),
             "Span with non-zero range should not be empty"
         );
-        assert_eq!(span.start, 0, "Span should start at position 0");
-        assert_eq!(span.end, 10, "Span should end at position 10");
+        assert_eq!(span.start_byte, 10, "Span should start at byte 10");
+        assert_eq!(span.end_byte, 20, "Span should end at byte 20");
 
         let empty_span = Span::new(10, 10, 2, 2, 5, 5);
         assert_eq!(empty_span.len(), 0, "Should have 0 items");
@@ -579,8 +579,8 @@ mod tests {
             "Span with same start and end should be empty"
         );
         assert_eq!(
-            empty_span.start, empty_span.end,
-            "Empty span should have equal start and end"
+            empty_span.start_byte, empty_span.end_byte,
+            "Empty span should have equal start and end bytes"
         );
     }
 

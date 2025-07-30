@@ -537,14 +537,9 @@ mod tests {
         );
 
         // Verify managers are functional
-        assert!(
-            manager.content_index.nodes.is_empty(),
-            "New manager should have empty content index"
-        );
-        assert!(
-            manager_default.content_index.nodes.is_empty(),
-            "Default manager should have empty content index"
-        );
+        // Verify managers have proper initialization
+        assert!(manager.index.get_stats().total_nodes == 0, "New manager should start with no nodes");
+        assert!(manager_default.index.get_stats().total_nodes == 0, "Default manager should start with no nodes");
     }
 
     #[test]
@@ -558,10 +553,8 @@ mod tests {
 
         // Verify the graph store is functional
         let graph_store = manager.graph_store.as_ref().unwrap();
-        assert!(
-            graph_store.nodes.is_empty(),
-            "New graph store should start empty"
-        );
+        // Verify the graph store is accessible
+        assert!(graph_store.get_node_count() == 0, "New graph store should start empty");
     }
 
     #[test]
@@ -767,7 +760,16 @@ mod tests {
 
         // Index a file
         let _ = manager.index_file(file_path, "# Temporary\n\nThis will be removed.");
-        assert!(manager.get_node(file_path).is_some());
+        assert!(
+            manager.get_node(file_path).is_some(),
+            "Node should exist after indexing"
+        );
+        let node = manager.get_node(file_path).unwrap();
+        assert_eq!(
+            node.file_path, file_path,
+            "Node should have correct file path"
+        );
+        assert!(!node.chunks.is_empty(), "Node should have content chunks");
 
         // Remove the file
         let result = manager.remove_file(file_path);
@@ -784,8 +786,25 @@ mod tests {
         let _ = manager.index_file(Path::new("test2.md"), "Content 2");
 
         // Verify files are indexed
-        assert!(manager.get_node(Path::new("test1.md")).is_some());
-        assert!(manager.get_node(Path::new("test2.md")).is_some());
+        assert!(
+            manager.get_node(Path::new("test1.md")).is_some(),
+            "First file should be indexed"
+        );
+        let node1 = manager.get_node(Path::new("test1.md")).unwrap();
+        assert_eq!(
+            node1.chunks[0].content, "Content 1",
+            "First file should have correct content"
+        );
+
+        assert!(
+            manager.get_node(Path::new("test2.md")).is_some(),
+            "Second file should be indexed"
+        );
+        let node2 = manager.get_node(Path::new("test2.md")).unwrap();
+        assert_eq!(
+            node2.chunks[0].content, "Content 2",
+            "Second file should have correct content"
+        );
 
         // Clear all content
         manager.clear();

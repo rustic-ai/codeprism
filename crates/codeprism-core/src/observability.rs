@@ -199,7 +199,7 @@ impl MetricsCollector {
             error_severity_distribution: metrics
                 .error_severity_counts
                 .iter()
-                .map(|(k, v)| (format!("{:?}", k), *v))
+                .map(|(k, v)| (format!("{k:?}"), *v))
                 .collect(),
             operation_metrics,
             resource_usage: metrics.resource_usage.clone(),
@@ -387,14 +387,12 @@ impl HealthMonitor {
 
         let message = match status {
             HealthStatus::Healthy => "Error rates within acceptable limits".to_string(),
-            HealthStatus::Degraded => format!(
-                "Warning: High error rates in operations: {:?}",
-                warning_operations
-            ),
-            HealthStatus::Unhealthy => format!(
-                "Critical: Very high error rates in operations: {:?}",
-                high_error_operations
-            ),
+            HealthStatus::Degraded => {
+                format!("Warning: High error rates in operations: {warning_operations:?}")
+            }
+            HealthStatus::Unhealthy => {
+                format!("Critical: Very high error rates in operations: {high_error_operations:?}")
+            }
         };
 
         ComponentHealth {
@@ -435,14 +433,14 @@ impl HealthMonitor {
         let message = match status {
             HealthStatus::Healthy => "All circuit breakers closed".to_string(),
             HealthStatus::Degraded => {
-                format!("Circuit breakers in recovery: {:?}", half_open_circuits)
+                format!("Circuit breakers in recovery: {half_open_circuits:?}")
             }
-            HealthStatus::Unhealthy => format!("Open circuit breakers: {:?}", open_circuits),
+            HealthStatus::Unhealthy => format!("Open circuit breakers: {open_circuits:?}"),
         };
 
         let circuit_metrics = states
             .iter()
-            .map(|(k, v)| (k.clone(), serde_json::Value::String(format!("{:?}", v))))
+            .map(|(k, v)| (k.clone(), serde_json::Value::String(format!("{v:?}"))))
             .collect();
 
         ComponentHealth {
@@ -477,7 +475,7 @@ impl HealthMonitor {
             };
 
             if *usage > threshold {
-                high_usage_resources.push(format!("{}: {}", resource, usage));
+                high_usage_resources.push(format!("{resource}: {usage}"));
             }
         }
 
@@ -491,9 +489,9 @@ impl HealthMonitor {
 
         let message = match status {
             HealthStatus::Healthy => "Resource usage normal".to_string(),
-            HealthStatus::Degraded => format!("High resource usage: {:?}", high_usage_resources),
+            HealthStatus::Degraded => format!("High resource usage: {high_usage_resources:?}"),
             HealthStatus::Unhealthy => {
-                format!("Critical resource usage: {:?}", high_usage_resources)
+                format!("Critical resource usage: {high_usage_resources:?}")
             }
         };
 

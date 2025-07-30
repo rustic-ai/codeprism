@@ -432,8 +432,8 @@ mod tests {
                 let ext = if i % 2 == 0 { "js" } else { "py" };
                 let context = ParseContext::new(
                     "test_repo".to_string(),
-                    PathBuf::from(format!("test{}.{}", i, ext)),
-                    format!("function test{}() {{}}", i),
+                    PathBuf::from(format!("test{i}.{ext}")),
+                    format!("function test{i}() {{}}"),
                 );
                 engine_clone.parse_file(context).unwrap()
             });

@@ -567,10 +567,10 @@ impl Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Io(e) => write!(f, "IO error: {}", e),
-            Self::Json(e) => write!(f, "JSON error: {}", e),
+            Self::Io(e) => write!(f, "IO error: {e}"),
+            Self::Json(e) => write!(f, "JSON error: {e}"),
             Self::Config { key, message, .. } => {
-                write!(f, "Config error in '{}': {}", key, message)
+                write!(f, "Config error in '{key}': {message}")
             }
             Self::Parse {
                 file,
@@ -584,30 +584,30 @@ impl fmt::Display for Error {
                     write!(f, "Parse error in {}: {}", file.display(), message)
                 }
             }
-            Self::Network { message, .. } => write!(f, "Network error: {}", message),
-            Self::Database { message, .. } => write!(f, "Database error: {}", message),
+            Self::Network { message, .. } => write!(f, "Network error: {message}"),
+            Self::Database { message, .. } => write!(f, "Database error: {message}"),
             Self::ResourceExhausted {
                 resource, message, ..
             } => {
-                write!(f, "Resource exhausted ({}): {}", resource, message)
+                write!(f, "Resource exhausted ({resource}): {message}")
             }
             Self::Timeout {
                 operation, timeout, ..
             } => {
-                write!(f, "Timeout in '{}' after {:?}", operation, timeout)
+                write!(f, "Timeout in '{operation}' after {timeout:?}")
             }
             Self::Cancelled { operation, .. } => {
-                write!(f, "Operation '{}' was cancelled", operation)
+                write!(f, "Operation '{operation}' was cancelled")
             }
             Self::Permission {
                 resource, message, ..
             } => {
-                write!(f, "Permission denied for '{}': {}", resource, message)
+                write!(f, "Permission denied for '{resource}': {message}")
             }
             Self::Validation { field, message, .. } => {
-                write!(f, "Validation error in '{}': {}", field, message)
+                write!(f, "Validation error in '{field}': {message}")
             }
-            Self::Generic { message, .. } => write!(f, "{}", message),
+            Self::Generic { message, .. } => write!(f, "{message}"),
         }
     }
 }

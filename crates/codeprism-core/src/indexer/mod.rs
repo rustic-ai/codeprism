@@ -512,13 +512,10 @@ impl ProgressReporter for IndexingProgressReporter {
                 match total {
                     Some(total) => {
                         let percent = (current as f64 / total as f64) * 100.0;
-                        println!(
-                            "Indexing progress: {}/{} files ({:.1}%)",
-                            current, total, percent
-                        );
+                        println!("Indexing progress: {current}/{total} files ({percent:.1}%)");
                     }
                     None => {
-                        println!("Indexing progress: {} files processed", current);
+                        println!("Indexing progress: {current} files processed");
                     }
                 }
                 *last_report = now;
@@ -532,7 +529,7 @@ impl ProgressReporter for IndexingProgressReporter {
 
     fn report_error(&self, error: &Error) {
         if self.verbose {
-            eprintln!("Indexing error: {}", error);
+            eprintln!("Indexing error: {error}");
         }
     }
 }

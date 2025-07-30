@@ -448,7 +448,7 @@ impl ConfigParser {
                     let new_path = if key_path.is_empty() {
                         key.clone()
                     } else {
-                        format!("{}.{}", key_path, key)
+                        format!("{key_path}.{key}")
                     };
                     self.extract_json_values(
                         val,
@@ -462,7 +462,7 @@ impl ConfigParser {
             }
             Value::Array(arr) => {
                 for (index, val) in arr.iter().enumerate() {
-                    let new_path = format!("{}[{}]", key_path, index);
+                    let new_path = format!("{key_path}[{index}]");
                     self.extract_json_values(
                         val,
                         file_path,
@@ -484,7 +484,7 @@ impl ConfigParser {
                 let searchable_content = if key_path.is_empty() {
                     value_str.clone()
                 } else {
-                    format!("{}: {}", key_path, value_str)
+                    format!("{key_path}: {value_str}")
                 };
 
                 // Try to find the approximate location in the original content
@@ -554,7 +554,7 @@ impl ConfigParser {
                         ContentType::Configuration {
                             format: ConfigFormat::Yaml,
                         },
-                        format!("{}: {}", key, value),
+                        format!("{key}: {value}"),
                         span,
                         chunks.len(),
                     )
@@ -618,7 +618,7 @@ impl ConfigParser {
                     ContentType::Configuration {
                         format: ConfigFormat::Toml,
                     },
-                    format!("{} = {}", key, value),
+                    format!("{key} = {value}"),
                     span,
                     chunks.len(),
                 )
@@ -714,7 +714,7 @@ impl ConfigParser {
                     ContentType::Configuration {
                         format: format.clone(),
                     },
-                    format!("{}={}", key, value),
+                    format!("{key}={value}"),
                     span,
                     chunks.len(),
                 )
@@ -1005,8 +1005,7 @@ mod tests {
             assert_eq!(
                 std::mem::discriminant(&detected_type),
                 std::mem::discriminant(&expected_type),
-                "Failed for file: {}",
-                filename
+                "Failed for file: {filename}"
             );
         }
     }
@@ -1531,8 +1530,7 @@ And even more lines."#;
         let mut content = String::new();
         for i in 0..100 {
             content.push_str(&format!(
-                "# Header {}\n\nThis is paragraph {} with some content.\n\n",
-                i, i
+                "# Header {i}\n\nThis is paragraph {i} with some content.\n\n"
             ));
         }
 

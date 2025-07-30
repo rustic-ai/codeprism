@@ -254,7 +254,7 @@ impl RepositoryManager {
         let repo_info = self
             .repositories
             .get_mut(repo_id)
-            .ok_or_else(|| Error::other(format!("Repository not found: {}", repo_id)))?;
+            .ok_or_else(|| Error::other(format!("Repository not found: {repo_id}")))?;
 
         let progress = progress_reporter.unwrap_or_else(|| Arc::new(NoOpProgressReporter));
 
@@ -317,7 +317,7 @@ impl RepositoryManager {
         let repo_info = self
             .repositories
             .get_mut(repo_id)
-            .ok_or_else(|| Error::other(format!("Repository not found: {}", repo_id)))?;
+            .ok_or_else(|| Error::other(format!("Repository not found: {repo_id}")))?;
 
         // Check if repository path still exists
         if !repo_info.config.root_path.exists() {

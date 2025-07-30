@@ -305,14 +305,14 @@ mod tests {
 
         // Add many nodes
         for i in 0..100 {
-            let node = create_test_node(&format!("func{}", i));
+            let node = create_test_node(&format!("func{i}"));
             builder = builder.add_node(node);
         }
 
         // Add many deletions
         for i in 0..50 {
-            builder = builder.delete_node(format!("old_node_{}", i));
-            builder = builder.delete_edge(format!("old_edge_{}", i));
+            builder = builder.delete_node(format!("old_node_{i}"));
+            builder = builder.delete_edge(format!("old_edge_{i}"));
         }
 
         let patch = builder.build();

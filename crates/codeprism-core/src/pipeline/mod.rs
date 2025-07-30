@@ -211,7 +211,7 @@ impl MonitoringPipeline {
         event_handler: Arc<dyn PipelineEventHandler>,
     ) -> Result<Self> {
         let file_watcher = FileWatcher::with_debounce(config.debounce_duration)
-            .map_err(|e| Error::watcher(format!("Failed to create file watcher: {}", e)))?;
+            .map_err(|e| Error::watcher(format!("Failed to create file watcher: {e}")))?;
 
         Ok(Self {
             config,
@@ -230,7 +230,7 @@ impl MonitoringPipeline {
         // Start watching the repository
         self.file_watcher
             .watch_dir(repo_path, repo_path.to_path_buf())
-            .map_err(|e| Error::watcher(format!("Failed to watch directory: {}", e)))?;
+            .map_err(|e| Error::watcher(format!("Failed to watch directory: {e}")))?;
 
         // Start the processing loop
         let (shutdown_tx, shutdown_rx) = oneshot::channel();

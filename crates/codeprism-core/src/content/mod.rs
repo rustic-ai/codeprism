@@ -480,8 +480,7 @@ mod tests {
             assert_eq!(
                 std::mem::discriminant(&content_type),
                 std::mem::discriminant(&deserialized),
-                "Serialization roundtrip failed for: {:?}",
-                content_type
+                "Serialization roundtrip failed for: {content_type:?}"
             );
         }
     }

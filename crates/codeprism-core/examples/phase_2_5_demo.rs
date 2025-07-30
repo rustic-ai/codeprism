@@ -108,7 +108,7 @@ async fn main() -> Result<()> {
 
     // Demonstrate health check
     let health = repo_manager.health_check("demo_repo").await?;
-    println!("   🩺 Health status: {:?}", health);
+    println!("   🩺 Health status: {health:?}");
 
     // Step 4: Demonstrate File Monitoring Pipeline (setup only)
     println!("\n👁️  Step 4: File Monitoring Pipeline");
@@ -136,7 +136,7 @@ async fn main() -> Result<()> {
     println!("\n📊 Step 5: Overall Statistics");
     let total_stats = repo_manager.get_total_stats();
     for (key, value) in &total_stats {
-        println!("   - {}: {}", key, value);
+        println!("   - {key}: {value}");
     }
 
     println!("\n🎉 Phase 2.5 Demo Complete!");
@@ -153,7 +153,7 @@ async fn main() -> Result<()> {
 /// Create a test repository with sample source files
 async fn create_test_repository() -> Result<TempDir> {
     let temp_dir =
-        TempDir::new().map_err(|e| Error::io(format!("Failed to create temp directory: {}", e)))?;
+        TempDir::new().map_err(|e| Error::io(format!("Failed to create temp directory: {e}")))?;
 
     let repo_path = temp_dir.path();
 
@@ -174,7 +174,7 @@ module.exports = { main, calculateSum };
 "#,
     )
     .await
-    .map_err(|e| Error::io(format!("Failed to write file: {}", e)))?;
+    .map_err(|e| Error::io(format!("Failed to write file: {e}")))?;
 
     fs::write(
         repo_path.join("utils.py"),
@@ -196,7 +196,7 @@ if __name__ == "__main__":
 "#,
     )
     .await
-    .map_err(|e| Error::io(format!("Failed to write file: {}", e)))?;
+    .map_err(|e| Error::io(format!("Failed to write file: {e}")))?;
 
     fs::write(
         repo_path.join("config.ts"),
@@ -219,12 +219,12 @@ export function getFeatureCount(): number {
 "#,
     )
     .await
-    .map_err(|e| Error::io(format!("Failed to write file: {}", e)))?;
+    .map_err(|e| Error::io(format!("Failed to write file: {e}")))?;
 
     // Create subdirectory with more files
     fs::create_dir(repo_path.join("src"))
         .await
-        .map_err(|e| Error::io(format!("Failed to create directory: {}", e)))?;
+        .map_err(|e| Error::io(format!("Failed to create directory: {e}")))?;
 
     fs::write(
         repo_path.join("src/helper.js"),
@@ -239,7 +239,7 @@ module.exports = { advancedCalculation };
 "#,
     )
     .await
-    .map_err(|e| Error::io(format!("Failed to write file: {}", e)))?;
+    .map_err(|e| Error::io(format!("Failed to write file: {e}")))?;
 
     fs::write(
         repo_path.join("src/data.py"),
@@ -260,7 +260,7 @@ if __name__ == "__main__":
 "#,
     )
     .await
-    .map_err(|e| Error::io(format!("Failed to write file: {}", e)))?;
+    .map_err(|e| Error::io(format!("Failed to write file: {e}")))?;
 
     // Add some files that should be ignored
     fs::write(
@@ -268,14 +268,14 @@ if __name__ == "__main__":
         "# Demo Repository\nThis is a demonstration repository for CodePrism Phase 2.5.",
     )
     .await
-    .map_err(|e| Error::io(format!("Failed to write file: {}", e)))?;
+    .map_err(|e| Error::io(format!("Failed to write file: {e}")))?;
 
     fs::write(
         repo_path.join("package.json"),
         r#"{"name": "demo", "version": "1.0.0"}"#,
     )
     .await
-    .map_err(|e| Error::io(format!("Failed to write file: {}", e)))?;
+    .map_err(|e| Error::io(format!("Failed to write file: {e}")))?;
 
     Ok(temp_dir)
 }

@@ -667,11 +667,11 @@ impl ContentIndex {
     /// Convert content type to string for indexing
     fn content_type_to_string(&self, content_type: &ContentType) -> String {
         match content_type {
-            ContentType::Code { language } => format!("code:{:?}", language),
-            ContentType::Documentation { format } => format!("doc:{:?}", format),
-            ContentType::Configuration { format } => format!("config:{:?}", format),
+            ContentType::Code { language } => format!("code:{language:?}"),
+            ContentType::Documentation { format } => format!("doc:{format:?}"),
+            ContentType::Configuration { format } => format!("config:{format:?}"),
             ContentType::Comment { language, context } => {
-                format!("comment:{:?}:{:?}", language, context)
+                format!("comment:{language:?}:{context:?}")
             }
             ContentType::PlainText => "text".to_string(),
         }
@@ -1205,10 +1205,10 @@ mod tests {
 
         // Add multiple documents with the same term
         for i in 0..10 {
-            let file_path = PathBuf::from(format!("doc{}.md", i));
+            let file_path = PathBuf::from(format!("doc{i}.md"));
             let chunk = create_test_chunk(
                 &file_path,
-                &format!("Document {} contains the search term", i),
+                &format!("Document {i} contains the search term"),
                 ContentType::Documentation {
                     format: DocumentFormat::Markdown,
                 },
@@ -1239,7 +1239,7 @@ mod tests {
             let file_path = Path::new(file_name);
             let chunk = create_test_chunk(
                 file_path,
-                &format!("Content {}", i),
+                &format!("Content {i}"),
                 ContentType::Documentation {
                     format: DocumentFormat::Markdown,
                 },

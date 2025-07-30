@@ -21,7 +21,7 @@ impl NodeId {
         hasher.update(file_path.to_string_lossy().as_bytes());
         hasher.update(&span.start_byte.to_le_bytes());
         hasher.update(&span.end_byte.to_le_bytes());
-        hasher.update(format!("{:?}", kind).as_bytes());
+        hasher.update(format!("{kind:?}").as_bytes());
 
         let hash = hasher.finalize();
         let mut id = [0u8; 16];

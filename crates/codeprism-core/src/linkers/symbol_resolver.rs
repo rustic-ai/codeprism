@@ -189,7 +189,7 @@ impl SymbolResolver {
     /// Find a symbol in a specific module
     fn find_symbol_in_module(&self, module_path: &str, symbol_name: &str) -> Option<NodeId> {
         // Try qualified name first
-        let qualified_name = format!("{}.{}", module_path, symbol_name);
+        let qualified_name = format!("{module_path}.{symbol_name}");
         if let Some(node_id) = self.qualified_symbols.get(&qualified_name) {
             return Some(*node_id);
         }

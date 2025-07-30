@@ -478,8 +478,13 @@ mod tests {
         
         assert!(result.is_ok(), "Operation should succeed");
         let script_result = result.unwrap();
-        assert!(script_result.success);
-        assert!(script_result.output.get("message").is_some());
+        assert!(script_result.success, "Script execution should succeed");
+        assert!(script_result.output.get("message").is_some(), "Output should contain a message field");
+        
+        // Validate the actual message content
+        let message = script_result.output.get("message").unwrap();
+        assert!(!message.as_str().unwrap_or("").is_empty(), "Message should not be empty");
+        assert!(message.as_str().unwrap_or("").contains("test"), "Message should contain test content");
     }
 
     #[tokio::test]

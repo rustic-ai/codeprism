@@ -211,7 +211,16 @@ mod tests {
 
         // First item should always be unstructured text for backward compatibility
         let first_content = &response.content[0];
-        assert!(first_content.as_text().is_some());
+        assert!(
+            first_content.as_text().is_some(),
+            "First content should be text for backward compatibility"
+        );
+        let text_content = first_content.as_text().unwrap();
+        assert!(!text_content.text.is_empty(), "Text content should not be empty");
+        assert!(
+            text_content.text.contains("test data"),
+            "Text should contain the actual test data"
+        );
     }
 
     #[test]
@@ -247,7 +256,25 @@ mod tests {
             // This test will help us verify when structured content is working
             let second_content = &response.content[1];
             // Verify structured content exists when SDK supports multiple content items
-            assert!(second_content.as_text().is_some() || second_content.as_resource().is_some());
+            let has_text = second_content.as_text().is_some();
+            let has_resource = second_content.as_resource().is_some();
+            assert!(
+                has_text || has_resource,
+                "Second content should be either text or resource"
+            );
+
+            // Validate the actual content based on type
+            if has_text {
+                let text = second_content.as_text().unwrap();
+                assert!(
+                    !text.text.is_empty(),
+                    "Structured text content should not be empty"
+                );
+            }
+            if has_resource {
+                let resource = second_content.as_resource().unwrap();
+                assert!(!resource.resource.uri.is_empty(), "Resource URI should not be empty");
+            }
         }
     }
 }

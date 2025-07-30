@@ -676,14 +676,21 @@ mod tests {
             );
 
         let error = Error::parse_with_context("test.rs", "test error", context);
-        assert!(error.get_context().is_some());
+        assert!(
+            error.get_context().is_some(),
+            "Error should have context when created with context"
+        );
+
+        let error_context = error.get_context().unwrap();
         assert_eq!(
-            error.get_context().unwrap().request_id,
-            Some("req-123".to_string())
+            error_context.request_id,
+            Some("req-123".to_string()),
+            "Context should preserve request_id"
         );
         assert_eq!(
-            error.get_context().unwrap().operation,
-            Some("test-op".to_string())
+            error_context.operation,
+            Some("test-op".to_string()),
+            "Context should preserve operation"
         );
     }
 

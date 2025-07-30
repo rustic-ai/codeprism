@@ -245,12 +245,35 @@ mod tests {
         let parser = Arc::new(MockParser::new(Language::JavaScript));
         registry.register(parser.clone());
 
-        // Test direct language lookup
-        assert!(registry.get(Language::JavaScript).is_some());
+        // Test direct language lookup with functionality validation
+        assert!(
+            registry.get(Language::JavaScript).is_some(),
+            "JavaScript parser should be registered"
+        );
+        let js_parser = registry.get(Language::JavaScript).unwrap();
+        assert_eq!(
+            js_parser.language(),
+            Language::JavaScript,
+            "Parser should return correct language"
+        );
+        // Verify we get the same language (ptr_eq doesn't work with trait objects)
+        assert_eq!(js_parser.language(), parser.language(), "Should return parser with same language");
 
-        // Test extension lookup
-        assert!(registry.get_by_extension("js").is_some());
-        assert!(registry.get_by_extension("ts").is_none()); // Not registered
+        // Test extension lookup with functionality validation
+        assert!(
+            registry.get_by_extension("js").is_some(),
+            "Should find parser by .js extension"
+        );
+        let js_parser_by_ext = registry.get_by_extension("js").unwrap();
+        assert_eq!(
+            js_parser_by_ext.language(),
+            Language::JavaScript,
+            "Extension lookup should return JavaScript parser"
+        );
+        assert!(
+            registry.get_by_extension("ts").is_none(),
+            "Should not find parser for unregistered .ts extension"
+        );
     }
 
     #[test]

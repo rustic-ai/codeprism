@@ -425,7 +425,16 @@ mod tests {
         let registry = Arc::new(LanguageRegistry::new());
         let manager = RepositoryManager::new(registry);
 
-        assert_eq!(manager.list_repositories().len(), 0);
+        assert_eq!(
+            manager.list_repositories().len(),
+            0,
+            "New manager should start with no repositories"
+        );
+        let repos = manager.list_repositories();
+        assert!(
+            repos.is_empty(),
+            "Repository list should be empty initially"
+        );
     }
 
     #[test]
@@ -436,7 +445,24 @@ mod tests {
 
         let result = manager.register_repository(config);
         assert!(result.is_ok(), "Repository operation should succeed");
-        assert_eq!(manager.list_repositories().len(), 1);
+        assert_eq!(
+            manager.list_repositories().len(),
+            1,
+            "Should have 1 repository after registration"
+        );
+
+        // Verify repository content and properties
+        let repos = manager.list_repositories();
+        let repo = &repos[0];
+        assert_eq!(
+            repo.config.name, "test_repo",
+            "Repository should have correct name"
+        );
+        assert_eq!(
+            repo.config.path,
+            temp_dir.path(),
+            "Repository should have correct path"
+        );
     }
 
     #[test]
@@ -456,10 +482,36 @@ mod tests {
         let config = RepositoryConfig::new("test_repo".to_string(), temp_dir.path());
 
         manager.register_repository(config).unwrap();
-        assert_eq!(manager.list_repositories().len(), 1);
+        assert_eq!(
+            manager.list_repositories().len(),
+            1,
+            "Should have 1 repository after registration"
+        );
+
+        // Verify repository exists with correct name
+        let repos_before = manager.list_repositories();
+        assert_eq!(
+            repos_before[0].config.name, "test_repo",
+            "Repository should have correct name"
+        );
 
         manager.unregister_repository("test_repo");
-        assert_eq!(manager.list_repositories().len(), 0);
+        assert_eq!(
+            manager.list_repositories().len(),
+            0,
+            "Should have 0 repositories after unregistration"
+        );
+
+        // Verify repository is actually removed
+        let repos_after = manager.list_repositories();
+        assert!(
+            repos_after.is_empty(),
+            "Repository list should be empty after unregistration"
+        );
+        assert!(
+            !repos_after.iter().any(|r| r.config.name == "test_repo"),
+            "test_repo should be completely removed"
+        );
     }
 
     #[tokio::test]

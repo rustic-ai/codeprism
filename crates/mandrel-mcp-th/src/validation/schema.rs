@@ -260,7 +260,19 @@ mod tests {
 
         let result = validator.add_schema("person".to_string(), schema);
         assert!(result.is_ok(), "Operation should succeed");
-        assert_eq!(validator.schema_info().len(), 1);
+        assert_eq!(
+            validator.schema_info().len(),
+            1,
+            "Should have 1 schema after adding"
+        );
+
+        // Verify schema content and functionality
+        let schema_info = validator.schema_info();
+        assert!(
+            schema_info.contains("person"),
+            "Should contain 'person' schema"
+        );
+        // Note: schema_info returns Vec<String> of schema names, not the actual schemas
     }
 
     #[test]
@@ -474,11 +486,33 @@ mod tests {
             .add_schema("test_schema".to_string(), schema)
             .unwrap();
 
-        assert_eq!(validator.schema_info().len(), 1);
+        assert_eq!(
+            validator.schema_info().len(),
+            1,
+            "Should have 1 schema after adding"
+        );
+
+        // Verify schema exists before removal
+        let schemas_before = validator.schema_info();
+        assert!(
+            schemas_before.contains("test_schema"),
+            "Should contain test_schema before removal"
+        );
 
         let removed = validator.remove_schema("test_schema");
-        assert!(removed);
-        assert_eq!(validator.schema_info().len(), 0);
+        assert!(removed, "Should successfully remove existing schema");
+        assert_eq!(
+            validator.schema_info().len(),
+            0,
+            "Should have 0 schemas after removal"
+        );
+
+        // Verify schema is actually gone
+        let schemas_after = validator.schema_info();
+        assert!(
+            !schemas_after.contains("test_schema"),
+            "Should not contain test_schema after removal"
+        );
 
         let not_removed = validator.remove_schema("nonexistent");
         assert!(!not_removed);

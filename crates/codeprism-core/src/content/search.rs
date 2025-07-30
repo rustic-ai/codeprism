@@ -561,7 +561,18 @@ mod tests {
         let graph_store = manager.graph_store.as_ref().unwrap();
         // Verify the graph store is accessible
         // Verify the graph store functionality (basic check since internal fields are private)
-        assert!(graph_store.get_node(&NodeId::new("test", Path::new("test.rs"), &Span::new(0, 1, 1, 1, 1, 2), &NodeKind::Function)).is_none(), "New graph store should start empty");
+        use crate::{Span, NodeKind};
+        assert!(
+            graph_store
+                .get_node(&NodeId::new(
+                    "test",
+                    Path::new("test.rs"),
+                    &Span::new(0, 1, 1, 1, 1, 2),
+                    &NodeKind::Function
+                ))
+                .is_none(),
+            "New graph store should start empty"
+        );
     }
 
     #[test]

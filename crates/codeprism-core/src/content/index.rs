@@ -1410,10 +1410,31 @@ mod tests {
         let node = create_test_node(file_path, vec![chunk]);
         let _ = index.add_node(node);
 
-        // Verify content exists
-        assert!(index.get_node(file_path).is_some());
+        // Verify content exists and validate its properties
+        assert!(
+            index.get_node(file_path).is_some(),
+            "Node should exist after adding"
+        );
+        let retrieved_node = index.get_node(file_path).unwrap();
+        assert_eq!(
+            retrieved_node.file_path, file_path,
+            "Retrieved node should have correct file path"
+        );
+        assert!(
+            !retrieved_node.chunks.is_empty(),
+            "Retrieved node should have chunks"
+        );
+        assert_eq!(
+            retrieved_node.chunks[0].content, "Test content for clear",
+            "Chunk should have correct content"
+        );
+
         let stats = index.get_stats();
-        assert!(stats.total_files > 0);
+        assert!(
+            stats.total_files > 0,
+            "Stats should show files after adding content"
+        );
+        assert_eq!(stats.total_files, 1, "Should have exactly 1 file");
 
         // Clear all content
         index.clear();

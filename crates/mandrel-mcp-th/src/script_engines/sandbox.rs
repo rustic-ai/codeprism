@@ -419,7 +419,17 @@ mod tests {
         let result = monitor.execute_with_monitoring(normal_script).await;
 
         // Should succeed when within limits
-        assert!(result.is_ok());
+        assert!(
+            result.is_ok(),
+            "Script execution within limits should succeed"
+        );
+
+        // Verify the result contains expected data
+        let result_value = result.unwrap();
+        assert_eq!(
+            result_value, "Success",
+            "Normal script should return expected result"
+        );
 
         // Test that we get real memory metrics
         let metrics = monitor.get_metrics().await;
@@ -608,8 +618,8 @@ mod tests {
         assert!(!sandbox.is_path_allowed(Path::new("/home/user/blocked/file.txt")));
     }
 
-    #[test]
-    fn test_resource_limits_configuration() {
+    #[tokio::test]
+    async fn test_resource_limits_configuration() {
         let limits = ResourceLimits {
             memory_mb: Some(128),
             cpu_time_ms: 5000,
@@ -618,11 +628,40 @@ mod tests {
             network_bandwidth_kbps: Some(1024),
         };
 
-        assert_eq!(limits.memory_mb, Some(128));
-        assert_eq!(limits.cpu_time_ms, 5000);
-        assert_eq!(limits.disk_space_mb, Some(20));
-        assert_eq!(limits.max_file_descriptors, Some(50));
-        assert_eq!(limits.network_bandwidth_kbps, Some(1024));
+        // Verify configuration values are set correctly
+        assert_eq!(limits.memory_mb, Some(128), "Memory limit should be 128 MB");
+        assert_eq!(limits.cpu_time_ms, 5000, "CPU time limit should be 5000 ms");
+        assert_eq!(
+            limits.disk_space_mb,
+            Some(20),
+            "Disk space limit should be 20 MB"
+        );
+        assert_eq!(
+            limits.max_file_descriptors,
+            Some(50),
+            "File descriptor limit should be 50"
+        );
+        assert_eq!(
+            limits.network_bandwidth_kbps,
+            Some(1024),
+            "Network bandwidth limit should be 1024 kbps"
+        );
+
+        // Actually test the limits by creating a monitor with them
+        let monitor = ResourceMonitor::new(limits);
+        let metrics = monitor.get_metrics().await;
+
+        // Verify that the monitor is functional and returns metrics
+        assert!(
+            metrics.memory_usage_bytes <= 128 * 1024 * 1024,
+            "Memory usage should be within configured limit, got: {} bytes",
+            metrics.memory_usage_bytes
+        );
+        assert!(
+            metrics.cpu_time_ms <= 5000,
+            "CPU time should be within configured limit, got: {} ms",
+            metrics.cpu_time_ms
+        );
     }
 
     #[tokio::test]
@@ -648,7 +687,33 @@ mod tests {
 
         // Create sandbox
         sandbox.create_sandbox().await.unwrap();
-        assert!(sandbox.temp_sandbox_dir.is_some());
+        assert!(
+            sandbox.temp_sandbox_dir.is_some(),
+            "Sandbox should have temp directory after creation"
+        );
+
+        // Verify the sandbox directory actually exists and is usable
+        let temp_dir = sandbox.temp_sandbox_dir.as_ref().unwrap();
+        assert!(
+            temp_dir.exists(),
+            "Temp sandbox directory should exist on filesystem"
+        );
+        assert!(temp_dir.is_dir(), "Temp sandbox path should be a directory");
+
+        // Verify we can actually use the sandbox (create a test file)
+        let test_file = temp_dir.join("test.txt");
+        std::fs::write(&test_file, "test content").expect("Should be able to write to sandbox");
+        assert!(
+            test_file.exists(),
+            "Should be able to create files in sandbox"
+        );
+
+        let content =
+            std::fs::read_to_string(&test_file).expect("Should be able to read from sandbox");
+        assert_eq!(
+            content, "test content",
+            "Sandbox file operations should work correctly"
+        );
 
         // Cleanup sandbox
         sandbox.cleanup_sandbox().await.unwrap();

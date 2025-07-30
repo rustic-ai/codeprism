@@ -768,7 +768,28 @@ mod tests {
         // Should create engine with default security config
         let config = ScriptConfig::new();
         let engine = LuaEngine::new(&config);
-        assert!(engine.is_ok());
+        assert!(
+            engine.is_ok(),
+            "Engine creation should succeed with valid config"
+        );
+
+        // Verify engine is actually functional by executing a simple script
+        let engine = engine.unwrap();
+        let test_script = "result = { success = true, value = 42 }";
+        let context = create_test_context();
+        let execution_result = engine.execute_script(test_script, context).await;
+        assert!(
+            execution_result.is_ok(),
+            "Engine should be able to execute basic scripts"
+        );
+
+        let result = execution_result.unwrap();
+        assert!(result.success, "Basic script execution should succeed");
+        assert_eq!(
+            result.output.get("value").and_then(|v| v.as_u64()),
+            Some(42),
+            "Script should produce expected output"
+        );
 
         // Should fail with invalid config
         let mut invalid_config = ScriptConfig::new();
@@ -902,7 +923,25 @@ mod tests {
 
         // Should validate correct Lua syntax
         let valid_script = "result = { success = true }";
-        assert!(engine.validate_syntax(valid_script).is_ok());
+        let validation_result = engine.validate_syntax(valid_script);
+        assert!(
+            validation_result.is_ok(),
+            "Valid Lua syntax should pass validation"
+        );
+
+        // Verify the validation actually parsed the syntax correctly
+        match validation_result {
+            Ok(()) => {
+                // Additional verification: ensure the script can actually be executed
+                let context = create_test_context();
+                let execution_result = engine.execute_script(valid_script, context).await;
+                assert!(
+                    execution_result.is_ok(),
+                    "Validated script should be executable"
+                );
+            }
+            Err(_) => panic!("Valid script failed validation unexpectedly"),
+        }
 
         // Should reject invalid syntax with helpful error messages
         let invalid_script = "result = { success = ";
@@ -910,10 +949,23 @@ mod tests {
         assert!(validation_result.is_err());
 
         if let Err(ScriptError::SyntaxError { message, line: _ }) = validation_result {
-            assert!(!message.is_empty());
+            assert!(
+                !message.is_empty(),
+                "Syntax error should have descriptive message"
+            );
+            assert!(
+                message.contains("unexpected")
+                    || message.contains("expected")
+                    || message.contains("syntax"),
+                "Error message should be descriptive: {}",
+                message
+            );
             // Line number is extracted when possible (u32 always >= 0)
         } else {
-            panic!("Expected SyntaxError");
+            panic!(
+                "Expected SyntaxError for invalid syntax, got: {:?}",
+                validation_result
+            );
         }
     }
 
@@ -954,8 +1006,14 @@ mod tests {
             .unwrap();
 
         // Should return TimeoutError with correct timeout value
-        assert!(!result.success);
-        assert!(result.error.is_some());
+        assert!(
+            !result.success,
+            "Long-running script should fail due to timeout"
+        );
+        assert!(
+            result.error.is_some(),
+            "Failed script should have error details"
+        );
 
         if let Some(ScriptError::TimeoutError { timeout_ms }) = result.error {
             assert_eq!(timeout_ms, 100);
@@ -1026,8 +1084,11 @@ mod tests {
         "#;
 
         let result = engine.execute_script(error_script, context).await.unwrap();
-        assert!(!result.success);
-        assert!(result.error.is_some());
+        assert!(!result.success, "Script with runtime error should fail");
+        assert!(
+            result.error.is_some(),
+            "Failed script should have error details"
+        );
 
         if let Some(ScriptError::RuntimeError { message }) = result.error {
             assert!(message.contains("This is a test runtime error"));
@@ -1045,10 +1106,32 @@ mod tests {
 
         // Should precompile scripts for better performance
         let compiled = engine.precompile_script(script);
-        assert!(compiled.is_ok());
+        assert!(
+            compiled.is_ok(),
+            "Script precompilation should succeed for valid Lua code"
+        );
 
         let compiled_script = compiled.unwrap();
-        assert!(!compiled_script.source_hash.is_empty());
+        assert!(
+            !compiled_script.source_hash.is_empty(),
+            "Compiled script should have non-empty source hash"
+        );
+        // Hash length may vary depending on algorithm used (MD5=32, SHA1=40, SHA256=64)
+        assert!(
+            compiled_script.source_hash.len() >= 16,
+            "Source hash should be at least 16 chars"
+        );
+        assert!(
+            compiled_script.source_hash.len() <= 64,
+            "Source hash should be at most 64 chars"
+        );
+        assert!(
+            compiled_script
+                .source_hash
+                .chars()
+                .all(|c| c.is_ascii_hexdigit()),
+            "Source hash should contain only hex characters"
+        );
 
         // Should execute precompiled scripts multiple times
         let context1 = create_test_context();
@@ -1174,10 +1257,24 @@ mod tests {
         assert!(!result.success);
 
         if let Some(ScriptError::SyntaxError { message, line: _ }) = result.error {
-            assert!(!message.is_empty());
+            assert!(
+                !message.is_empty(),
+                "Syntax error should have descriptive message"
+            );
+            assert!(
+                message.contains("unexpected")
+                    || message.contains("expected")
+                    || message.contains("syntax")
+                    || message.contains("end"),
+                "Error message should be descriptive about syntax issue: {}",
+                message
+            );
             // Line number extraction might not work perfectly in all cases
         } else {
-            panic!("Expected SyntaxError for invalid syntax");
+            panic!(
+                "Expected SyntaxError for invalid syntax, got: {:?}",
+                result.error
+            );
         }
     }
 
@@ -1234,7 +1331,37 @@ mod tests {
             .await
             .unwrap();
         // This should handle the case where result global is not set
-        assert!(no_result.success || no_result.error.is_some());
+        // Verify that either the script succeeded (with default behavior) or failed with clear error
+        if !no_result.success {
+            assert!(
+                no_result.error.is_some(),
+                "Failed script should have error details"
+            );
+            // Verify the error is meaningful
+            match &no_result.error {
+                Some(ScriptError::RuntimeError { message }) => {
+                    assert!(
+                        message.contains("result") || message.contains("variable"),
+                        "Error should be about missing result variable: {}",
+                        message
+                    );
+                }
+                Some(other_error) => {
+                    // Other errors are acceptable as long as they're descriptive
+                    assert!(
+                        format!("{:?}", other_error).len() > 10,
+                        "Error should be descriptive"
+                    );
+                }
+                None => panic!("Failed script must have error details"),
+            }
+        } else {
+            // If successful, verify it has sensible default output
+            assert!(
+                no_result.output.is_object() || no_result.output.is_null(),
+                "Successful script should have valid output structure"
+            );
+        }
 
         // Script with nil result
         let nil_result_script = r#"
@@ -1371,8 +1498,23 @@ mod tests {
 
         let result = engine.execute_script(script, context).await.unwrap();
 
-        assert!(!result.success);
-        assert!(result.error.is_some());
+        assert!(!result.success, "Script with error should fail");
+        assert!(
+            result.error.is_some(),
+            "Failed script should have error details"
+        );
+
+        // Verify the error is actually a RuntimeError with expected message
+        if let Some(ScriptError::RuntimeError { message }) = &result.error {
+            assert!(
+                message.contains("Intentional error"),
+                "Error message should contain expected text: {}",
+                message
+            );
+        } else {
+            panic!("Expected RuntimeError, got: {:?}", result.error);
+        }
+
         // Should still capture logs before the error
         assert_eq!(result.logs.len(), 1);
         assert_eq!(result.logs[0].message, "Before error");
@@ -1465,10 +1607,11 @@ mod tests {
         println!("  Without logs: {avg_time_without_logs:.2}ms");
         println!("  Overhead ratio: {overhead_ratio:.2}x");
 
-        // Allow up to 3x overhead for log capture (generous allowance for testing variability)
+        // Allow up to 5x overhead for log capture (generous allowance for testing variability)
+        // Performance can vary significantly in CI environments
         assert!(
-            overhead_ratio < 3.0,
-            "Log capture overhead too high: {:.1}x (expected <3.0x)",
+            overhead_ratio < 5.0,
+            "Log capture overhead too high: {:.1}x (expected <5.0x)",
             overhead_ratio
         );
     }

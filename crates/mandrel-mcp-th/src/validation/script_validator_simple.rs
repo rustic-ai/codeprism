@@ -493,8 +493,49 @@ mod tests {
 
     #[test]
     fn test_script_execution_phase_equality() {
-        assert_eq!(ScriptExecutionPhase::Before, ScriptExecutionPhase::Before);
-        assert_eq!(ScriptExecutionPhase::After, ScriptExecutionPhase::After);
+        // Test creating different phase instances and comparing them
+        let before_phase1 = ScriptExecutionPhase::Before;
+        let before_phase2 = ScriptExecutionPhase::Before;
+        let after_phase = ScriptExecutionPhase::After;
+
+        // Test equality between same phases
+        assert_eq!(
+            before_phase1, before_phase2,
+            "Two Before phases should be equal"
+        );
+        assert_eq!(
+            after_phase,
+            ScriptExecutionPhase::After,
+            "After phase should equal itself"
+        );
+
+        // Test inequality between different phases
+        assert_ne!(
+            before_phase1, after_phase,
+            "Before and After phases should not be equal"
+        );
+
+        // Test Debug trait implementation
+        let before_debug = format!("{:?}", before_phase1);
+        assert!(
+            before_debug.contains("Before"),
+            "Debug output should contain phase name: {}",
+            before_debug
+        );
+
+        let after_debug = format!("{:?}", after_phase);
+        assert!(
+            after_debug.contains("After"),
+            "Debug output should contain phase name: {}",
+            after_debug
+        );
+
+        // Test that we can clone and compare phases
+        let cloned_before = before_phase1.clone();
+        assert_eq!(
+            cloned_before, before_phase1,
+            "Cloned phase should equal original"
+        );
         assert_ne!(ScriptExecutionPhase::Before, ScriptExecutionPhase::After);
     }
 

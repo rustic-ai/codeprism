@@ -410,7 +410,22 @@ mod tests {
         collector.sample_memory();
 
         let samples = collector.get_memory_samples();
-        assert_eq!(samples.len(), 3);
+        assert_eq!(
+            samples.len(),
+            3,
+            "Should have exactly 3 memory samples after 3 collections"
+        );
+
+        // Verify samples have timestamps in chronological order
+        let mut prev_timestamp = samples[0].timestamp;
+        for (i, sample) in samples.iter().enumerate().skip(1) {
+            assert!(
+                sample.timestamp >= prev_timestamp,
+                "Sample {} timestamp should be >= previous timestamp",
+                i
+            );
+            prev_timestamp = sample.timestamp;
+        }
 
         // All samples should have reasonable memory values
         for sample in samples {

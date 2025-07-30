@@ -984,23 +984,77 @@ mod tests {
         });
         let response = create_test_response();
 
-        // Simple cache test - just verify it doesn't crash
-        let _result1 = engine.evaluate_jsonpath(&response, "$.status").unwrap();
-        let (_hits, _misses) = engine.cache_stats();
+        // Test that JSONPath evaluation works with caching enabled
+        let result1 = engine.evaluate_jsonpath(&response, "$.status").unwrap();
+        let (hits1, misses1) = engine.cache_stats();
 
-        // Second evaluation should work
-        let _result2 = engine.evaluate_jsonpath(&response, "$.status").unwrap();
-        let (_hits, _misses) = engine.cache_stats();
+        // Verify basic functionality
+        assert!(
+            !result1.is_null(),
+            "JSONPath evaluation should return non-null results"
+        );
+        // Note: Cache hits/misses are unsigned integers, so they're always >= 0
 
-        // Test passes if no panic occurs
-        assert_eq!(1, 1);
+        // Second evaluation should work consistently
+        let result2 = engine.evaluate_jsonpath(&response, "$.status").unwrap();
+        let (hits2, misses2) = engine.cache_stats();
+
+        // Verify results are consistent
+        assert_eq!(
+            result1, result2,
+            "Multiple evaluations should return same result"
+        );
+        assert!(hits2 >= hits1, "Cache hits should not decrease");
+        assert!(misses2 >= misses1, "Cache misses should not decrease");
+
+        // Test different JSONPath expression
+        let result3 = engine.evaluate_jsonpath(&response, "$.tools").unwrap();
+        assert!(!result3.is_null(), "Different JSONPath should also work");
+    }
+
+    #[test]
+    fn test_clear_cache() {
+        let mut engine = ValidationEngine::default();
+        let response = create_test_response();
+
+        // Add something to trigger cache usage and get baseline
+        let result_before = engine.evaluate_jsonpath(&response, "$.status").unwrap();
+        let (hits_before, misses_before) = engine.cache_stats();
+
+        // Clear cache and verify functionality still works
+        engine.clear_cache();
+        let (hits_after_clear, misses_after_clear) = engine.cache_stats();
+
+        // Verify cache operations work (implementation may vary)
+        assert!(
+            hits_after_clear <= hits_before,
+            "Cache hits after clear should not exceed previous"
+        );
+        assert!(
+            misses_after_clear <= misses_before,
+            "Cache misses after clear should not exceed previous"
+        );
+
+        // Verify JSONPath evaluation works after cache clear
+        let result_after_clear = engine.evaluate_jsonpath(&response, "$.status").unwrap();
+        let (_hits_new, _misses_new) = engine.cache_stats();
+
+        assert!(
+            !result_after_clear.is_null(),
+            "JSONPath evaluation should work after cache clear"
+        );
+        assert_eq!(
+            result_after_clear, result_before,
+            "Result should be consistent after cache clear"
+        );
+        // Note: Cache hits/misses are unsigned integers, so they're always >= 0
     }
 
     #[test]
     fn test_cache_overflow() {
         let mut engine = ValidationEngine::new(ValidationConfig {
             enable_caching: true,
-            max_cache_size: 2, // Very small cache
+            max_cache_size: 2, // Small cache size to test overflow
             ..Default::default()
         });
         let response = create_test_response();
@@ -1011,23 +1065,16 @@ mod tests {
         let result3 = engine.evaluate_jsonpath(&response, "$.metadata");
 
         // Should handle cache overflow gracefully - in our simple implementation, this should work
-        assert!(result3.is_ok() || result3.is_err()); // Either is fine for now
-    }
+        assert!(
+            result3.is_ok() || result3.is_err(),
+            "Cache overflow should be handled gracefully"
+        );
 
-    #[test]
-    fn test_clear_cache() {
-        let mut engine = ValidationEngine::default();
-        let response = create_test_response();
-
-        // Add something to trigger cache usage
-        let _result = engine.evaluate_jsonpath(&response, "$.status").unwrap();
-
-        // Clear cache
-        engine.clear_cache();
-        let (_hits, _misses) = engine.cache_stats();
-
-        // Test passes if no panic occurs
-        assert_eq!(1, 1);
+        // Verify cache stats remain sane
+        let (hits, misses) = engine.cache_stats();
+        // Note: Cache hits/misses are unsigned integers, so they're always >= 0
+        // Just verify the function returns without panicking
+        let _ = (hits, misses);
     }
 
     #[tokio::test]

@@ -196,9 +196,39 @@ mod tests {
         let config = MemoryTrackingConfig::default();
         let tracker = MemoryTracker::new(config);
 
-        assert!(tracker.config.enabled);
-        assert!(!tracker.config.fail_on_error);
-        assert_eq!(tracker.config.min_delta_mb, 0.1);
+        // Verify configuration is set correctly
+        assert!(
+            tracker.config.enabled,
+            "Memory tracking should be enabled by default"
+        );
+        assert!(
+            !tracker.config.fail_on_error,
+            "Should not fail on error by default"
+        );
+        assert_eq!(
+            tracker.config.min_delta_mb, 0.1,
+            "Default minimum delta should be 0.1 MB"
+        );
+
+        // Actually test the tracker functionality by taking a snapshot
+        let snapshot_result = tracker.snapshot();
+        assert!(
+            snapshot_result.is_ok(),
+            "Should be able to take memory snapshot"
+        );
+
+        let snapshot = snapshot_result.unwrap();
+        // Verify snapshot has reasonable values (RSS should be non-zero for running process)
+        // On some platforms/configurations, heap might be 0, but RSS should have some value
+        assert!(
+            snapshot.rss_bytes > 0 || !tracker.config.enabled,
+            "RSS bytes should be non-zero for enabled tracking, got: {} bytes",
+            snapshot.rss_bytes
+        );
+        assert!(
+            snapshot.timestamp.elapsed() < Duration::from_secs(1),
+            "Snapshot timestamp should be recent"
+        );
     }
 
     #[tokio::test]
@@ -301,15 +331,47 @@ mod tests {
 
     #[tokio::test]
     async fn test_memory_tracking_error_handling() {
-        // Test that error types exist and can be created properly
-        // FUTURE(#304): Add platform-specific error injection testing
-        let error = MemoryError::PlatformUnavailable {
+        // Test error type creation and formatting
+        let platform_error = MemoryError::PlatformUnavailable {
             message: "Test error".to_string(),
         };
+        assert!(
+            platform_error
+                .to_string()
+                .contains("Platform memory API unavailable"),
+            "Platform error should contain expected message"
+        );
 
-        assert!(error
-            .to_string()
-            .contains("Platform memory API unavailable"));
+        let measurement_error = MemoryError::MeasurementFailed {
+            message: "Measurement failed".to_string(),
+        };
+        assert!(
+            measurement_error.to_string().contains("Measurement failed"),
+            "Measurement error should contain expected message"
+        );
+
+        // Test disabled tracker returns OK with zero values
+        let config = MemoryTrackingConfig {
+            enabled: false,
+            ..Default::default()
+        };
+        let disabled_tracker = MemoryTracker::new(config);
+
+        let snapshot_result = disabled_tracker.snapshot();
+        assert!(
+            snapshot_result.is_ok(),
+            "Disabled tracker should still return OK"
+        );
+
+        let snapshot = snapshot_result.unwrap();
+        assert_eq!(
+            snapshot.rss_bytes, 0,
+            "Disabled tracker should return zero RSS"
+        );
+        assert_eq!(
+            snapshot.heap_bytes, 0,
+            "Disabled tracker should return zero heap"
+        );
     }
 
     #[tokio::test]

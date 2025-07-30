@@ -289,10 +289,44 @@ mod tests {
         ];
         let groups = scheduler.schedule_execution(&order);
 
-        assert_eq!(groups.len(), 3);
-        assert_eq!(groups[0], vec!["test1"]);
-        assert_eq!(groups[1], vec!["test2"]);
-        assert_eq!(groups[2], vec!["test3"]);
+        assert_eq!(
+            groups.len(),
+            3,
+            "Sequential execution should create 3 groups for 3 tests"
+        );
+        assert_eq!(
+            groups[0],
+            vec!["test1"],
+            "First group should contain only test1"
+        );
+        assert_eq!(
+            groups[1],
+            vec!["test2"],
+            "Second group should contain only test2"
+        );
+        assert_eq!(
+            groups[2],
+            vec!["test3"],
+            "Third group should contain only test3"
+        );
+
+        // Verify sequential behavior: each group has exactly one test
+        for (i, group) in groups.iter().enumerate() {
+            assert_eq!(
+                group.len(),
+                1,
+                "Sequential group {} should have exactly 1 test",
+                i
+            );
+        }
+
+        // Verify total test count is preserved
+        let total_tests: usize = groups.iter().map(|g| g.len()).sum();
+        assert_eq!(
+            total_tests,
+            order.len(),
+            "Total tests in groups should match input order"
+        );
     }
 
     #[test]
@@ -305,9 +339,46 @@ mod tests {
         ];
         let groups = scheduler.schedule_execution(&order);
 
-        assert_eq!(groups.len(), 2);
-        assert_eq!(groups[0], vec!["test1", "test2"]);
-        assert_eq!(groups[1], vec!["test3"]);
+        assert_eq!(
+            groups.len(),
+            2,
+            "Parallel execution with parallelism=2 should create 2 groups for 3 tests"
+        );
+        assert_eq!(
+            groups[0],
+            vec!["test1", "test2"],
+            "First group should contain first 2 tests"
+        );
+        assert_eq!(
+            groups[1],
+            vec!["test3"],
+            "Second group should contain remaining test"
+        );
+
+        // Verify parallel behavior: first group has max parallelism, second has remainder
+        assert!(
+            groups[0].len() <= 2,
+            "First group should not exceed parallelism limit of 2"
+        );
+        assert!(
+            groups[1].len() <= 2,
+            "Second group should not exceed parallelism limit of 2"
+        );
+
+        // Verify total test count is preserved
+        let total_tests: usize = groups.iter().map(|g| g.len()).sum();
+        assert_eq!(
+            total_tests,
+            order.len(),
+            "Total tests in groups should match input order"
+        );
+
+        // Verify optimal parallelization: first group should be full when possible
+        assert_eq!(
+            groups[0].len(),
+            2,
+            "First group should use full parallelism when 3+ tests available"
+        );
     }
 
     #[test]

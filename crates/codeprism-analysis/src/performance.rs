@@ -1022,7 +1022,7 @@ mod tests {
             .analyze_content(code, &["concurrency_bottlenecks".to_string()], "low")
             .unwrap();
 
-        assert!(!issues.is_empty());
+        assert!(!issues.is_empty(), "Should find performance issues");
         assert!(issues.iter().any(|i| i.issue_type == "Thread Contention"));
     }
 
@@ -1074,7 +1074,7 @@ mod tests {
             .analyze_content(code, &["hot_spots".to_string()], "low")
             .unwrap();
 
-        assert!(!issues.is_empty());
+        assert!(!issues.is_empty(), "Should find performance issues");
         assert!(issues
             .iter()
             .any(|i| i.issue_type == "Database Query in Loop"));
@@ -1089,7 +1089,7 @@ mod tests {
             .analyze_content(code, &["time_complexity".to_string()], "low")
             .unwrap();
 
-        assert!(!issues.is_empty());
+        assert!(!issues.is_empty(), "Should find performance issues");
         assert!(issues
             .iter()
             .any(|i| i.issue_type == "Inefficient String Concatenation"));

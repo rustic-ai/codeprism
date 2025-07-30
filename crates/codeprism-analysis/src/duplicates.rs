@@ -1116,7 +1116,7 @@ mod tests {
         let content = "line1\nline2\nline3\nline4\nline1\nline2\nline3\nline5";
         let duplicates = analyzer.find_duplicate_blocks(content, 3, 0.8).unwrap();
 
-        assert!(!duplicates.is_empty());
+        assert!(!duplicates.is_empty(), "Should find duplicate code");
     }
 
     #[test]
@@ -1134,6 +1134,6 @@ mod tests {
         let duplicates = analyzer
             .find_code_duplicates(temp_dir.path(), 0.8, 1, &[])
             .unwrap();
-        assert!(!duplicates.is_empty());
+        assert!(!duplicates.is_empty(), "Should find duplicate code");
     }
 }

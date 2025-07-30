@@ -680,7 +680,10 @@ mod tests {
             .analyze_content(vulnerable_code, &["injection".to_string()], "low")
             .unwrap();
 
-        assert!(!vulnerabilities.is_empty());
+        assert!(
+            !vulnerabilities.is_empty(),
+            "Should find security vulnerabilities"
+        );
         assert_eq!(vulnerabilities[0].vulnerability_type, "SQL Injection");
     }
 
@@ -693,7 +696,10 @@ mod tests {
             .analyze_content(vulnerable_code, &["authentication".to_string()], "low")
             .unwrap();
 
-        assert!(!vulnerabilities.is_empty());
+        assert!(
+            !vulnerabilities.is_empty(),
+            "Should find security vulnerabilities"
+        );
         assert_eq!(vulnerabilities[0].vulnerability_type, "Hardcoded Password");
     }
 
@@ -706,7 +712,10 @@ mod tests {
             .analyze_content(vulnerable_code, &["crypto".to_string()], "low")
             .unwrap();
 
-        assert!(!vulnerabilities.is_empty());
+        assert!(
+            !vulnerabilities.is_empty(),
+            "Should find security vulnerabilities"
+        );
         assert_eq!(
             vulnerabilities[0].vulnerability_type,
             "Weak Crypto Algorithm"

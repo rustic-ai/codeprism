@@ -811,14 +811,42 @@ mod tests {
 
         // Add node to index
         let result = index.add_node(node.clone());
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Adding valid content node should succeed");
 
-        // Retrieve the node
+        // Retrieve the node and verify its content
         let retrieved_node = index.get_node(file_path);
-        assert!(retrieved_node.is_some());
+        assert!(
+            retrieved_node.is_some(),
+            "Should be able to retrieve added node"
+        );
         let retrieved_node = retrieved_node.unwrap();
-        assert_eq!(retrieved_node.file_path, file_path);
-        assert_eq!(retrieved_node.chunks.len(), 1);
+        assert_eq!(
+            retrieved_node.file_path, file_path,
+            "Retrieved node should have correct file path"
+        );
+        assert_eq!(
+            retrieved_node.chunks.len(),
+            1,
+            "Retrieved node should have 1 chunk"
+        );
+
+        // Verify chunk content was preserved
+        assert_eq!(
+            retrieved_node.chunks[0].content, "# Test Document\n\nThis is a test.",
+            "Chunk content should be preserved"
+        );
+        assert!(
+            matches!(
+                retrieved_node.chunks[0].content_type,
+                ContentType::Documentation { .. }
+            ),
+            "Content type should be preserved"
+        );
+
+        // Verify index statistics updated
+        let stats = index.get_stats();
+        assert_eq!(stats.total_files, 1, "Stats should show 1 file");
+        assert_eq!(stats.total_chunks, 1, "Stats should show 1 chunk");
     }
 
     #[test]
@@ -877,7 +905,7 @@ mod tests {
 
         // Remove it
         let result = index.remove_node(file_path);
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Operation should succeed");
 
         // Verify it's gone
         assert!(index.get_node(file_path).is_none());

@@ -446,10 +446,30 @@ mod tests {
             .analyze_api_surface(code, &["public_api".to_string()], false)
             .unwrap();
 
-        assert!(!elements.is_empty());
-        assert!(elements
+        assert!(!elements.is_empty(), "Should find API surface elements");
+
+        // Verify elements contain the expected API surface
+        assert!(elements.len() >= 1, "Should have at least one API element");
+        assert!(
+            elements
+                .iter()
+                .any(|e| e.name == "test_function" && e.visibility == "public"),
+            "Should find public test_function"
+        );
+
+        // Verify element structure is meaningful
+        let test_func = elements
             .iter()
-            .any(|e| e.name == "test_function" && e.visibility == "public"));
+            .find(|e| e.name == "test_function")
+            .expect("Should have test_function");
+        assert!(
+            !test_func.signature.is_empty(),
+            "Function should have signature"
+        );
+        assert!(
+            test_func.line_number > 0,
+            "Function should have valid line number"
+        );
     }
 
     #[test]

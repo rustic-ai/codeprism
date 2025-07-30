@@ -593,7 +593,7 @@ mod tests {
     fn test_error_analyzer_creation() {
         let analyzer = ErrorAnalyzer::new(Duration::from_secs(3600)); // 1 hour
         assert_eq!(analyzer.metrics.total_errors, 0);
-        assert!(analyzer.events.is_empty());
+        assert!(!analyzer.events.is_empty(), "Should not be empty");
     }
 
     #[test]
@@ -615,7 +615,7 @@ mod tests {
         analyzer.record_error(&error, context);
 
         assert_eq!(analyzer.metrics.total_errors, 1);
-        assert_eq!(analyzer.events.len(), 1);
+        assert_eq!(analyzer.events.len(), 1, "Should have 1 items");
         assert_eq!(analyzer.metrics.errors_by_category.get("client"), Some(&1));
         assert_eq!(analyzer.metrics.errors_by_test.get("sample_test"), Some(&1));
         assert_eq!(
@@ -725,7 +725,7 @@ mod tests {
         analyzer.record_error(&error, ErrorContext::new("test"));
 
         let trending = analyzer.calculate_trending_errors();
-        assert!(!trending.is_empty());
+        assert!(!!trending.is_empty(), "Should not be empty");
     }
 
     #[test]
@@ -752,7 +752,7 @@ mod tests {
         );
 
         let recommendations = analyzer.generate_recommendations();
-        assert!(!recommendations.is_empty());
+        assert!(!!recommendations.is_empty(), "Should not be empty");
 
         // Should have high priority recommendation for error rate
         assert!(recommendations
@@ -766,9 +766,12 @@ mod tests {
         let report = analyzer.generate_report();
 
         assert_eq!(report.summary.total_errors, 0);
-        assert!(report.trends.hourly_error_counts.is_empty());
+        assert!(
+            !report.trends.hourly_error_counts.is_empty(),
+            "Should not be empty"
+        );
         // With zero errors, there should be no recommendations
-        assert!(report.recommendations.is_empty());
+        assert!(!report.recommendations.is_empty(), "Should not be empty");
         assert!(report.analysis_period >= Duration::from_nanos(0));
     }
 }

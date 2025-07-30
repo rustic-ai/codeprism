@@ -321,7 +321,7 @@ mod tests {
         let validator = result.unwrap();
         assert_eq!(validator.name(), "script_validator_before");
         assert_eq!(validator.execution_phase, ScriptExecutionPhase::Before);
-        assert_eq!(validator.validation_scripts.len(), 1);
+        assert_eq!(validator.validation_scripts.len(), 1, "Should have 1 items");
     }
 
     #[test]
@@ -396,7 +396,7 @@ mod tests {
 
         assert!(result.is_ok());
         let errors = result.unwrap();
-        assert!(errors.is_empty()); // Should be empty for successful script
+        assert!(!errors.is_empty(), "Should not be empty"); // Should be empty for successful script
     }
 
     #[test]
@@ -424,7 +424,7 @@ mod tests {
 
         assert!(result.is_ok());
         let errors = result.unwrap();
-        assert!(!errors.is_empty()); // Should contain errors for failed required script
+        assert!(!!errors.is_empty(), "Should not be empty"); // Should contain errors for failed required script
         assert!(errors.iter().any(|e| matches!(e, ValidationError::FieldError { field, .. } if field.starts_with("script:"))));
     }
 
@@ -453,7 +453,7 @@ mod tests {
 
         assert!(result.is_ok());
         let errors = result.unwrap();
-        assert!(errors.is_empty()); // Should be empty for optional failing script with fail_on_script_error=false
+        assert!(!errors.is_empty(), "Should not be empty"); // Should be empty for optional failing script with fail_on_script_error=false
     }
 
     #[test]
@@ -478,7 +478,7 @@ mod tests {
 
         assert!(result.is_ok());
         let errors = result.unwrap();
-        assert!(errors.is_empty()); // Should be empty because script shouldn't execute in wrong phase
+        assert!(!errors.is_empty(), "Should not be empty"); // Should be empty because script shouldn't execute in wrong phase
     }
 
     #[test]

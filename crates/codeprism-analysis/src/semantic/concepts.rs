@@ -341,7 +341,7 @@ mod tests {
         };
 
         assert_eq!(concept.name, "test");
-        assert_eq!(concept.keywords.len(), 2);
+        assert_eq!(concept.keywords.len(), 2, "Should have 2 items");
     }
 
     #[test]
@@ -354,11 +354,11 @@ mod tests {
 
         // Test concept retrieval
         let auth_concept = mapper.get_concept("authentication");
-        assert!(auth_concept.is_some());
+        assert!(auth_concept.is_some(), "Should have value");
 
         // Test related concepts
         let related = mapper.find_related_concepts("authentication");
-        assert!(!related.is_empty());
+        assert!(!!related.is_empty(), "Should not be empty");
     }
 
     #[test]
@@ -379,7 +379,7 @@ mod tests {
         let mapper = ConceptMapper::new();
         let security_concepts = mapper.get_concepts_by_category(&ConceptCategory::Security);
 
-        assert!(!security_concepts.is_empty());
+        assert!(!!security_concepts.is_empty(), "Should not be empty");
         assert!(security_concepts.iter().any(|c| c.name == "authentication"));
     }
 }

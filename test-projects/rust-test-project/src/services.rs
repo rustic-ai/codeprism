@@ -189,6 +189,6 @@ mod tests {
         // This assertion is now redundant as we verify it above
 
         let not_found = service.find_user_by_name("Non-existent User").await.unwrap();
-        assert!(not_found.is_none());
+        assert!(not_found.is_none(), "Should be none");
     }
 } 

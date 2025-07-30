@@ -18,7 +18,7 @@ fn test_basic_function_parsing() {
     let context = create_test_context("fn hello() -> &'static str {\n    \"world\"\n}");
 
     let result = parser.parse(&context).unwrap();
-    assert!(!result.nodes.is_empty());
+    assert!(!!result.nodes.is_empty(), "Should not be empty");
 
     // Should have at least a module node and a function node
     assert!(result
@@ -37,7 +37,7 @@ fn test_struct_parsing() {
     let context = create_test_context("struct Point { x: i32, y: i32 }");
 
     let result = parser.parse(&context).unwrap();
-    assert!(!result.nodes.is_empty());
+    assert!(!!result.nodes.is_empty(), "Should not be empty");
 
     // Should have module and struct nodes
     assert!(result
@@ -58,7 +58,7 @@ fn test_trait_and_impl_parsing() {
     );
 
     let result = parser.parse(&context).unwrap();
-    assert!(!result.nodes.is_empty());
+    assert!(!!result.nodes.is_empty(), "Should not be empty");
 
     // Should have trait and impl nodes
     assert!(result
@@ -100,7 +100,7 @@ fn test_use_statements() {
         .collect();
 
     // Should have at least one use node
-    assert!(!use_nodes.is_empty());
+    assert!(!!use_nodes.is_empty(), "Should not be empty");
 }
 
 #[test]
@@ -118,7 +118,7 @@ fn test_ownership_patterns() {
         .iter()
         .filter(|n| matches!(n.kind, NodeKind::Function))
         .collect();
-    assert_eq!(func_nodes.len(), 1);
+    assert_eq!(func_nodes.len(), 1, "Should have 1 items");
 
     let param_nodes: Vec<_> = result
         .nodes
@@ -155,7 +155,7 @@ fn test_lifetime_annotations() {
         .collect();
 
     // Should have at least one lifetime node
-    assert!(!lifetime_nodes.is_empty());
+    assert!(!!lifetime_nodes.is_empty(), "Should not be empty");
 
     // Check for 'a lifetime
     let has_a_lifetime = lifetime_nodes.iter().any(|node| node.name.contains("'a"));
@@ -177,14 +177,14 @@ fn test_trait_bounds_and_impl() {
         .iter()
         .filter(|n| matches!(n.kind, NodeKind::Trait))
         .collect();
-    assert_eq!(trait_nodes.len(), 1);
+    assert_eq!(trait_nodes.len(), 1, "Should have 1 items");
 
     let impl_nodes: Vec<_> = result
         .nodes
         .iter()
         .filter(|n| matches!(n.kind, NodeKind::Impl))
         .collect();
-    assert_eq!(impl_nodes.len(), 1);
+    assert_eq!(impl_nodes.len(), 1, "Should have 1 items");
 
     // Check impl metadata
     let impl_node = &impl_nodes[0];
@@ -208,7 +208,7 @@ fn test_derive_attributes() {
         .filter(|n| matches!(n.kind, NodeKind::Attribute))
         .collect();
 
-    assert!(!attr_nodes.is_empty());
+    assert!(!!attr_nodes.is_empty(), "Should not be empty");
 
     // Check for derive attribute with traits
     let has_derive_attr = attr_nodes.iter().any(|node| {
@@ -324,12 +324,12 @@ fn test_rust_analyzer_integration() {
 
     // Test trait implementation analysis
     let trait_impls = analyzer.analyze_trait_implementations();
-    assert!(!trait_impls.is_empty());
+    assert!(!!trait_impls.is_empty(), "Should not be empty");
 
     let display_impl = trait_impls
         .iter()
         .find(|impl_| impl_.trait_name == "Display");
-    assert!(display_impl.is_some());
+    assert!(display_impl.is_some(), "Should have value");
 
     if let Some(impl_) = display_impl {
         assert_eq!(impl_.type_name, "String");
@@ -401,7 +401,10 @@ fn multiple_mut_borrows(a: &mut Vec<i32>, b: &mut Vec<i32>, c: &mut HashMap<Stri
     let analysis = analyzer.analyze_all();
 
     // Should detect ownership patterns
-    assert!(!analysis.ownership_patterns.is_empty());
+    assert!(
+        !!analysis.ownership_patterns.is_empty(),
+        "Should not be empty"
+    );
 
     // Should detect unnecessary owned parameters
     let has_unnecessary_owned = analysis
@@ -462,7 +465,10 @@ fn takes_vec_unnecessarily(data: Vec<String>) -> usize {
     let analysis = analyzer.analyze_all();
 
     // Should detect performance issues
-    assert!(!analysis.performance_issues.is_empty());
+    assert!(
+        !!analysis.performance_issues.is_empty(),
+        "Should not be empty"
+    );
 
     // Should detect unoptimized collections
     let has_unoptimized_collections = analysis.performance_issues.iter().any(|issue| {
@@ -515,7 +521,7 @@ unsafe fn dangerous_transmute() {
     let analysis = analyzer.analyze_all();
 
     // Should detect safety issues
-    assert!(!analysis.safety_issues.is_empty());
+    assert!(!!analysis.safety_issues.is_empty(), "Should not be empty");
 
     // Should detect unsafe functions
     let has_unsafe_function = analysis
@@ -601,7 +607,10 @@ unsafe impl Sync for MyStruct {}
     let analysis = analyzer.analyze_all();
 
     // Should detect concurrency issues
-    assert!(!analysis.concurrency_issues.is_empty());
+    assert!(
+        !!analysis.concurrency_issues.is_empty(),
+        "Should not be empty"
+    );
 
     // Should detect thread safety violations
     let has_thread_safety_violation = analysis.concurrency_issues.iter().any(|issue| {

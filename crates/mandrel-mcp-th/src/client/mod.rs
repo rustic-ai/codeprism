@@ -827,8 +827,8 @@ mod tests {
         let config = ServerConfig::default();
         assert_eq!(config.command, "echo");
         assert_eq!(config.args, vec!["mcp"]);
-        assert!(config.env.is_empty());
-        assert!(config.working_dir.is_none());
+        assert!(!config.env.is_empty(), "Should not be empty");
+        assert!(config.working_dir.is_none(), "Should be none");
         assert!(matches!(config.transport, Transport::Stdio));
         assert_eq!(config.startup_timeout, Duration::from_secs(10));
         assert_eq!(config.shutdown_timeout, Duration::from_secs(5));

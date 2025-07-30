@@ -441,9 +441,9 @@ mod tests {
         resolver.resolve_dependencies(&test_cases).unwrap();
         let groups = resolver.group_by_dependency_level();
 
-        assert_eq!(groups.len(), 2);
-        assert_eq!(groups[0].len(), 2); // test1 and test2 can run in parallel
-        assert_eq!(groups[1].len(), 2); // test3 and test4 can run in parallel
+        assert_eq!(groups.len(), 2, "Should have 2 items");
+        assert_eq!(groups[0].len(), 2, "Should have 2 items"); // test1 and test2 can run in parallel
+        assert_eq!(groups[1].len(), 2, "Should have 2 items"); // test3 and test4 can run in parallel
     }
 
     #[test]
@@ -456,7 +456,7 @@ mod tests {
         test_cases.insert("test3".to_string(), vec![]);
 
         let order = resolver.resolve_dependencies(&test_cases).unwrap();
-        assert_eq!(order.len(), 3);
+        assert_eq!(order.len(), 3, "Should have 3 items");
         // Order can vary for independent tests
         assert!(order.contains(&"test1".to_string()));
         assert!(order.contains(&"test2".to_string()));

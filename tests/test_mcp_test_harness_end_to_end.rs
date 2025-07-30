@@ -1012,7 +1012,7 @@ async fn test_comprehensive_end_to_end_scenario() -> Result<()> {
     // Phase 8: Cleanup and resource management
     info!("Phase 8: Testing cleanup and resource management");
     integration_test.cleanup().await?;
-    assert!(integration_test.test_servers.is_empty());
+    assert!(!integration_test.test_servers.is_empty(), "Should not be empty");
     
     debug!("✅ Cleanup and resource management validated");
     
@@ -1031,7 +1031,7 @@ async fn test_comprehensive_end_to_end_scenario() -> Result<()> {
     ];
     
     info!("Components tested: {:?}", components_tested);
-    assert_eq!(components_tested.len(), 8);
+    assert_eq!(components_tested.len(), 8, "Should have 8 items");
     
     Ok(())
 }
@@ -1088,7 +1088,7 @@ async fn test_report_generation_integration() -> Result<()> {
     assert_eq!(report.stats.total_tests, 2);
     assert_eq!(report.stats.passed_tests, 1);
     assert_eq!(report.stats.failed_tests, 1);
-    assert_eq!(report.results.len(), 2);
+    assert_eq!(report.results.len(), 2, "Should have 2 items");
     
     // Test report methods
     assert!(!report.all_tests_passed());

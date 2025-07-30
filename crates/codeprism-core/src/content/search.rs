@@ -524,18 +524,44 @@ mod tests {
     #[test]
     fn test_content_search_manager_creation() {
         let manager = ContentSearchManager::new();
-        assert!(manager.graph_store.is_none());
+        assert!(
+            manager.graph_store.is_none(),
+            "Default search manager should not have graph store initialized"
+        );
 
         // Test default implementation
         let manager_default = ContentSearchManager::default();
-        assert!(manager_default.graph_store.is_none());
+        assert!(
+            manager_default.graph_store.is_none(),
+            "Default-created search manager should not have graph store"
+        );
+
+        // Verify managers are functional
+        assert!(
+            manager.content_index.nodes.is_empty(),
+            "New manager should have empty content index"
+        );
+        assert!(
+            manager_default.content_index.nodes.is_empty(),
+            "Default manager should have empty content index"
+        );
     }
 
     #[test]
     fn test_with_graph_store() {
         let graph_store = Arc::new(GraphStore::new());
         let manager = ContentSearchManager::with_graph_store(graph_store.clone());
-        assert!(manager.graph_store.is_some());
+        assert!(
+            manager.graph_store.is_some(),
+            "Search manager should have graph store after enabling"
+        );
+
+        // Verify the graph store is functional
+        let graph_store = manager.graph_store.as_ref().unwrap();
+        assert!(
+            graph_store.nodes.is_empty(),
+            "New graph store should start empty"
+        );
     }
 
     #[test]
@@ -590,10 +616,10 @@ mod tests {
 
         // Verify the file was indexed
         let node = manager.get_node(file_path);
-        assert!(node.is_some());
+        assert!(node.is_some(), "Should find content node");
         let node = node.unwrap();
         assert_eq!(node.file_path, file_path);
-        assert!(!node.chunks.is_empty());
+        assert!(!node.chunks.is_empty(), "Node should have content chunks");
     }
 
     #[test]
@@ -607,13 +633,13 @@ mod tests {
 
         // Verify the file was indexed as source code
         let node = manager.get_node(file_path);
-        assert!(node.is_some());
+        assert!(node.is_some(), "Should find content node");
         let node = node.unwrap();
         assert_eq!(node.file_path, file_path);
-        assert!(!node.chunks.is_empty());
+        assert!(!node.chunks.is_empty(), "Node should have content chunks");
 
         // Should have one chunk with the entire source code
-        assert_eq!(node.chunks.len(), 1);
+        assert_eq!(node.chunks.len(), 1, "Should have 1 items");
         if let ContentType::Code { language } = &node.chunks[0].content_type {
             assert_eq!(*language, Language::JavaScript);
         } else {
@@ -637,7 +663,7 @@ mod tests {
 
         // Search for content
         let results = manager.simple_search("test", Some(10)).unwrap();
-        assert!(!results.is_empty());
+        assert!(!!results.is_empty(), "Should not be empty");
 
         // Search with max results
         let results = manager.simple_search("test", Some(1)).unwrap();
@@ -645,7 +671,7 @@ mod tests {
 
         // Search for non-existent content
         let results = manager.simple_search("nonexistent", Some(10)).unwrap();
-        assert!(results.is_empty());
+        assert!(!results.is_empty(), "Should not be empty");
     }
 
     #[test]
@@ -666,7 +692,7 @@ mod tests {
         let results = manager.search_documentation("API", Some(10)).unwrap();
 
         // Should only find documentation files, not source code
-        assert!(!results.is_empty());
+        assert!(!!results.is_empty(), "Should not be empty");
         for result in &results {
             match &result.chunk.content_type {
                 ContentType::Documentation { .. } => {} // Expected
@@ -687,7 +713,7 @@ mod tests {
         let results = manager.search_configuration("database", Some(10)).unwrap();
 
         // Should only find configuration files
-        assert!(!results.is_empty());
+        assert!(!!results.is_empty(), "Should not be empty");
         for result in &results {
             match &result.chunk.content_type {
                 ContentType::Configuration { .. } => {} // Expected
@@ -708,7 +734,7 @@ mod tests {
 
         // Search with regex pattern
         let results = manager.regex_search(r"\b\w+@\w+\.\w+\b", Some(10)).unwrap();
-        assert!(!results.is_empty());
+        assert!(!!results.is_empty(), "Should not be empty");
 
         // Invalid regex should return error
         let invalid_result = manager.regex_search("[invalid", Some(10));
@@ -728,7 +754,7 @@ mod tests {
         let results = manager
             .search_in_files("content", vec!["*.md".to_string()], Some(10))
             .unwrap();
-        assert!(!results.is_empty());
+        assert!(!!results.is_empty(), "Should not be empty");
     }
 
     #[test]
@@ -795,11 +821,11 @@ mod tests {
 
         // Find markdown files
         let md_files = manager.find_files(r"\.md$").unwrap();
-        assert_eq!(md_files.len(), 2);
+        assert_eq!(md_files.len(), 2, "Should have 2 items");
 
         // Find all test files
         let test_files = manager.find_files(r"test_").unwrap();
-        assert_eq!(test_files.len(), 2);
+        assert_eq!(test_files.len(), 2, "Should have 2 items");
     }
 
     #[test]
@@ -834,7 +860,7 @@ mod tests {
             }])
             .build();
 
-        assert_eq!(query.content_types.len(), 1);
+        assert_eq!(query.content_types.len(), 1, "Should have 1 items");
 
         // Test with file patterns
         let query = SearchQueryBuilder::new("search")
@@ -842,8 +868,8 @@ mod tests {
             .exclude_files(vec!["*.tmp".to_string()])
             .build();
 
-        assert_eq!(query.file_patterns.len(), 1);
-        assert_eq!(query.exclude_patterns.len(), 1);
+        assert_eq!(query.file_patterns.len(), 1, "Should have 1 items");
+        assert_eq!(query.exclude_patterns.len(), 1, "Should have 1 items");
 
         // Test with regex and context
         let query = SearchQueryBuilder::new("pattern")
@@ -865,7 +891,7 @@ mod tests {
     fn test_search_query_builder_convenience_methods() {
         // Test markdown docs builder
         let query = SearchQueryBuilder::markdown_docs("test").build();
-        assert_eq!(query.content_types.len(), 1);
+        assert_eq!(query.content_types.len(), 1, "Should have 1 items");
         match &query.content_types[0] {
             ContentType::Documentation {
                 format: DocumentFormat::Markdown,
@@ -875,15 +901,15 @@ mod tests {
 
         // Test JS comments builder
         let query = SearchQueryBuilder::js_comments("test").build();
-        assert_eq!(query.content_types.len(), 4); // JS + TS, Block + Documentation
+        assert_eq!(query.content_types.len(), 4, "Should have 4 items"); // JS + TS, Block + Documentation
 
         // Test Python docs builder
         let query = SearchQueryBuilder::python_docs("test").build();
-        assert_eq!(query.content_types.len(), 2); // Documentation + Inline
+        assert_eq!(query.content_types.len(), 2, "Should have 2 items"); // Documentation + Inline
 
         // Test JSON config builder
         let query = SearchQueryBuilder::json_config("test").build();
-        assert_eq!(query.content_types.len(), 1);
+        assert_eq!(query.content_types.len(), 1, "Should have 1 items");
         match &query.content_types[0] {
             ContentType::Configuration {
                 format: ConfigFormat::Json,
@@ -893,7 +919,7 @@ mod tests {
 
         // Test YAML config builder
         let query = SearchQueryBuilder::yaml_config("test").build();
-        assert_eq!(query.content_types.len(), 1);
+        assert_eq!(query.content_types.len(), 1, "Should have 1 items");
         match &query.content_types[0] {
             ContentType::Configuration {
                 format: ConfigFormat::Yaml,

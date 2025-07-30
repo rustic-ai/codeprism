@@ -503,11 +503,11 @@ mod tests {
 
         // Test filtering for Before phase
         let before_scripts = engine.filter_scripts_by_phase(&scripts, ExecutionPhase::Before);
-        assert_eq!(before_scripts.len(), 2); // before + both
+        assert_eq!(before_scripts.len(), 2, "Should have 2 items"); // before + both
 
         // Test filtering for After phase
         let after_scripts = engine.filter_scripts_by_phase(&scripts, ExecutionPhase::After);
-        assert_eq!(after_scripts.len(), 2); // after + both
+        assert_eq!(after_scripts.len(), 2, "Should have 2 items"); // after + both
 
         // Verify the correct scripts are included
         assert!(before_scripts.iter().any(|s| s.name == "before"));

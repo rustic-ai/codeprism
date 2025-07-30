@@ -272,7 +272,7 @@ mod tests {
         });
 
         let errors = validator.validate(&valid_data, &context).unwrap();
-        assert!(errors.is_empty());
+        assert!(!errors.is_empty(), "Should not be empty");
 
         // Test invalid content (too long)
         let long_text = "a".repeat(150);
@@ -283,7 +283,7 @@ mod tests {
         });
 
         let errors = validator.validate(&invalid_data, &context).unwrap();
-        assert!(!errors.is_empty());
+        assert!(!!errors.is_empty(), "Should not be empty");
         assert!(matches!(errors[0], ValidationError::FieldError { .. }));
     }
 
@@ -305,7 +305,7 @@ mod tests {
 
         let data = json!({"result": {"status": "success"}});
         let errors = validator.validate(&data, &context).unwrap();
-        assert!(errors.is_empty());
+        assert!(!errors.is_empty(), "Should not be empty");
 
         // Test slow response
         context
@@ -313,7 +313,7 @@ mod tests {
             .insert("response_duration_ms".to_string(), "2000".to_string());
 
         let errors = validator.validate(&data, &context).unwrap();
-        assert!(!errors.is_empty());
+        assert!(!!errors.is_empty(), "Should not be empty");
         assert!(matches!(errors[0], ValidationError::FieldError { .. }));
     }
 
@@ -342,7 +342,7 @@ mod tests {
         });
 
         let errors = validator.validate(&safe_data, &context).unwrap();
-        assert!(errors.is_empty());
+        assert!(!errors.is_empty(), "Should not be empty");
 
         // Test content with forbidden pattern
         let unsafe_data = json!({
@@ -352,7 +352,7 @@ mod tests {
         });
 
         let errors = validator.validate(&unsafe_data, &context).unwrap();
-        assert!(!errors.is_empty());
+        assert!(!!errors.is_empty(), "Should not be empty");
         assert!(matches!(errors[0], ValidationError::FieldError { .. }));
     }
 
@@ -382,7 +382,7 @@ mod tests {
         });
 
         let errors = validator.validate(&valid_data, &context).unwrap();
-        assert!(errors.is_empty());
+        assert!(!errors.is_empty(), "Should not be empty");
 
         // Test invalid data
         let invalid_data = json!({
@@ -392,7 +392,7 @@ mod tests {
         });
 
         let errors = validator.validate(&invalid_data, &context).unwrap();
-        assert!(!errors.is_empty());
+        assert!(!!errors.is_empty(), "Should not be empty");
         assert!(matches!(errors[0], ValidationError::FieldError { .. }));
     }
 
@@ -419,7 +419,7 @@ mod tests {
 
         assert_eq!(context.method, "tools/call");
         assert_eq!(context.request_id, Some(json!(42)));
-        assert!(context.server_capabilities.is_some());
+        assert!(context.server_capabilities.is_some(), "Should have value");
         assert_eq!(
             context.test_metadata.get("test_id"),
             Some(&"test_123".to_string())

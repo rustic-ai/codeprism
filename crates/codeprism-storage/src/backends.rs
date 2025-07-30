@@ -907,11 +907,11 @@ mod tests {
         // Test store and load
         storage.store_graph(&graph).await.unwrap();
         let loaded = storage.load_graph("test_repo").await.unwrap();
-        assert!(loaded.is_some());
+        assert!(loaded.is_some(), "Should have value");
         let loaded_graph = loaded.unwrap();
         assert_eq!(loaded_graph.repo_id, "test_repo");
-        assert_eq!(loaded_graph.nodes.len(), 2);
-        assert_eq!(loaded_graph.edges.len(), 1);
+        assert_eq!(loaded_graph.nodes.len(), 2, "Should have 2 items");
+        assert_eq!(loaded_graph.edges.len(), 1, "Should have 1 items");
 
         // Test update nodes
         let new_node = SerializableNode::new(
@@ -934,7 +934,7 @@ mod tests {
             .unwrap();
 
         let updated = storage.load_graph("test_repo").await.unwrap().unwrap();
-        assert_eq!(updated.nodes.len(), 3);
+        assert_eq!(updated.nodes.len(), 3, "Should have 3 items");
 
         // Test delete nodes
         storage
@@ -942,8 +942,8 @@ mod tests {
             .await
             .unwrap();
         let after_delete = storage.load_graph("test_repo").await.unwrap().unwrap();
-        assert_eq!(after_delete.nodes.len(), 2);
-        assert_eq!(after_delete.edges.len(), 0); // Edge should be deleted too
+        assert_eq!(after_delete.nodes.len(), 2, "Should have 2 items");
+        assert_eq!(after_delete.edges.len(), 0, "Should have 0 items"); // Edge should be deleted too
 
         // Test list repositories
         let repos = storage.list_repositories().await.unwrap();
@@ -967,15 +967,15 @@ mod tests {
         // Test store and load
         storage.store_graph(&graph).await.unwrap();
         let loaded = storage.load_graph("test_repo").await.unwrap();
-        assert!(loaded.is_some());
+        assert!(loaded.is_some(), "Should have value");
         let loaded_graph = loaded.unwrap();
         assert_eq!(loaded_graph.repo_id, "test_repo");
-        assert_eq!(loaded_graph.nodes.len(), 2);
-        assert_eq!(loaded_graph.edges.len(), 1);
+        assert_eq!(loaded_graph.nodes.len(), 2, "Should have 2 items");
+        assert_eq!(loaded_graph.edges.len(), 1, "Should have 1 items");
 
         // Test metadata operations
         let metadata = storage.get_graph_metadata("test_repo").await.unwrap();
-        assert!(metadata.is_some());
+        assert!(metadata.is_some(), "Should have value");
 
         let mut new_metadata = metadata.unwrap();
         new_metadata.version = 42;
@@ -1012,7 +1012,7 @@ mod tests {
             .unwrap();
 
         let updated = storage.load_graph("test_repo").await.unwrap().unwrap();
-        assert_eq!(updated.nodes.len(), 3);
+        assert_eq!(updated.nodes.len(), 3, "Should have 3 items");
 
         // Test edge updates
         let new_edge = SerializableEdge::new(
@@ -1026,7 +1026,7 @@ mod tests {
             .unwrap();
 
         let updated = storage.load_graph("test_repo").await.unwrap().unwrap();
-        assert_eq!(updated.edges.len(), 2);
+        assert_eq!(updated.edges.len(), 2, "Should have 2 items");
 
         // Test list repositories
         let repos = storage.list_repositories().await.unwrap();
@@ -1045,7 +1045,7 @@ mod tests {
         storage.delete_edges("test_repo", &edge_refs).await.unwrap();
 
         let after_edge_delete = storage.load_graph("test_repo").await.unwrap().unwrap();
-        assert_eq!(after_edge_delete.edges.len(), 1);
+        assert_eq!(after_edge_delete.edges.len(), 1, "Should have 1 items");
 
         // Test delete graph
         storage.delete_graph("test_repo").await.unwrap();
@@ -1061,15 +1061,15 @@ mod tests {
         // Test store and load
         storage.store_graph(&graph).await.unwrap();
         let loaded = storage.load_graph("test_repo").await.unwrap();
-        assert!(loaded.is_some());
+        assert!(loaded.is_some(), "Should have value");
         let loaded_graph = loaded.unwrap();
         assert_eq!(loaded_graph.repo_id, "test_repo");
-        assert_eq!(loaded_graph.nodes.len(), 2);
-        assert_eq!(loaded_graph.edges.len(), 1);
+        assert_eq!(loaded_graph.nodes.len(), 2, "Should have 2 items");
+        assert_eq!(loaded_graph.edges.len(), 1, "Should have 1 items");
 
         // Test metadata operations
         let metadata = storage.get_graph_metadata("test_repo").await.unwrap();
-        assert!(metadata.is_some());
+        assert!(metadata.is_some(), "Should have value");
 
         let mut new_metadata = metadata.unwrap();
         new_metadata.version = 42;
@@ -1106,7 +1106,7 @@ mod tests {
             .unwrap();
 
         let updated = storage.load_graph("test_repo").await.unwrap().unwrap();
-        assert_eq!(updated.nodes.len(), 3);
+        assert_eq!(updated.nodes.len(), 3, "Should have 3 items");
 
         // Test edge updates
         let new_edge = SerializableEdge::new(
@@ -1120,7 +1120,7 @@ mod tests {
             .unwrap();
 
         let updated = storage.load_graph("test_repo").await.unwrap().unwrap();
-        assert_eq!(updated.edges.len(), 2);
+        assert_eq!(updated.edges.len(), 2, "Should have 2 items");
 
         // Test list repositories
         let repos = storage.list_repositories().await.unwrap();
@@ -1139,7 +1139,7 @@ mod tests {
         storage.delete_edges("test_repo", &edge_refs).await.unwrap();
 
         let after_edge_delete = storage.load_graph("test_repo").await.unwrap().unwrap();
-        assert_eq!(after_edge_delete.edges.len(), 1);
+        assert_eq!(after_edge_delete.edges.len(), 1, "Should have 1 items");
 
         // Test delete nodes (should also remove related edges)
         storage
@@ -1147,8 +1147,8 @@ mod tests {
             .await
             .unwrap();
         let after_node_delete = storage.load_graph("test_repo").await.unwrap().unwrap();
-        assert_eq!(after_node_delete.nodes.len(), 2);
-        assert_eq!(after_node_delete.edges.len(), 0); // Edge to node3 should be deleted
+        assert_eq!(after_node_delete.nodes.len(), 2, "Should have 2 items");
+        assert_eq!(after_node_delete.edges.len(), 0, "Should have 0 items"); // Edge to node3 should be deleted
 
         // Test delete graph
         storage.delete_graph("test_repo").await.unwrap();
@@ -1161,13 +1161,13 @@ mod tests {
         let temp_dir = tempdir().unwrap();
         let storage = FileGraphStorage::new(temp_dir.path()).await.unwrap();
         let result = storage.load_graph("nonexistent").await.unwrap();
-        assert!(result.is_none());
+        assert!(result.is_none(), "Should be none");
 
         // Test loading non-existent graph from SQLiteGraphStorage
         let temp_dir = tempdir().unwrap();
         let storage = SqliteGraphStorage::new(temp_dir.path()).await.unwrap();
         let result = storage.load_graph("nonexistent").await.unwrap();
-        assert!(result.is_none());
+        assert!(result.is_none(), "Should be none");
 
         // Test FileGraphStorage with a file as path (should fail)
         let temp_dir = tempdir().unwrap();
@@ -1216,7 +1216,7 @@ mod tests {
 
         // Verify all graphs were stored
         let repos = storage.list_repositories().await.unwrap();
-        assert_eq!(repos.len(), 10);
+        assert_eq!(repos.len(), 10, "Should have 10 items");
 
         // Test concurrent reads
         let mut handles = Vec::new();
@@ -1225,7 +1225,7 @@ mod tests {
             let handle = task::spawn(async move {
                 let repo_id = format!("repo_{i}");
                 let graph = storage_clone.load_graph(&repo_id).await.unwrap();
-                assert!(graph.is_some());
+                assert!(graph.is_some(), "Should have value");
                 assert_eq!(graph.unwrap().repo_id, repo_id);
             });
             handles.push(handle);

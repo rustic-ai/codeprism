@@ -790,22 +790,22 @@ metadata:
 
         // Validate tools
         let tools = spec.tools.as_ref().unwrap();
-        assert_eq!(tools.len(), 1);
+        assert_eq!(tools.len(), 1, "Should have 1 items");
         assert_eq!(tools[0].name, "calculate");
-        assert_eq!(tools[0].tests.len(), 1);
+        assert_eq!(tools[0].tests.len(), 1, "Should have 1 items");
         assert_eq!(tools[0].tests[0].tags, vec!["math", "basic"]);
 
         // Validate resources
         let resources = spec.resources.as_ref().unwrap();
-        assert_eq!(resources.len(), 1);
+        assert_eq!(resources.len(), 1, "Should have 1 items");
         assert_eq!(resources[0].name, "file_content");
         assert_eq!(resources[0].uri_template, "file:///{path}");
 
         // Validate prompts
         let prompts = spec.prompts.as_ref().unwrap();
-        assert_eq!(prompts.len(), 1);
+        assert_eq!(prompts.len(), 1, "Should have 1 items");
         assert_eq!(prompts[0].name, "code_review");
-        assert_eq!(prompts[0].arguments.len(), 2);
+        assert_eq!(prompts[0].arguments.len(), 2, "Should have 2 items");
         assert!(prompts[0].arguments[0].required);
         assert!(!prompts[0].arguments[1].required);
 
@@ -884,7 +884,7 @@ tools:
             .validation_scripts
             .as_ref()
             .expect("Missing validation_scripts");
-        assert_eq!(scripts.len(), 1);
+        assert_eq!(scripts.len(), 1, "Should have 1 items");
         assert_eq!(scripts[0].name, "math_precision_validator");
         assert_eq!(scripts[0].language, crate::spec::ScriptLanguage::Lua);
         assert_eq!(
@@ -1081,7 +1081,7 @@ server:
         .unwrap();
 
         let specs = loader.load_from_directory(temp_dir.path()).await.unwrap();
-        assert_eq!(specs.len(), 2);
+        assert_eq!(specs.len(), 2, "Should have 2 items");
 
         // Verify both specs were loaded
         let names: Vec<&str> = specs.iter().map(|s| s.name.as_str()).collect();
@@ -1191,9 +1191,9 @@ validation_scripts:
 "#;
 
         let spec: TestSpecification = serde_yml::from_str(yaml).unwrap();
-        assert!(spec.validation_scripts.is_some());
+        assert!(spec.validation_scripts.is_some(), "Should have value");
         let scripts = spec.validation_scripts.unwrap();
-        assert_eq!(scripts.len(), 1);
+        assert_eq!(scripts.len(), 1, "Should have 1 items");
         assert_eq!(scripts[0].name, "precision_validator");
         assert_eq!(scripts[0].language, ScriptLanguage::Lua);
         assert_eq!(scripts[0].execution_phase, ExecutionPhase::After);
@@ -1279,7 +1279,7 @@ tools:
         assert_eq!(spec.name, "Enhanced Test Server");
 
         let scripts = spec.validation_scripts.unwrap();
-        assert_eq!(scripts.len(), 2);
+        assert_eq!(scripts.len(), 2, "Should have 2 items");
 
         // First script
         assert_eq!(scripts[0].name, "math_precision_validator");

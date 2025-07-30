@@ -970,11 +970,11 @@ mod tests {
         graph.add_edge(edge.clone());
 
         let outgoing = graph.get_outgoing_edges(&node1.id);
-        assert_eq!(outgoing.len(), 1);
+        assert_eq!(outgoing.len(), 1, "Should have 1 items");
         assert_eq!(outgoing[0], edge);
 
         let incoming = graph.get_incoming_edges(&node2.id);
-        assert_eq!(incoming.len(), 1);
+        assert_eq!(incoming.len(), 1, "Should have 1 items");
         assert_eq!(incoming[0], edge);
     }
 
@@ -995,7 +995,7 @@ mod tests {
         graph.add_edge(Edge::new(node2.id, node3.id, EdgeKind::Calls));
 
         let path = query.find_path(&node1.id, &node3.id, None).unwrap();
-        assert!(path.is_some());
+        assert!(path.is_some(), "Should have value");
 
         let path = path.unwrap();
         assert_eq!(path.distance, 2);
@@ -1016,12 +1016,12 @@ mod tests {
         graph.add_node(node3.clone());
 
         let results = query.search_symbols("test", None, None).unwrap();
-        assert_eq!(results.len(), 2); // test_function and test_class
+        assert_eq!(results.len(), 2, "Should have 2 items"); // test_function and test_class
 
         let results = query
             .search_symbols("test", Some(vec![NodeKind::Function]), None)
             .unwrap();
-        assert_eq!(results.len(), 1); // only test_function
+        assert_eq!(results.len(), 1, "Should have 1 items"); // only test_function
     }
 
     #[test]
@@ -1045,24 +1045,24 @@ mod tests {
 
         // Test exact match using regex
         let results = query.search_symbols("^Agent$", None, None).unwrap();
-        assert_eq!(results.len(), 1); // only exact "Agent"
+        assert_eq!(results.len(), 1, "Should have 1 items"); // only exact "Agent"
         assert_eq!(results[0].node.name, "Agent");
 
         // Test suffix match
         let results = query.search_symbols("Agent$", None, None).unwrap();
-        assert_eq!(results.len(), 4); // Agent, UserAgent, GuildManagerAgent, ProcessAgent
+        assert_eq!(results.len(), 4, "Should have 4 items"); // Agent, UserAgent, GuildManagerAgent, ProcessAgent
 
         // Test case-sensitive prefix match
         let results = query.search_symbols("^Guild", None, None).unwrap();
-        assert_eq!(results.len(), 1); // only GuildManagerAgent
+        assert_eq!(results.len(), 1, "Should have 1 items"); // only GuildManagerAgent
         assert_eq!(results[0].node.name, "GuildManagerAgent");
 
         // Test fallback to substring search with invalid regex
         let results = query.search_symbols("[invalid", None, None).unwrap();
-        assert_eq!(results.len(), 0); // no matches for invalid pattern (falls back to substring)
+        assert_eq!(results.len(), 0, "Should have 0 items"); // no matches for invalid pattern (falls back to substring)
 
         // Test normal substring search still works
         let results = query.search_symbols("Agent", None, None).unwrap();
-        assert_eq!(results.len(), 4); // All nodes containing "Agent"
+        assert_eq!(results.len(), 4, "Should have 4 items"); // All nodes containing "Agent"
     }
 }

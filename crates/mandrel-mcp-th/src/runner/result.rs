@@ -664,7 +664,7 @@ mod tests {
             .with_expected_duration(Duration::from_secs(5))
             .with_property("environment".to_string(), "staging".to_string());
 
-        assert_eq!(metadata.tags.len(), 2);
+        assert_eq!(metadata.tags.len(), 2, "Should have 2 items");
         assert_eq!(metadata.category, Some("api".to_string()));
         assert_eq!(metadata.priority, Some("high".to_string()));
         assert_eq!(metadata.expected_duration, Some(Duration::from_secs(5)));

@@ -507,8 +507,8 @@ mod tests {
         assert_eq!(context.metadata.execution_phase, ExecutionPhase::After);
         assert_eq!(context.metadata.test_index, 0);
         assert_eq!(context.metadata.total_tests, 5);
-        assert!(context.request.is_none());
-        assert!(context.response.is_none());
+        assert!(context.request.is_none(), "Should be none");
+        assert!(context.response.is_none(), "Should be none");
     }
 
     #[test]

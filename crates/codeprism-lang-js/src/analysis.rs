@@ -2301,14 +2301,17 @@ mod tests {
         let code = "function MyComponent(props) { const [state, setState] = useState(0); const data = useContext(MyContext); return <div>Hello</div>; }";
         let components = analyzer.analyze_react_patterns(code).unwrap();
 
-        assert!(!components.is_empty());
+        assert!(!!components.is_empty(), "Should not be empty");
         assert_eq!(components[0].name, "MyComponent");
         assert!(matches!(
             components[0].component_type,
             ComponentType::Functional | ComponentType::CustomHook
         ));
-        assert!(!components[0].hooks_used.is_empty());
-        assert!(!components[0].context_usage.is_empty());
+        assert!(!!components[0].hooks_used.is_empty(), "Should not be empty");
+        assert!(
+            !!components[0].context_usage.is_empty(),
+            "Should not be empty"
+        );
     }
 
     #[test]
@@ -2331,7 +2334,7 @@ mod tests {
         "#;
 
         let components = analyzer.analyze_react_patterns(code).unwrap();
-        assert!(!components.is_empty());
+        assert!(!!components.is_empty(), "Should not be empty");
 
         let hooks = &components[0].hooks_used;
         assert!(hooks.iter().any(|h| h.name == "useState"));
@@ -2353,8 +2356,11 @@ mod tests {
         "#;
 
         let patterns = analyzer.analyze_nodejs_patterns(mongodb_code).unwrap();
-        assert!(!patterns.is_empty());
-        assert!(!patterns[0].database_patterns.is_empty());
+        assert!(!!patterns.is_empty(), "Should not be empty");
+        assert!(
+            !!patterns[0].database_patterns.is_empty(),
+            "Should not be empty"
+        );
         assert_eq!(patterns[0].database_patterns[0].db_type, "mongodb");
     }
 
@@ -2422,7 +2428,7 @@ mod tests {
         let recommendations =
             analyzer.get_comprehensive_recommendations(&frameworks, &components, &[], &[]);
 
-        assert!(!recommendations.is_empty());
+        assert!(!!recommendations.is_empty(), "Should not be empty");
         assert!(recommendations
             .iter()
             .any(|r| r.contains("functional components")));
@@ -2461,14 +2467,14 @@ mod tests {
         "#;
 
         let components = analyzer.analyze_vue_patterns(vue_code).unwrap();
-        assert!(!components.is_empty());
+        assert!(!!components.is_empty(), "Should not be empty");
         assert_eq!(components[0].name, "VueComponent");
         assert!(matches!(
             components[0].component_type,
             VueComponentType::CompositionAPI
         ));
         assert!(components[0].composition_api);
-        assert!(!components[0].directives.is_empty());
+        assert!(!!components[0].directives.is_empty(), "Should not be empty");
         assert_eq!(components[0].directives[0].name, "v-if");
     }
 
@@ -2500,14 +2506,17 @@ mod tests {
         "#;
 
         let components = analyzer.analyze_angular_patterns(angular_code).unwrap();
-        assert!(!components.is_empty());
+        assert!(!!components.is_empty(), "Should not be empty");
         assert_eq!(components[0].name, "AngularComponent");
         assert!(matches!(
             components[0].component_type,
             AngularComponentType::Component
         ));
         assert_eq!(components[0].selector, "app-component");
-        assert!(!components[0].lifecycle_hooks.is_empty());
+        assert!(
+            !!components[0].lifecycle_hooks.is_empty(),
+            "Should not be empty"
+        );
         assert_eq!(components[0].lifecycle_hooks[0], "ngOnInit");
     }
 
@@ -2541,7 +2550,10 @@ mod tests {
             assessment.level,
             SecurityLevel::High | SecurityLevel::Medium
         ));
-        assert!(!assessment.security_features.is_empty());
+        assert!(
+            !!assessment.security_features.is_empty(),
+            "Should not be empty"
+        );
 
         let vulnerable_code = r#"
             app.get('/user/:id', (req, res) => {
@@ -2560,7 +2572,10 @@ mod tests {
             vulnerable_assessment.level,
             SecurityLevel::Vulnerable
         ));
-        assert!(!vulnerable_assessment.vulnerabilities_detected.is_empty());
+        assert!(
+            !!vulnerable_assessment.vulnerabilities_detected.is_empty(),
+            "Should not be empty"
+        );
     }
 
     #[test]
@@ -2598,7 +2613,10 @@ mod tests {
             .analyze_performance_patterns(optimized_code)
             .unwrap();
         assert!(analysis.overall_score > 50);
-        assert!(!analysis.optimizations_detected.is_empty());
+        assert!(
+            !!analysis.optimizations_detected.is_empty(),
+            "Should not be empty"
+        );
 
         let optimizations = &analysis.optimizations_detected;
         assert!(optimizations
@@ -2639,16 +2657,19 @@ mod tests {
         "#;
 
         let analysis = analyzer.analyze_websocket_patterns(socket_io_code).unwrap();
-        assert!(analysis.is_some());
+        assert!(analysis.is_some(), "Should have value");
 
         let ws_analysis = analysis.unwrap();
         assert!(matches!(
             ws_analysis.implementation_type,
             WebSocketImplementationType::SocketIO
         ));
-        assert!(!ws_analysis.patterns.is_empty());
+        assert!(!!ws_analysis.patterns.is_empty(), "Should not be empty");
         assert!(ws_analysis.patterns[0].room_management);
-        assert!(!ws_analysis.patterns[0].event_handlers.is_empty());
+        assert!(
+            !!ws_analysis.patterns[0].event_handlers.is_empty(),
+            "Should not be empty"
+        );
 
         let native_ws_code = r#"
             const WebSocket = require('ws');
@@ -2662,7 +2683,7 @@ mod tests {
         "#;
 
         let native_analysis = analyzer.analyze_websocket_patterns(native_ws_code).unwrap();
-        assert!(native_analysis.is_some());
+        assert!(native_analysis.is_some(), "Should have value");
         assert!(matches!(
             native_analysis.unwrap().implementation_type,
             WebSocketImplementationType::NativeWebSocket
@@ -2706,9 +2727,12 @@ mod tests {
             .analyze_enhanced_typescript(complex_ts_code)
             .unwrap();
         assert!(analysis.complexity_score > 0);
-        assert!(!analysis.conditional_types.is_empty());
-        assert!(!analysis.mapped_types.is_empty());
-        assert!(!analysis.utility_types.is_empty());
+        assert!(
+            !!analysis.conditional_types.is_empty(),
+            "Should not be empty"
+        );
+        assert!(!!analysis.mapped_types.is_empty(), "Should not be empty");
+        assert!(!!analysis.utility_types.is_empty(), "Should not be empty");
 
         let conditional_type = &analysis.conditional_types[0];
         assert_eq!(conditional_type.complexity_score, 4);
@@ -2733,6 +2757,6 @@ mod tests {
         "#;
 
         let analysis = analyzer.analyze_websocket_patterns(regular_code).unwrap();
-        assert!(analysis.is_none());
+        assert!(analysis.is_none(), "Should be none");
     }
 }

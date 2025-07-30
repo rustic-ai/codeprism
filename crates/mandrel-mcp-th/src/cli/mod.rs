@@ -1291,7 +1291,7 @@ mod tests {
             Commands::Report(args) => {
                 assert_eq!(args.input.to_string_lossy(), "test-results.json");
                 assert_eq!(args.output.to_string_lossy(), "reports/");
-                assert_eq!(args.formats.len(), 2);
+                assert_eq!(args.formats.len(), 2, "Should have 2 items");
                 assert!(args.formats.contains(&ReportFormat::Html));
                 assert!(args.formats.contains(&ReportFormat::Json));
             }
@@ -1333,7 +1333,7 @@ mod tests {
 
         match cli.command {
             Commands::Report(args) => {
-                assert_eq!(args.custom_fields.len(), 2);
+                assert_eq!(args.custom_fields.len(), 2, "Should have 2 items");
                 assert!(args
                     .custom_fields
                     .contains(&("version".to_string(), "1.0.0".to_string())));

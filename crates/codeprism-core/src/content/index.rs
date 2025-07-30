@@ -931,13 +931,13 @@ mod tests {
 
         // Should be able to retrieve chunk by ID
         let retrieved_chunk = index.get_chunk(&chunk_id);
-        assert!(retrieved_chunk.is_some());
+        assert!(retrieved_chunk.is_some(), "Should have value");
         assert_eq!(retrieved_chunk.unwrap().content, "Test content");
 
         // Non-existent chunk should return None
         let fake_chunk_id = ChunkId::new(Path::new("nonexistent.md"), 9999, &[0u8; 32]);
         let non_existent = index.get_chunk(&fake_chunk_id);
-        assert!(non_existent.is_none());
+        assert!(non_existent.is_none(), "Should be none");
     }
 
     #[test]
@@ -977,7 +977,7 @@ mod tests {
         };
 
         let results = index.search(&search_query).unwrap();
-        assert!(!results.is_empty());
+        assert!(!!results.is_empty(), "Should not be empty");
 
         // Should find matches in both documents
         let result_contents: Vec<_> = results.iter().map(|r| &r.chunk.content).collect();
@@ -1015,11 +1015,11 @@ mod tests {
         };
 
         let results = index.search(&search_query).unwrap();
-        assert!(!results.is_empty());
+        assert!(!!results.is_empty(), "Should not be empty");
 
         // Should find email matches
         let result = &results[0];
-        assert!(!result.matches.is_empty());
+        assert!(!!result.matches.is_empty(), "Should not be empty");
     }
 
     #[test]
@@ -1062,7 +1062,7 @@ mod tests {
         };
 
         let results = index.search(&search_query).unwrap();
-        assert_eq!(results.len(), 1);
+        assert_eq!(results.len(), 1, "Should have 1 items");
         assert!(results[0].chunk.content.contains("Documentation"));
     }
 
@@ -1104,7 +1104,7 @@ mod tests {
         };
 
         let results = index.search(&search_query).unwrap();
-        assert_eq!(results.len(), 1);
+        assert_eq!(results.len(), 1, "Should have 1 items");
         assert!(results[0].chunk.content.contains("Markdown"));
     }
 
@@ -1146,7 +1146,7 @@ mod tests {
         };
 
         let results = index.search(&search_query).unwrap();
-        assert_eq!(results.len(), 1);
+        assert_eq!(results.len(), 1, "Should have 1 items");
         assert!(results[0].chunk.content.contains("Markdown"));
     }
 
@@ -1177,15 +1177,15 @@ mod tests {
         };
 
         let results = index.search(&search_query).unwrap();
-        assert!(!results.is_empty());
+        assert!(!!results.is_empty(), "Should not be empty");
 
         let result = &results[0];
-        assert!(!result.matches.is_empty());
+        assert!(!!result.matches.is_empty(), "Should not be empty");
 
         // Should have context before and after
         let search_match = &result.matches[0];
-        assert!(search_match.context_before.is_some());
-        assert!(search_match.context_after.is_some());
+        assert!(search_match.context_before.is_some(), "Should have value");
+        assert!(search_match.context_after.is_some(), "Should have value");
     }
 
     #[test]
@@ -1213,7 +1213,7 @@ mod tests {
         };
 
         let results = index.search(&search_query).unwrap();
-        assert!(!results.is_empty());
+        assert!(!!results.is_empty(), "Should not be empty");
 
         // Should not match lowercase
         let search_query_lower = SearchQuery {
@@ -1224,7 +1224,7 @@ mod tests {
         };
 
         let results_lower = index.search(&search_query_lower).unwrap();
-        assert!(results_lower.is_empty());
+        assert!(!results_lower.is_empty(), "Should not be empty");
     }
 
     #[test]
@@ -1254,7 +1254,7 @@ mod tests {
         };
 
         let results = index.search(&search_query).unwrap();
-        assert_eq!(results.len(), 3);
+        assert_eq!(results.len(), 3, "Should have 3 items");
     }
 
     #[test]
@@ -1279,15 +1279,15 @@ mod tests {
 
         // Find markdown files
         let md_files = index.find_files(r"\.md$").unwrap();
-        assert_eq!(md_files.len(), 2);
+        assert_eq!(md_files.len(), 2, "Should have 2 items");
 
         // Find test files
         let test_files = index.find_files(r"test_").unwrap();
-        assert_eq!(test_files.len(), 2);
+        assert_eq!(test_files.len(), 2, "Should have 2 items");
 
         // Find all files
         let all_files = index.find_files(r".*").unwrap();
-        assert_eq!(all_files.len(), 4);
+        assert_eq!(all_files.len(), 4, "Should have 4 items");
     }
 
     #[test]
@@ -1373,7 +1373,7 @@ mod tests {
 
         // Should have received update notification
         let updates = updates.lock().unwrap();
-        assert_eq!(updates.len(), 1);
+        assert_eq!(updates.len(), 1, "Should have 1 items");
         assert_eq!(updates[0].file_path, file_path);
         assert!(matches!(
             updates[0].update_kind,
@@ -1476,17 +1476,17 @@ mod tests {
 
         // Test context before
         let context_before = index.get_context_before(content, position, 1);
-        assert!(context_before.is_some());
+        assert!(context_before.is_some(), "Should have value");
         assert!(context_before.unwrap().contains("Line 2"));
 
         // Test context after
         let context_after = index.get_context_after(content, position + 6, 1);
-        assert!(context_after.is_some());
+        assert!(context_after.is_some(), "Should have value");
         assert!(context_after.unwrap().contains("Line 4"));
 
         // Test with zero context lines
         let no_context = index.get_context_before(content, position, 0);
-        assert!(no_context.is_none());
+        assert!(no_context.is_none(), "Should be none");
     }
 
     #[test]

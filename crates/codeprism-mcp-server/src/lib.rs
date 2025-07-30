@@ -75,8 +75,8 @@ mod tests {
         let info = server.get_info();
         assert_eq!(info.protocol_version, ProtocolVersion::V_2024_11_05);
         assert_eq!(info.server_info.name, "codeprism-mcp-server");
-        assert!(info.instructions.is_some());
-        assert!(info.capabilities.tools.is_some());
+        assert!(info.instructions.is_some(), "Should have value");
+        assert!(info.capabilities.tools.is_some(), "Should have value");
     }
 
     // Additional tests moved to integration_test.rs module

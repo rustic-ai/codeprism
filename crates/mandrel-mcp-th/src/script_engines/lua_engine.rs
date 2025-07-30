@@ -887,7 +887,7 @@ mod tests {
 
         // Should capture basic execution metrics
         assert!(result.duration_ms > 0);
-        assert!(result.error.is_none());
+        assert!(result.error.is_none(), "Should be none");
     }
 
     #[tokio::test]
@@ -1448,7 +1448,7 @@ mod tests {
         let result = engine.execute_script(script, context).await.unwrap();
 
         assert!(result.success);
-        assert_eq!(result.logs.len(), 3);
+        assert_eq!(result.logs.len(), 3, "Should have 3 items");
         assert_eq!(result.logs[0].message, "Hello from Lua");
         assert_eq!(result.logs[1].message, "Debug info:\t42");
         assert_eq!(result.logs[2].message, "Multiple\targuments\ttest");
@@ -1476,7 +1476,7 @@ mod tests {
         let result = engine.execute_script(script, context).await.unwrap();
 
         assert!(result.success);
-        assert_eq!(result.logs.len(), 6);
+        assert_eq!(result.logs.len(), 6, "Should have 6 items");
         assert_eq!(result.logs[0].message, "String value");
         assert_eq!(result.logs[1].message, "42");
         assert_eq!(result.logs[2].message, "3.14");
@@ -1516,7 +1516,7 @@ mod tests {
         }
 
         // Should still capture logs before the error
-        assert_eq!(result.logs.len(), 1);
+        assert_eq!(result.logs.len(), 1, "Should have 1 items");
         assert_eq!(result.logs[0].message, "Before error");
     }
 
@@ -1532,7 +1532,7 @@ mod tests {
         let result = engine.execute_script(script, context).await.unwrap();
 
         assert!(result.success);
-        assert_eq!(result.logs.len(), 0); // No print statements
+        assert_eq!(result.logs.len(), 0, "Should have 0 items"); // No print statements
     }
 
     #[tokio::test]
@@ -1550,7 +1550,7 @@ mod tests {
         let result = engine.execute_script(script, context).await.unwrap();
 
         assert!(result.success);
-        assert_eq!(result.logs.len(), 10);
+        assert_eq!(result.logs.len(), 10, "Should have 10 items");
         for i in 0..10 {
             assert_eq!(result.logs[i].message, format!("Log entry {}", i + 1));
         }
@@ -1632,7 +1632,7 @@ mod tests {
         let end_time = chrono::Utc::now();
 
         assert!(result.success);
-        assert_eq!(result.logs.len(), 2);
+        assert_eq!(result.logs.len(), 2, "Should have 2 items");
 
         // Verify timestamps are reasonable
         for log in &result.logs {

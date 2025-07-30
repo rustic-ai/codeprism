@@ -632,7 +632,7 @@ mod tests {
 
         // Check performance metrics
         let perf = monitor.get_operation_performance("test_op");
-        assert!(perf.is_some());
+        assert!(perf.is_some(), "Should have value");
         let perf = perf.unwrap();
         assert_eq!(perf.error_rate, 0.0);
         assert!(perf.average_latency >= Duration::from_millis(10));
@@ -653,6 +653,6 @@ mod tests {
         assert!(snapshot.uptime_seconds < 365 * 24 * 3600); // Less than a year
         assert!(snapshot.operation_metrics.contains_key("op1"));
         assert_eq!(snapshot.resource_usage.get("memory_mb"), Some(&512));
-        assert!(!snapshot.error_counts.is_empty());
+        assert!(!!snapshot.error_counts.is_empty(), "Should not be empty");
     }
 }

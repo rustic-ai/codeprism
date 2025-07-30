@@ -528,7 +528,7 @@ mod tests {
         fs::write(&test_file, "").await.unwrap();
 
         let result = pipeline.process_file_change(&test_file).await.unwrap();
-        assert!(result.is_none()); // Should be None for empty files
+        assert!(result.is_none(), "Should be none"); // Should be None for empty files
     }
 
     #[tokio::test]
@@ -538,7 +538,7 @@ mod tests {
         let test_file = temp_dir.path().join("nonexistent.js");
 
         let result = pipeline.process_file_change(&test_file).await.unwrap();
-        assert!(result.is_none()); // Should be None for nonexistent files
+        assert!(result.is_none(), "Should be none"); // Should be None for nonexistent files
     }
 
     #[test]

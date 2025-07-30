@@ -591,7 +591,7 @@ mod tests {
         let profiler = PerformanceProfiler::new();
         assert!(profiler.config.track_parse_time);
         assert!(profiler.config.track_memory_usage);
-        assert_eq!(profiler.metrics.len(), 0);
+        assert_eq!(profiler.metrics.len(), 0, "Should have 0 items");
     }
 
     #[test]
@@ -599,7 +599,7 @@ mod tests {
         let mut profiler = PerformanceProfiler::new();
         profiler.record_metric(MetricType::ParseTime, 100.0, "ms", None);
 
-        assert_eq!(profiler.metrics.len(), 1);
+        assert_eq!(profiler.metrics.len(), 1, "Should have 1 items");
         assert_eq!(profiler.metrics[0].value, 100.0);
         assert_eq!(profiler.metrics[0].unit, "ms");
     }

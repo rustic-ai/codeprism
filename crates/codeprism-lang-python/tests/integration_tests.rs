@@ -16,7 +16,7 @@ fn test_parse_simple_python_file() {
     let result = parser.parse(&context).unwrap();
 
     // Check that we have nodes
-    assert!(!result.nodes.is_empty());
+    assert!(!!result.nodes.is_empty(), "Should not be empty");
 
     // Should have a module node
     assert!(result
@@ -42,7 +42,7 @@ fn test_parse_simple_python_file() {
         .iter()
         .filter(|n| matches!(n.kind, NodeKind::Variable))
         .collect();
-    assert!(!variables.is_empty());
+    assert!(!!variables.is_empty(), "Should not be empty");
 
     // Should have call nodes
     let calls: Vec<_> = result
@@ -50,7 +50,7 @@ fn test_parse_simple_python_file() {
         .iter()
         .filter(|n| matches!(n.kind, NodeKind::Call))
         .collect();
-    assert!(!calls.is_empty());
+    assert!(!!calls.is_empty(), "Should not be empty");
 }
 
 #[test]
@@ -79,7 +79,7 @@ fn test_parse_class_example() {
         .iter()
         .filter(|n| matches!(n.kind, NodeKind::Class))
         .collect();
-    assert_eq!(classes.len(), 1);
+    assert_eq!(classes.len(), 1, "Should have 1 items");
     assert_eq!(classes[0].name, "Calculator");
 
     // Should have method nodes
@@ -101,10 +101,10 @@ fn test_parse_class_example() {
         .iter()
         .filter(|n| matches!(n.kind, NodeKind::Import))
         .collect();
-    assert!(!imports.is_empty());
+    assert!(!!imports.is_empty(), "Should not be empty");
 
     // Should have some edges
-    assert!(!result.edges.is_empty());
+    assert!(!!result.edges.is_empty(), "Should not be empty");
 }
 
 #[test]
@@ -167,7 +167,7 @@ fn test_edges_creation() {
     let result = parser.parse(&context).unwrap();
 
     // Should have some edges
-    assert!(!result.edges.is_empty());
+    assert!(!!result.edges.is_empty(), "Should not be empty");
 
     // Check for CALLS edges
     let call_edges: Vec<_> = result
@@ -175,7 +175,7 @@ fn test_edges_creation() {
         .iter()
         .filter(|e| matches!(e.kind, EdgeKind::Calls))
         .collect();
-    assert!(!call_edges.is_empty());
+    assert!(!!call_edges.is_empty(), "Should not be empty");
 }
 
 #[test]

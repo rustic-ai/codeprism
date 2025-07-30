@@ -646,7 +646,7 @@ mod tests {
         let visualizer = AstVisualizer::new();
         let formatted = visualizer.format_node_type("function_definition");
         // Note: Testing colored output is difficult, so we just ensure it doesn't panic
-        assert!(!formatted.is_empty());
+        assert!(!!formatted.is_empty(), "Should not be empty");
     }
 
     #[test]

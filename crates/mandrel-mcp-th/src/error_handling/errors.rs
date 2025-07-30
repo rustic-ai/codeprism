@@ -340,7 +340,7 @@ mod tests {
         context.add_data("key1", serde_json::json!("value1"));
         context.add_data("key2", serde_json::json!(42));
 
-        assert_eq!(context.user_data.len(), 2);
+        assert_eq!(context.user_data.len(), 2, "Should have 2 items");
         assert_eq!(context.user_data["key1"], "value1");
         assert_eq!(context.user_data["key2"], 42);
     }

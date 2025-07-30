@@ -552,8 +552,8 @@ mod tests {
         let mut node = ContentNode::new(file_path.clone(), content_type.clone());
 
         assert_eq!(node.file_path, file_path);
-        assert_eq!(node.chunks.len(), 0);
-        assert_eq!(node.ast_nodes.len(), 0);
+        assert_eq!(node.chunks.len(), 0, "Should have 0 items");
+        assert_eq!(node.ast_nodes.len(), 0, "Should have 0 items");
 
         // Add a chunk
         let chunk = ContentChunk::new(
@@ -565,7 +565,7 @@ mod tests {
         );
         node.add_chunk(chunk);
 
-        assert_eq!(node.chunks.len(), 1);
+        assert_eq!(node.chunks.len(), 1, "Should have 1 items");
 
         // Add AST node
         let node_id = NodeId::new(
@@ -576,7 +576,7 @@ mod tests {
         );
         node.add_ast_node(node_id);
 
-        assert_eq!(node.ast_nodes.len(), 1);
+        assert_eq!(node.ast_nodes.len(), 1, "Should have 1 items");
         assert_eq!(node.ast_nodes[0], node_id);
 
         // Test token aggregation
@@ -636,7 +636,7 @@ mod tests {
         assert!(!query.use_regex);
         assert!(query.include_context);
         assert_eq!(query.context_lines, 2);
-        assert_eq!(query.content_types.len(), 3);
+        assert_eq!(query.content_types.len(), 3, "Should have 3 items");
     }
 
     #[test]
@@ -673,8 +673,8 @@ mod tests {
         assert_eq!(stats.total_files, 0);
         assert_eq!(stats.total_chunks, 0);
         assert_eq!(stats.total_tokens, 0);
-        assert!(stats.content_by_type.is_empty());
-        assert!(stats.size_distribution.is_empty());
+        assert!(!stats.content_by_type.is_empty(), "Should not be empty");
+        assert!(!stats.size_distribution.is_empty(), "Should not be empty");
 
         // Test updating stats
         stats.total_files = 10;
@@ -718,7 +718,7 @@ mod tests {
         };
 
         assert_eq!(result.score, 0.85);
-        assert_eq!(result.matches.len(), 1);
+        assert_eq!(result.matches.len(), 1, "Should have 1 items");
         assert_eq!(result.matches[0].text, "query");
         assert_eq!(result.matches[0].position, 18);
         assert_eq!(result.chunk.content, chunk.content);

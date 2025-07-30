@@ -294,7 +294,7 @@ mod tests {
         let config = LoggingConfig::default();
         assert!(matches!(config.level, LogLevel::Info));
         assert!(matches!(config.format, LogFormat::Pretty));
-        assert_eq!(config.outputs.len(), 1);
+        assert_eq!(config.outputs.len(), 1, "Should have 1 items");
         assert!(config.enable_colors);
     }
 
@@ -310,7 +310,7 @@ mod tests {
     #[test]
     fn test_error_collector_creation() {
         let collector = ErrorCollector::new();
-        assert_eq!(collector.events.len(), 0);
+        assert_eq!(collector.events.len(), 0, "Should have 0 items");
         assert_eq!(collector.statistics.total_errors, 0);
     }
 
@@ -327,7 +327,7 @@ mod tests {
 
         collector.record_error(&error, context);
 
-        assert_eq!(collector.events.len(), 1);
+        assert_eq!(collector.events.len(), 1, "Should have 1 items");
         assert_eq!(collector.statistics.total_errors, 1);
         assert_eq!(
             collector.statistics.errors_by_category.get("configuration"),

@@ -717,6 +717,6 @@ mod tests {
 
         // Cleanup sandbox
         sandbox.cleanup_sandbox().await.unwrap();
-        assert!(sandbox.temp_sandbox_dir.is_none());
+        assert!(sandbox.temp_sandbox_dir.is_none(), "Should be none");
     }
 }

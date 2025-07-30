@@ -263,7 +263,7 @@ mod tests {
 
         assert_eq!(context.repo_id, "test_repo");
         assert_eq!(context.file_path, PathBuf::from("test.js"));
-        assert!(context.old_tree.is_none());
+        assert!(context.old_tree.is_none(), "Should be none");
     }
 
     #[test]
@@ -280,8 +280,8 @@ mod tests {
         );
 
         let result = engine.parse_file(context).unwrap();
-        assert_eq!(result.nodes.len(), 2); // Module + Function
-        assert_eq!(result.edges.len(), 1); // Module -> Function
+        assert_eq!(result.nodes.len(), 2, "Should have 2 items"); // Module + Function
+        assert_eq!(result.edges.len(), 1, "Should have 1 items"); // Module -> Function
         assert_eq!(parser.parse_count(), 1);
     }
 
@@ -354,7 +354,7 @@ mod tests {
         );
         let result2 = engine.parse_incremental(context2).unwrap();
 
-        assert_eq!(result2.nodes.len(), 2);
+        assert_eq!(result2.nodes.len(), 2, "Should have 2 items");
         assert_eq!(parser.parse_count(), 2); // Both parses executed
     }
 
@@ -398,9 +398,9 @@ mod tests {
         let result = engine.parse_file(context).unwrap();
 
         // Validate nodes
-        assert!(!result.nodes.is_empty());
+        assert!(!!result.nodes.is_empty(), "Should not be empty");
         for node in &result.nodes {
-            assert!(!node.name.is_empty());
+            assert!(!!node.name.is_empty(), "Should not be empty");
             assert_eq!(node.lang, Language::JavaScript);
         }
 
@@ -443,7 +443,7 @@ mod tests {
         // Wait for all threads and verify results
         for handle in handles {
             let result = handle.join().unwrap();
-            assert!(!result.nodes.is_empty());
+            assert!(!!result.nodes.is_empty(), "Should not be empty");
         }
     }
 }

@@ -691,7 +691,7 @@ mod tests {
         });
 
         let retry_config = classifier.get_retry_config(&connection_error, &recovery_config);
-        assert!(retry_config.is_some());
+        assert!(retry_config.is_some(), "Should have value");
         assert_eq!(retry_config.unwrap().max_attempts, 3);
 
         let validation_error = TestHarnessError::Validation(ValidationError::SchemaValidation {
@@ -702,6 +702,6 @@ mod tests {
         });
 
         let retry_config = classifier.get_retry_config(&validation_error, &recovery_config);
-        assert!(retry_config.is_none());
+        assert!(retry_config.is_none(), "Should be none");
     }
 }

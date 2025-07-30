@@ -162,7 +162,7 @@ mod tests {
         }"#;
 
         let spec: ValidationSpec = serde_json::from_str(spec_json).unwrap();
-        assert_eq!(spec.jsonpath_rules.len(), 1);
+        assert_eq!(spec.jsonpath_rules.len(), 1, "Should have 1 items");
         assert_eq!(spec.protocol_requirements.method, "tools/call");
         assert!(spec.strict_mode);
     }

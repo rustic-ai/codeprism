@@ -165,9 +165,9 @@ mod tests {
         let patch = AstPatch::new("test_repo".to_string(), "abc123".to_string());
         assert_eq!(patch.repo, "test_repo");
         assert_eq!(patch.commit, "abc123");
-        assert!(patch.is_empty());
+        assert!(patch.is_empty(), "New patch should be empty");
         assert_eq!(patch.operation_count(), 0);
-        assert!(patch.timestamp_ms > 0);
+        assert!(patch.timestamp_ms > 0, "Patch should have valid timestamp");
     }
 
     #[test]
@@ -184,12 +184,29 @@ mod tests {
             .delete_edge("old_edge_id".to_string())
             .build();
 
-        assert_eq!(patch.nodes_add.len(), 2);
-        assert_eq!(patch.edges_add.len(), 1);
-        assert_eq!(patch.nodes_delete.len(), 1);
-        assert_eq!(patch.edges_delete.len(), 1);
-        assert_eq!(patch.operation_count(), 5);
-        assert!(!patch.is_empty());
+        assert_eq!(patch.nodes_add.len(), 2, "Should have 2 nodes to add");
+        assert_eq!(patch.edges_add.len(), 1, "Should have 1 edge to add");
+        assert_eq!(patch.nodes_delete.len(), 1, "Should have 1 node to delete");
+        assert_eq!(patch.edges_delete.len(), 1, "Should have 1 edge to delete");
+        assert_eq!(patch.operation_count(), 5, "Total operations should be 5");
+        assert!(
+            !patch.is_empty(),
+            "Patch with operations should not be empty"
+        );
+
+        // Verify actual content of operations
+        assert!(
+            patch.nodes_add.iter().any(|n| n.kind == NodeKind::Function),
+            "Should add function node"
+        );
+        assert!(
+            patch.nodes_add.iter().any(|n| n.kind == NodeKind::Variable),
+            "Should add variable node"
+        );
+        assert!(
+            patch.nodes_delete.iter().any(|n| n.kind == NodeKind::Class),
+            "Should delete class node"
+        );
     }
 
     #[test]
@@ -211,10 +228,10 @@ mod tests {
             .delete_edges(vec!["edge1".to_string(), "edge2".to_string()])
             .build();
 
-        assert_eq!(patch.nodes_add.len(), 3);
-        assert_eq!(patch.edges_add.len(), 2);
-        assert_eq!(patch.nodes_delete.len(), 2);
-        assert_eq!(patch.edges_delete.len(), 2);
+        assert_eq!(patch.nodes_add.len(), 3, "Should have 3 items");
+        assert_eq!(patch.edges_add.len(), 2, "Should have 2 items");
+        assert_eq!(patch.nodes_delete.len(), 2, "Should have 2 items");
+        assert_eq!(patch.edges_delete.len(), 2, "Should have 2 items");
         assert_eq!(patch.operation_count(), 9);
     }
 
@@ -257,10 +274,10 @@ mod tests {
 
         patch1.merge(patch2);
 
-        assert_eq!(patch1.nodes_add.len(), 2);
-        assert_eq!(patch1.edges_add.len(), 1);
-        assert_eq!(patch1.nodes_delete.len(), 1);
-        assert_eq!(patch1.edges_delete.len(), 1);
+        assert_eq!(patch1.nodes_add.len(), 2, "Should have 2 items");
+        assert_eq!(patch1.edges_add.len(), 1, "Should have 1 items");
+        assert_eq!(patch1.nodes_delete.len(), 1, "Should have 1 items");
+        assert_eq!(patch1.edges_delete.len(), 1, "Should have 1 items");
         assert_eq!(patch1.timestamp_ms, 2000); // Should use the latest timestamp
         assert_eq!(patch1.operation_count(), 5);
     }
@@ -268,13 +285,13 @@ mod tests {
     #[test]
     fn test_empty_patch() {
         let patch = AstPatch::new("test_repo".to_string(), "abc123".to_string());
-        assert!(patch.is_empty());
+        assert!(patch.is_empty(), "New patch should be empty");
         assert_eq!(patch.operation_count(), 0);
 
         // Empty patch should serialize/deserialize correctly
         let json = serde_json::to_string(&patch).unwrap();
         let deserialized: AstPatch = serde_json::from_str(&json).unwrap();
-        assert!(deserialized.is_empty());
+        assert!(!deserialized.is_empty(), "Should not be empty");
     }
 
     #[test]
@@ -296,7 +313,7 @@ mod tests {
             .add_node(node.clone()) // Same node added twice
             .build();
 
-        assert_eq!(patch.nodes_add.len(), 2); // Both are kept in the patch
+        assert_eq!(patch.nodes_add.len(), 2, "Should have 2 items"); // Both are kept in the patch
     }
 
     #[test]
@@ -316,9 +333,9 @@ mod tests {
         }
 
         let patch = builder.build();
-        assert_eq!(patch.nodes_add.len(), 100);
-        assert_eq!(patch.nodes_delete.len(), 50);
-        assert_eq!(patch.edges_delete.len(), 50);
+        assert_eq!(patch.nodes_add.len(), 100, "Should have 100 items");
+        assert_eq!(patch.nodes_delete.len(), 50, "Should have 50 items");
+        assert_eq!(patch.edges_delete.len(), 50, "Should have 50 items");
         assert_eq!(patch.operation_count(), 200);
     }
 }

@@ -307,7 +307,7 @@ mod tests {
         assert!(deleted);
 
         let not_found = repo.find_by_id(&user_id).await.unwrap();
-        assert!(not_found.is_none());
+        assert!(not_found.is_none(), "Should be none");
     }
 
     #[test]

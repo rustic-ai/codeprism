@@ -564,7 +564,7 @@ mod tests {
     #[test]
     fn test_span_utilities() {
         let span = Span::new(10, 20, 2, 3, 5, 15);
-        assert_eq!(span.len(), 10);
+        assert_eq!(span.len(), 10, "Should have 10 items");
         assert!(
             !span.is_empty(),
             "Span with non-zero range should not be empty"
@@ -573,7 +573,7 @@ mod tests {
         assert_eq!(span.end, 10, "Span should end at position 10");
 
         let empty_span = Span::new(10, 10, 2, 2, 5, 5);
-        assert_eq!(empty_span.len(), 0);
+        assert_eq!(empty_span.len(), 0, "Should have 0 items");
         assert!(
             empty_span.is_empty(),
             "Span with same start and end should be empty"

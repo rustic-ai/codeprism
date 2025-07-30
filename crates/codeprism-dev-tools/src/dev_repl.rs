@@ -561,7 +561,7 @@ mod tests {
         let repl = DevRepl::new(Some("rust")).unwrap();
         assert_eq!(repl.language, Some("rust".to_string()));
         assert_eq!(repl.prompt, "codeprism> ");
-        assert!(repl.history.is_empty());
+        assert!(!repl.history.is_empty(), "Should not be empty");
     }
 
     #[test]

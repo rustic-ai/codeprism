@@ -1106,8 +1106,8 @@ tools:
         // Verify suite-level metrics
         let metrics = &suite_result.suite_metrics;
         assert!(metrics.average_test_duration > Duration::from_millis(0));
-        assert!(metrics.slowest_test.is_some());
-        assert!(metrics.fastest_test.is_some());
+        assert!(metrics.slowest_test.is_some(), "Should have value");
+        assert!(metrics.fastest_test.is_some(), "Should have value");
         assert!(metrics.peak_memory_usage > 0);
         assert!(metrics.execution_efficiency_score >= 0.0);
         assert!(metrics.execution_efficiency_score <= 100.0);
@@ -1315,7 +1315,7 @@ tools:
         assert_eq!(suite_result.total_tests, 0);
         assert_eq!(suite_result.passed, 0);
         assert_eq!(suite_result.failed, 0);
-        assert_eq!(suite_result.test_results.len(), 0);
+        assert_eq!(suite_result.test_results.len(), 0, "Should have 0 items");
         assert!(suite_result.all_passed()); // Vacuously true
         assert!(!suite_result.has_failures());
     }

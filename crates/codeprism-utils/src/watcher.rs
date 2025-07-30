@@ -248,7 +248,7 @@ mod tests {
         sleep(Duration::from_millis(200)).await;
 
         let received = rx.recv().await;
-        assert!(received.is_some());
+        assert!(received.is_some(), "Should have value");
     }
 
     #[tokio::test]
@@ -297,7 +297,7 @@ mod tests {
         assert!(result2.is_ok());
 
         let watched_paths = watcher.watched_paths.lock().unwrap();
-        assert_eq!(watched_paths.len(), 2);
+        assert_eq!(watched_paths.len(), 2, "Should have 2 items");
         assert!(watched_paths.contains(&temp_dir1.path().to_path_buf()));
         assert!(watched_paths.contains(&temp_dir2.path().to_path_buf()));
     }
@@ -392,7 +392,7 @@ mod tests {
             attrs: Default::default(),
         };
         let change_event = FileWatcher::convert_event(create_event, repo_root.clone());
-        assert!(change_event.is_some());
+        assert!(change_event.is_some(), "Should have value");
         let change_event = change_event.unwrap();
         assert_eq!(change_event.kind, ChangeKind::Created);
 
@@ -405,7 +405,7 @@ mod tests {
             attrs: Default::default(),
         };
         let change_event = FileWatcher::convert_event(modify_event, repo_root.clone());
-        assert!(change_event.is_some());
+        assert!(change_event.is_some(), "Should have value");
         let change_event = change_event.unwrap();
         assert_eq!(change_event.kind, ChangeKind::Modified);
 
@@ -416,7 +416,7 @@ mod tests {
             attrs: Default::default(),
         };
         let change_event = FileWatcher::convert_event(remove_event, repo_root);
-        assert!(change_event.is_some());
+        assert!(change_event.is_some(), "Should have value");
         let change_event = change_event.unwrap();
         assert_eq!(change_event.kind, ChangeKind::Deleted);
     }

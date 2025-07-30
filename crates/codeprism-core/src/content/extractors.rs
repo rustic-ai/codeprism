@@ -687,13 +687,13 @@ mod tests {
         // Test comment at end of file without newline
         let source = "const x = 5; // Comment at end";
         let matches: Vec<_> = js_extractor.comment_regex.find_iter(source).collect();
-        assert_eq!(matches.len(), 1);
+        assert_eq!(matches.len(), 1, "Should have 1 items");
         assert_eq!(matches[0].as_str(), "// Comment at end");
 
         // Test empty comments
         let source = "// \n/* */";
         let matches: Vec<_> = js_extractor.comment_regex.find_iter(source).collect();
-        assert_eq!(matches.len(), 2);
+        assert_eq!(matches.len(), 2, "Should have 2 items");
     }
 
     #[test]

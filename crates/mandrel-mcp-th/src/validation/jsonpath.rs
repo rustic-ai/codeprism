@@ -385,7 +385,7 @@ mod tests {
         });
 
         let values = evaluator.extract_values(&data, "$.result").unwrap();
-        assert_eq!(values.len(), 1);
+        assert_eq!(values.len(), 1, "Should have 1 items");
         assert!(values[0].is_object());
     }
 
@@ -401,7 +401,7 @@ mod tests {
         let values = evaluator
             .extract_values(&data, "$.result.content[0]")
             .unwrap();
-        assert_eq!(values.len(), 1);
+        assert_eq!(values.len(), 1, "Should have 1 items");
         assert_eq!(values[0]["text"], "Hello");
     }
 
@@ -417,7 +417,7 @@ mod tests {
         let values = evaluator
             .extract_values(&data, "$.result.content[0].text")
             .unwrap();
-        assert_eq!(values.len(), 1);
+        assert_eq!(values.len(), 1, "Should have 1 items");
         assert_eq!(values[0], "Hello");
     }
 
@@ -448,7 +448,7 @@ mod tests {
 
         let result = evaluator.evaluate_rule(&data, &rule);
         assert!(result.is_valid);
-        assert!(result.error_message.is_none());
+        assert!(result.error_message.is_none(), "Should be none");
     }
 
     #[test]
@@ -465,7 +465,7 @@ mod tests {
 
         let result = evaluator.evaluate_rule(&data, &rule);
         assert!(result.is_valid);
-        assert!(result.error_message.is_none());
+        assert!(result.error_message.is_none(), "Should be none");
     }
 
     #[test]
@@ -482,7 +482,7 @@ mod tests {
 
         let result = evaluator.evaluate_rule(&data, &rule);
         assert!(result.is_valid);
-        assert!(result.error_message.is_none());
+        assert!(result.error_message.is_none(), "Should be none");
     }
 
     #[test]
@@ -499,7 +499,7 @@ mod tests {
 
         let result = evaluator.evaluate_rule(&data, &rule);
         assert!(result.is_valid);
-        assert!(result.error_message.is_none());
+        assert!(result.error_message.is_none(), "Should be none");
     }
 
     #[test]
@@ -518,7 +518,7 @@ mod tests {
 
         let result = evaluator.evaluate_rule(&data, &rule);
         assert!(result.is_valid);
-        assert!(result.error_message.is_none());
+        assert!(result.error_message.is_none(), "Should be none");
     }
 
     #[test]
@@ -535,7 +535,7 @@ mod tests {
 
         let result = evaluator.evaluate_rule(&data, &rule);
         assert!(result.is_valid);
-        assert!(result.error_message.is_none());
+        assert!(result.error_message.is_none(), "Should be none");
     }
 
     #[test]
@@ -552,7 +552,7 @@ mod tests {
 
         let result = evaluator.evaluate_rule(&data, &rule);
         assert!(!result.is_valid);
-        assert!(result.error_message.is_some());
+        assert!(result.error_message.is_some(), "Should have value");
         assert!(result.error_message.unwrap().contains("Expected"));
     }
 }

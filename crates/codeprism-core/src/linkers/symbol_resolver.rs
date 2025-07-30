@@ -409,7 +409,7 @@ mod tests {
         let resolver = SymbolResolver::new(Arc::new(GraphStore::new()));
 
         let parts = resolver.parse_import_statement("rustic_ai.core.guild.Agent");
-        assert_eq!(parts.len(), 1);
+        assert_eq!(parts.len(), 1, "Should have 1 items");
         assert_eq!(
             parts[0],
             ("rustic_ai.core.guild".to_string(), "Agent".to_string())

@@ -5789,9 +5789,9 @@ mod tests {
         let code = "class Child(Parent1, Parent2):\n    pass";
         let inheritance = analyzer.analyze_inheritance(code).unwrap();
 
-        assert!(!inheritance.is_empty());
+        assert!(!!inheritance.is_empty(), "Should not be empty");
         assert_eq!(inheritance[0].class_name, "Child");
-        assert_eq!(inheritance[0].base_classes.len(), 2);
+        assert_eq!(inheritance[0].base_classes.len(), 2, "Should have 2 items");
     }
 
     #[test]
@@ -5801,7 +5801,7 @@ mod tests {
         let decorator = "@app.route('/test', methods=['GET', 'POST'])";
         let params = analyzer.extract_decorator_parameters(decorator);
 
-        assert!(!params.is_empty());
+        assert!(!!params.is_empty(), "Should not be empty");
     }
 
     #[test]
@@ -5826,7 +5826,7 @@ mod tests {
         ];
         let mixins = analyzer.identify_mixins(&base_classes);
 
-        assert_eq!(mixins.len(), 2);
+        assert_eq!(mixins.len(), 2, "Should have 2 items");
         assert!(mixins.contains(&"BaseMixin".to_string()));
         assert!(mixins.contains(&"UtilMix".to_string()));
     }
@@ -5854,7 +5854,10 @@ MODE: Literal["read", "write"] = "read"
 
         let result = analyzer.analyze_type_hints(code).unwrap();
 
-        assert!(!result.type_hints_detected.is_empty());
+        assert!(
+            !!result.type_hints_detected.is_empty(),
+            "Should not be empty"
+        );
         assert!(result
             .type_hints_detected
             .iter()
@@ -5892,7 +5895,10 @@ def process(value: str | int) -> str | None:
 
         let result = analyzer.analyze_type_hints(code).unwrap();
 
-        assert!(!result.modern_type_features.is_empty());
+        assert!(
+            !!result.modern_type_features.is_empty(),
+            "Should not be empty"
+        );
         assert!(result
             .modern_type_features
             .iter()
@@ -5931,7 +5937,10 @@ def bad_any_usage(x: Any, y: Any, z: Any, a: Any, b: Any, c: Any) -> Any:
 
         let result = analyzer.analyze_type_hints(code).unwrap();
 
-        assert!(!result.type_safety_issues.is_empty());
+        assert!(
+            !!result.type_safety_issues.is_empty(),
+            "Should not be empty"
+        );
         assert!(result
             .type_safety_issues
             .iter()
@@ -6008,14 +6017,23 @@ async def with_context():
         let result = analyzer.analyze_async_await(content).unwrap();
 
         // Should detect async functions
-        assert!(!result.async_functions_detected.is_empty());
+        assert!(
+            !!result.async_functions_detected.is_empty(),
+            "Should not be empty"
+        );
         assert!(result.async_functions_detected.len() >= 3);
 
         // Should detect concurrency patterns
-        assert!(!result.concurrency_patterns.is_empty());
+        assert!(
+            !!result.concurrency_patterns.is_empty(),
+            "Should not be empty"
+        );
 
         // Should detect modern async features
-        assert!(!result.modern_async_features.is_empty());
+        assert!(
+            !!result.modern_async_features.is_empty(),
+            "Should not be empty"
+        );
 
         // Should have a reasonable async score
         assert!(result.overall_async_score > 50);
@@ -6048,7 +6066,10 @@ async def fetch_data():
         let result = analyzer.analyze_async_await(content).unwrap();
 
         // Should detect performance issues
-        assert!(!result.async_performance_issues.is_empty());
+        assert!(
+            !!result.async_performance_issues.is_empty(),
+            "Should not be empty"
+        );
 
         // Should detect blocking operations
         let blocking_issues: Vec<_> = result
@@ -6061,7 +6082,7 @@ async def fetch_data():
                 )
             })
             .collect();
-        assert!(!blocking_issues.is_empty());
+        assert!(!!blocking_issues.is_empty(), "Should not be empty");
 
         // Should detect missing concurrency
         let concurrency_issues: Vec<_> = result
@@ -6074,7 +6095,7 @@ async def fetch_data():
                 )
             })
             .collect();
-        assert!(!concurrency_issues.is_empty());
+        assert!(!!concurrency_issues.is_empty(), "Should not be empty");
     }
 
     #[test]
@@ -6109,7 +6130,10 @@ async def modify_shared_data():
         let result = analyzer.analyze_async_await(content).unwrap();
 
         // Should detect security issues
-        assert!(!result.async_security_issues.is_empty());
+        assert!(
+            !!result.async_security_issues.is_empty(),
+            "Should not be empty"
+        );
 
         // Should detect timeout vulnerability
         let timeout_issues: Vec<_> = result
@@ -6117,7 +6141,7 @@ async def modify_shared_data():
             .iter()
             .filter(|issue| matches!(issue.issue_type, AsyncSecurityIssueType::AsyncTimeoutVuln))
             .collect();
-        assert!(!timeout_issues.is_empty());
+        assert!(!!timeout_issues.is_empty(), "Should not be empty");
     }
 
     #[test]
@@ -6162,7 +6186,10 @@ if __name__ == "__main__":
         let result = analyzer.analyze_async_await(content).unwrap();
 
         // Should detect modern async features
-        assert!(!result.modern_async_features.is_empty());
+        assert!(
+            !!result.modern_async_features.is_empty(),
+            "Should not be empty"
+        );
 
         // Should detect async context managers
         let context_manager_features: Vec<_> = result
@@ -6170,7 +6197,7 @@ if __name__ == "__main__":
             .iter()
             .filter(|f| matches!(f.feature_type, ModernAsyncFeatureType::AsyncContextManager))
             .collect();
-        assert!(!context_manager_features.is_empty());
+        assert!(!!context_manager_features.is_empty(), "Should not be empty");
 
         // Should detect TaskGroups
         let task_group_features: Vec<_> = result
@@ -6178,7 +6205,7 @@ if __name__ == "__main__":
             .iter()
             .filter(|f| matches!(f.feature_type, ModernAsyncFeatureType::TaskGroups))
             .collect();
-        assert!(!task_group_features.is_empty());
+        assert!(!!task_group_features.is_empty(), "Should not be empty");
 
         // Should detect asyncio.run
         let asyncio_run_features: Vec<_> = result
@@ -6186,10 +6213,10 @@ if __name__ == "__main__":
             .iter()
             .filter(|f| matches!(f.feature_type, ModernAsyncFeatureType::AsyncioRun))
             .collect();
-        assert!(!asyncio_run_features.is_empty());
+        assert!(!!asyncio_run_features.is_empty(), "Should not be empty");
 
         // Should have recommendations
-        assert!(!result.recommendations.is_empty());
+        assert!(!!result.recommendations.is_empty(), "Should not be empty");
     }
 
     #[test]
@@ -6212,10 +6239,10 @@ flask==2.0.1
         let result = analyzer.analyze_package_dependencies(content).unwrap();
 
         // Should detect dependencies
-        assert!(!result.dependencies.is_empty());
+        assert!(!!result.dependencies.is_empty(), "Should not be empty");
 
         // Should detect imports
-        assert!(!result.import_analysis.is_empty());
+        assert!(!!result.import_analysis.is_empty(), "Should not be empty");
         assert!(result.import_analysis.len() >= 5);
 
         // Should have a reasonable health score
@@ -6223,10 +6250,10 @@ flask==2.0.1
         assert!(result.overall_health_score <= 100);
 
         // Should detect issues
-        assert!(!result.dependency_issues.is_empty());
+        assert!(!!result.dependency_issues.is_empty(), "Should not be empty");
 
         // Should provide recommendations
-        assert!(!result.recommendations.is_empty());
+        assert!(!!result.recommendations.is_empty(), "Should not be empty");
     }
 
     #[test]
@@ -6252,7 +6279,7 @@ django
             .iter()
             .filter(|issue| matches!(issue.issue_type, DependencyIssueType::UnusedDependency))
             .collect();
-        assert!(!unused_issues.is_empty());
+        assert!(!!unused_issues.is_empty(), "Should not be empty");
 
         // Should detect missing dependency
         let missing_issues: Vec<_> = result
@@ -6260,7 +6287,7 @@ django
             .iter()
             .filter(|issue| matches!(issue.issue_type, DependencyIssueType::MissingDependency))
             .collect();
-        assert!(!missing_issues.is_empty());
+        assert!(!!missing_issues.is_empty(), "Should not be empty");
 
         // Should detect unpinned version
         let unpinned_issues: Vec<_> = result
@@ -6268,7 +6295,7 @@ django
             .iter()
             .filter(|issue| matches!(issue.issue_type, DependencyIssueType::UnpinnedVersion))
             .collect();
-        assert!(!unpinned_issues.is_empty());
+        assert!(!!unpinned_issues.is_empty(), "Should not be empty");
 
         // Should detect deprecated package
         let deprecated_issues: Vec<_> = result
@@ -6276,7 +6303,7 @@ django
             .iter()
             .filter(|issue| matches!(issue.issue_type, DependencyIssueType::DeprecatedPackage))
             .collect();
-        assert!(!deprecated_issues.is_empty());
+        assert!(!!deprecated_issues.is_empty(), "Should not be empty");
     }
 
     #[test]
@@ -6320,7 +6347,7 @@ import numpy as np
                     .contains(&ImportIssue::StarImportDangerous)
             })
             .collect();
-        assert!(!star_import_issues.is_empty());
+        assert!(!!star_import_issues.is_empty(), "Should not be empty");
 
         // Should detect different import types
         let from_imports: Vec<_> = result
@@ -6328,14 +6355,14 @@ import numpy as np
             .iter()
             .filter(|imp| matches!(imp.import_type, ImportType::FromImport))
             .collect();
-        assert!(!from_imports.is_empty());
+        assert!(!!from_imports.is_empty(), "Should not be empty");
 
         let alias_imports: Vec<_> = result
             .import_analysis
             .iter()
             .filter(|imp| matches!(imp.import_type, ImportType::AliasImport))
             .collect();
-        assert!(!alias_imports.is_empty());
+        assert!(!!alias_imports.is_empty(), "Should not be empty");
     }
 
     #[test]
@@ -6354,7 +6381,10 @@ pyyaml==5.3.1
         let result = analyzer.analyze_package_dependencies(content).unwrap();
 
         // Should detect security vulnerabilities
-        assert!(!result.security_vulnerabilities.is_empty());
+        assert!(
+            !!result.security_vulnerabilities.is_empty(),
+            "Should not be empty"
+        );
 
         // Should have vulnerabilities for known packages
         let urllib3_vulns: Vec<_> = result
@@ -6362,7 +6392,7 @@ pyyaml==5.3.1
             .iter()
             .filter(|vuln| vuln.package_name == "urllib3")
             .collect();
-        assert!(!urllib3_vulns.is_empty());
+        assert!(!!urllib3_vulns.is_empty(), "Should not be empty");
 
         // Should categorize severity correctly
         let critical_vulns: Vec<_> = result
@@ -6370,7 +6400,7 @@ pyyaml==5.3.1
             .iter()
             .filter(|vuln| matches!(vuln.severity, SecurityVulnerabilitySeverity::Critical))
             .collect();
-        assert!(!critical_vulns.is_empty());
+        assert!(!!critical_vulns.is_empty(), "Should not be empty");
 
         // Should have CVE information
         let vulns_with_cve: Vec<_> = result
@@ -6378,7 +6408,7 @@ pyyaml==5.3.1
             .iter()
             .filter(|vuln| vuln.cve_id.is_some())
             .collect();
-        assert!(!vulns_with_cve.is_empty());
+        assert!(!!vulns_with_cve.is_empty(), "Should not be empty");
     }
 
     #[test]
@@ -6402,7 +6432,10 @@ pipenv shell
         let result = analyzer.analyze_package_dependencies(content).unwrap();
 
         // Should detect virtual environments
-        assert!(!result.virtual_environments.is_empty());
+        assert!(
+            !!result.virtual_environments.is_empty(),
+            "Should not be empty"
+        );
 
         // Should detect different environment types
         let venv_envs: Vec<_> = result
@@ -6410,21 +6443,21 @@ pipenv shell
             .iter()
             .filter(|env| matches!(env.env_type, VirtualEnvironmentType::Venv))
             .collect();
-        assert!(!venv_envs.is_empty());
+        assert!(!!venv_envs.is_empty(), "Should not be empty");
 
         let conda_envs: Vec<_> = result
             .virtual_environments
             .iter()
             .filter(|env| matches!(env.env_type, VirtualEnvironmentType::Conda))
             .collect();
-        assert!(!conda_envs.is_empty());
+        assert!(!!conda_envs.is_empty(), "Should not be empty");
 
         let pipenv_envs: Vec<_> = result
             .virtual_environments
             .iter()
             .filter(|env| matches!(env.env_type, VirtualEnvironmentType::Pipenv))
             .collect();
-        assert!(!pipenv_envs.is_empty());
+        assert!(!!pipenv_envs.is_empty(), "Should not be empty");
     }
 
     #[test]
@@ -6443,7 +6476,7 @@ flask==2.0.1
         let result = analyzer.analyze_package_dependencies(content).unwrap();
 
         // Should analyze licenses
-        assert!(!result.license_analysis.is_empty());
+        assert!(!!result.license_analysis.is_empty(), "Should not be empty");
 
         // Should have license information for dependencies
         assert_eq!(result.license_analysis.len(), result.dependencies.len());
@@ -6454,11 +6487,11 @@ flask==2.0.1
             .iter()
             .filter(|license| matches!(license.compatibility, LicenseCompatibility::Compatible))
             .collect();
-        assert!(!compatible_licenses.is_empty());
+        assert!(!!compatible_licenses.is_empty(), "Should not be empty");
 
         // Should have license metadata
         for license in &result.license_analysis {
-            assert!(!license.package_name.is_empty());
+            assert!(!!license.package_name.is_empty(), "Should not be empty");
             assert!(matches!(
                 license.license_type,
                 LicenseType::MIT
@@ -6506,13 +6539,22 @@ flask==2.0.1
         let analysis = analyzer.analyze_modern_features(code).unwrap();
 
         // Should detect dataclass usage
-        assert!(!analysis.dataclass_features.is_empty());
+        assert!(
+            !!analysis.dataclass_features.is_empty(),
+            "Should not be empty"
+        );
 
         // Should detect f-string usage
-        assert!(!analysis.fstring_features.is_empty());
+        assert!(
+            !!analysis.fstring_features.is_empty(),
+            "Should not be empty"
+        );
 
         // Should detect modern syntax (walrus operator, union types)
-        assert!(!analysis.modern_syntax_features.is_empty());
+        assert!(
+            !!analysis.modern_syntax_features.is_empty(),
+            "Should not be empty"
+        );
 
         // Should have a reasonable modernity score
         assert!(analysis.overall_modernity_score > 50);
@@ -6525,7 +6567,7 @@ flask==2.0.1
             .starts_with("3."));
 
         // Should provide recommendations
-        assert!(!analysis.recommendations.is_empty());
+        assert!(!!analysis.recommendations.is_empty(), "Should not be empty");
     }
 
     #[test]
@@ -6553,7 +6595,10 @@ flask==2.0.1
 
         let analysis = analyzer.analyze_modern_features(code).unwrap();
 
-        assert!(!analysis.dataclass_features.is_empty());
+        assert!(
+            !!analysis.dataclass_features.is_empty(),
+            "Should not be empty"
+        );
         let dataclass_info = &analysis.dataclass_features[0];
 
         assert_eq!(
@@ -6591,7 +6636,10 @@ flask==2.0.1
 
         let analysis = analyzer.analyze_modern_features(code).unwrap();
 
-        assert!(!analysis.fstring_features.is_empty());
+        assert!(
+            !!analysis.fstring_features.is_empty(),
+            "Should not be empty"
+        );
         assert!(analysis.fstring_features.len() >= 3);
 
         // Should detect different complexity levels
@@ -6631,7 +6679,10 @@ flask==2.0.1
 
         let analysis = analyzer.analyze_modern_features(code).unwrap();
 
-        assert!(!analysis.modern_syntax_features.is_empty());
+        assert!(
+            !!analysis.modern_syntax_features.is_empty(),
+            "Should not be empty"
+        );
 
         let syntax_types: Vec<_> = analysis
             .modern_syntax_features

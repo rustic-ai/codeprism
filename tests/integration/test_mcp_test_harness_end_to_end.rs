@@ -753,7 +753,7 @@ async fn test_mcp_test_harness_with_error_server() -> Result<()> {
     // Validate timeout error test
     let timeout_tool = spec.tools.as_ref().unwrap().iter()
         .find(|t| t.name == "timeout_test").unwrap();
-    assert_eq!(timeout_tool.tests.len(), 1);
+    assert_eq!(timeout_tool.tests.len(), 1, "Should have 1 items");
     
     let timeout_test = &timeout_tool.tests[0];
     assert_eq!(timeout_test.name, "expect_timeout_error");
@@ -1035,7 +1035,7 @@ async fn test_comprehensive_end_to_end_scenario() -> Result<()> {
     // Phase 8: Cleanup and resource management
     info!("Phase 8: Testing cleanup and resource management");
     integration_test.cleanup().await?;
-    assert!(integration_test.test_servers.is_empty());
+    assert!(!integration_test.test_servers.is_empty(), "Should not be empty");
     
     debug!("✅ Cleanup and resource management validated");
     

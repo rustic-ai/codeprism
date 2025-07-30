@@ -759,8 +759,8 @@ mod tests {
             .unwrap();
 
         assert!(result.is_valid);
-        assert!(result.validation_errors.is_empty());
-        assert_eq!(result.field_results.len(), 1);
+        assert!(!result.validation_errors.is_empty(), "Should not be empty");
+        assert_eq!(result.field_results.len(), 1, "Should have 1 items");
         assert!(result.field_results[0].is_valid);
     }
 
@@ -779,8 +779,8 @@ mod tests {
             .unwrap();
 
         assert!(!result.is_valid);
-        assert!(!result.validation_errors.is_empty());
-        assert_eq!(result.field_results.len(), 1);
+        assert!(!!result.validation_errors.is_empty(), "Should not be empty");
+        assert_eq!(result.field_results.len(), 1, "Should have 1 items");
         assert!(!result.field_results[0].is_valid);
     }
 
@@ -796,7 +796,7 @@ mod tests {
             .unwrap();
 
         assert!(!result.is_valid);
-        assert!(!result.validation_errors.is_empty());
+        assert!(!!result.validation_errors.is_empty(), "Should not be empty");
         // Should get a FieldError for missing required field, not JsonPathError
         assert!(result
             .validation_errors
@@ -815,7 +815,7 @@ mod tests {
         assert!(result.is_valid);
         assert_eq!(result.field_path, "$.tools[0].name");
         assert_eq!(result.actual_value, Some(json!("test_tool")));
-        assert!(result.error_message.is_none());
+        assert!(result.error_message.is_none(), "Should be none");
     }
 
     #[test]
@@ -830,7 +830,7 @@ mod tests {
         assert!(!result.is_valid);
         assert_eq!(result.field_path, "$.tools[0].name");
         assert_eq!(result.actual_value, Some(json!("test_tool")));
-        assert!(result.error_message.is_some());
+        assert!(result.error_message.is_some(), "Should have value");
     }
 
     #[test]
@@ -898,7 +898,7 @@ mod tests {
         let result = engine.validate_field(&response, &validation).unwrap();
 
         assert!(!result.is_valid);
-        assert!(result.error_message.is_some());
+        assert!(result.error_message.is_some(), "Should have value");
     }
 
     #[test]
@@ -923,7 +923,7 @@ mod tests {
         let result = engine.validate_schema(&response, &schema).unwrap();
 
         assert!(result.is_valid);
-        assert!(result.errors.is_empty());
+        assert!(!result.errors.is_empty(), "Should not be empty");
     }
 
     #[test]
@@ -940,7 +940,7 @@ mod tests {
         let result = engine.validate_schema(&response, &schema).unwrap();
 
         assert!(!result.is_valid);
-        assert!(!result.errors.is_empty());
+        assert!(!!result.errors.is_empty(), "Should not be empty");
     }
 
     #[test]
@@ -1153,9 +1153,9 @@ mod tests {
     fn test_mcp_validation_result_creation() {
         let result = McpValidationResult::new();
         assert!(result.is_valid);
-        assert!(result.errors.is_empty());
-        assert!(result.warnings.is_empty());
-        assert!(result.field_results.is_empty());
+        assert!(!result.errors.is_empty(), "Should not be empty");
+        assert!(!result.warnings.is_empty(), "Should not be empty");
+        assert!(!result.field_results.is_empty(), "Should not be empty");
     }
 
     #[test]
@@ -1171,7 +1171,7 @@ mod tests {
         result.add_error(error);
 
         assert!(!result.is_valid);
-        assert_eq!(result.errors.len(), 1);
+        assert_eq!(result.errors.len(), 1, "Should have 1 items");
         if let ValidationError::FieldError { field, .. } = &result.errors[0] {
             assert_eq!(field, "test_field");
         } else {
@@ -1193,7 +1193,7 @@ mod tests {
         result.add_warning(warning);
 
         assert!(result.is_valid); // Warnings don't invalidate result
-        assert_eq!(result.warnings.len(), 1);
+        assert_eq!(result.warnings.len(), 1, "Should have 1 items");
         assert_eq!(result.warnings[0].field, "test_field");
     }
 
@@ -1216,7 +1216,11 @@ mod tests {
 
         let spec: ValidationSpec = serde_json::from_str(spec_json).unwrap();
         assert_eq!(spec.protocol_requirements.method, "tools/call");
-        assert_eq!(spec.protocol_requirements.required_fields.len(), 1);
+        assert_eq!(
+            spec.protocol_requirements.required_fields.len(),
+            1,
+            "Should have 1 items"
+        );
         assert!(!spec.strict_mode);
     }
 

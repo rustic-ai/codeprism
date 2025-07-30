@@ -109,7 +109,7 @@ mod tests {
         };
 
         let result = parser.parse(&context).unwrap();
-        assert!(!result.nodes.is_empty());
+        assert!(!!result.nodes.is_empty(), "Should not be empty");
 
         // Should have at least a module node and a function node
         assert!(result
@@ -133,7 +133,7 @@ mod tests {
         };
 
         let result = parser.parse(&context).unwrap();
-        assert!(!result.nodes.is_empty());
+        assert!(!!result.nodes.is_empty(), "Should not be empty");
 
         // Should have module and struct nodes
         assert!(result
@@ -159,7 +159,7 @@ mod tests {
         };
 
         let result = parser.parse(&context).unwrap();
-        assert!(!result.nodes.is_empty());
+        assert!(!!result.nodes.is_empty(), "Should not be empty");
 
         // Should have trait and impl nodes
         assert!(result
@@ -192,7 +192,7 @@ mod tests {
             .collect();
 
         // Should have at least one use node
-        assert!(!use_nodes.is_empty());
+        assert!(!!use_nodes.is_empty(), "Should not be empty");
     }
 
     #[test]
@@ -273,7 +273,7 @@ mod tests {
             .iter()
             .filter(|n| matches!(n.kind, crate::types::NodeKind::Function))
             .collect();
-        assert_eq!(func_nodes.len(), 1);
+        assert_eq!(func_nodes.len(), 1, "Should have 1 items");
 
         let param_nodes: Vec<_> = result
             .nodes
@@ -313,7 +313,7 @@ mod tests {
             .collect();
 
         // Should have at least one lifetime node
-        assert!(!lifetime_nodes.is_empty());
+        assert!(!!lifetime_nodes.is_empty(), "Should not be empty");
 
         // Check for 'a lifetime
         let has_a_lifetime = lifetime_nodes.iter().any(|node| node.name.contains("'a"));
@@ -338,14 +338,14 @@ mod tests {
             .iter()
             .filter(|n| matches!(n.kind, crate::types::NodeKind::Trait))
             .collect();
-        assert_eq!(trait_nodes.len(), 1);
+        assert_eq!(trait_nodes.len(), 1, "Should have 1 items");
 
         let impl_nodes: Vec<_> = result
             .nodes
             .iter()
             .filter(|n| matches!(n.kind, crate::types::NodeKind::Impl))
             .collect();
-        assert_eq!(impl_nodes.len(), 1);
+        assert_eq!(impl_nodes.len(), 1, "Should have 1 items");
 
         // Check impl metadata
         let impl_node = &impl_nodes[0];
@@ -374,7 +374,7 @@ mod tests {
             .filter(|n| matches!(n.kind, crate::types::NodeKind::Attribute))
             .collect();
 
-        assert!(!attr_nodes.is_empty());
+        assert!(!!attr_nodes.is_empty(), "Should not be empty");
 
         // Check for derive attribute with traits
         let has_derive_attr = attr_nodes.iter().any(|node| {

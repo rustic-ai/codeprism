@@ -177,7 +177,7 @@ mod tests {
         };
 
         let matching_scripts = manager.get_scripts_for_test_case(&test_case);
-        assert_eq!(matching_scripts.len(), 2);
+        assert_eq!(matching_scripts.len(), 2, "Should have 2 items");
 
         let script_names: Vec<&str> = matching_scripts.iter().map(|s| s.name.as_str()).collect();
         assert!(script_names.contains(&"script1"));

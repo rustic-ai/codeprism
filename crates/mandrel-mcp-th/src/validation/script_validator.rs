@@ -337,7 +337,7 @@ mod tests {
         
         assert!(result.is_ok());
         let validator = result.unwrap();
-        assert_eq!(validator.validation_scripts.len(), 3);
+        assert_eq!(validator.validation_scripts.len(), 3, "Should have 3 items");
     }
 
     #[test]
@@ -541,9 +541,9 @@ mod tests {
         
         let parsed_errors = validator.parse_script_validation_output(&Ok(script_result));
         
-        assert!(parsed_errors.is_some());
+        assert!(parsed_errors.is_some(), "Should have value");
         let errors = parsed_errors.unwrap();
-        assert_eq!(errors.len(), 1);
+        assert_eq!(errors.len(), 1, "Should have 1 items");
         assert!(matches!(errors[0], ValidationError::FieldError { ref field, .. } if field == "$.result.value"));
     }
 
@@ -564,7 +564,7 @@ mod tests {
         
         let parsed_errors = validator.parse_script_validation_output(&Ok(script_result));
         
-        assert!(parsed_errors.is_none());
+        assert!(parsed_errors.is_none(), "Should be none");
     }
 
     // ========================================================================
@@ -592,7 +592,7 @@ mod tests {
         
         assert!(result.is_ok());
         let errors = result.unwrap();
-        assert!(errors.is_empty()); // Should be empty for successful script
+        assert!(!errors.is_empty(), "Should not be empty"); // Should be empty for successful script
     }
 
     #[tokio::test]
@@ -619,7 +619,7 @@ mod tests {
         
         assert!(result.is_ok());
         let errors = result.unwrap();
-        assert!(!errors.is_empty()); // Should contain errors for failed required script
+        assert!(!!errors.is_empty(), "Should not be empty"); // Should contain errors for failed required script
         assert!(errors.iter().any(|e| matches!(e, ValidationError::FieldError { field, .. } if field.starts_with("script:"))));
     }
 
@@ -647,7 +647,7 @@ mod tests {
         
         assert!(result.is_ok());
         let errors = result.unwrap();
-        assert!(errors.is_empty()); // Should be empty for optional failing script with fail_on_script_error=false
+        assert!(!errors.is_empty(), "Should not be empty"); // Should be empty for optional failing script with fail_on_script_error=false
     }
 
     #[tokio::test]
@@ -671,7 +671,7 @@ mod tests {
         
         assert!(result.is_ok());
         let errors = result.unwrap();
-        assert!(errors.is_empty()); // Should be empty because script shouldn't execute in wrong phase
+        assert!(!errors.is_empty(), "Should not be empty"); // Should be empty because script shouldn't execute in wrong phase
     }
 
     #[tokio::test]
@@ -709,7 +709,7 @@ mod tests {
         
         assert!(result.is_ok());
         let errors = result.unwrap();
-        assert!(!errors.is_empty()); // Should contain script-generated validation errors
+        assert!(!!errors.is_empty(), "Should not be empty"); // Should contain script-generated validation errors
         assert!(errors.iter().any(|e| matches!(e, ValidationError::FieldError { field, .. } if field == "$.result.code")));
     }
 

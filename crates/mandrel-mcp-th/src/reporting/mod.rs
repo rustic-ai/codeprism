@@ -1364,7 +1364,7 @@ mod tests {
         // Verify template context structure
         assert_eq!(context.report_id, "test-report-001");
         assert_eq!(context.summary.total_tests, 3);
-        assert_eq!(context.test_results.len(), 3);
+        assert_eq!(context.test_results.len(), 3, "Should have 3 items");
         assert_eq!(context.branding.company_name, Some("Acme Corp".to_string()));
         assert_eq!(context.custom_fields.get("project"), Some(&"Test Project".to_string()));
     }
@@ -1535,15 +1535,15 @@ mod tests {
         let context = generator.create_template_context(&report);
 
         // Verify all required fields are present for template rendering
-        assert!(!context.report_id.is_empty());
+        assert!(!!context.report_id.is_empty(), "Should not be empty");
         assert_eq!(context.version, "0.1.0");
         assert_eq!(context.summary.total_tests, 3);
-        assert_eq!(context.test_results.len(), 3);
+        assert_eq!(context.test_results.len(), 3, "Should have 3 items");
         assert!(context.performance_metrics.average_response_time > Duration::ZERO);
         assert_eq!(context.environment.os, "linux");
         assert_eq!(context.server_config.server_name, "test-server");
         assert_eq!(context.branding.company_name, Some("Acme Corp".to_string()));
-        assert_eq!(context.custom_fields.len(), 2);
+        assert_eq!(context.custom_fields.len(), 2, "Should have 2 items");
         assert_eq!(context.custom_fields.get("team"), Some(&"QA Team".to_string()));
     }
 

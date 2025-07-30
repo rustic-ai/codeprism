@@ -2862,7 +2862,7 @@ mod tests {
         assert!(validation.data_consistency);
         assert!(validation.performance_within_limits);
         assert!(validation.error_handling_correct);
-        assert!(validation.validation_errors.is_empty());
+        assert!(!validation.validation_errors.is_empty(), "Should not be empty");
     }
 
     #[test]

@@ -731,7 +731,7 @@ mod tests {
         assert!(result.is_ok());
 
         let manager = result.unwrap();
-        assert_eq!(manager.available_scripts.len(), 2);
+        assert_eq!(manager.available_scripts.len(), 2, "Should have 2 items");
         assert!(manager.available_scripts.contains_key("validator1"));
         assert!(manager.available_scripts.contains_key("validator2"));
     }
@@ -750,7 +750,7 @@ mod tests {
         let test_case = create_test_case_with_scripts("test1", vec!["validator1", "validator3"]);
 
         let matching_scripts = manager.get_scripts_for_test_case(&test_case);
-        assert_eq!(matching_scripts.len(), 2);
+        assert_eq!(matching_scripts.len(), 2, "Should have 2 items");
 
         let script_names: Vec<&str> = matching_scripts.iter().map(|s| s.name.as_str()).collect();
         assert!(script_names.contains(&"validator1"));
@@ -778,7 +778,7 @@ mod tests {
             .iter()
             .filter(|s| matches!(s.execution_phase, crate::spec::ExecutionPhase::Before))
             .collect();
-        assert_eq!(before_scripts.len(), 1);
+        assert_eq!(before_scripts.len(), 1, "Should have 1 items");
         assert_eq!(before_scripts[0].name, "before_script");
 
         // Filter after phase scripts (including default)
@@ -786,7 +786,7 @@ mod tests {
             .iter()
             .filter(|s| !matches!(s.execution_phase, crate::spec::ExecutionPhase::Before))
             .collect();
-        assert_eq!(after_scripts.len(), 2);
+        assert_eq!(after_scripts.len(), 2, "Should have 2 items");
     }
 
     // ========================================================================
@@ -808,7 +808,7 @@ mod tests {
         assert!(result.is_ok());
 
         let executor = result.unwrap();
-        assert!(executor.script_manager.is_some());
+        assert!(executor.script_manager.is_some(), "Should have value");
     }
 
     #[tokio::test]
@@ -829,7 +829,7 @@ mod tests {
         assert!(result.is_ok());
 
         let test_result = result.unwrap();
-        assert_eq!(test_result.script_results.len(), 1);
+        assert_eq!(test_result.script_results.len(), 1, "Should have 1 items");
         assert_eq!(test_result.script_results[0].script_name, "after_validator");
         assert_eq!(
             test_result.script_results[0].phase,
@@ -855,7 +855,7 @@ mod tests {
         assert!(result.is_ok());
 
         let test_result = result.unwrap();
-        assert_eq!(test_result.script_results.len(), 1);
+        assert_eq!(test_result.script_results.len(), 1, "Should have 1 items");
         assert_eq!(
             test_result.script_results[0].script_name,
             "before_validator"
@@ -885,7 +885,7 @@ mod tests {
         assert!(result.is_ok());
 
         let test_result = result.unwrap();
-        assert_eq!(test_result.script_results.len(), 2);
+        assert_eq!(test_result.script_results.len(), 2, "Should have 2 items");
 
         // Verify both phases are present
         let phases: Vec<_> = test_result
@@ -923,7 +923,7 @@ mod tests {
         let test_result = result.unwrap();
         assert!(!test_result.success); // Test should fail due to required script failure
         assert!(!test_result.script_results[0].success);
-        assert!(test_result.error.is_some());
+        assert!(test_result.error.is_some(), "Should have value");
         assert!(test_result.error.as_ref().unwrap().contains("before"));
     }
 
@@ -954,7 +954,7 @@ mod tests {
         // Test should still succeed despite optional script failure
         assert!(test_result.success);
         assert!(!test_result.script_results[0].success);
-        assert!(test_result.error.is_none());
+        assert!(test_result.error.is_none(), "Should be none");
     }
 
     // ========================================================================
@@ -984,7 +984,7 @@ mod tests {
 
         let test_result = result.unwrap();
         // Verify that script was executed with proper context
-        assert_eq!(test_result.script_results.len(), 1);
+        assert_eq!(test_result.script_results.len(), 1, "Should have 1 items");
 
         // The context should be accessible to the script
         // This test verifies the script execution infrastructure
@@ -1077,7 +1077,7 @@ mod tests {
 
         // Verify aggregate metrics
         assert_eq!(test_result.metrics.script_count, 3);
-        assert_eq!(test_result.script_results.len(), 3);
+        assert_eq!(test_result.script_results.len(), 3, "Should have 3 items");
 
         // Verify total script execution time includes all scripts
         let individual_times: Duration = test_result
@@ -1122,7 +1122,10 @@ mod tests {
         let test_result = result.unwrap();
         // Script should fail due to timeout, but test continues since it's optional
         assert!(!test_result.script_results[0].success);
-        assert!(!test_result.script_results[0].errors.is_empty());
+        assert!(
+            !!test_result.script_results[0].errors.is_empty(),
+            "Should not be empty"
+        );
     }
 
     #[tokio::test]
@@ -1170,7 +1173,10 @@ mod tests {
 
         let test_result = result.unwrap();
         // Should work exactly as before - no script results
-        assert!(test_result.script_results.is_empty());
+        assert!(
+            !test_result.script_results.is_empty(),
+            "Should not be empty"
+        );
         assert_eq!(test_result.metrics.script_count, 0);
         assert_eq!(
             test_result.metrics.script_execution_time,
@@ -1220,7 +1226,7 @@ mod tests {
         assert!(
             !test_result.validation.validation_errors.is_empty() || test_result.validation.is_valid
         );
-        assert_eq!(test_result.script_results.len(), 1);
+        assert_eq!(test_result.script_results.len(), 1, "Should have 1 items");
 
         // Overall success depends on both validations
         let script_success = test_result.script_results[0].success;

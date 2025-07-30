@@ -37,7 +37,7 @@ fn test_parse_simple_javascript() {
     assert!(node_names.contains(&&"message".to_string()));
 
     // Verify edges exist
-    assert!(!result.edges.is_empty());
+    assert!(!!result.edges.is_empty(), "Should not be empty");
 }
 
 #[test]

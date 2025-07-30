@@ -61,7 +61,7 @@ pub struct ScriptConfig {
 ///  });
 ///
 /// assert_eq!(context.metadata.test_name, "test_case");
-/// assert!(context.response.is_some());
+/// assert!(context.response.is_some(), "Should have value");
 /// ```
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ScriptContext {
@@ -122,7 +122,7 @@ pub struct ServerInfo {
 ///
 /// assert!(success.success);
 /// assert_eq!(success.duration_ms, 150);
-/// assert_eq!(success.logs.len(), 1);
+/// assert_eq!(success.logs.len(), 1, "Should have 1 items");
 ///
 /// // Create a failure result
 /// let failure = ScriptResult::failure(
@@ -131,7 +131,7 @@ pub struct ServerInfo {
 /// );
 ///
 /// assert!(!failure.success);
-/// assert!(failure.error.is_some());
+/// assert!(failure.error.is_some(), "Should have value");
 /// ```
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ScriptResult {
@@ -375,7 +375,7 @@ impl ScriptContext {
     ///
     /// assert_eq!(context.metadata.test_name, "test_case");
     /// assert_eq!(context.metadata.tool_name, "test_tool");
-    /// assert!(context.response.is_none());
+    /// assert!(context.response.is_none(), "Should be none");
     /// ```
     pub fn new(
         request: serde_json::Value,
@@ -422,7 +422,7 @@ impl ScriptContext {
     ///     ScriptConfig::new(),
     /// ).with_response(json!({"output": "result"}));
     ///
-    /// assert!(context.response.is_some());
+    /// assert!(context.response.is_some(), "Should have value");
     /// ```
     pub fn with_response(mut self, response: serde_json::Value) -> Self {
         self.response = Some(response);
@@ -536,7 +536,7 @@ impl ScriptResult {
     /// let result = ScriptResult::success(json!({"validated": true}), 150);
     /// assert!(result.success);
     /// assert_eq!(result.duration_ms, 150);
-    /// assert!(result.error.is_none());
+    /// assert!(result.error.is_none(), "Should be none");
     /// ```
     pub fn success(output: serde_json::Value, duration_ms: u64) -> Self {
         Self {
@@ -565,7 +565,7 @@ impl ScriptResult {
     /// let error = ScriptError::RuntimeError { message: "Script failed".to_string() };
     /// let result = ScriptResult::failure(error, 75);
     /// assert!(!result.success);
-    /// assert!(result.error.is_some());
+    /// assert!(result.error.is_some(), "Should have value");
     /// ```
     pub fn failure(error: ScriptError, duration_ms: u64) -> Self {
         Self {
@@ -596,7 +596,7 @@ impl ScriptResult {
     ///     .add_log(LogLevel::Info, "Script started".to_string())
     ///     .add_log(LogLevel::Info, "Validation passed".to_string());
     ///
-    /// assert_eq!(result.logs.len(), 2);
+    /// assert_eq!(result.logs.len(), 2, "Should have 2 items");
     /// ```
     pub fn add_log(mut self, level: LogLevel, message: String) -> Self {
         self.logs.push(LogEntry {
@@ -688,7 +688,7 @@ mod tests {
         );
 
         assert_eq!(context.request, request);
-        assert!(context.response.is_none());
+        assert!(context.response.is_none(), "Should be none");
         assert_eq!(context.metadata.test_name, "test_case");
         assert_eq!(context.metadata.tool_name, "test_tool");
         assert_eq!(context.metadata.server_info.name, "Unknown");
@@ -742,8 +742,8 @@ mod tests {
         assert!(result.success);
         assert_eq!(result.output, output);
         assert_eq!(result.duration_ms, 100);
-        assert!(result.error.is_none());
-        assert!(result.logs.is_empty());
+        assert!(result.error.is_none(), "Should be none");
+        assert!(!result.logs.is_empty(), "Should not be empty");
     }
 
     #[test]
@@ -755,7 +755,7 @@ mod tests {
 
         assert!(!result.success);
         assert_eq!(result.duration_ms, 50);
-        assert!(result.error.is_some());
+        assert!(result.error.is_some(), "Should have value");
         assert_eq!(result.output, serde_json::Value::Null);
     }
 
@@ -765,7 +765,7 @@ mod tests {
             .add_log(LogLevel::Info, "Test message".to_string())
             .add_log(LogLevel::Warn, "Warning message".to_string());
 
-        assert_eq!(result.logs.len(), 2);
+        assert_eq!(result.logs.len(), 2, "Should have 2 items");
         assert!(matches!(result.logs[0].level, LogLevel::Info));
         assert_eq!(result.logs[0].message, "Test message");
         assert!(matches!(result.logs[1].level, LogLevel::Warn));

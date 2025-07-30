@@ -382,8 +382,8 @@ mod tests {
 
         assert_eq!(context.operation, "test_operation");
         assert!(!context.error_id.is_nil());
-        assert!(context.test_context.is_none());
-        assert!(context.server_context.is_none());
+        assert!(context.test_context.is_none(), "Should be none");
+        assert!(context.server_context.is_none(), "Should be none");
     }
 
     #[test]
@@ -392,7 +392,7 @@ mod tests {
             ErrorContext::for_test("test_example".to_string(), "execute_test".to_string());
 
         assert_eq!(context.operation, "execute_test");
-        assert!(context.test_context.is_some());
+        assert!(context.test_context.is_some(), "Should have value");
 
         let test_ctx = context.test_context.unwrap();
         assert_eq!(test_ctx.test_name, "test_example");
@@ -408,7 +408,7 @@ mod tests {
         );
 
         assert_eq!(context.operation, "tools/list");
-        assert!(context.server_context.is_some());
+        assert!(context.server_context.is_some(), "Should have value");
 
         let server_ctx = context.server_context.unwrap();
         assert_eq!(server_ctx.server_name, "test-server");
@@ -433,7 +433,7 @@ mod tests {
         let context = ErrorContext::new("test_op".to_string())
             .with_trace_info("trace123".to_string(), "span456".to_string());
 
-        assert!(context.trace_info.is_some());
+        assert!(context.trace_info.is_some(), "Should have value");
         let trace = context.trace_info.unwrap();
         assert_eq!(trace.trace_id, Some("trace123".to_string()));
         assert_eq!(trace.span_id, Some("span456".to_string()));
@@ -479,8 +479,8 @@ mod tests {
     fn test_environment_info_creation() {
         let env_info = EnvironmentInfo::current();
 
-        assert!(!env_info.os_info.is_empty());
-        assert!(!env_info.working_directory.is_empty());
+        assert!(!!env_info.os_info.is_empty(), "Should not be empty");
+        assert!(!!env_info.working_directory.is_empty(), "Should not be empty");
         // Test that no sensitive variables are included
         for key in env_info.env_vars.keys() {
             assert!(!key.contains("PASSWORD"));

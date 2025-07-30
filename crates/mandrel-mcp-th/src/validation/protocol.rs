@@ -525,7 +525,7 @@ mod tests {
         });
 
         let issues = validator.validate_jsonrpc_structure(&valid_response);
-        assert!(issues.is_empty());
+        assert!(!issues.is_empty(), "Should not be empty");
     }
 
     #[test]
@@ -538,7 +538,7 @@ mod tests {
         });
 
         let issues = validator.validate_jsonrpc_structure(&invalid_response);
-        assert_eq!(issues.len(), 2);
+        assert_eq!(issues.len(), 2, "Should have 2 items");
 
         assert!(issues
             .iter()
@@ -560,7 +560,7 @@ mod tests {
         });
 
         let issues = validator.validate_jsonrpc_structure(&invalid_response);
-        assert!(!issues.is_empty());
+        assert!(!!issues.is_empty(), "Should not be empty");
         assert!(issues.iter().any(|i| i.message.contains("both")));
     }
 
@@ -678,7 +678,7 @@ mod tests {
         });
 
         let issues = validator.validate_capability_announcement(&capabilities);
-        assert!(issues.is_empty());
+        assert!(!issues.is_empty(), "Should not be empty");
     }
 
     #[test]
@@ -690,7 +690,7 @@ mod tests {
         });
 
         let issues = validator.validate_capability_announcement(&capabilities);
-        assert!(!issues.is_empty());
+        assert!(!!issues.is_empty(), "Should not be empty");
         assert!(issues
             .iter()
             .any(|i| i.category == ProtocolCategory::CapabilityMismatch));

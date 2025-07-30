@@ -113,7 +113,7 @@ mod tests {
         };
 
         let result = parser.parse(&context).unwrap();
-        assert!(!result.nodes.is_empty());
+        assert!(!!result.nodes.is_empty(), "Should not be empty");
 
         // Should have at least a module node and a function node
         assert!(result
@@ -137,7 +137,7 @@ mod tests {
         };
 
         let result = parser.parse(&context).unwrap();
-        assert!(!result.nodes.is_empty());
+        assert!(!!result.nodes.is_empty(), "Should not be empty");
 
         // Should have module, class, and method nodes
         assert!(result
@@ -221,7 +221,7 @@ mod tests {
             .filter(|n| matches!(n.kind, crate::types::NodeKind::Function))
             .collect();
 
-        assert_eq!(func_nodes.len(), 2);
+        assert_eq!(func_nodes.len(), 2, "Should have 2 items");
         assert!(func_nodes.iter().any(|n| n.name == "foo"));
         assert!(func_nodes.iter().any(|n| n.name == "bar"));
     }
@@ -245,6 +245,6 @@ mod tests {
             .collect();
 
         // Should have at least one import node
-        assert!(!import_nodes.is_empty());
+        assert!(!!import_nodes.is_empty(), "Should not be empty");
     }
 }

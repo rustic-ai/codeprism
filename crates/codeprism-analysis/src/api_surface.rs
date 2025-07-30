@@ -481,7 +481,7 @@ mod tests {
             .analyze_api_surface(code, &["public_api".to_string()], false)
             .unwrap();
 
-        assert!(!elements.is_empty());
+        assert!(!!elements.is_empty(), "Should not be empty");
         assert!(elements.iter().any(|e| e.deprecated));
     }
 
@@ -494,7 +494,7 @@ mod tests {
             .analyze_api_surface(code, &["public_api".to_string()], false)
             .unwrap();
 
-        assert!(!elements.is_empty());
+        assert!(!!elements.is_empty(), "Should not be empty");
         assert!(elements.iter().any(|e| e.documentation.is_some()));
     }
 
@@ -531,6 +531,6 @@ mod tests {
         }];
 
         let recommendations = analyzer.get_api_recommendations(&elements);
-        assert!(!recommendations.is_empty());
+        assert!(!!recommendations.is_empty(), "Should not be empty");
     }
 }

@@ -1141,7 +1141,13 @@ mod tests {
         assert_eq!(deserialized.summary.total_tests, 3);
         assert_eq!(deserialized.summary.passed, 2);
         assert_eq!(deserialized.summary.failed, 1);
-        assert_eq!(deserialized.test_results.len(), 3);
+        assert_eq!(deserialized.test_results.len(), 3, "Deserialized report should have 3 test results");
+
+        // Verify actual deserialization functionality by checking test result content
+        assert_eq!(deserialized.test_results[0].test_name, "passing_test", "First test should be passing_test");
+        assert_eq!(deserialized.test_results[1].test_name, "failing_test", "Second test should be failing_test");
+        assert!(matches!(deserialized.test_results[0].status, TestStatus::Passed), "First test should be Passed");
+        assert!(matches!(deserialized.test_results[1].status, TestStatus::Failed), "Second test should be Failed");
     }
 
     #[test]
@@ -1154,11 +1160,21 @@ mod tests {
 
         let summary = ExecutionSummary::from_results(&test_results);
 
-        assert_eq!(summary.total_tests, 3);
-        assert_eq!(summary.passed, 2);
-        assert_eq!(summary.failed, 1);
-        assert_eq!(summary.skipped, 0);
-        assert_eq!(summary.success_rate, 66.66666666666666);
+        // Verify summary calculations are correct
+        assert_eq!(summary.total_tests, 3, "Total tests should be 3");
+        assert_eq!(summary.passed, 2, "Passed tests should be 2");
+        assert_eq!(summary.failed, 1, "Failed tests should be 1");
+        assert_eq!(summary.skipped, 0, "Skipped tests should be 0");
+        assert_eq!(summary.success_rate, 66.66666666666666, "Success rate should be 66.67%");
+
+        // Verify total_duration is calculated from all test durations
+        let expected_duration = test_results.iter().map(|t| t.duration).sum::<Duration>();
+        assert_eq!(summary.total_duration, expected_duration, "Total duration should sum individual test durations");
+
+        // Verify calculations work with empty results
+        let empty_summary = ExecutionSummary::from_results(&[]);
+        assert_eq!(empty_summary.total_tests, 0, "Empty results should have 0 total tests");
+        assert_eq!(empty_summary.success_rate, 0.0, "Empty results should have 0% success rate");
     }
 
     #[test]
@@ -1171,9 +1187,20 @@ mod tests {
 
         let performance = PerformanceReport::from_results(&test_results);
 
-        assert!(performance.average_response_time > Duration::from_millis(0));
-        assert!(performance.p95_response_time >= performance.average_response_time);
-        assert_eq!(performance.throughput, 0.0); // ENHANCEMENT(#202): Will be implemented with performance monitoring
+        // Verify performance calculations are functional
+        assert!(performance.average_response_time > Duration::from_millis(0), "Average response time should be positive");
+        assert!(performance.p95_response_time >= performance.average_response_time, "P95 should be >= average");
+        assert_eq!(performance.throughput, 0.0, "Throughput is not implemented yet (ENHANCEMENT #202)");
+
+        // Verify actual calculations by testing with known durations
+        let total_duration: Duration = test_results.iter().map(|t| t.duration).sum();
+        let expected_avg = total_duration.div_f64(test_results.len() as f64);
+        assert_eq!(performance.average_response_time, expected_avg, "Average should be calculated correctly");
+
+        // Test edge case: single result
+        let single_result = vec![create_passing_test_result()];
+        let single_perf = PerformanceReport::from_results(&single_result);
+        assert_eq!(single_perf.average_response_time, single_perf.p95_response_time, "For single result, avg should equal p95");
     }
 
     #[test]
@@ -1189,7 +1216,12 @@ mod tests {
         assert!(json_output.contains("\"metadata\""));
         assert!(json_output.contains("\"summary\""));
         assert!(json_output.contains("\"test_results\""));
-        assert!(!json_output.is_empty());
+        assert!(!json_output.is_empty(), "JSON output should not be empty");
+
+        // Verify the actual JSON structure and content
+        assert!(json_output.len() > 100, "JSON output should be substantial, got {} chars", json_output.len());
+        assert!(json_output.contains("test-report-001"), "JSON should contain the test report ID");
+        assert!(json_output.contains("test_suite"), "JSON should contain the suite name");
 
         // Verify it's valid JSON
         let parsed: serde_json::Value = serde_json::from_str(&json_output).expect("Should be valid JSON");
@@ -1208,10 +1240,19 @@ mod tests {
 
         let metadata = ReportMetadata::from_suite(&suite_result);
 
-        assert!(!metadata.report_id.is_empty());
+        assert!(!metadata.report_id.is_empty(), "Report ID should not be empty");
+
+        // Verify the report ID format and content
+        assert!(metadata.report_id.starts_with("mandrel-"), "Report ID should start with 'mandrel-', got: {}", metadata.report_id);
+        assert!(metadata.report_id.len() > 10, "Report ID should be reasonably long, got {} chars", metadata.report_id.len());
         assert_eq!(metadata.mandrel_version, "0.1.0");
         assert_eq!(metadata.mcp_protocol_version, "2025-06-18");
-        assert!(!metadata.environment.os.is_empty());
+        assert!(!metadata.environment.os.is_empty(), "OS field should not be empty");
+
+        // Verify environment data is populated with real values
+        assert!(metadata.environment.os.len() > 2, "OS should be descriptive, got: {}", metadata.environment.os);
+        assert!(!metadata.environment.arch.is_empty(), "Architecture should not be empty");
+        assert!(!metadata.environment.rust_version.is_empty(), "Rust version should not be empty");
     }
 
     #[test]
@@ -1220,7 +1261,13 @@ mod tests {
 
         let validation_details = ValidationDetail::from_suite(&suite_result);
 
-        assert!(!validation_details.is_empty());
+        assert!(!validation_details.is_empty(), "Validation details should not be empty");
+
+        // Verify validation details contain meaningful data
+        assert!(validation_details.len() > 0, "Should have at least one validation detail");
+        let first_detail = &validation_details[0];
+        assert!(!first_detail.validation_type.is_empty(), "Validation type should not be empty");
+        assert!(!first_detail.description.is_empty(), "Validation description should not be empty");
         assert!(validation_details.iter().any(|v| v.validation_type == "schema"));
     }
 
@@ -1232,9 +1279,21 @@ mod tests {
 
         let memory_stats = MemoryStats::calculate(initial_memory, peak_memory, final_memory);
 
-        assert_eq!(memory_stats.peak_memory_mb, 45.0);
-        assert_eq!(memory_stats.memory_growth_mb, 5.0);
-        assert_eq!(memory_stats.average_memory_mb, 32.5);
+        // Verify memory calculations are correct
+        assert_eq!(memory_stats.peak_memory_mb, 45.0, "Peak memory should be 45.0 MB");
+        assert_eq!(memory_stats.memory_growth_mb, 5.0, "Memory growth should be final - initial = 35.0 - 30.0 = 5.0 MB");
+        assert_eq!(memory_stats.average_memory_mb, 32.5, "Average should be (initial + final) / 2 = (30.0 + 35.0) / 2 = 32.5 MB");
+
+        // Test edge cases to verify calculation logic
+        let zero_growth = MemoryStats::calculate(10.0, 15.0, 10.0);
+        assert_eq!(zero_growth.memory_growth_mb, 0.0, "No growth when final equals initial");
+
+        let negative_growth = MemoryStats::calculate(20.0, 25.0, 15.0);
+        assert_eq!(negative_growth.memory_growth_mb, -5.0, "Negative growth when final < initial");
+
+        // Verify peak is always the maximum value passed
+        assert!(memory_stats.peak_memory_mb >= initial_memory, "Peak should be >= initial");
+        assert!(memory_stats.peak_memory_mb >= final_memory, "Peak should be >= final");
     }
 
     #[test]
@@ -1243,12 +1302,30 @@ mod tests {
 
         let summary = ExecutionSummary::from_results(&empty_results);
 
-        assert_eq!(summary.total_tests, 0);
-        assert_eq!(summary.passed, 0);
-        assert_eq!(summary.failed, 0);
-        assert_eq!(summary.skipped, 0);
-        assert_eq!(summary.success_rate, 0.0);
-        assert_eq!(summary.total_duration, Duration::from_secs(0));
+        // Verify empty results handling works correctly
+        assert_eq!(summary.total_tests, 0, "Empty results should have 0 total tests");
+        assert_eq!(summary.passed, 0, "Empty results should have 0 passed tests");
+        assert_eq!(summary.failed, 0, "Empty results should have 0 failed tests");
+        assert_eq!(summary.skipped, 0, "Empty results should have 0 skipped tests");
+        assert_eq!(summary.success_rate, 0.0, "Empty results should have 0% success rate");
+        assert_eq!(summary.total_duration, Duration::from_secs(0), "Empty results should have 0 duration");
+
+        // Test that other components handle empty results gracefully
+        let empty_performance = PerformanceReport::from_results(&empty_results);
+        assert_eq!(empty_performance.average_response_time, Duration::ZERO, "Empty results should have zero average response time");
+        assert_eq!(empty_performance.p95_response_time, Duration::ZERO, "Empty results should have zero p95 response time");
+
+        // Verify validation details extraction handles empty results
+        let empty_validation = ValidationDetail::from_suite(&SuiteResult {
+            suite_name: "empty".to_string(),
+            total_tests: 0,
+            passed: 0,
+            failed: 0,
+            skipped: 0,
+            duration: Duration::ZERO,
+            test_results: empty_results,
+        });
+        assert!(empty_validation.is_empty(), "Empty suite should produce empty validation details");
     }
 
     // Phase 2 RED: Template System Tests (These should FAIL initially)
@@ -1362,7 +1439,12 @@ mod tests {
         match markdown_format {
             OutputFormat::Markdown { style, template } => {
                 assert!(matches!(style, MarkdownStyle::GitHub));
-                assert!(template.is_some());
+                assert!(template.is_some(), "Template should be loaded successfully");
+
+        // Verify the template contains expected content
+        let template_content = template.unwrap();
+        assert!(!template_content.is_empty(), "Template content should not be empty");
+        assert!(template_content.contains("{{summary.total_tests}}" ) || template_content.contains("{{test_results}}"), "Template should contain handlebars variables");
             },
             _ => panic!("Should be Markdown format"),
         }
@@ -1389,7 +1471,14 @@ mod tests {
         let generator = ReportGenerator::new(config).expect("Should create generator with custom config");
 
         // Template source should be accessible
-        assert!(generator.config.template_source.is_some());
+        assert!(generator.config.template_source.is_some(), "Generator should have template source configured");
+
+        // Verify the template source is the correct type
+        if let Some(TemplateSource::BuiltIn(template)) = &generator.config.template_source {
+            assert!(matches!(template, BuiltInTemplate::TechnicalDetailed), "Should be TechnicalDetailed template");
+        } else {
+            panic!("Template source should be BuiltIn variant");
+        }
         assert_eq!(generator.config.branding.company_name, Some("Test Company".to_string()));
         assert!(generator.config.custom_fields.contains_key("version"));
     }
@@ -1418,7 +1507,12 @@ mod tests {
         assert!(html_output.contains("Test Report"));
         assert!(html_output.contains("Acme Corp")); // Custom branding
         assert!(html_output.contains("test_suite")); // Suite name from test data
-        assert!(!html_output.is_empty());
+        assert!(!html_output.is_empty(), "HTML output should not be empty");
+
+        // Verify HTML output has substantial content and proper structure
+        assert!(html_output.len() > 500, "HTML output should be substantial, got {} chars", html_output.len());
+        assert!(html_output.contains("test_suite"), "HTML should contain suite name from test data");
+        assert!(html_output.contains("Test Report"), "HTML should contain report title");
 
         // Verify template variables were substituted
         assert!(!html_output.contains("{{"));
@@ -1475,7 +1569,15 @@ mod tests {
         assert!(xml_output.contains("<testsuite"));
         assert!(xml_output.contains("</testsuite>"));
         assert!(xml_output.contains("</testsuites>"));
-        assert!(!xml_output.is_empty());
+        assert!(!xml_output.is_empty(), "JUnit XML output should not be empty");
+
+        // Verify XML output has substantial content and is well-formed
+        assert!(xml_output.len() > 200, "JUnit XML should be substantial, got {} chars", xml_output.len());
+        assert!(xml_output.starts_with("<?xml"), "JUnit XML should start with XML declaration");
+
+        // Verify XML contains actual test data
+        assert!(xml_output.contains("passing_test"), "XML should contain test names from test data");
+        assert!(xml_output.contains("failing_test"), "XML should contain failing test name");
     }
 
     #[test]
@@ -1656,7 +1758,16 @@ mod tests {
         assert!(markdown_output.contains("## Test Results"));
         assert!(markdown_output.contains("| Test Name |"));
         assert!(markdown_output.contains("|-----------|"));
-        assert!(!markdown_output.is_empty());
+        assert!(!markdown_output.is_empty(), "Markdown output should not be empty");
+
+        // Verify Markdown output has substantial content and proper structure
+        assert!(markdown_output.len() > 300, "Markdown should be substantial, got {} chars", markdown_output.len());
+        assert!(markdown_output.lines().count() > 10, "Markdown should have multiple lines");
+
+        // Verify Markdown contains actual test data
+        assert!(markdown_output.contains("passing_test"), "Markdown should contain test names from test data");
+        assert!(markdown_output.contains("failing_test"), "Markdown should contain failing test name");
+        assert!(markdown_output.contains("test_suite"), "Markdown should contain suite name");
     }
 
     #[test]

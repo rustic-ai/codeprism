@@ -289,11 +289,19 @@ mod tests {
         let result = ScriptValidator::new(scripts, ScriptExecutionPhase::Before, config);
         
         // This should pass once implemented
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "ScriptValidator creation should succeed with valid scripts");
+        
+        // Verify the validator actually contains the scripts and can function
         let validator = result.unwrap();
-        assert_eq!(validator.name(), "script_validator_before");
-        assert_eq!(validator.execution_phase, ScriptExecutionPhase::Before);
-        assert_eq!(validator.validation_scripts.len(), 1);
+        assert_eq!(validator.name(), "script_validator_before", "Validator name should reflect before phase");
+        assert_eq!(validator.execution_phase, ScriptExecutionPhase::Before, "Execution phase should be Before");
+        assert_eq!(validator.validation_scripts.len(), 1, "Should have 1 validation script");
+        
+        // Verify the script has the expected properties
+        let script = &validator.validation_scripts[0];
+        assert_eq!(script.name, "test_script", "Script name should match");
+        assert_eq!(script.execution_phase, Some("before".to_string()), "Script should have before phase");
+        assert!(script.source.is_some(), "Script should have source code");
     }
 
     #[test]
@@ -304,10 +312,16 @@ mod tests {
         let result = ScriptValidator::new(scripts, ScriptExecutionPhase::After, config);
         
         // This should pass once implemented
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "ScriptValidator creation should succeed for after phase");
         let validator = result.unwrap();
-        assert_eq!(validator.name(), "script_validator_after");
-        assert_eq!(validator.execution_phase, ScriptExecutionPhase::After);
+        assert_eq!(validator.name(), "script_validator_after", "Validator name should reflect after phase");
+        assert_eq!(validator.execution_phase, ScriptExecutionPhase::After, "Execution phase should be After");
+        
+        // Verify the validator has functional scripts
+        assert!(!validator.validation_scripts.is_empty(), "Validator should have scripts");
+        let script = &validator.validation_scripts[0];
+        assert_eq!(script.name, "test_script", "Script name should be preserved");
+        assert!(script.source.is_some(), "Script should have source code");
     }
 
     #[test]

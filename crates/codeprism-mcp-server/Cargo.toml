@@ -40,7 +40,7 @@ toml = "0.8"
 serde_yaml = "0.9"
 
 # MCP Rust SDK dependencies
-rmcp = { version = "0.3.0", features = ["server", "transport-io", "transport-sse-server"] }
+rmcp = { version = "0.3.1", features = ["server", "transport-io", "transport-sse-server"] }
 
 # Codeprism dependencies for real tool implementations
 codeprism-core = { path = "../codeprism-core" }

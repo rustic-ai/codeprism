@@ -73,6 +73,7 @@ pub use sandbox::{
 
 #[cfg(test)]
 mod dependency_tests {
+    use std::ffi::CString;
     use std::time::Instant;
 
     #[tokio::test]
@@ -96,7 +97,8 @@ mod dependency_tests {
     #[test]
     fn test_pyo3_basic_execution() {
         pyo3::Python::with_gil(|py| {
-            let result = py.eval_bound("'Hello from Python'", None, None).unwrap();
+            let code = CString::new("'Hello from Python'").unwrap();
+            let result = py.eval(&code, None, None).unwrap();
             assert_eq!(result.to_string(), "Hello from Python");
         });
     }
@@ -158,7 +160,8 @@ mod dependency_tests {
     fn test_pyo3_performance() {
         let start = Instant::now();
         pyo3::Python::with_gil(|py| {
-            let _result = py.eval_bound("'Performance test'", None, None).unwrap();
+            let code = CString::new("'Performance test'").unwrap();
+            let _result = py.eval(&code, None, None).unwrap();
         });
         let duration = start.elapsed();
 
@@ -221,7 +224,8 @@ mod dependency_tests {
     #[test]
     fn test_pyo3_error_handling() {
         pyo3::Python::with_gil(|py| {
-            let result = py.eval_bound("invalid_syntax(", None, None);
+            let code = CString::new("invalid_syntax(").unwrap();
+            let result = py.eval(&code, None, None);
             assert!(result.is_err());
         });
     }

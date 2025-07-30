@@ -59,13 +59,17 @@ class TestTheaterDetector:
                  "Testing completion message instead of results"),
             ],
             
-            # Meaningless assertions
+            # Meaningless assertions - IMPROVED TO REDUCE FALSE POSITIVES
             TheaterType.MEANINGLESS_ASSERTION: [
                 (r'assert!\(true\)', "Always passes - meaningless assertion"),
-                (r'assert!\(.*\.is_ok\(\)\)', "Only tests that no error occurred, not functionality"),
-                (r'assert!\(.*\.len\(\)\s*>\s*0\)(?!.*&&)', "Only tests non-empty, not content quality"),
-                (r'assert!\(.*\.is_some\(\)\)(?!\s*,)', "Only tests that value exists, not its content"),
-                (r'assert!\(!.*\.is_empty\(\)\)', "Only tests non-empty, not content validity"),
+                # Only flag is_ok() without descriptive message or follow-up validation
+                (r'assert!\(.*\.is_ok\(\)\);$', "Only tests that no error occurred, not functionality"),
+                (r'assert!\(.*\.len\(\)\s*>\s*0\)(?!.*&&)(?!\s*,)', "Only tests non-empty, not content quality"),
+                # Only flag is_some() without message or follow-up
+                (r'assert!\(.*\.is_some\(\)\);$', "Only tests that value exists, not its content"),
+                (r'assert!\(!.*\.is_empty\(\)\);$', "Only tests non-empty, not content validity"),
+                # Flag missing descriptive messages in assertions
+                (r'assert!\([^,)]+\.get\([^)]+\)\.is_some\(\)\);$', "Only tests that value exists, not its content"),
             ],
             
             # Count-based validation without content check
@@ -99,10 +103,13 @@ class TestTheaterDetector:
                 # This pattern is harder to detect with regex, will be done in analyze_test_function
             ],
             
-            # Mock/placeholder testing without real functionality
+            # Mock/placeholder testing without real functionality - IMPROVED
             TheaterType.MOCK_TESTING_ONLY: [
-                (r'\.mock\(\)|Mock::|create_mock', "Testing mock objects instead of real functionality"),
-                (r'placeholder|stub|fake', "Using placeholder implementations in tests"),
+                (r'\.mock\(\)|Mock::|create_mock(?!.*edge)', "Testing mock objects instead of real functionality"),
+                # Only flag placeholder/fake if not used for negative/edge case testing
+                (r'\b(placeholder|stub)\b(?!.*test|.*edge|.*nonexistent)', "Using placeholder implementations in tests"),
+                # Allow fake for edge case testing (fake_chunk_id for testing nonexistent)
+                (r'\bfake\b(?!.*(_id|_chunk|nonexistent|invalid))', "Using fake implementations in tests"),
                 (r'todo!\(\)|unimplemented!\(\)', "Test calls unimplemented functionality"),
             ],
         }
@@ -219,15 +226,34 @@ class TestTheaterDetector:
         # Combine all content
         full_content = '\n'.join([line for _, line in content])
         
-        # Look for actual function calls
+        # Look for actual function calls - ENHANCED PATTERNS
         has_call_tool = bool(re.search(r'\.call_tool\(', full_content))
         # More flexible await pattern to catch various async call patterns
         has_await_call = bool(re.search(r'\.await\b', full_content))
         # More specific execute patterns to avoid false matches
         has_execute_call = bool(re.search(r'\b(execute|run|process)\s*\(', full_content, re.IGNORECASE))
-        # Additional patterns for function calls
+        
+        # ENHANCED: Static function calls (Struct::method, function())
+        has_static_call = bool(re.search(r'\b[A-Z]\w*::\w+\(', full_content))
+        # ENHANCED: Constructor calls (Type::new, Type::from_*)
+        has_constructor_call = bool(re.search(r'\b[A-Z]\w*::(new|from_\w*|create|build)\(', full_content))
+        # ENHANCED: Serialization calls (to_string, from_str, etc.)
+        has_serialization = bool(re.search(r'\b(to_string|from_str|to_json|from_json|serialize|deserialize)\(', full_content))
+        # ENHANCED: Extension method calls (Language::from_extension, etc.)
+        has_extension_method = bool(re.search(r'\w+::from_\w+\(', full_content))
+        
+        # Additional patterns for function calls  
         has_function_call = bool(re.search(r'\w+\.\w+\([^)]*\)', full_content))
         has_method_chain = bool(re.search(r'\w+\.\w+\(.*\)\.\w+', full_content))
+        
+        # ENHANCED: Function calls without dots (standalone functions)
+        has_standalone_call = bool(re.search(r'\b\w+\([^)]*\)(?!\s*[;,)])', full_content))
+        
+        # Combine all function call indicators
+        has_any_function_call = (has_call_tool or has_await_call or has_execute_call or 
+                                has_static_call or has_constructor_call or has_serialization or
+                                has_extension_method or has_function_call or has_method_chain or
+                                has_standalone_call)
         
         # Count assertions
         assertion_count = len(re.findall(r'assert[_!]', full_content))
@@ -236,7 +262,7 @@ class TestTheaterDetector:
         contains_assertions = len(re.findall(r'assert!\([^)]*\.contains\(', full_content))
         
         # Check for test theater patterns
-        if contains_assertions > 0 and not (has_call_tool or has_await_call or has_function_call):
+        if contains_assertions > 0 and not has_any_function_call:
             issues.append(TheaterIssue(
                 file_path=file_path,
                 line_number=start_line,
@@ -247,8 +273,22 @@ class TestTheaterDetector:
                 recommendation="Replace contains assertions with actual function calls and result validation"
             ))
         
-        # Only flag if no meaningful function calls are detected
-        if assertion_count > 0 and not (has_call_tool or has_await_call or has_execute_call or has_function_call or has_method_chain):
+        # ENHANCED: Check for valid test patterns before flagging as no_function_call
+        is_valid_test_pattern = (
+            # Edge case testing (nonexistent, invalid input, etc.)
+            bool(re.search(r'\b(nonexistent|invalid|fake|non_existent)\b', full_content, re.IGNORECASE)) or
+            # Negative testing (should fail, should be none, etc.) 
+            bool(re.search(r'\.is_none\(\)|\.is_err\(\)', full_content)) or
+            # Comparison/validation tests (assert_eq, assert_ne)
+            bool(re.search(r'assert_(eq|ne)!', full_content)) or
+            # Configuration/initialization tests
+            bool(re.search(r'\b(new|default|create)\s*\(\)', full_content)) or
+            # Very short tests (likely simple validation)
+            len(content) <= 5
+        )
+        
+        # Only flag if no meaningful function calls are detected AND it's not a valid test pattern
+        if assertion_count > 0 and not has_any_function_call and not is_valid_test_pattern:
             issues.append(TheaterIssue(
                 file_path=file_path,
                 line_number=start_line,

@@ -257,7 +257,11 @@ mod tests {
             "Parser should return correct language"
         );
         // Verify we get the same language (ptr_eq doesn't work with trait objects)
-        assert_eq!(js_parser.language(), parser.language(), "Should return parser with same language");
+        assert_eq!(
+            js_parser.language(),
+            parser.language(),
+            "Should return parser with same language"
+        );
 
         // Test extension lookup with functionality validation
         assert!(

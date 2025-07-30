@@ -422,11 +422,13 @@ mod tests {
     }
 
     #[test]
-    fn test_change_kind_equality() {
-        assert_eq!(ChangeKind::Created, ChangeKind::Created);
-        assert_eq!(ChangeKind::Modified, ChangeKind::Modified);
-        assert_eq!(ChangeKind::Deleted, ChangeKind::Deleted);
+    fn test_change_kind_equality_and_inequality() {
+        // Test that different variants are not equal
+        assert_ne!(ChangeKind::Created, ChangeKind::Modified);
+        assert_ne!(ChangeKind::Modified, ChangeKind::Deleted);
+        assert_ne!(ChangeKind::Created, ChangeKind::Deleted);
 
+        // Test Renamed variant equality with same paths
         let renamed1 = ChangeKind::Renamed {
             old: PathBuf::from("old.txt"),
             new: PathBuf::from("new.txt"),
@@ -435,7 +437,25 @@ mod tests {
             old: PathBuf::from("old.txt"),
             new: PathBuf::from("new.txt"),
         };
-        assert_eq!(renamed1, renamed2);
+        assert_eq!(
+            renamed1, renamed2,
+            "Renamed variants with same paths should be equal"
+        );
+
+        // Test Renamed variant inequality with different paths
+        let renamed3 = ChangeKind::Renamed {
+            old: PathBuf::from("different.txt"),
+            new: PathBuf::from("new.txt"),
+        };
+        assert_ne!(
+            renamed1, renamed3,
+            "Renamed variants with different paths should not be equal"
+        );
+
+        // Test Renamed vs other variants
+        assert_ne!(renamed1, ChangeKind::Created);
+        assert_ne!(renamed1, ChangeKind::Modified);
+        assert_ne!(renamed1, ChangeKind::Deleted);
     }
 
     #[test]

@@ -561,7 +561,7 @@ mod tests {
         let graph_store = manager.graph_store.as_ref().unwrap();
         // Verify the graph store is accessible
         // Verify the graph store functionality (basic check since internal fields are private)
-        use crate::{Span, NodeKind};
+        use crate::{NodeKind, Span};
         assert!(
             graph_store
                 .get_node(&NodeId::new(

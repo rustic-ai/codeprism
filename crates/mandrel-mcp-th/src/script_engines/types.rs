@@ -643,7 +643,12 @@ mod tests {
         assert_eq!(config.memory_limit_mb, Some(100));
         assert!(!config.allow_network);
         assert!(!config.allow_filesystem);
-        assert!(config.validate().is_ok());
+        let validation_result = config.validate();
+        assert!(
+            validation_result.is_ok(),
+            "Valid configuration should pass validation: {:?}",
+            validation_result.err()
+        );
     }
 
     #[test]
@@ -667,14 +672,24 @@ mod tests {
         assert_eq!(config.memory_limit_mb, Some(500));
         assert!(config.allow_network);
         assert!(config.allow_filesystem);
-        assert!(config.validate().is_ok());
+        let validation_result = config.validate();
+        assert!(
+            validation_result.is_ok(),
+            "Valid configuration should pass validation: {:?}",
+            validation_result.err()
+        );
     }
 
     #[test]
     fn test_script_config_default() {
         let config = ScriptConfig::default();
         assert_eq!(config.timeout_ms, 5000);
-        assert!(config.validate().is_ok());
+        let validation_result = config.validate();
+        assert!(
+            validation_result.is_ok(),
+            "Valid configuration should pass validation: {:?}",
+            validation_result.err()
+        );
     }
 
     #[test]

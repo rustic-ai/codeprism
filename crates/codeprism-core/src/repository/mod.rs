@@ -459,9 +459,9 @@ mod tests {
             "Repository should have correct name"
         );
         assert_eq!(
-            repo.config.path,
+            repo.config.root_path,
             temp_dir.path(),
-            "Repository should have correct path"
+            "Repository should have correct root_path"
         );
     }
 

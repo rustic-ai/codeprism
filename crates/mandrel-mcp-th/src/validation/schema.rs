@@ -269,7 +269,7 @@ mod tests {
         // Verify schema content and functionality
         let schema_info = validator.schema_info();
         assert!(
-            schema_info.contains("person"),
+            schema_info.contains(&"person".to_string()),
             "Should contain 'person' schema"
         );
         // Note: schema_info returns Vec<String> of schema names, not the actual schemas
@@ -495,7 +495,7 @@ mod tests {
         // Verify schema exists before removal
         let schemas_before = validator.schema_info();
         assert!(
-            schemas_before.contains("test_schema"),
+            schemas_before.contains(&"test_schema".to_string()),
             "Should contain test_schema before removal"
         );
 
@@ -510,7 +510,7 @@ mod tests {
         // Verify schema is actually gone
         let schemas_after = validator.schema_info();
         assert!(
-            !schemas_after.contains("test_schema"),
+            !schemas_after.contains(&"test_schema".to_string()),
             "Should not contain test_schema after removal"
         );
 

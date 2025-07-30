@@ -837,16 +837,35 @@ mod tests {
     }
 
     #[test]
-    fn test_connection_state_equality() {
-        assert_eq!(ConnectionState::Disconnected, ConnectionState::Disconnected);
-        assert_eq!(ConnectionState::Connecting, ConnectionState::Connecting);
-        assert_eq!(ConnectionState::Connected, ConnectionState::Connected);
+    fn test_connection_state_equality_and_transitions() {
+        // Test meaningful inequality between different states
+        assert_ne!(ConnectionState::Disconnected, ConnectionState::Connected);
+        assert_ne!(ConnectionState::Disconnected, ConnectionState::Connecting);
+        assert_ne!(ConnectionState::Connecting, ConnectionState::Connected);
+
+        // Test Error state equality with same message
         assert_eq!(
             ConnectionState::Error("test".to_string()),
-            ConnectionState::Error("test".to_string())
+            ConnectionState::Error("test".to_string()),
+            "Error states with same message should be equal"
         );
 
-        assert_ne!(ConnectionState::Disconnected, ConnectionState::Connected);
+        // Test Error state inequality with different messages
+        assert_ne!(
+            ConnectionState::Error("error1".to_string()),
+            ConnectionState::Error("error2".to_string()),
+            "Error states with different messages should not be equal"
+        );
+
+        // Test Error vs other states
+        assert_ne!(
+            ConnectionState::Error("test".to_string()),
+            ConnectionState::Connected
+        );
+        assert_ne!(
+            ConnectionState::Error("test".to_string()),
+            ConnectionState::Disconnected
+        );
         assert_ne!(
             ConnectionState::Error("test1".to_string()),
             ConnectionState::Error("test2".to_string())

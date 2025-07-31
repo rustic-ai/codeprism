@@ -1,6 +1,6 @@
 [package]
 name = "mandrel-mcp-th"
-version = "0.1.0"
+version = "0.4.2"
 edition = "2021"
 authors = ["AI Assistant"]
 description = "Mandrel MCP Test Harness - Professional testing and reporting for MCP servers"
@@ -80,7 +80,7 @@ dirs = "5.0"
 notify = "6.1"
 
 # Lightweight CodePrism utilities for file monitoring
-codeprism-utils = { version = "0.4.1", path = "../codeprism-utils" }
+codeprism-utils = { version = "0.4.2" }
 
 # Advanced configuration dependencies
 regex = "1.10"              # For validation patterns

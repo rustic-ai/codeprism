@@ -2,7 +2,7 @@
 # Supports both source builds (CI) and crates.io installs (releases)
 
 # Build stage
-FROM rust:1.82-slim AS builder
+FROM rustlang/rust:nightly-slim AS builder
 
 # Install system dependencies for building
 RUN apt-get update && apt-get install -y \

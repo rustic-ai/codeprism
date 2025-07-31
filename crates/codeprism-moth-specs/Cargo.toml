@@ -1,6 +1,6 @@
 [package]
 name = "codeprism-moth-specs"
-version = "0.1.0"
+version = "0.4.4"
 edition = "2021"
 authors = ["CodePrism Team"]
 description = "Test specifications for CodePrism MCP server using Mandrel (Moth) test harness"

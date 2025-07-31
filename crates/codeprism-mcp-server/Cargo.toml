@@ -11,7 +11,7 @@ keywords = ["mcp", "server", "code-analysis", "rust-sdk"]
 categories = ["development-tools", "network-programming"]
 
 [[bin]]
-name = "codeprism-mcp-server"
+name = "codeprism"
 path = "src/main.rs"
 
 [dependencies]

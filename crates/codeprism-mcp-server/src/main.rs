@@ -9,14 +9,18 @@ use codeprism_mcp_server::{CodePrismMcpServer, Config};
 use tracing::{info, level_filters::LevelFilter};
 use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
-/// CodePrism MCP Server - Expose code analysis capabilities via MCP protocol
+/// CodePrism - Code analysis and insights tool
 #[derive(Parser, Debug)]
 #[command(
-    name = "codeprism-mcp-server",
+    name = "codeprism",
     version = codeprism_mcp_server::VERSION,
-    about = "CodePrism MCP Server - Code analysis via Model Context Protocol"
+    about = "CodePrism - Advanced code analysis and insights"
 )]
 struct Cli {
+    /// Run as MCP (Model Context Protocol) server
+    #[arg(long)]
+    mcp: bool,
+
     /// Configuration file path
     #[arg(short, long, value_name = "FILE")]
     config: Option<String>,
@@ -56,9 +60,23 @@ async fn main() -> Result<()> {
         return Ok(());
     }
 
-    // Create and run the MCP server
-    let server = CodePrismMcpServer::new(config).await?;
-    server.run().await?;
+    // Check what mode to run in
+    if cli.mcp {
+        // Run as MCP server
+        info!("Starting MCP server mode");
+        let server = CodePrismMcpServer::new(config).await?;
+        server.run().await?;
+    } else {
+        // Show usage information when no mode is specified
+        println!("CodePrism v{}", codeprism_mcp_server::VERSION);
+        println!("Advanced code analysis and insights");
+        println!();
+        println!("For Claude Desktop integration, use:");
+        println!("  codeprism --mcp");
+        println!();
+        println!("For help:");
+        println!("  codeprism --help");
+    }
 
     Ok(())
 }

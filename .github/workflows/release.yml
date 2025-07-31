@@ -167,8 +167,8 @@ jobs:
         if: matrix.target == 'x86_64-unknown-linux-musl'
         run: sudo apt-get install -y musl-tools
 
-      - name: Build CodePrism MCP Server Binary
-        run: cargo build --release --target ${{ matrix.target }} --bin codeprism-mcp-server
+      - name: Build CodePrism Binary
+        run: cargo build --release --target ${{ matrix.target }} --bin codeprism
 
       - name: Build Moth Test Harness Binary  
         run: cargo build --release --target ${{ matrix.target }} --bin moth
@@ -176,9 +176,9 @@ jobs:
       - name: Prepare Binaries (Unix)
         if: matrix.os != 'windows-latest'
         run: |
-          # CodePrism MCP Server
-          cp target/${{ matrix.target }}/release/codeprism-mcp-server codeprism-mcp-server-${{ matrix.suffix }}
-          chmod +x codeprism-mcp-server-${{ matrix.suffix }}
+          # CodePrism Binary
+          cp target/${{ matrix.target }}/release/codeprism codeprism-${{ matrix.suffix }}
+          chmod +x codeprism-${{ matrix.suffix }}
           
           # Moth Test Harness
           cp target/${{ matrix.target }}/release/moth moth-${{ matrix.suffix }}
@@ -188,17 +188,17 @@ jobs:
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
-          # CodePrism MCP Server
-          Copy-Item "target/${{ matrix.target }}/release/codeprism-mcp-server.exe" "codeprism-mcp-server-${{ matrix.suffix }}"
+          # CodePrism Binary
+          Copy-Item "target/${{ matrix.target }}/release/codeprism.exe" "codeprism-${{ matrix.suffix }}"
           
           # Moth Test Harness  
           Copy-Item "target/${{ matrix.target }}/release/moth.exe" "moth-${{ matrix.suffix }}"
 
-      - name: Upload CodePrism MCP Server Binary
+      - name: Upload CodePrism Binary
         uses: actions/upload-artifact@v4
         with:
-          name: codeprism-mcp-server-${{ matrix.suffix }}
-          path: codeprism-mcp-server-${{ matrix.suffix }}
+          name: codeprism-${{ matrix.suffix }}
+          path: codeprism-${{ matrix.suffix }}
           retention-days: 5
 
       - name: Upload Moth Test Harness Binary
@@ -262,8 +262,8 @@ jobs:
         run: |
           mkdir -p release-assets
           
-          # Copy CodePrism MCP Server binaries
-          find binaries -type f \( -name "codeprism-mcp-server-*" \) | while read file; do
+          # Copy CodePrism binaries
+          find binaries -type f \( -name "codeprism-*" \) | while read file; do
             cp "$file" release-assets/
           done
           

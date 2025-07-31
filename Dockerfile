@@ -22,8 +22,8 @@ RUN if [ -n "$CRATE_VERSION" ]; then \
     else \
         echo "Building from source (CI/development)" && \
         cd /tmp/source && \
-        cargo build --release --bin codeprism-mcp-server && \
-        cp target/release/codeprism-mcp-server /usr/local/cargo/bin/; \
+        cargo build --release --bin codeprism && \
+        cp target/release/codeprism /usr/local/cargo/bin/; \
     fi
 
 # Runtime stage
@@ -36,7 +36,7 @@ RUN apt-get update && apt-get install -y \
     && useradd -r -s /bin/false codeprism
 
 # Copy the binary from cargo install location
-COPY --from=builder /usr/local/cargo/bin/codeprism-mcp-server /usr/local/bin/codeprism-mcp-server
+COPY --from=builder /usr/local/cargo/bin/codeprism /usr/local/bin/codeprism
 
 # Create workspace directory
 RUN mkdir -p /workspace && chown codeprism:codeprism /workspace
@@ -56,10 +56,10 @@ ENV REPOSITORY_PATH=/workspace
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD codeprism-mcp-server --help || exit 1
+    CMD codeprism --help || exit 1
 
-# Default command
-CMD ["codeprism-mcp-server"]
+# Default command - run as MCP server
+CMD ["codeprism", "--mcp"]
 
 # Labels for metadata
 LABEL org.opencontainers.image.title="CodePrism MCP Server"

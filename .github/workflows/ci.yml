@@ -253,7 +253,8 @@ jobs:
           echo "Running full system integration test..."
           
           # Test complete pipeline: Parse -> Analyze -> Store -> Query
-          cargo test --test full_integration_test --all-features
+          # Run comprehensive tests across all packages
+          cargo test test_comprehensive --all-features
           
       - name: Deployment readiness check
         run: |

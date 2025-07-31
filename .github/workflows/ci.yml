@@ -186,6 +186,11 @@ jobs:
           fail-fast: true
           test-theater-check: true
           
+      - name: Install cargo-audit
+        run: |
+          echo "Installing cargo-audit..."
+          cargo install cargo-audit
+          
       - name: Security audit
         run: |
           echo "Running security audit..."

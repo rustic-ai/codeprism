@@ -240,8 +240,8 @@ mod tests {
     fn test_schema_validator_creation() {
         let validator = SchemaValidator::new();
         assert!(
-            !validator.compiled_schemas.is_empty(),
-            "Should not be empty"
+            validator.compiled_schemas.is_empty(),
+            "Should be empty for new validator"
         );
     }
 
@@ -321,7 +321,10 @@ mod tests {
             .validate_against_schema(&valid_data, "mcp_response")
             .unwrap();
         assert!(result.is_valid);
-        assert!(!result.violations.is_empty(), "Should not be empty");
+        assert!(
+            result.violations.is_empty(),
+            "Should be empty for valid data"
+        );
     }
 
     #[test]
@@ -348,7 +351,7 @@ mod tests {
             .validate_against_schema(&invalid_data, "test_schema")
             .unwrap();
         assert!(!result.is_valid);
-        assert!(!!result.violations.is_empty(), "Should not be empty");
+        assert!(!result.violations.is_empty(), "Should not be empty");
 
         let violation = &result.violations[0];
         assert_eq!(violation.violation_type, ViolationType::Required);
@@ -372,7 +375,10 @@ mod tests {
 
         let result = validator.validate_with_inline_schema(&valid_data, &schema);
         assert!(result.is_valid);
-        assert!(!result.violations.is_empty(), "Should not be empty");
+        assert!(
+            result.violations.is_empty(),
+            "Should be empty for valid data"
+        );
     }
 
     #[test]
@@ -393,7 +399,7 @@ mod tests {
 
         let result = validator.validate_with_inline_schema(&invalid_data, &schema);
         assert!(!result.is_valid);
-        assert!(!!result.violations.is_empty(), "Should not be empty");
+        assert!(!result.violations.is_empty(), "Should not be empty");
 
         let violation = &result.violations[0];
         assert_eq!(violation.violation_type, ViolationType::Minimum);
@@ -416,7 +422,7 @@ mod tests {
 
         let result = validator.validate_with_inline_schema(&invalid_data, &schema);
         assert!(!result.is_valid);
-        assert!(!!result.violations.is_empty(), "Should not be empty");
+        assert!(!result.violations.is_empty(), "Should not be empty");
 
         let violation = &result.violations[0];
         assert_eq!(violation.violation_type, ViolationType::Type);
@@ -444,7 +450,7 @@ mod tests {
 
         let result = validator.validate_with_inline_schema(&invalid_data, &schema);
         assert!(!result.is_valid);
-        assert!(!!result.violations.is_empty(), "Should not be empty");
+        assert!(!result.violations.is_empty(), "Should not be empty");
 
         // Should have violations for maxItems and uniqueItems
         assert!(result

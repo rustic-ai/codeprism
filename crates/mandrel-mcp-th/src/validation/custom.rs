@@ -272,7 +272,7 @@ mod tests {
         });
 
         let errors = validator.validate(&valid_data, &context).unwrap();
-        assert!(!errors.is_empty(), "Should not be empty");
+        assert!(errors.is_empty(), "Should be empty for valid content");
 
         // Test invalid content (too long)
         let long_text = "a".repeat(150);
@@ -283,7 +283,7 @@ mod tests {
         });
 
         let errors = validator.validate(&invalid_data, &context).unwrap();
-        assert!(!!errors.is_empty(), "Should not be empty");
+        assert!(!errors.is_empty(), "Should not be empty");
         assert!(matches!(errors[0], ValidationError::FieldError { .. }));
     }
 
@@ -305,7 +305,7 @@ mod tests {
 
         let data = json!({"result": {"status": "success"}});
         let errors = validator.validate(&data, &context).unwrap();
-        assert!(!errors.is_empty(), "Should not be empty");
+        assert!(errors.is_empty(), "Should be empty for fast response");
 
         // Test slow response
         context
@@ -313,7 +313,7 @@ mod tests {
             .insert("response_duration_ms".to_string(), "2000".to_string());
 
         let errors = validator.validate(&data, &context).unwrap();
-        assert!(!!errors.is_empty(), "Should not be empty");
+        assert!(!errors.is_empty(), "Should not be empty");
         assert!(matches!(errors[0], ValidationError::FieldError { .. }));
     }
 
@@ -342,7 +342,7 @@ mod tests {
         });
 
         let errors = validator.validate(&safe_data, &context).unwrap();
-        assert!(!errors.is_empty(), "Should not be empty");
+        assert!(errors.is_empty(), "Should be empty for safe content");
 
         // Test content with forbidden pattern
         let unsafe_data = json!({
@@ -352,7 +352,7 @@ mod tests {
         });
 
         let errors = validator.validate(&unsafe_data, &context).unwrap();
-        assert!(!!errors.is_empty(), "Should not be empty");
+        assert!(!errors.is_empty(), "Should not be empty");
         assert!(matches!(errors[0], ValidationError::FieldError { .. }));
     }
 
@@ -382,7 +382,10 @@ mod tests {
         });
 
         let errors = validator.validate(&valid_data, &context).unwrap();
-        assert!(!errors.is_empty(), "Should not be empty");
+        assert!(
+            errors.is_empty(),
+            "Should be empty for valid business rules"
+        );
 
         // Test invalid data
         let invalid_data = json!({
@@ -392,7 +395,7 @@ mod tests {
         });
 
         let errors = validator.validate(&invalid_data, &context).unwrap();
-        assert!(!!errors.is_empty(), "Should not be empty");
+        assert!(!errors.is_empty(), "Should not be empty");
         assert!(matches!(errors[0], ValidationError::FieldError { .. }));
     }
 

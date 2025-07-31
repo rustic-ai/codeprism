@@ -1123,7 +1123,7 @@ mod tests {
         // Script should fail due to timeout, but test continues since it's optional
         assert!(!test_result.script_results[0].success);
         assert!(
-            !!test_result.script_results[0].errors.is_empty(),
+            !test_result.script_results[0].errors.is_empty(),
             "Should not be empty"
         );
     }
@@ -1174,8 +1174,8 @@ mod tests {
         let test_result = result.unwrap();
         // Should work exactly as before - no script results
         assert!(
-            !test_result.script_results.is_empty(),
-            "Should not be empty"
+            test_result.script_results.is_empty(),
+            "Should be empty when no scripts are provided"
         );
         assert_eq!(test_result.metrics.script_count, 0);
         assert_eq!(

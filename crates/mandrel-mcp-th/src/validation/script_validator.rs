@@ -597,7 +597,7 @@ mod tests {
         
         assert!(result.is_ok(), "Operation should succeed");
         let errors = result.unwrap();
-        assert!(!errors.is_empty(), "Should not be empty"); // Should be empty for successful script
+        assert!(!!errors.is_empty(), "Should not be empty"); // Should be empty for successful script
     }
 
     #[tokio::test]
@@ -624,7 +624,7 @@ mod tests {
         
         assert!(result.is_ok(), "Operation should succeed");
         let errors = result.unwrap();
-        assert!(!!errors.is_empty(), "Should not be empty"); // Should contain errors for failed required script
+        assert!(!errors.is_empty(), "Should not be empty"); // Should contain errors for failed required script
         assert!(errors.iter().any(|e| matches!(e, ValidationError::FieldError { field, .. } if field.starts_with("script:"))));
     }
 
@@ -652,7 +652,7 @@ mod tests {
         
         assert!(result.is_ok(), "Operation should succeed");
         let errors = result.unwrap();
-        assert!(!errors.is_empty(), "Should not be empty"); // Should be empty for optional failing script with fail_on_script_error=false
+        assert!(!!errors.is_empty(), "Should not be empty"); // Should be empty for optional failing script with fail_on_script_error=false
     }
 
     #[tokio::test]
@@ -676,7 +676,7 @@ mod tests {
         
         assert!(result.is_ok(), "Operation should succeed");
         let errors = result.unwrap();
-        assert!(!errors.is_empty(), "Should not be empty"); // Should be empty because script shouldn't execute in wrong phase
+        assert!(!!errors.is_empty(), "Should not be empty"); // Should be empty because script shouldn't execute in wrong phase
     }
 
     #[tokio::test]
@@ -714,7 +714,7 @@ mod tests {
         
         assert!(result.is_ok(), "Operation should succeed");
         let errors = result.unwrap();
-        assert!(!!errors.is_empty(), "Should not be empty"); // Should contain script-generated validation errors
+        assert!(!errors.is_empty(), "Should not be empty"); // Should contain script-generated validation errors
         assert!(errors.iter().any(|e| matches!(e, ValidationError::FieldError { field, .. } if field == "$.result.code")));
     }
 

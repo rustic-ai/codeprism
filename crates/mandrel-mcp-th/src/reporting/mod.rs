@@ -1535,7 +1535,7 @@ mod tests {
         let context = generator.create_template_context(&report);
 
         // Verify all required fields are present for template rendering
-        assert!(!!context.report_id.is_empty(), "Should not be empty");
+        assert!(!context.report_id.is_empty(), "Should not be empty");
         assert_eq!(context.version, "0.1.0");
         assert_eq!(context.summary.total_tests, 3);
         assert_eq!(context.test_results.len(), 3, "Should have 3 items");

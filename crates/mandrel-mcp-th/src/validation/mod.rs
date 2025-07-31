@@ -759,7 +759,10 @@ mod tests {
             .unwrap();
 
         assert!(result.is_valid);
-        assert!(!result.validation_errors.is_empty(), "Should not be empty");
+        assert!(
+            result.validation_errors.is_empty(),
+            "Should be empty for valid response"
+        );
         assert_eq!(result.field_results.len(), 1, "Should have 1 items");
         assert!(result.field_results[0].is_valid);
     }
@@ -779,7 +782,7 @@ mod tests {
             .unwrap();
 
         assert!(!result.is_valid);
-        assert!(!!result.validation_errors.is_empty(), "Should not be empty");
+        assert!(!result.validation_errors.is_empty(), "Should not be empty");
         assert_eq!(result.field_results.len(), 1, "Should have 1 items");
         assert!(!result.field_results[0].is_valid);
     }
@@ -796,7 +799,7 @@ mod tests {
             .unwrap();
 
         assert!(!result.is_valid);
-        assert!(!!result.validation_errors.is_empty(), "Should not be empty");
+        assert!(!result.validation_errors.is_empty(), "Should not be empty");
         // Should get a FieldError for missing required field, not JsonPathError
         assert!(result
             .validation_errors
@@ -923,7 +926,7 @@ mod tests {
         let result = engine.validate_schema(&response, &schema).unwrap();
 
         assert!(result.is_valid);
-        assert!(!result.errors.is_empty(), "Should not be empty");
+        assert!(result.errors.is_empty(), "Should be empty for valid schema");
     }
 
     #[test]
@@ -940,7 +943,7 @@ mod tests {
         let result = engine.validate_schema(&response, &schema).unwrap();
 
         assert!(!result.is_valid);
-        assert!(!!result.errors.is_empty(), "Should not be empty");
+        assert!(!result.errors.is_empty(), "Should not be empty");
     }
 
     #[test]
@@ -1153,9 +1156,12 @@ mod tests {
     fn test_mcp_validation_result_creation() {
         let result = McpValidationResult::new();
         assert!(result.is_valid);
-        assert!(!result.errors.is_empty(), "Should not be empty");
-        assert!(!result.warnings.is_empty(), "Should not be empty");
-        assert!(!result.field_results.is_empty(), "Should not be empty");
+        assert!(result.errors.is_empty(), "Should be empty for new result");
+        assert!(result.warnings.is_empty(), "Should be empty for new result");
+        assert!(
+            result.field_results.is_empty(),
+            "Should be empty for new result"
+        );
     }
 
     #[test]

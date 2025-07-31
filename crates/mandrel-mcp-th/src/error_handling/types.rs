@@ -576,7 +576,7 @@ mod tests {
         });
 
         let suggestions = connection_error.suggestions();
-        assert!(!!suggestions.is_empty(), "Should not be empty");
+        assert!(!suggestions.is_empty(), "Should not be empty");
         assert!(suggestions.iter().any(|s| s.contains("MCP server")));
     }
 }

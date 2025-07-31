@@ -479,8 +479,8 @@ mod tests {
     fn test_environment_info_creation() {
         let env_info = EnvironmentInfo::current();
 
-        assert!(!!env_info.os_info.is_empty(), "Should not be empty");
-        assert!(!!env_info.working_directory.is_empty(), "Should not be empty");
+        assert!(!env_info.os_info.is_empty(), "Should not be empty");
+        assert!(!env_info.working_directory.is_empty(), "Should not be empty");
         // Test that no sensitive variables are included
         for key in env_info.env_vars.keys() {
             assert!(!key.contains("PASSWORD"));

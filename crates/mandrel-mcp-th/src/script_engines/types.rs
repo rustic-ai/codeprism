@@ -758,7 +758,10 @@ mod tests {
         assert_eq!(result.output, output);
         assert_eq!(result.duration_ms, 100);
         assert!(result.error.is_none(), "Should be none");
-        assert!(!result.logs.is_empty(), "Should not be empty");
+        assert!(
+            result.logs.is_empty(),
+            "Should be empty for basic success result"
+        );
     }
 
     #[test]

@@ -33,7 +33,7 @@ regex.workspace = true
 rand.workspace = true
 
 # File watching
-codeprism-utils = { version = "0.4.1", path = "../codeprism-utils" }
+codeprism-utils = { version = "0.4.6" }
 
 # Repository scanning
 walkdir = "2.4"
@@ -55,17 +55,17 @@ lang-python = ["codeprism-lang-python"]
 lang-java = ["codeprism-lang-java"]
 
 [dependencies.codeprism-lang-js]
-version = "0.4.1"
+version = "0.4.6"
 path = "../codeprism-lang-js"
 optional = true
 
 [dependencies.codeprism-lang-python]
-version = "0.4.1"
+version = "0.4.6"
 path = "../codeprism-lang-python"
 optional = true
 
 [dependencies.codeprism-lang-java]
-version = "0.4.1"
+version = "0.4.6"
 path = "../codeprism-lang-java"
 optional = true
 

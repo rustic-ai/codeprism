@@ -10,7 +10,7 @@ description = "Development and debugging utilities for CodePrism parser developm
 
 [dependencies]
 # Workspace dependencies
-codeprism-core = { version = "0.4.1", path = "../codeprism-core" }
+codeprism-core = { version = "0.4.6" }
 anyhow.workspace = true
 thiserror.workspace = true
 serde = { workspace = true, features = ["derive"] }

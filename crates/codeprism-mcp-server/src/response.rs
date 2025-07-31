@@ -132,7 +132,7 @@ mod tests {
         // Verify response is successful
         // Note: Testing exact structure depends on rmcp SDK internals
         // This test validates the response can be created without panicking
-        assert!(!!response.content.is_empty(), "Should not be empty");
+        assert!(!response.content.is_empty(), "Should not be empty");
 
         // Verify unstructured content exists (backward compatibility)
         let first_content = &response.content[0];
@@ -147,7 +147,7 @@ mod tests {
         let response = create_error_response("Test error", Some("TEST_ERROR"));
 
         // Verify error response structure
-        assert!(!!response.content.is_empty(), "Should not be empty");
+        assert!(!response.content.is_empty(), "Should not be empty");
 
         let first_content = &response.content[0];
         if let Some(text_content) = first_content.as_text() {
@@ -186,7 +186,7 @@ mod tests {
         let response = create_dual_response(&data);
 
         // Should handle nested JSON structures
-        assert!(!!response.content.is_empty(), "Should not be empty");
+        assert!(!response.content.is_empty(), "Should not be empty");
 
         let first_content = &response.content[0];
         if let Some(text_content) = first_content.as_text() {
@@ -207,7 +207,7 @@ mod tests {
 
         // Should contain both unstructured and structured content
         // The exact number depends on SDK capabilities, but should be at least 1
-        assert!(!!response.content.is_empty(), "Should not be empty");
+        assert!(!response.content.is_empty(), "Should not be empty");
 
         // First item should always be unstructured text for backward compatibility
         let first_content = &response.content[0];
@@ -216,9 +216,12 @@ mod tests {
             "First content should be text for backward compatibility"
         );
         let text_content = first_content.as_text().unwrap();
-        assert!(!text_content.text.is_empty(), "Text content should not be empty");
         assert!(
-            text_content.text.contains("test data"),
+            !text_content.text.is_empty(),
+            "Text content should not be empty"
+        );
+        assert!(
+            text_content.text.contains("ping response"),
             "Text should contain the actual test data"
         );
     }
@@ -240,7 +243,7 @@ mod tests {
         let response = create_dual_response(&data);
 
         // Verify response can be created for complex analysis data
-        assert!(!!response.content.is_empty(), "Should not be empty");
+        assert!(!response.content.is_empty(), "Should not be empty");
 
         // Verify unstructured format contains all data
         let first_content = &response.content[0];
@@ -273,7 +276,12 @@ mod tests {
             }
             if has_resource {
                 let resource = second_content.as_resource().unwrap();
-                assert!(!resource.resource.uri.is_empty(), "Resource URI should not be empty");
+                // Check URI based on resource type
+                let uri = match &resource.resource {
+                    rmcp::model::ResourceContents::TextResourceContents { uri, .. } => uri,
+                    rmcp::model::ResourceContents::BlobResourceContents { uri, .. } => uri,
+                };
+                assert!(!uri.is_empty(), "Resource URI should not be empty");
             }
         }
     }

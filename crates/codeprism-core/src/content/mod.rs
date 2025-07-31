@@ -673,8 +673,14 @@ mod tests {
         assert_eq!(stats.total_files, 0);
         assert_eq!(stats.total_chunks, 0);
         assert_eq!(stats.total_tokens, 0);
-        assert!(!stats.content_by_type.is_empty(), "Should not be empty");
-        assert!(!stats.size_distribution.is_empty(), "Should not be empty");
+        assert!(
+            stats.content_by_type.is_empty(),
+            "Should be empty initially"
+        );
+        assert!(
+            stats.size_distribution.is_empty(),
+            "Should be empty initially"
+        );
 
         // Test updating stats
         stats.total_files = 10;

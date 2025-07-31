@@ -455,8 +455,8 @@ mod tests {
         let repos = manager.list_repositories();
         let repo = &repos[0];
         assert_eq!(
-            repo.config.name, "test_repo",
-            "Repository should have correct name"
+            repo.config.repo_id, "test_repo",
+            "Repository should have correct repo_id"
         );
         assert_eq!(
             repo.config.root_path,
@@ -491,8 +491,8 @@ mod tests {
         // Verify repository exists with correct name
         let repos_before = manager.list_repositories();
         assert_eq!(
-            repos_before[0].config.name, "test_repo",
-            "Repository should have correct name"
+            repos_before[0].config.repo_id, "test_repo",
+            "Repository should have correct repo_id"
         );
 
         manager.unregister_repository("test_repo");
@@ -509,7 +509,7 @@ mod tests {
             "Repository list should be empty after unregistration"
         );
         assert!(
-            !repos_after.iter().any(|r| r.config.name == "test_repo"),
+            !repos_after.iter().any(|r| r.config.repo_id == "test_repo"),
             "test_repo should be completely removed"
         );
     }

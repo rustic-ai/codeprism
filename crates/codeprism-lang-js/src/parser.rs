@@ -135,7 +135,7 @@ mod tests {
         };
 
         let result = parser.parse(&context).unwrap();
-        assert!(!!result.nodes.is_empty(), "Should not be empty");
+        assert!(!result.nodes.is_empty(), "Should not be empty");
 
         // Should have at least a module node and a function node
         assert!(result
@@ -160,7 +160,7 @@ mod tests {
         };
 
         let result = parser.parse(&context).unwrap();
-        assert!(!!result.nodes.is_empty(), "Should not be empty");
+        assert!(!result.nodes.is_empty(), "Should not be empty");
 
         // Should detect TypeScript
         let func_node = result

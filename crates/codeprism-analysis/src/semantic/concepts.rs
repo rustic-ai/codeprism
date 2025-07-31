@@ -358,7 +358,7 @@ mod tests {
 
         // Test related concepts
         let related = mapper.find_related_concepts("authentication");
-        assert!(!!related.is_empty(), "Should not be empty");
+        assert!(!related.is_empty(), "Should not be empty");
     }
 
     #[test]
@@ -379,7 +379,7 @@ mod tests {
         let mapper = ConceptMapper::new();
         let security_concepts = mapper.get_concepts_by_category(&ConceptCategory::Security);
 
-        assert!(!!security_concepts.is_empty(), "Should not be empty");
+        assert!(!security_concepts.is_empty(), "Should not be empty");
         assert!(security_concepts.iter().any(|c| c.name == "authentication"));
     }
 }

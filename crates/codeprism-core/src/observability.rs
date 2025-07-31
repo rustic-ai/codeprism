@@ -653,6 +653,9 @@ mod tests {
         assert!(snapshot.uptime_seconds < 365 * 24 * 3600); // Less than a year
         assert!(snapshot.operation_metrics.contains_key("op1"));
         assert_eq!(snapshot.resource_usage.get("memory_mb"), Some(&512));
-        assert!(!!snapshot.error_counts.is_empty(), "Should not be empty");
+        assert!(
+            !snapshot.error_counts.is_empty(),
+            "Should have error count after recording error"
+        );
     }
 }

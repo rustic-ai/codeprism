@@ -113,7 +113,7 @@ mod tests {
         };
 
         let result = parser.parse(&context).unwrap();
-        assert!(!!result.nodes.is_empty(), "Should not be empty");
+        assert!(!result.nodes.is_empty(), "Should not be empty");
 
         // Should have at least a module node and a function node
         assert!(result
@@ -137,7 +137,7 @@ mod tests {
         };
 
         let result = parser.parse(&context).unwrap();
-        assert!(!!result.nodes.is_empty(), "Should not be empty");
+        assert!(!result.nodes.is_empty(), "Should not be empty");
 
         // Should have module, class, and method nodes
         assert!(result
@@ -245,6 +245,6 @@ mod tests {
             .collect();
 
         // Should have at least one import node
-        assert!(!!import_nodes.is_empty(), "Should not be empty");
+        assert!(!import_nodes.is_empty(), "Should not be empty");
     }
 }

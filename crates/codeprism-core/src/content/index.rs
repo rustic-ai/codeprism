@@ -989,7 +989,7 @@ mod tests {
         };
 
         let results = index.search(&search_query).unwrap();
-        assert!(!!results.is_empty(), "Should not be empty");
+        assert!(!results.is_empty(), "Should not be empty");
 
         // Should find matches in both documents
         let result_contents: Vec<_> = results.iter().map(|r| &r.chunk.content).collect();
@@ -1027,11 +1027,11 @@ mod tests {
         };
 
         let results = index.search(&search_query).unwrap();
-        assert!(!!results.is_empty(), "Should not be empty");
+        assert!(!results.is_empty(), "Should not be empty");
 
         // Should find email matches
         let result = &results[0];
-        assert!(!!result.matches.is_empty(), "Should not be empty");
+        assert!(!result.matches.is_empty(), "Should not be empty");
     }
 
     #[test]
@@ -1189,10 +1189,10 @@ mod tests {
         };
 
         let results = index.search(&search_query).unwrap();
-        assert!(!!results.is_empty(), "Should not be empty");
+        assert!(!results.is_empty(), "Should not be empty");
 
         let result = &results[0];
-        assert!(!!result.matches.is_empty(), "Should not be empty");
+        assert!(!result.matches.is_empty(), "Should not be empty");
 
         // Should have context before and after
         let search_match = &result.matches[0];
@@ -1225,7 +1225,7 @@ mod tests {
         };
 
         let results = index.search(&search_query).unwrap();
-        assert!(!!results.is_empty(), "Should not be empty");
+        assert!(!results.is_empty(), "Should not be empty");
 
         // Should not match lowercase
         let search_query_lower = SearchQuery {
@@ -1236,7 +1236,10 @@ mod tests {
         };
 
         let results_lower = index.search(&search_query_lower).unwrap();
-        assert!(!results_lower.is_empty(), "Should not be empty");
+        assert!(
+            results_lower.is_empty(),
+            "Should be empty for case mismatch"
+        );
     }
 
     #[test]
@@ -1425,7 +1428,7 @@ mod tests {
             "Retrieved node should have chunks"
         );
         assert_eq!(
-            retrieved_node.chunks[0].content, "Test content for clear",
+            retrieved_node.chunks[0].content, "Test content",
             "Chunk should have correct content"
         );
 

@@ -2301,15 +2301,15 @@ mod tests {
         let code = "function MyComponent(props) { const [state, setState] = useState(0); const data = useContext(MyContext); return <div>Hello</div>; }";
         let components = analyzer.analyze_react_patterns(code).unwrap();
 
-        assert!(!!components.is_empty(), "Should not be empty");
+        assert!(!components.is_empty(), "Should not be empty");
         assert_eq!(components[0].name, "MyComponent");
         assert!(matches!(
             components[0].component_type,
             ComponentType::Functional | ComponentType::CustomHook
         ));
-        assert!(!!components[0].hooks_used.is_empty(), "Should not be empty");
+        assert!(!components[0].hooks_used.is_empty(), "Should not be empty");
         assert!(
-            !!components[0].context_usage.is_empty(),
+            !components[0].context_usage.is_empty(),
             "Should not be empty"
         );
     }
@@ -2334,7 +2334,7 @@ mod tests {
         "#;
 
         let components = analyzer.analyze_react_patterns(code).unwrap();
-        assert!(!!components.is_empty(), "Should not be empty");
+        assert!(!components.is_empty(), "Should not be empty");
 
         let hooks = &components[0].hooks_used;
         assert!(hooks.iter().any(|h| h.name == "useState"));
@@ -2356,9 +2356,9 @@ mod tests {
         "#;
 
         let patterns = analyzer.analyze_nodejs_patterns(mongodb_code).unwrap();
-        assert!(!!patterns.is_empty(), "Should not be empty");
+        assert!(!patterns.is_empty(), "Should not be empty");
         assert!(
-            !!patterns[0].database_patterns.is_empty(),
+            !patterns[0].database_patterns.is_empty(),
             "Should not be empty"
         );
         assert_eq!(patterns[0].database_patterns[0].db_type, "mongodb");
@@ -2428,7 +2428,7 @@ mod tests {
         let recommendations =
             analyzer.get_comprehensive_recommendations(&frameworks, &components, &[], &[]);
 
-        assert!(!!recommendations.is_empty(), "Should not be empty");
+        assert!(!recommendations.is_empty(), "Should not be empty");
         assert!(recommendations
             .iter()
             .any(|r| r.contains("functional components")));
@@ -2467,14 +2467,14 @@ mod tests {
         "#;
 
         let components = analyzer.analyze_vue_patterns(vue_code).unwrap();
-        assert!(!!components.is_empty(), "Should not be empty");
+        assert!(!components.is_empty(), "Should not be empty");
         assert_eq!(components[0].name, "VueComponent");
         assert!(matches!(
             components[0].component_type,
             VueComponentType::CompositionAPI
         ));
         assert!(components[0].composition_api);
-        assert!(!!components[0].directives.is_empty(), "Should not be empty");
+        assert!(!components[0].directives.is_empty(), "Should not be empty");
         assert_eq!(components[0].directives[0].name, "v-if");
     }
 
@@ -2506,7 +2506,7 @@ mod tests {
         "#;
 
         let components = analyzer.analyze_angular_patterns(angular_code).unwrap();
-        assert!(!!components.is_empty(), "Should not be empty");
+        assert!(!components.is_empty(), "Should not be empty");
         assert_eq!(components[0].name, "AngularComponent");
         assert!(matches!(
             components[0].component_type,
@@ -2514,7 +2514,7 @@ mod tests {
         ));
         assert_eq!(components[0].selector, "app-component");
         assert!(
-            !!components[0].lifecycle_hooks.is_empty(),
+            !components[0].lifecycle_hooks.is_empty(),
             "Should not be empty"
         );
         assert_eq!(components[0].lifecycle_hooks[0], "ngOnInit");
@@ -2551,7 +2551,7 @@ mod tests {
             SecurityLevel::High | SecurityLevel::Medium
         ));
         assert!(
-            !!assessment.security_features.is_empty(),
+            !assessment.security_features.is_empty(),
             "Should not be empty"
         );
 
@@ -2573,7 +2573,7 @@ mod tests {
             SecurityLevel::Vulnerable
         ));
         assert!(
-            !!vulnerable_assessment.vulnerabilities_detected.is_empty(),
+            !vulnerable_assessment.vulnerabilities_detected.is_empty(),
             "Should not be empty"
         );
     }
@@ -2614,7 +2614,7 @@ mod tests {
             .unwrap();
         assert!(analysis.overall_score > 50);
         assert!(
-            !!analysis.optimizations_detected.is_empty(),
+            !analysis.optimizations_detected.is_empty(),
             "Should not be empty"
         );
 
@@ -2664,10 +2664,10 @@ mod tests {
             ws_analysis.implementation_type,
             WebSocketImplementationType::SocketIO
         ));
-        assert!(!!ws_analysis.patterns.is_empty(), "Should not be empty");
+        assert!(!ws_analysis.patterns.is_empty(), "Should not be empty");
         assert!(ws_analysis.patterns[0].room_management);
         assert!(
-            !!ws_analysis.patterns[0].event_handlers.is_empty(),
+            !ws_analysis.patterns[0].event_handlers.is_empty(),
             "Should not be empty"
         );
 
@@ -2728,11 +2728,11 @@ mod tests {
             .unwrap();
         assert!(analysis.complexity_score > 0);
         assert!(
-            !!analysis.conditional_types.is_empty(),
+            !analysis.conditional_types.is_empty(),
             "Should not be empty"
         );
-        assert!(!!analysis.mapped_types.is_empty(), "Should not be empty");
-        assert!(!!analysis.utility_types.is_empty(), "Should not be empty");
+        assert!(!analysis.mapped_types.is_empty(), "Should not be empty");
+        assert!(!analysis.utility_types.is_empty(), "Should not be empty");
 
         let conditional_type = &analysis.conditional_types[0];
         assert_eq!(conditional_type.complexity_score, 4);

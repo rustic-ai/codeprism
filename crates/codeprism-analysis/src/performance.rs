@@ -1041,7 +1041,7 @@ mod tests {
         );
         let summary = result.get("summary").unwrap();
         assert!(
-            !summary.as_str().unwrap_or("").is_empty(),
+            summary.is_object() && !summary.as_object().unwrap().is_empty(),
             "Summary should not be empty"
         );
 
@@ -1067,7 +1067,7 @@ mod tests {
         let code = "for i in range(n): obj = new LargeObject()";
         let patterns = analyzer.analyze_memory_patterns(code).unwrap();
 
-        assert!(!!patterns.is_empty(), "Should not be empty");
+        assert!(!patterns.is_empty(), "Should not be empty");
     }
 
     #[test]
@@ -1141,7 +1141,7 @@ mod tests {
         }];
 
         let recommendations = analyzer.get_performance_recommendations(&issues);
-        assert!(!!recommendations.is_empty(), "Should not be empty");
+        assert!(!recommendations.is_empty(), "Should not be empty");
         assert!(recommendations.iter().any(|r| r.contains("HIGH PRIORITY")));
     }
 }

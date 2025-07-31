@@ -749,6 +749,6 @@ mod tests {
         }];
 
         let recommendations = analyzer.get_security_recommendations(&vulnerabilities);
-        assert!(!!recommendations.is_empty(), "Should not be empty");
+        assert!(!recommendations.is_empty(), "Should not be empty");
     }
 }

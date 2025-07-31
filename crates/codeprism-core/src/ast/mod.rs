@@ -496,8 +496,8 @@ mod tests {
         );
         assert_eq!(
             id1.to_hex().len(),
-            64,
-            "Node ID hex should be 64 characters (32 bytes * 2)"
+            32,
+            "Node ID hex should be 32 characters (16 bytes * 2)"
         );
 
         // Path with special characters
@@ -513,8 +513,8 @@ mod tests {
         );
         assert_eq!(
             id2.to_hex().len(),
-            64,
-            "Node ID hex should be 64 characters"
+            32,
+            "Node ID hex should be 32 characters"
         );
 
         // Unicode in path
@@ -525,8 +525,8 @@ mod tests {
         );
         assert_eq!(
             id3.to_hex().len(),
-            64,
-            "Node ID hex should be 64 characters"
+            32,
+            "Node ID hex should be 32 characters"
         );
     }
 

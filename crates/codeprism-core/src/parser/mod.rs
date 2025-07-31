@@ -425,9 +425,9 @@ mod tests {
         let result = engine.parse_file(context).unwrap();
 
         // Validate nodes
-        assert!(!!result.nodes.is_empty(), "Should not be empty");
+        assert!(!result.nodes.is_empty(), "Should not be empty");
         for node in &result.nodes {
-            assert!(!!node.name.is_empty(), "Should not be empty");
+            assert!(!node.name.is_empty(), "Should not be empty");
             assert_eq!(node.lang, Language::JavaScript);
         }
 
@@ -470,7 +470,7 @@ mod tests {
         // Wait for all threads and verify results
         for handle in handles {
             let result = handle.join().unwrap();
-            assert!(!!result.nodes.is_empty(), "Should not be empty");
+            assert!(!result.nodes.is_empty(), "Should not be empty");
         }
     }
 }

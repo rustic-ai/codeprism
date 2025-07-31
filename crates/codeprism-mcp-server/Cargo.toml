@@ -43,16 +43,16 @@ serde_yaml = "0.9"
 rmcp = { version = "0.3.1", features = ["server", "transport-io", "transport-sse-server"] }
 
 # Codeprism dependencies for complete standalone functionality
-codeprism-core = { path = "../codeprism-core" }
-codeprism-analysis = { path = "../codeprism-analysis" }
-codeprism-storage = { path = "../codeprism-storage" }
-codeprism-utils = { path = "../codeprism-utils" }
+codeprism-core = { version = "0.4.0", path = "../codeprism-core" }
+codeprism-analysis = { version = "0.4.0", path = "../codeprism-analysis" }
+codeprism-storage = { version = "0.4.0", path = "../codeprism-storage" }
+codeprism-utils = { version = "0.4.0", path = "../codeprism-utils" }
 
 # Language support - all parsers included for complete functionality
-codeprism-lang-rust = { path = "../codeprism-lang-rust" }
-codeprism-lang-python = { path = "../codeprism-lang-python" }
-codeprism-lang-js = { path = "../codeprism-lang-js" }
-codeprism-lang-java = { path = "../codeprism-lang-java" }
+codeprism-lang-rust = { version = "0.4.0", path = "../codeprism-lang-rust" }
+codeprism-lang-python = { version = "0.4.0", path = "../codeprism-lang-python" }
+codeprism-lang-js = { version = "0.4.0", path = "../codeprism-lang-js" }
+codeprism-lang-java = { version = "0.4.0", path = "../codeprism-lang-java" }
 
 regex.workspace = true
 

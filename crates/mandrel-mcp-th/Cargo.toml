@@ -80,7 +80,7 @@ dirs = "5.0"
 notify = "6.1"
 
 # Lightweight CodePrism utilities for file monitoring
-codeprism-utils = { path = "../codeprism-utils" }
+codeprism-utils = { version = "0.4.0", path = "../codeprism-utils" }
 
 # Advanced configuration dependencies
 regex = "1.10"              # For validation patterns

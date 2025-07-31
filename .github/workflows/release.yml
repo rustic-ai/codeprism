@@ -468,6 +468,10 @@ jobs:
           
                      echo "=== Phase 6: MCP Server (depends on all) ==="
           publish_crate "codeprism-mcp-server"
+          sleep 30
+          
+          echo "=== Phase 7: Test Harness (depends on all) ==="
+          publish_crate "mandrel-mcp-th"
           
           echo "🎉 All crates published successfully!"
 

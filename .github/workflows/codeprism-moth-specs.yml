@@ -148,10 +148,10 @@ jobs:
             --package mandrel-mcp-th \
             --package codeprism-mcp-server \
             --bin moth \
-            --bin codeprism-mcp-server
+            --bin codeprism
           
           # Verify binaries
-          if [[ ! -f "target/release/moth" ]] || [[ ! -f "target/release/codeprism-mcp-server" ]]; then
+          if [[ ! -f "target/release/moth" ]] || [[ ! -f "target/release/codeprism" ]]; then
             echo "❌ Required binaries not found after build"
             exit 1
           fi

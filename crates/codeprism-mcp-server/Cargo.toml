@@ -42,9 +42,18 @@ serde_yaml = "0.9"
 # MCP Rust SDK dependencies
 rmcp = { version = "0.3.1", features = ["server", "transport-io", "transport-sse-server"] }
 
-# Codeprism dependencies for real tool implementations
+# Codeprism dependencies for complete standalone functionality
 codeprism-core = { path = "../codeprism-core" }
 codeprism-analysis = { path = "../codeprism-analysis" }
+codeprism-storage = { path = "../codeprism-storage" }
+codeprism-utils = { path = "../codeprism-utils" }
+
+# Language support - all parsers included for complete functionality
+codeprism-lang-rust = { path = "../codeprism-lang-rust" }
+codeprism-lang-python = { path = "../codeprism-lang-python" }
+codeprism-lang-js = { path = "../codeprism-lang-js" }
+codeprism-lang-java = { path = "../codeprism-lang-java" }
+
 regex.workspace = true
 
 [dev-dependencies]

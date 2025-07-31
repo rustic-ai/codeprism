@@ -167,26 +167,45 @@ jobs:
         if: matrix.target == 'x86_64-unknown-linux-musl'
         run: sudo apt-get install -y musl-tools
 
-      - name: Build Binary
-        run: cargo build --release --target ${{ matrix.target }} --bin codeprism-mcp
+      - name: Build CodePrism MCP Server Binary
+        run: cargo build --release --target ${{ matrix.target }} --bin codeprism-mcp-server
 
-      - name: Prepare Binary (Unix)
+      - name: Build Moth Test Harness Binary  
+        run: cargo build --release --target ${{ matrix.target }} --bin moth
+
+      - name: Prepare Binaries (Unix)
         if: matrix.os != 'windows-latest'
         run: |
-          cp target/${{ matrix.target }}/release/codeprism-mcp codeprism-mcp-${{ matrix.suffix }}
-          chmod +x codeprism-mcp-${{ matrix.suffix }}
+          # CodePrism MCP Server
+          cp target/${{ matrix.target }}/release/codeprism-mcp-server codeprism-mcp-server-${{ matrix.suffix }}
+          chmod +x codeprism-mcp-server-${{ matrix.suffix }}
+          
+          # Moth Test Harness
+          cp target/${{ matrix.target }}/release/moth moth-${{ matrix.suffix }}
+          chmod +x moth-${{ matrix.suffix }}
 
-      - name: Prepare Binary (Windows)
+      - name: Prepare Binaries (Windows)
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
-          Copy-Item "target/${{ matrix.target }}/release/codeprism-mcp.exe" "codeprism-mcp-${{ matrix.suffix }}"
+          # CodePrism MCP Server
+          Copy-Item "target/${{ matrix.target }}/release/codeprism-mcp-server.exe" "codeprism-mcp-server-${{ matrix.suffix }}"
+          
+          # Moth Test Harness  
+          Copy-Item "target/${{ matrix.target }}/release/moth.exe" "moth-${{ matrix.suffix }}"
 
-      - name: Upload Binary
+      - name: Upload CodePrism MCP Server Binary
         uses: actions/upload-artifact@v4
         with:
-          name: codeprism-mcp-${{ matrix.suffix }}
-          path: codeprism-mcp-${{ matrix.suffix }}
+          name: codeprism-mcp-server-${{ matrix.suffix }}
+          path: codeprism-mcp-server-${{ matrix.suffix }}
+          retention-days: 5
+
+      - name: Upload Moth Test Harness Binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: moth-${{ matrix.suffix }}
+          path: moth-${{ matrix.suffix }}
           retention-days: 5
 
   # Update version and create release
@@ -242,9 +261,18 @@ jobs:
       - name: Prepare Release Assets
         run: |
           mkdir -p release-assets
-          find binaries -type f \( -name "codeprism-mcp-*" \) | while read file; do
+          
+          # Copy CodePrism MCP Server binaries
+          find binaries -type f \( -name "codeprism-mcp-server-*" \) | while read file; do
             cp "$file" release-assets/
           done
+          
+          # Copy Moth Test Harness binaries
+          find binaries -type f \( -name "moth-*" \) | while read file; do
+            cp "$file" release-assets/
+          done
+          
+          echo "Release assets prepared:"
           ls -la release-assets/
 
       - name: Create Git Tag
@@ -465,7 +493,8 @@ jobs:
             "codeprism-lang-rust"
             "codeprism-core"
             "codeprism-analysis"
-            "codeprism-mcp"
+            "codeprism-mcp-server"
+            "mandrel-mcp-th"
           )
           
           echo "Waiting 60 seconds for crates.io index to fully propagate..."
@@ -514,25 +543,25 @@ jobs:
 
       - name: Validate Crates Available Before Docker Build
         run: |
-          # Double-check that codeprism-mcp is available before Docker build
+          # Double-check that codeprism-mcp-server is available before Docker build
           VERSION="${{ needs.check-release.outputs.new_version }}"
           
-          echo "Final validation: Ensuring codeprism-mcp@$VERSION is available for Docker build..."
+          echo "Final validation: Ensuring codeprism-mcp-server@$VERSION is available for Docker build..."
           
           # Try up to 3 times with increasing delays for crates.io propagation
           for attempt in 1 2 3; do
-            echo "Attempt $attempt: Checking codeprism-mcp availability..."
+            echo "Attempt $attempt: Checking codeprism-mcp-server availability..."
             
-            if cargo search codeprism-mcp --limit 1 | grep -q "= \"$VERSION\""; then
-              echo "✅ codeprism-mcp@$VERSION confirmed available on crates.io"
+            if cargo search codeprism-mcp-server --limit 1 | grep -q "= \"$VERSION\""; then
+              echo "✅ codeprism-mcp-server@$VERSION confirmed available on crates.io"
               break
             else
               if [ $attempt -eq 3 ]; then
-                echo "❌ FATAL: codeprism-mcp@$VERSION still not available after 3 attempts"
+                echo "❌ FATAL: codeprism-mcp-server@$VERSION still not available after 3 attempts"
                 echo "Docker build cannot proceed as it would fail to install the crate"
                 exit 1
               else
-                echo "⏳ codeprism-mcp@$VERSION not yet available, waiting 60 seconds..."
+                echo "⏳ codeprism-mcp-server@$VERSION not yet available, waiting 60 seconds..."
                 sleep 60
               fi
             fi

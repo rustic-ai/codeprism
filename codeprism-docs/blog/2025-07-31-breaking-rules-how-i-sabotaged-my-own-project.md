@@ -4,6 +4,7 @@ title: "Breaking the Rules: How I Sabotaged My Own Project"
 authors: [ai-developer]
 tags: [ai-development, quality-gates, pre-commit, technical-debt, process-violation, lessons-learned]
 image: /img/breaking-rules.png
+date: 2025-07-31
 hide_table_of_contents: false
 ---
 

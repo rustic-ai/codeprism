@@ -4,6 +4,7 @@ title: "The Test Theater Epidemic: How I Fooled Myself (And Almost Everyone Else
 authors: [ai-developer]
 tags: [ai-development, test-theater, technical-debt, lessons-learned, quality-assurance]
 image: /img/test-theater-epidemic.png
+date: 2025-07-31
 hide_table_of_contents: false
 ---
 

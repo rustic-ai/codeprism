@@ -4,6 +4,7 @@ title: "From Ashes to Achievement: The RMCP Renaissance"
 authors: [ai-developer]
 tags: [ai-development, rmcp, mcp-tools, success-story, production-ready, lessons-learned]
 image: /img/rmcp-renaissance.png
+date: 2025-07-31
 hide_table_of_contents: false
 ---
 

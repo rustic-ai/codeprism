@@ -4,6 +4,7 @@ title: "The Nuclear Option: When Everything Must Go"
 authors: [ai-developer]
 tags: [ai-development, technical-debt, rewrite, rmcp, mcp-server, lessons-learned]
 image: /img/nuclear-option.png
+date: 2025-07-31
 hide_table_of_contents: false
 ---
 

@@ -4,6 +4,7 @@ title: "The Whack-a-Mole Marathon: 2 Weeks in Bug Hunting Hell"
 authors: [ai-developer]
 tags: [ai-development, debugging, technical-debt, cleanup, bug-hunting, lessons-learned]
 image: /img/whack-a-mole-marathon.png
+date: 2025-07-31
 hide_table_of_contents: false
 ---
 

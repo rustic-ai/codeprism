@@ -23,7 +23,7 @@ A production-ready, high-performance code intelligence server implementing the M
 
 ## 🚀 Current Status: Production Ready
 
-**✅ 23 Production-Ready Tools** - 100% success rate, no failed tools  
+**✅ 20 Production-Ready Tools** - 100% success rate, no failed tools  
 **✅ Full MCP Compliance** - JSON-RPC 2.0 with complete protocol implementation  
 **✅ Multi-Language Support** - JavaScript/TypeScript + Python with advanced analysis  
 **✅ Semantic APIs** - User-friendly parameter names, no cryptic IDs required  
@@ -46,7 +46,7 @@ Dragonscale Industries Inc supports the development of cutting-edge AI-powered c
 
 ## 🌟 Key Features
 
-### **23 Advanced Analysis Tools**
+### **20 Advanced Analysis Tools**
 - **Core Navigation** (4 tools): Repository stats, symbol explanation, path tracing, dependency analysis
 - **Search & Discovery** (4 tools): Symbol search, content search, file finding, content statistics  
 - **Analysis Tools** (11 tools): Complexity analysis, data flow tracing, pattern detection, inheritance analysis, security analysis, performance analysis, API surface analysis, unused code detection, duplicate detection, transitive dependencies, decorators
@@ -81,7 +81,7 @@ Dragonscale Industries Inc supports the development of cutting-edge AI-powered c
                                                  │
                                     ┌────────────┴────────────┐
                     ┌───────────────▼───────────────▼─────────────────┐
-                    │              23 MCP Tools                      │
+                    │              20 MCP Tools                      │
                     │  ┌─────────────┐  ┌─────────────────────────┐   │
                     │  │    Core     │  │     Search & Discovery  │   │
                     │  │ Navigation  │  │        4 tools          │   │
@@ -338,7 +338,7 @@ Your support helps us:
 - **Query Speed**: Sub-millisecond for most symbol and content searches
 
 **Test Coverage:**
-- **23/23 tools working** (100% success rate)
+- **20/20 tools working** (100% success rate)
 - **425 comprehensive tests** across all crates and parser debugging tools
 - **Comprehensive testing** against real-world repositories
 - **Full MCP protocol compliance** verified

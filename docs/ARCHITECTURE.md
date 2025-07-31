@@ -1,6 +1,6 @@
 # Architecture Guide
 
-This document describes the high-level architecture, design decisions, and implementation details of CodeCodePrism.
+This document describes the high-level architecture, design decisions, and implementation details of CodePrism.
 
 **🚨 ARCHITECTURAL PIVOT - December 2024**
 
@@ -19,13 +19,13 @@ After detailed review against official MCP (Model Context Protocol) documentatio
 
 ## System Overview
 
-CodeCodePrism is a **MCP-compliant** graph-first code intelligence system designed to provide real-time, accurate code understanding for LLM assistants. The system implements the Model Context Protocol (JSON-RPC 2.0) specification to integrate seamlessly with MCP clients like Claude Desktop, Cursor, and VS Code GitHub Copilot.
+CodePrism is a **MCP-compliant** graph-first code intelligence system designed to provide real-time, accurate code understanding for LLM assistants. The system implements the Model Context Protocol (JSON-RPC 2.0) specification to integrate seamlessly with MCP clients like Claude Desktop, Cursor, and VS Code GitHub Copilot.
 
 ### **MCP-Optimized Architecture**
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                   MCP-Compliant CodeCodePrism                      │
+│                   MCP-Compliant CodePrism                      │
 ├─────────────────────────────────────────────────────────────┤
 │  MCP Clients                                                │
 │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐           │
@@ -36,7 +36,7 @@ CodeCodePrism is a **MCP-compliant** graph-first code intelligence system design
 │         └───────────────┼───────────────┘                 │
 │                         ▼ (JSON-RPC 2.0)                 │
 │  ┌─────────────────────────────────────────────────────────┐ │
-│  │              CodeCodePrism MCP Server                           │ │
+│  │              CodePrism MCP Server                           │ │
 │  │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐       │ │
 │  │  │ Resources   │ │   Tools     │ │  Prompts    │       │ │
 │  │  │ Manager     │ │ Manager     │ │ Manager     │       │ │
@@ -86,7 +86,7 @@ CodeCodePrism is a **MCP-compliant** graph-first code intelligence system design
 
 ### 1. **MCP Protocol Compliance**
 
-CodeCodePrism strictly adheres to the Model Context Protocol specification:
+CodePrism strictly adheres to the Model Context Protocol specification:
 
 - **JSON-RPC 2.0**: All communication uses proper JSON-RPC 2.0 format
 - **Initialization Handshake**: Proper capability negotiation
@@ -103,7 +103,7 @@ Based on MCP best practices:
 
 ### 3. **Graph-First Design**
 
-Maintains the core strength of CodeCodePrism:
+Maintains the core strength of CodePrism:
 - **Structural Understanding**: Relationships between functions, classes, and modules
 - **Cross-Language Analysis**: Unified representation across programming languages
 - **Efficient Queries**: Graph traversal for code navigation and analysis
@@ -614,7 +614,7 @@ pub struct HealthStatus {
 
 ## Conclusion
 
-This **MCP-compliant architecture** provides a robust, performant, and standards-compliant foundation for CodeCodePrism that:
+This **MCP-compliant architecture** provides a robust, performant, and standards-compliant foundation for CodePrism that:
 
 1. **Meets MCP Requirements**: Full JSON-RPC 2.0 compliance with proper transport
 2. **Optimizes for Simplicity**: Removed unnecessary complexity for better performance

@@ -1,6 +1,6 @@
 # Developer Guide
 
-This guide covers the development workflow, architecture, and best practices for contributing to CodeCodePrism.
+This guide covers the development workflow, architecture, and best practices for contributing to CodePrism.
 
 ## Table of Contents
 
@@ -19,7 +19,6 @@ This guide covers the development workflow, architecture, and best practices for
 ### Prerequisites
 
 - **Rust**: 1.82+ with `rustfmt` and `clippy`
-- **Docker**: For development services (Neo4j, Kafka)
 - **Make**: For build automation
 - **Git**: Version control
 
@@ -27,7 +26,7 @@ This guide covers the development workflow, architecture, and best practices for
 
 ```bash
 # Clone the repository
-git clone https://github.com/rustic-ai /codeprism
+git clone https://github.com/rustic-ai/codeprism
 cd codeprism
 
 # Install Rust toolchain components
@@ -38,41 +37,21 @@ cargo install cargo-tarpaulin  # Code coverage
 cargo install cargo-watch     # File watching
 cargo install cargo-expand    # Macro expansion
 
-# Start development services
-make dev-up
+# Build the project
+cargo build --release
 
 # Verify setup
 make check
 ```
 
-### Development Services
+### Development Environment
 
-The project uses Docker Compose for development dependencies:
+CodePrism uses a simplified in-memory architecture without external services:
 
-```yaml
-# docker-compose.yml
-services:
-  neo4j:
-    image: neo4j:5.15
-    ports: ["7474:7474", "7687:7687"]
-    environment:
-      NEO4J_AUTH: neo4j/password
-      
-  kafka:
-    image: confluentinc/cp-kafka:latest
-    ports: ["9092:9092"]
-    
-  redis:
-    image: redis:7-alpine
-    ports: ["6379:6379"]
-```
-
-Start services:
-```bash
-make dev-up    # Start all services
-make dev-down  # Stop all services
-make dev-logs  # View service logs
-```
+- **In-Memory Graph Store**: Fast local graph storage using DashMap
+- **File System Watcher**: Real-time file change detection
+- **MCP Protocol**: JSON-RPC 2.0 over stdio transport
+- **Optional Persistence**: File-based caching for faster startup
 
 ## Project Structure
 

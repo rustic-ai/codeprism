@@ -31,16 +31,16 @@ moth --version
 
 ```bash
 # Run tests from a specification file
-moth test my-server.yaml
+moth run my-server.yaml
 
 # Validate a test specification
 moth validate my-server.yaml
 
-# List available tests
-moth list my-server.yaml --detailed
+# Generate reports from test results
+moth report --format html --output results.html
 
 # Show version information
-moth version
+moth --version
 ```
 
 ### Test Specification Example
@@ -94,19 +94,16 @@ tools:
 
 ## CLI Commands
 
-### `moth test`
+### `moth run`
 
 Run test specifications against MCP servers.
 
 ```bash
-moth test [OPTIONS] <SPEC>
+moth run [OPTIONS] <SPEC>
 
 Options:
-  -o, --output-file <FILE>     Output file for test results
-  -f, --fail-fast              Stop execution on first failure
-  -F, --filter <PATTERN>       Test filter pattern
-  -c, --concurrency <N>        Maximum concurrent tests [default: 4]
-  --output <FORMAT>            Output format [default: json] [possible: json, html, junit, text]
+  --output <DIR>               Output directory for test results
+  --formats <FORMAT>           Output formats (json, html, junit)
 ```
 
 ### `moth validate`
@@ -117,15 +114,16 @@ Validate test specification syntax and structure.
 moth validate <SPEC>
 ```
 
-### `moth list`
+### `moth report`
 
-List available tests in a specification.
+Generate reports from test execution results.
 
 ```bash
-moth list [OPTIONS] <SPEC>
+moth report [OPTIONS]
 
 Options:
-  -d, --detailed               Show detailed test information
+  --format <FORMAT>            Report format (json, html, junit)
+  --output <FILE>              Output file path
 ```
 
 ## Library Usage

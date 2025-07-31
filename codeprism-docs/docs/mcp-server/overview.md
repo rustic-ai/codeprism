@@ -14,12 +14,12 @@ CodePrism provides a **production-ready MCP server** that enables AI assistants 
 
 ### 🔌 **Complete MCP Compliance**
 - **Resources**: Repository files, code symbols, and graph data
-- **Tools**: 23 production-ready code analysis and navigation tools  
+- **Tools**: 20 production-ready code analysis and navigation tools  
 - **Prompts**: Code analysis templates and workflow guidance
 - **Real-time Updates**: Live resource and tool updates
 
 ### 🚀 **Production-Ready Capabilities**
-- **100% Tool Success Rate** - All 23 tools tested and production-ready
+- **100% Tool Success Rate** - All 20 tools tested and production-ready
 - **Semantic Parameter Support** - Human-readable names instead of cryptic IDs
 - **Environment Variable Integration** - Automatic repository detection
 - **Context-Enhanced Responses** - Source code snippets included
@@ -30,7 +30,7 @@ CodePrism provides a **production-ready MCP server** that enables AI assistants 
 ```json
 {
   "name": "codeprism-mcp-server",
-  "version": "0.2.6",
+  "version": "0.3.4",
   "capabilities": {
     "resources": {
       "subscribe": true,
@@ -74,7 +74,7 @@ CodePrism provides a **production-ready MCP server** that enables AI assistants 
 - `codeprism://architecture/patterns` - Detected design patterns and structures
 - `codeprism://architecture/dependencies` - High-level dependency analysis
 
-## Production Tools (23 Available)
+## Production Tools (20 Available)
 
 ### Core Navigation & Understanding (4 tools)
 1. **`repository_stats`** - Get comprehensive statistics about the repository

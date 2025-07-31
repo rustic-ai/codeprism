@@ -567,7 +567,8 @@ CodeCodePrism is designed to work seamlessly with major MCP clients:
 {
   "mcpServers": {
     "codeprism": {
-      "command": "codeprism-mcp-server",
+              "command": "codeprism",
+        "args": ["--mcp"],
       "env": {
         "CODEPRISM_PROFILE": "development",
         "RUST_LOG": "info"
@@ -582,7 +583,8 @@ CodeCodePrism is designed to work seamlessly with major MCP clients:
 {
   "mcpServers": {
     "codeprism": {
-      "command": "codeprism-mcp-server",
+              "command": "codeprism",
+        "args": ["--mcp"],
       "env": {
         "CODEPRISM_PROFILE": "development",
         "RUST_LOG": "info"
@@ -613,7 +615,7 @@ CodeCodePrism is designed to work seamlessly with major MCP clients:
 # Set configuration and start CodePrism MCP server
 export CODEPRISM_PROFILE=development
 export RUST_LOG=info
-codeprism-mcp-server
+codeprism --mcp
 
 # The MCP server is designed to be launched by MCP clients
 # Not as a standalone command-line tool

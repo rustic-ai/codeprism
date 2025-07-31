@@ -21,7 +21,7 @@ This means for most repositories, you can simply run:
 ```bash
 export CODEPRISM_PROFILE=development
 export REPOSITORY_PATH=/path/to/your/repository
-./target/release/codeprism-mcp-server
+./target/release/codeprism --mcp
 ```
 
 ## Default Configuration
@@ -114,7 +114,7 @@ graph TD
 ```bash
 export CODEPRISM_PROFILE=development
 export REPOSITORY_PATH=/path/to/repo
-./target/release/codeprism-mcp-server
+./target/release/codeprism --mcp
 ```
 - **Excludes**: All dependency directories (`.tox`, `venv`, `node_modules`, etc.)
 - **Pros**: Fast indexing, low memory usage, focuses on your code
@@ -125,7 +125,7 @@ export REPOSITORY_PATH=/path/to/repo
 export CODEPRISM_PROFILE=development
 export CODEPRISM_DEPENDENCY_MODE=smart
 export REPOSITORY_PATH=/path/to/repo
-./target/release/codeprism-mcp-server
+./target/release/codeprism --mcp
 ```
 - **Includes**: Public APIs and commonly used dependency files only
 - **Excludes**: Internal implementation details, tests, documentation
@@ -138,7 +138,7 @@ export REPOSITORY_PATH=/path/to/repo
 export CODEPRISM_PROFILE=production
 export CODEPRISM_DEPENDENCY_MODE=include_all
 export REPOSITORY_PATH=/path/to/repo
-./target/release/codeprism-mcp-server
+./target/release/codeprism --mcp
 ```
 - **Includes**: Everything including full dependency source code
 - **Pros**: Complete code intelligence, full import following, comprehensive analysis
@@ -163,7 +163,7 @@ export CODEPRISM_PROFILE=development
 export CODEPRISM_MEMORY_LIMIT_MB=4096
 export CODEPRISM_DEPENDENCY_MODE=smart
 export REPOSITORY_PATH=/path/to/repo
-./target/release/codeprism-mcp-server
+./target/release/codeprism --mcp
 ```
 
 2. **Use complete analysis** when you need full dependency intelligence:
@@ -172,14 +172,14 @@ export CODEPRISM_PROFILE=production
 export CODEPRISM_MEMORY_LIMIT_MB=8192
 export CODEPRISM_DEPENDENCY_MODE=include_all
 export REPOSITORY_PATH=/path/to/repo
-./target/release/codeprism-mcp-server
+./target/release/codeprism --mcp
 ```
 
 3. **Use minimal mode** for CI/CD or when performance is critical:
 ```bash
 export CODEPRISM_PROFILE=development
 export REPOSITORY_PATH=/path/to/repo
-./target/release/codeprism-mcp-server  # Default
+./target/release/codeprism --mcp  # Default
 ```
 
 ### Very Large Repositories (>50,000 files)
@@ -188,7 +188,7 @@ export CODEPRISM_PROFILE=enterprise
 export CODEPRISM_MEMORY_LIMIT_MB=8192
 export CODEPRISM_BATCH_SIZE=20
 export REPOSITORY_PATH=/path/to/huge/repo
-./target/release/codeprism-mcp-server
+./target/release/codeprism --mcp
 ```
 
 ### Specific Language Focus
@@ -197,13 +197,13 @@ export REPOSITORY_PATH=/path/to/huge/repo
 export CODEPRISM_PROFILE=development
 export CODEPRISM_INCLUDE_EXTENSIONS="py,js,ts"
 export REPOSITORY_PATH=/path/to/repo
-./target/release/codeprism-mcp-server
+./target/release/codeprism --mcp
 
 # Only Rust projects  
 export CODEPRISM_PROFILE=development
 export CODEPRISM_INCLUDE_EXTENSIONS="rs,toml"
 export REPOSITORY_PATH=/path/to/repo
-./target/release/codeprism-mcp-server
+./target/release/codeprism --mcp
 ```
 
 ### Memory-Constrained Systems
@@ -213,7 +213,7 @@ export CODEPRISM_PROFILE=development
 export CODEPRISM_MEMORY_LIMIT_MB=2048
 export CODEPRISM_BATCH_SIZE=15
 export REPOSITORY_PATH=/path/to/repo
-./target/release/codeprism-mcp-server
+./target/release/codeprism --mcp
 ```
 
 ### Include All File Types
@@ -222,7 +222,7 @@ export REPOSITORY_PATH=/path/to/repo
 export CODEPRISM_PROFILE=development
 export CODEPRISM_INCLUDE_EXTENSIONS="*"
 export REPOSITORY_PATH=/path/to/repo
-./target/release/codeprism-mcp-server
+./target/release/codeprism --mcp
 ```
 
 ## Environment Variables Reference
@@ -260,7 +260,7 @@ export CODEPRISM_PROFILE=development
 export CODEPRISM_MEMORY_LIMIT_MB=1024
 export CODEPRISM_INCLUDE_EXTENSIONS="*"
 export REPOSITORY_PATH=/path/to/repo
-./target/release/codeprism-mcp-server
+./target/release/codeprism --mcp
 ```
 
 ## Examples
@@ -270,7 +270,7 @@ export REPOSITORY_PATH=/path/to/repo
 # Uses optimized defaults - works for most repositories
 export CODEPRISM_PROFILE=development
 export REPOSITORY_PATH=/path/to/your/repository
-./target/release/codeprism-mcp-server
+./target/release/codeprism --mcp
 ```
 
 ### Custom Configuration Examples
@@ -280,19 +280,19 @@ export CODEPRISM_PROFILE=development
 export CODEPRISM_MEMORY_LIMIT_MB=1024
 export CODEPRISM_BATCH_SIZE=15
 export REPOSITORY_PATH=/path/to/repo
-./target/release/codeprism-mcp-server
+./target/release/codeprism --mcp
 
 # Maximum performance (if you have lots of RAM)
 export CODEPRISM_PROFILE=enterprise
 export CODEPRISM_MEMORY_LIMIT_MB=16384
 export CODEPRISM_BATCH_SIZE=50
 export REPOSITORY_PATH=/path/to/repo
-./target/release/codeprism-mcp-server
+./target/release/codeprism --mcp
 
 # Use production profile for complete analysis
 export CODEPRISM_PROFILE=production
 export REPOSITORY_PATH=/path/to/repo
-./target/release/codeprism-mcp-server
+./target/release/codeprism --mcp
 ```
 
 The new defaults should handle most real-world repositories without any configuration needed! 

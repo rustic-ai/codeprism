@@ -18,7 +18,7 @@ global:
 
 server:
   start_command: "cargo"
-  args: ["run", "--bin", "codeprism-mcp-server", "--"]
+      args: ["run", "--bin", "codeprism", "--", "--mcp"]
   env: {}
   working_dir: "."
   startup_timeout_seconds: 30

@@ -142,7 +142,7 @@ cd codeprism
 cargo build --release
 
 # Verify installation
-./target/release/codeprism-mcp-server --help
+./target/release/codeprism --help
 ```
 
 **⚠️ Development Note**: This project enforces strict implementation completeness standards via git pre-commit hooks. All commits must contain complete, functional implementations with zero placeholder code. The existing `.git/hooks/pre-commit` script automatically validates code quality and implementation completeness.
@@ -157,7 +157,8 @@ cargo build --release
 {
   "mcpServers": {
     "codeprism": {
-      "command": "/path/to/codeprism/target/release/codeprism-mcp-server",
+      "command": "/path/to/codeprism/target/release/codeprism",
+      "args": ["--mcp"],
       "env": {
         "CODEPRISM_PROFILE": "development",
         "RUST_LOG": "info"
@@ -173,7 +174,8 @@ cargo build --release
 {
   "mcpServers": {
     "codeprism": {
-      "command": "/path/to/codeprism/target/release/codeprism-mcp-server",
+      "command": "/path/to/codeprism/target/release/codeprism",
+      "args": ["--mcp"],
       "env": {
         "CODEPRISM_PROFILE": "development",
         "RUST_LOG": "info"
@@ -188,7 +190,7 @@ cargo build --release
 # Set configuration and run
 export CODEPRISM_PROFILE=development
 export RUST_LOG=info
-./target/release/codeprism-mcp-server
+./target/release/codeprism --mcp
 ```
 
 ## 🛠️ Available Tools
@@ -398,14 +400,14 @@ cargo install codeprism-mcp-server
 **Download Binary:**
 ```bash
 # Linux x86_64
-wget https://github.com/rustic-ai/codeprism/releases/latest/download/codeprism-mcp-server-linux-x86_64
-chmod +x codeprism-mcp-server-linux-x86_64
+wget https://github.com/rustic-ai/codeprism/releases/latest/download/codeprism-linux-x86_64
+chmod +x codeprism-linux-x86_64
 
 # macOS
-wget https://github.com/rustic-ai/codeprism/releases/latest/download/codeprism-mcp-server-macos-x86_64
+wget https://github.com/rustic-ai/codeprism/releases/latest/download/codeprism-macos-x86_64
 
 # Windows
-# Download from: https://github.com/rustic-ai/codeprism/releases/latest/download/codeprism-mcp-server-windows-x86_64.exe
+# Download from: https://github.com/rustic-ai/codeprism/releases/latest/download/codeprism-windows-x86_64.exe
 ```
 
 **Docker:**

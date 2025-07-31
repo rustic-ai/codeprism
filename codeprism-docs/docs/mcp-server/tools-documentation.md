@@ -450,7 +450,7 @@ export CODEPRISM_PROFILE=development
 export REPOSITORY_PATH=/path/to/your/repository
 
 # Start CodePrism MCP server
-./target/release/codeprism-mcp-server
+./target/release/codeprism --mcp
 ```
 
 #### Client Configuration (Claude Desktop)
@@ -458,7 +458,8 @@ export REPOSITORY_PATH=/path/to/your/repository
 {
   "mcpServers": {
     "codeprism": {
-      "command": "./target/release/codeprism-mcp-server",
+      "command": "./target/release/codeprism",
+      "args": ["--mcp"],
       "env": {
         "CODEPRISM_PROFILE": "development",
         "REPOSITORY_PATH": "/path/to/repository"

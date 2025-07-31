@@ -113,7 +113,7 @@ impl McpServerClient {
         println!("🚀 Starting MCP server for end-to-end testing...");
         
         let mut cmd = Command::new("cargo");
-        cmd.args(&["run", "--bin", "codeprism-mcp-server", "--", "stdio"])
+        cmd.args(&["run", "--bin", "codeprism", "--", "--mcp", "stdio"])
             .kill_on_drop(true);
 
         let child = cmd.spawn()?;

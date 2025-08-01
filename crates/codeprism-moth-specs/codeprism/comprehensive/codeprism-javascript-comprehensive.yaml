@@ -18,7 +18,7 @@ capabilities:
 # Server startup configuration  
 server:
   command: "cargo"
-  args: ["run", "--package", "codeprism-mcp-server", "--bin", "codeprism"]
+  args: ["run", "--package", "codeprism-mcp-server", "--bin", "codeprism", "--", "--mcp"]
   env:
     RUST_LOG: "info"
     MCP_PROTOCOL_VERSION: "2025-06-18"

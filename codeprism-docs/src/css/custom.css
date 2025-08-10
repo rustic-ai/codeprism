@@ -4,357 +4,835 @@
  * work well for content-centric websites.
  */
 
+/* Fonts: Roboto Mono for headings/brand; Inter for UI/prose; Source Serif 4 for long-form docs/blog */
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600&display=swap');
+
 /* You can override the default Infima variables here. */
 :root {
-  --ifm-color-primary: #2e8555;
-  --ifm-color-primary-dark: #29784c;
-  --ifm-color-primary-darker: #277148;
-  --ifm-color-primary-darkest: #205d3b;
-  --ifm-color-primary-light: #33925d;
-  --ifm-color-primary-lighter: #359962;
-  --ifm-color-primary-lightest: #3cad6e;
+  /* Exact Rustic AI Color Palette */
+  --rustic-white: #ffffff;
+  --rustic-text: #434446;
+  --rustic-black: #181b20;
+  /* Neutral off-white; avoid blue tint */
+  --rustic-white-smoke: #f7f7f9;
+  --rustic-orange: #ff8a57;
+  --rustic-light-grey: #e4ebf3;
+  
+  /* Legacy names for compatibility */
+  --white: #ffffff;
+  --dark-slate-grey: #434446;
+  --black: #181b20;
+  --white-smoke: #f1faff;
+  --medium-sea-green: #ff8a57;
+  --gainsboro: #e4ebf3;
+  --honeydew: #d8ffe3;
+  --purple-lightest: var(--alice-blue);
+
+  /* Primary Colors - Rustic AI inspired */
+  --ifm-color-primary: var(--black);
+  --ifm-color-primary-dark: #0f1419;
+  --ifm-color-primary-darker: #0a0d10;
+  --ifm-color-primary-darkest: #050708;
+  --ifm-color-primary-light: #2a2f36;
+  --ifm-color-primary-lighter: #3a3f46;
+  --ifm-color-primary-lightest: #4a4f56;
+
+  /* Typography - Inter for base UI/prose, Roboto Mono reserved for headings/brand */
+  --ifm-font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --ifm-font-family-monospace: 'Roboto Mono', 'SF Mono', Monaco, 'Cascadia Code', Consolas, 'Courier New', monospace;
+  --ifm-font-size-base: 1rem;
+  --ifm-line-height-base: 1.5;
+
+  /* Background Colors */
+  --ifm-background-color: var(--white);
+  --ifm-background-surface-color: var(--white-smoke);
+  --ifm-color-emphasis-100: #f8f9fa;
+  --ifm-color-emphasis-200: #e9ecef;
+  --ifm-color-emphasis-300: #dee2e6;
+  --ifm-color-emphasis-700: var(--dark-slate-grey);
+  --ifm-color-emphasis-800: #495057;
+  --ifm-color-emphasis-900: var(--black);
+
+  /* Code Styling */
   --ifm-code-font-size: 95%;
-  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
-}
+  --ifm-code-background: rgba(24, 27, 32, 0.1);
+  --ifm-code-border-radius: 4px;
+  --docusaurus-highlighted-code-line-bg: rgba(24, 27, 32, 0.1);
 
-/* For readability concerns, you should choose a lighter palette in dark mode. */
-[data-theme='dark'] {
-  --ifm-color-primary: #25c2a0;
-  --ifm-color-primary-dark: #21af90;
-  --ifm-color-primary-darker: #1fa588;
-  --ifm-color-primary-darkest: #1a8870;
-  --ifm-color-primary-light: #29d5b0;
-  --ifm-color-primary-lighter: #32d8b4;
-  --ifm-color-primary-lightest: #4fddbf;
-  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
-}
+  /* Border Radius - Clean and minimal */
+  --ifm-border-radius: 8px;
+  --ifm-button-border-radius: 6px;
+  --ifm-card-border-radius: 12px;
 
-/**
- * CodePrism - Modern AI-Inspired Theme
- * Material Design principles with AI-focused color palette
- */
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
-
-/* AI-Inspired Color Palette */
-:root {
-  /* Primary Colors - Deep AI Blue */
-  --ifm-color-primary: #1e3a8a;
-  --ifm-color-primary-dark: #1e40af;
-  --ifm-color-primary-darker: #1d4ed8;
-  --ifm-color-primary-darkest: #2563eb;
-  --ifm-color-primary-light: #3b82f6;
-  --ifm-color-primary-lighter: #60a5fa;
-  --ifm-color-primary-lightest: #93c5fd;
-
-  /* AI Accent Colors */
-  --ai-electric-blue: #00d4ff;
-  --ai-neural-purple: #8b5cf6;
-  --ai-quantum-green: #10b981;
-  --ai-cyber-pink: #ec4899;
-  --ai-matrix-orange: #f59e0b;
-
-  /* Sponsor Colors - Welcoming Blues */
-  --sponsor-blue: #3b82f6;
-  --sponsor-blue-hover: #2563eb;
-  --sponsor-blue-light: #60a5fa;
-  --sponsor-gradient: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-
-  /* Material Design Elevation */
-  --md-elevation-1: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
-  --md-elevation-2: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
-  --md-elevation-3: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
-  --md-elevation-4: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);
-
-  /* Typography */
-  --ifm-font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --ifm-font-family-monospace: 'JetBrains Mono', 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
-  --ifm-font-size-base: 16px;
-  --ifm-line-height-base: 1.6;
-
-  /* Modern Spacing */
+  /* Spacing */
   --ifm-spacing-horizontal: 1.5rem;
   --ifm-spacing-vertical: 1.5rem;
 
-  /* Border Radius */
-  --ifm-border-radius: 12px;
-  --ifm-button-border-radius: 8px;
-  --ifm-card-border-radius: 16px;
-
-  /* Code Styling */
-  --ifm-code-font-size: 0.875rem;
-  --ifm-code-background: rgba(30, 58, 138, 0.1);
-  --ifm-code-border-radius: 6px;
-  --docusaurus-highlighted-code-line-bg: rgba(59, 130, 246, 0.1);
-
-  /* Gradients */
-  --ai-gradient-primary: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #8b5cf6 100%);
-  --ai-gradient-secondary: linear-gradient(135deg, #10b981 0%, #00d4ff 100%);
-  --ai-gradient-accent: linear-gradient(135deg, #ec4899 0%, #f59e0b 100%);
-
-  /* Background Colors */
-  --ifm-background-color: #ffffff;
-  --ifm-background-surface-color: #f8fafc;
-  --ifm-color-emphasis-100: #f1f5f9;
-  --ifm-color-emphasis-200: #e2e8f0;
-  --ifm-color-emphasis-300: #cbd5e1;
-  --ifm-color-emphasis-700: #374151;
-  --ifm-color-emphasis-800: #1f2937;
-  --ifm-color-emphasis-900: #111827;
+  /* Shadows - Subtle like Rustic AI */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
-/* Dark Theme - AI Night Mode */
+/* Dark Theme - Clean and minimal */
 [data-theme='dark'] {
-  /* Primary Colors - Brighter for dark mode */
-  --ifm-color-primary: #60a5fa;
-  --ifm-color-primary-dark: #3b82f6;
-  --ifm-color-primary-darker: #2563eb;
-  --ifm-color-primary-darkest: #1d4ed8;
-  --ifm-color-primary-light: #93c5fd;
-  --ifm-color-primary-lighter: #bfdbfe;
-  --ifm-color-primary-lightest: #dbeafe;
-
-  /* Sponsor Colors for Dark Theme */
-  --sponsor-blue: #60a5fa;
-  --sponsor-blue-hover: #93c5fd;
-  --sponsor-blue-light: #bfdbfe;
-  --sponsor-gradient: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+  --ifm-color-primary: var(--white);
+  --ifm-color-primary-dark: #e6e6e6;
+  --ifm-color-primary-darker: #d9d9d9;
+  --ifm-color-primary-darkest: #bfbfbf;
+  --ifm-color-primary-light: #f9f9f9;
+  --ifm-color-primary-lighter: #fcfcfc;
+  --ifm-color-primary-lightest: #ffffff;
 
   /* Dark Backgrounds */
-  --ifm-background-color: #0f172a;
-  --ifm-background-surface-color: #1e293b;
-  --ifm-color-emphasis-100: #334155;
-  --ifm-color-emphasis-200: #475569;
-  --ifm-color-emphasis-300: #64748b;
+  --ifm-background-color: var(--black);
+  --ifm-background-surface-color: #1a1d22;
+  --ifm-color-emphasis-100: #2a2d32;
+  --ifm-color-emphasis-200: #3a3d42;
+  --ifm-color-emphasis-300: #4a4d52;
   --ifm-color-emphasis-700: #cbd5e1;
   --ifm-color-emphasis-800: #e2e8f0;
   --ifm-color-emphasis-900: #f1f5f9;
 
   /* Code in dark mode */
-  --ifm-code-background: rgba(96, 165, 250, 0.15);
-  --docusaurus-highlighted-code-line-bg: rgba(96, 165, 250, 0.2);
-
-  /* Dark gradients */
-  --ai-gradient-primary: linear-gradient(135deg, #1e293b 0%, #3b82f6 50%, #8b5cf6 100%);
+  --ifm-code-background: rgba(255, 255, 255, 0.1);
+  --docusaurus-highlighted-code-line-bg: rgba(255, 255, 255, 0.15);
 }
 
-/* Material Design Components */
+/* Typography */
+body {
+  font-family: var(--ifm-font-family-base);
+  color: var(--rustic-text);
+  line-height: 24px;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Roboto Mono", sans-serif;
+  color: var(--rustic-black);
+  font-weight: 600;
+}
+
+h1 {
+  font-size: 64px !important;
+  line-height: 76.8px !important;
+  font-weight: 600 !important;
+  margin-bottom: 1rem !important;
+  font-family: "Roboto Mono", sans-serif !important;
+}
+
+.hero h1,
+.hero__title {
+  font-size: 64px !important;
+  line-height: 76.8px !important;
+  font-weight: 600 !important;
+  color: var(--rustic-black) !important;
+  font-family: "Roboto Mono", sans-serif !important;
+}
+
+h2 {
+  font-size: 3rem;
+  margin-bottom: 0.75rem;
+}
+
+h3 {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+h4 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+h5 {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+h6 {
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+p {
+  color: var(--dark-slate-grey);
+  margin-bottom: 1rem;
+  font-family: var(--ifm-font-family-base);
+}
+
+/* Button Styling - Clean and minimal like Rustic AI */
 .button {
-  font-weight: 500;
+  font-family: var(--ifm-font-family-base);
+  font-weight: 400;
   text-transform: none;
-  letter-spacing: 0.02em;
-  box-shadow: var(--md-elevation-2);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  border: none;
+  letter-spacing: 0;
+  border-radius: var(--ifm-button-border-radius);
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  padding: 0.75rem 1.25rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  text-decoration: none;
+  display: inline-block;
+  cursor: pointer;
 }
 
 .button:hover {
-  box-shadow: var(--md-elevation-3);
+  text-decoration: none;
   transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 .button--primary {
-  background: var(--ai-gradient-primary);
-  color: white;
+  background-color: var(--rustic-orange) !important;
+  color: var(--rustic-black) !important;
+  border: 0.771084px solid var(--rustic-orange) !important;
+  border-radius: 0px !important;
+  box-shadow: rgba(0, 0, 0, 0.15) 0px 3px 7px 0px !important;
+  padding: 8px 16px !important;
+  font-size: 16px !important;
+  font-weight: 400 !important;
+  font-family: "Roboto Mono", sans-serif !important;
+}
+
+.button--primary:hover {
+  background-color: var(--rustic-orange) !important;
+  border-color: var(--rustic-orange) !important;
+  color: var(--rustic-black) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: rgba(0, 0, 0, 0.2) 0px 4px 10px 0px !important;
+}
+
+/* Fix specific buttons on homepage */
+.buttons .button,
+.button--sponsor {
+  background-color: var(--rustic-orange) !important;
+  color: var(--rustic-black) !important;
+  border: 0.771084px solid var(--rustic-orange) !important;
+  border-radius: 0px !important;
+  box-shadow: rgba(0, 0, 0, 0.15) 0px 3px 7px 0px !important;
+  padding: 8px 16px !important;
+  font-size: 16px !important;
+  font-weight: 400 !important;
+  font-family: "Roboto Mono", sans-serif !important;
+}
+
+/* Hero button normalization */
+.hero .button {
+  font-family: "Roboto Mono", sans-serif !important;
+  font-size: 16px !important;
+  line-height: 24px !important;
+  padding: 8px 16px !important;
+  border-radius: 0px !important;
+  margin: 0 !important;
+  box-shadow: rgba(0, 0, 0, 0.12) 0px 2px 6px 0px !important;
+  min-width: 244px !important;
+  white-space: nowrap !important;
+  text-align: center !important;
+}
+
+.hero .button.button--lg {
+  padding: 8px 16px !important;
+}
+
+.hero .button--secondary {
+  background-color: var(--white) !important;
+  color: var(--black) !important;
+  border: 0.771084px solid var(--black) !important;
+}
+
+.hero .button--outline {
+  background-color: transparent !important;
+  color: var(--black) !important;
+  border: 0.771084px solid var(--black) !important;
+}
+
+.hero .button:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: rgba(0, 0, 0, 0.18) 0px 4px 10px 0px !important;
+}
+
+.hero .buttons {
+  gap: 1rem !important;
+}
+
+/* Sponsor button in hero */
+.hero a[href*="sponsor"] {
+  background-color: var(--rustic-orange) !important;
+  color: var(--rustic-black) !important;
+  border: 0.771084px solid var(--rustic-orange) !important;
+  padding: 8px 16px !important;
+  font-size: 16px !important;
+  line-height: 24px !important;
+  border-radius: 0px !important;
+}
+
+[data-theme='dark'] .hero .button--secondary {
+  background-color: var(--white) !important;
+  color: var(--black) !important;
+}
+
+/* Target sponsor button in navbar specifically */
+.navbar__item [href*="sponsor"],
+a[href*="sponsor"] {
+  background-color: var(--rustic-orange) !important;
+  color: var(--rustic-black) !important;
+  border: 0.771084px solid var(--rustic-orange) !important;
+  border-radius: 0px !important;
+  box-shadow: rgba(0, 0, 0, 0.15) 0px 3px 7px 0px !important;
+  padding: 6px 12px !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  font-family: "Roboto Mono", sans-serif !important;
+  text-decoration: none !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+/* Ensure navbar sponsor link uses readable text color and size */
+nav.navbar a[href*="sponsor"] {
+  color: var(--rustic-black) !important;
+  padding: 8px 16px !important;
+  font-size: 16px !important;
+  line-height: 24px !important;
+}
+
+.navbar__item [href*="sponsor"]:hover,
+a[href*="sponsor"]:hover {
+  background-color: var(--rustic-orange) !important;
+  color: var(--rustic-black) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: rgba(0, 0, 0, 0.2) 0px 4px 10px 0px !important;
 }
 
 .button--secondary {
-  background: var(--ai-gradient-secondary);
-  color: white;
+  background-color: var(--white);
+  color: var(--black);
+  border-color: var(--black);
 }
 
-/* Cards with Material Design */
+.button--secondary:hover {
+  background-color: var(--black);
+  color: var(--white);
+  border-color: var(--black);
+}
+
+.button--outline {
+  background-color: transparent;
+  color: var(--black);
+  border-color: var(--black);
+}
+
+.button--outline:hover {
+  background-color: var(--black);
+  color: var(--white);
+  border-color: var(--black);
+}
+
+/* Navbar - Clean and minimal */
+.navbar {
+  background: var(--white);
+  border-bottom: 1px solid var(--gainsboro);
+  box-shadow: var(--shadow-sm);
+  padding: 1rem 0;
+}
+
+.navbar__brand {
+  font-family: var(--ifm-font-family-base);
+  font-weight: 600;
+  color: var(--black);
+}
+
+.navbar__link {
+  font-family: var(--ifm-font-family-base);
+  color: var(--dark-slate-grey);
+  font-weight: 400;
+  transition: all 0.2s ease;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  margin: 0 0.25rem;
+}
+
+.navbar__link:hover {
+  color: var(--black);
+  text-decoration: none;
+  background-color: rgba(241, 250, 255, 0.8);
+}
+
+.navbar__link--active {
+  color: var(--black);
+  font-weight: 500;
+  background-color: var(--alice-blue);
+}
+
+/* Dark navbar */
+[data-theme='dark'] .navbar {
+  background: var(--black);
+  border-bottom: 1px solid var(--ifm-color-emphasis-300);
+}
+
+[data-theme='dark'] .navbar__brand {
+  color: var(--white);
+}
+
+[data-theme='dark'] .navbar__link {
+  color: var(--ifm-color-emphasis-700);
+}
+
+[data-theme='dark'] .navbar__link:hover {
+  color: var(--white);
+}
+
+[data-theme='dark'] .navbar__link--active {
+  color: var(--white);
+}
+
+/* Hero Section - Exact Rustic AI style with cell pattern */
+.hero {
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.5)),
+    linear-gradient(rgb(255, 255, 255), rgba(255, 255, 255, 0) 89%, rgb(255, 255, 255) 102%),
+    url('/img/cell-pattern.png');
+  background-size: auto, auto, 120px;
+  background-repeat: repeat, repeat, repeat;
+  color: var(--rustic-black);
+  padding: 6rem 0;
+  text-align: center;
+}
+
+/* Ensure our hero styling wins over theme's hero--primary */
+.hero.hero--primary {
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.62)),
+    linear-gradient(rgb(255, 255, 255), rgba(255, 255, 255, 0) 89%, rgb(255, 255, 255) 102%),
+    url('/img/cell-pattern.png') !important;
+  background-size: auto, auto, 120px !important;
+  background-repeat: repeat, repeat, repeat !important;
+}
+
+.hero__title {
+  font-size: 4rem;
+  font-weight: 600;
+  color: var(--black);
+  margin-bottom: 1.5rem;
+  line-height: 1.2;
+}
+
+.hero__subtitle {
+  font-size: 1.5rem;
+  color: var(--dark-slate-grey);
+  margin-bottom: 2rem;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+/* Cards - Clean and minimal */
 .card {
-  box-shadow: var(--md-elevation-1);
+  background: var(--white);
+  border: 1px solid var(--gainsboro);
   border-radius: var(--ifm-card-border-radius);
-  border: none;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 2rem;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
 }
 
 .card:hover {
-  box-shadow: var(--md-elevation-3);
+  box-shadow: var(--shadow-md);
   transform: translateY(-2px);
 }
 
-/* Hero Section Enhancements */
-.hero {
-  background: var(--ai-gradient-primary);
-  color: white;
-  position: relative;
-  overflow: hidden;
+/* Section backgrounds with cell patterns - matching Rustic AI */
+.features {
+  background: var(--white) !important;
 }
 
-.hero::before {
+/* CodePrism section styling */
+.codeprismSection {
+  background: var(--white) !important;
+  padding: 5rem 0 !important;
+  border-top: 3px solid var(--rustic-light-grey);
+}
+
+.codeprismSection h2 {
+  color: var(--rustic-black) !important;
+  font-family: "Roboto Mono", sans-serif !important;
+  font-size: 2.5rem !important;
+  margin-bottom: 1rem !important;
+  font-weight: 600 !important;
+}
+
+.codeprismSection h3 {
+  color: var(--rustic-orange) !important;
+  font-family: "Roboto Mono", sans-serif !important;
+  font-size: 1.3rem !important;
+  margin-bottom: 1.5rem !important;
+  font-weight: 500 !important;
+}
+
+.codeprismSection p {
+  color: var(--rustic-text) !important;
+  font-family: "Roboto Mono", sans-serif !important;
+  line-height: 1.7 !important;
+  margin-bottom: 1.5rem !important;
+  font-size: 1rem !important;
+}
+
+.codeprismSection ul {
+  list-style: none !important;
+  padding-left: 0 !important;
+  margin-bottom: 2rem !important;
+}
+
+.codeprismSection li {
+  color: var(--rustic-text) !important;
+  font-family: "Roboto Mono", sans-serif !important;
+  margin-bottom: 0.8rem !important;
+  padding-left: 1.5rem !important;
+  position: relative !important;
+}
+
+.codeprismSection li::before {
+  content: '▸' !important;
+  color: var(--rustic-orange) !important;
+  font-weight: bold !important;
+  position: absolute !important;
+  left: 0 !important;
+}
+
+/* Mandrel section styling */
+.mandrelSection {
+  background: var(--white) !important;
+  padding: 5rem 0 !important;
+  border-top: 3px solid var(--rustic-light-grey);
+}
+
+.mandrelSection h2 {
+  color: var(--rustic-black) !important;
+  font-family: "Roboto Mono", sans-serif !important;
+  font-size: 2.5rem !important;
+  margin-bottom: 1rem !important;
+  font-weight: 600 !important;
+}
+
+.mandrelSection h3 {
+  color: var(--rustic-orange) !important;
+  font-family: "Roboto Mono", sans-serif !important;
+  font-size: 1.3rem !important;
+  margin-bottom: 1.5rem !important;
+  font-weight: 500 !important;
+}
+
+.mandrelSection p {
+  color: var(--rustic-text) !important;
+  font-family: "Roboto Mono", sans-serif !important;
+  line-height: 1.7 !important;
+  margin-bottom: 1.5rem !important;
+  font-size: 1rem !important;
+}
+
+.mandrelSection ul {
+  list-style: none !important;
+  padding-left: 0 !important;
+  margin-bottom: 2rem !important;
+}
+
+.mandrelSection li {
+  color: var(--rustic-text) !important;
+  font-family: "Roboto Mono", sans-serif !important;
+  margin-bottom: 0.8rem !important;
+  padding-left: 1.5rem !important;
+  position: relative !important;
+}
+
+.mandrelSection li::before {
+  content: '▸' !important;
+  color: var(--rustic-orange) !important;
+  font-weight: bold !important;
+  position: absolute !important;
+  left: 0 !important;
+}
+
+/* Code and terminal examples */
+.codeExample, .terminalExample {
+  background: var(--rustic-black) !important;
+  border-radius: 8px !important;
+  padding: 1.5rem !important;
+  margin-top: 1rem !important;
+}
+
+.codeExample h4, .terminalExample h4 {
+  color: var(--rustic-orange) !important;
+  font-family: "Roboto Mono", sans-serif !important;
+  font-size: 1rem !important;
+  margin-bottom: 1rem !important;
+  font-weight: 600 !important;
+}
+
+.codeExample pre, .terminalExample pre {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  font-family: "Roboto Mono", sans-serif !important;
+  font-size: 0.9rem !important;
+  line-height: 1.5 !important;
+  color: var(--rustic-white) !important;
+  overflow-x: auto !important;
+}
+
+.codeExample code, .terminalExample code {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  color: var(--rustic-white) !important;
+  font-family: "Roboto Mono", sans-serif !important;
+}
+
+/* Button groups */
+.buttonGroup {
+  display: flex !important;
+  gap: 1rem !important;
+  margin-top: 2rem !important;
+}
+
+.buttonGroup .button {
+  font-family: "Roboto Mono", sans-serif !important;
+  font-weight: 500 !important;
+}
+
+/* Normalize product section buttons to match hero */
+.codeprismSection .button,
+.mandrelSection .button {
+  font-family: "Roboto Mono", sans-serif !important;
+  font-size: 16px !important;
+  line-height: 24px !important;
+  padding: 8px 16px !important;
+  border-radius: 0px !important;
+  margin: 0 !important;
+  box-shadow: rgba(0, 0, 0, 0.15) 0px 3px 7px 0px !important;
+}
+
+.codeprismSection .button--secondary,
+.mandrelSection .button--secondary {
+  background-color: var(--white) !important;
+  color: var(--black) !important;
+  border: 0.771084px solid var(--black) !important;
+}
+
+.codeprismSection .button--outline,
+.mandrelSection .button--outline {
+  background-color: transparent !important;
+  color: var(--black) !important;
+  border: 0.771084px solid var(--black) !important;
+}
+
+.codeprismSection .button:hover,
+.mandrelSection .button:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: rgba(0, 0, 0, 0.2) 0px 4px 10px 0px !important;
+}
+
+[data-theme='dark'] .codeprismSection .button--secondary,
+[data-theme='dark'] .mandrelSection .button--secondary {
+  background-color: var(--white) !important;
+  color: var(--black) !important;
+}
+
+/* Section spacing (no forced tinted backgrounds) */
+.stats {
+  padding: 4rem 0 !important;
+}
+
+/* Remove broad tinted background from first content wrapper */
+main > div:first-child {
+  padding: 4rem 0 !important;
+}
+
+/* Why Choose section - add visual separation */
+main > div:nth-child(2) {
+  background: var(--white) !important;
+  padding: 4rem 0 !important;
+  border-top: 3px solid var(--rustic-light-grey);
+  border-bottom: 3px solid var(--rustic-light-grey);
+  position: relative;
+  margin: 2rem 0;
+}
+
+/* Add subtle pattern to Why Choose section */
+main > div:nth-child(2)::before {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-  animation: float 20s ease-in-out infinite;
+  background: 
+    linear-gradient(91deg, rgb(255, 255, 255) 33%, rgba(255, 255, 255, 0) 89%, rgb(255, 255, 255) 102%),
+    url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="none"/><circle cx="50" cy="50" r="0.5" fill="rgba(0,0,0,0.03)"/></svg>');
+  background-size: auto, 100px;
+  background-repeat: repeat, repeat;
+  pointer-events: none;
+  z-index: -1;
 }
 
-@keyframes float {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-10px) rotate(180deg); }
+/* Improve section headers styling */
+.container h2 {
+  text-align: left !important;
+  color: var(--rustic-black) !important;
+  font-family: "Roboto Mono", sans-serif !important;
+  font-size: 2.4rem !important;
+  margin-bottom: 2.5rem !important;
+  font-weight: 600 !important;
+  position: relative;
 }
 
-.hero__title {
-  font-weight: 700;
-  font-size: 3.5rem;
+/* Add decorative underline to section headers */
+.container h2::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 0;
+  width: 72px;
+  height: 3px;
+  background: var(--rustic-orange);
+  border-radius: 2px;
+}
+
+.features .row:nth-child(even) {
+  background:
+    linear-gradient(91deg, rgb(255, 255, 255) 33%, rgba(255, 255, 255, 0) 89%, rgb(255, 255, 255) 102%),
+    url('/img/cell-pattern.png');
+  background-size: auto, 100px;
+  background-repeat: repeat, repeat;
+  padding: 1.5rem 2rem;
+  border-radius: 8px;
+  margin: 1.5rem 0;
+}
+
+/* Homepage sections with backgrounds */
+.homepage-section {
+  background: 
+    linear-gradient(91deg, rgb(255, 255, 255) 33%, rgba(255, 255, 255, 0) 89%, rgb(255, 255, 255) 102%),
+    url('/img/cell-pattern.png');
+  background-size: auto, 100px;
+  background-repeat: repeat, repeat;
+}
+
+/* Footer - Clean and minimal Rustic AI style */
+.footer {
+  background: var(--rustic-black);
+  color: var(--white);
+  padding: 3.5rem 0;
+  border-top: 2px solid rgba(255, 255, 255, 0.08);
+}
+
+.footer__title {
+  color: var(--white);
+  font-weight: 600;
   margin-bottom: 1rem;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  font-family: "Roboto Mono", sans-serif;
+  font-size: 1rem;
 }
 
-.hero__subtitle {
-  font-size: 1.5rem;
-  font-weight: 400;
-  opacity: 0.95;
+.footer__link-item,
+.footer__link {
+  color: #cbd5e1;
+  text-decoration: none;
+  transition: color 0.2s ease;
+  font-family: "Roboto Mono", sans-serif;
+  font-size: 0.9rem;
+  padding: 0.25rem 0;
+  display: block;
 }
 
-/* Navbar Enhancements */
-.navbar {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  box-shadow: var(--md-elevation-2);
-  border-bottom: 1px solid var(--ifm-color-emphasis-200);
+.footer__link-item:hover,
+.footer__link:hover {
+  color: var(--white);
+  text-decoration: underline;
 }
 
-[data-theme='dark'] .navbar {
-  background: rgba(15, 23, 42, 0.95);
-  border-bottom: 1px solid var(--ifm-color-emphasis-300);
+.footer__items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
-/* Sponsor Link Styling - Welcoming Blue Theme */
+.footer__item {
+  margin-bottom: 0.75rem;
+}
+
+/* Footer bottom section */
+.footer .container > div:last-child {
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  padding-top: 1.5rem;
+  margin-top: 1.75rem;
+  text-align: center;
+  font-family: "Roboto Mono", sans-serif;
+  font-size: 0.85rem;
+  color: #cbd5e1;
+}
+
+.footer .container > div:last-child a {
+  color: var(--rustic-orange);
+  text-decoration: underline;
+  transition: color 0.2s ease;
+}
+
+.footer .container > div:last-child a:hover {
+  color: var(--white);
+}
+
+/* Footer accessibility/focus */
+.footer a:focus {
+  outline: 2px solid var(--rustic-orange);
+  outline-offset: 2px;
+}
+
+/* Footer layout alignment tweaks */
+.footer .container {
+  padding-left: var(--ifm-spacing-horizontal);
+  padding-right: var(--ifm-spacing-horizontal);
+}
+
+/* Code blocks - Clean styling */
+.prism-code {
+  border-radius: var(--ifm-border-radius);
+  border: 1px solid var(--gainsboro);
+  background: var(--ifm-code-background);
+}
+
+/* Sponsor styling - Clean and minimal */
 .sponsor-link,
 a[href*="sponsor"], 
-a[href*="Sponsors"],
-.navbar__item[href*="sponsor"] {
-  color: var(--sponsor-blue) !important;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(29, 78, 216, 0.1) 100%);
-  border-radius: 8px;
-  padding: 0.5rem 1rem;
-  font-weight: 600;
+a[href*="Sponsors"] {
+  color: var(--medium-sea-green) !important;
+  font-weight: 500;
   text-decoration: none;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 2px solid transparent;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
+  transition: color 0.2s ease;
 }
 
 .sponsor-link:hover,
 a[href*="sponsor"]:hover,
-a[href*="Sponsors"]:hover,
-.navbar__item[href*="sponsor"]:hover {
-  color: var(--sponsor-blue-hover) !important;
-  background: var(--sponsor-gradient);
-  color: white !important;
-  transform: translateY(-2px);
-  box-shadow: var(--md-elevation-3);
-  border-color: var(--sponsor-blue-light);
+a[href*="Sponsors"]:hover {
+  color: var(--black) !important;
   text-decoration: none;
 }
 
-/* Sponsor button in navbar */
-.navbar__item--right a[href*="sponsor"] {
-  background: var(--sponsor-gradient);
-  color: white !important;
-  border-radius: var(--ifm-button-border-radius);
-  padding: 0.5rem 1rem;
-  font-weight: 600;
-  margin-left: 0.5rem;
-  box-shadow: var(--md-elevation-1);
-}
-
-.navbar__item--right a[href*="sponsor"]:hover {
-  background: linear-gradient(135deg, var(--sponsor-blue-hover) 0%, var(--sponsor-blue) 100%);
-  transform: translateY(-1px);
-  box-shadow: var(--md-elevation-2);
-}
-
-/* Sponsor section in footer */
-.footer a[href*="sponsor"] {
-  color: var(--sponsor-blue-light) !important;
-  font-weight: 500;
-}
-
-.footer a[href*="sponsor"]:hover {
-  color: white !important;
-  text-decoration: underline;
-}
-
-/* Sponsor page specific styling */
-.sponsor-hero {
-  background: var(--sponsor-gradient);
-  color: white;
-  text-align: center;
-  padding: 4rem 2rem;
-  border-radius: var(--ifm-card-border-radius);
-  margin-bottom: 2rem;
-  box-shadow: var(--md-elevation-3);
-}
-
-.sponsor-card {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(29, 78, 216, 0.05) 100%);
-  border: 2px solid var(--sponsor-blue-light);
-  border-radius: var(--ifm-card-border-radius);
-  padding: 2rem;
-  margin: 1rem 0;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.sponsor-card:hover {
-  border-color: var(--sponsor-blue);
-  box-shadow: 0 8px 32px rgba(59, 130, 246, 0.15);
-  transform: translateY(-2px);
-}
-
-/* Footer Enhancements */
-.footer {
-  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-  color: var(--ifm-color-emphasis-700);
-}
-
-/* Code Block Enhancements */
-.prism-code {
-  border-radius: var(--ifm-border-radius);
-  box-shadow: var(--md-elevation-1);
-}
-
-/* Smooth Scrolling */
-html {
-  scroll-behavior: smooth;
-}
-
-/* Custom Animations */
-@keyframes slideInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-slide-in {
-  animation: slideInUp 0.6s ease-out;
-}
-
-/* AI-themed accents */
-.ai-accent {
-  background: var(--ai-gradient-accent);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  font-weight: 600;
-}
-
-/* Responsive Design Improvements */
+/* Responsive Design */
 @media (max-width: 768px) {
+  h1 {
+    font-size: 2.5rem;
+  }
+  
+  h2 {
+    font-size: 2rem;
+  }
+  
+  h3 {
+    font-size: 1.75rem;
+  }
+  
   .hero__title {
     font-size: 2.5rem;
   }
@@ -362,11 +840,372 @@ html {
   .hero__subtitle {
     font-size: 1.25rem;
   }
-
-  .sponsor-link,
-  a[href*="sponsor"], 
-  a[href*="Sponsors"] {
-    padding: 0.4rem 0.8rem;
+  
+  .button {
+    padding: 0.6rem 1rem;
     font-size: 0.9rem;
   }
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Clean focus states */
+button:focus,
+a:focus,
+input:focus,
+textarea:focus,
+select:focus {
+  outline: 2px solid var(--medium-sea-green);
+  outline-offset: 2px;
+}
+
+/* Note: Do not globally disable background images.
+   Background patterns and layered gradients are used intentionally
+   across the site (hero, sections, features). */
+
+/* Clean list styling */
+ul, ol {
+  color: var(--dark-slate-grey);
+  font-family: var(--ifm-font-family-base);
+}
+
+li {
+  margin-bottom: 0.5rem;
+}
+
+/* Clean link styling */
+a {
+  color: var(--black);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--medium-sea-green);
+  text-decoration: none;
+}
+
+/* Clean table styling */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1rem 0;
+}
+
+th, td {
+  border: 1px solid var(--gainsboro);
+  padding: 0.75rem;
+  text-align: left;
+}
+
+th {
+  background: var(--ifm-color-emphasis-100);
+  font-weight: 600;
+  color: var(--black);
+}
+
+/* Clean blockquote styling */
+blockquote {
+  border-left: 4px solid var(--medium-sea-green);
+  margin: 1.5rem 0;
+  padding: 1rem 1.5rem;
+  background: var(--ifm-color-emphasis-100);
+  font-style: italic;
+}
+
+/* Clean horizontal rule */
+hr {
+  border: none;
+  border-top: 1px solid var(--gainsboro);
+  margin: 2rem 0;
+}
+
+/* Dark mode specific styles - enhanced for Rustic AI theme */
+[data-theme='dark'] {
+  --white: #f8f9fa;
+  --black: #181b20;
+  --rustic-white: #f8f9fa;
+  --rustic-text: #e6e6e6;
+  --rustic-black: #181b20;
+  --rustic-orange: #ff8a57;
+  --rustic-white-smoke: #2a2d32;
+  --rustic-light-grey: #3a3d42;
+}
+
+[data-theme='dark'] .navbar {
+  background-color: var(--rustic-black) !important;
+  border-bottom: 1px solid var(--rustic-light-grey);
+}
+
+[data-theme='dark'] .navbar__link {
+  color: var(--rustic-text) !important;
+}
+
+[data-theme='dark'] .navbar__link:hover,
+[data-theme='dark'] .navbar__link--active {
+  color: var(--white) !important;
+  background-color: var(--rustic-light-grey);
+}
+
+/* Dark mode hero section */
+[data-theme='dark'] .hero {
+  background:
+    linear-gradient(rgba(24, 27, 32, 0.7), rgba(24, 27, 32, 0.7)),
+    linear-gradient(rgb(24, 27, 32), rgba(24, 27, 32, 0) 89%, rgb(24, 27, 32) 102%),
+    url('@site/static/img/cell-pattern.png');
+  background-size: auto, auto, 120px;
+  color: var(--rustic-text) !important;
+}
+
+[data-theme='dark'] .hero.hero--primary {
+  background:
+    linear-gradient(rgba(24, 27, 32, 0.8), rgba(24, 27, 32, 0.8)),
+    linear-gradient(rgb(24, 27, 32), rgba(24, 27, 32, 0) 89%, rgb(24, 27, 32) 102%),
+    url('/img/cell-pattern.png') !important;
+  background-size: auto, auto, 120px !important;
+}
+
+[data-theme='dark'] .hero h1,
+[data-theme='dark'] .hero__title {
+  color: var(--rustic-text) !important;
+}
+
+/* Dark mode sections */
+[data-theme='dark'] main > div:first-child {
+  background: var(--rustic-white-smoke) !important;
+}
+
+[data-theme='dark'] main > div:nth-child(2) {
+  background: var(--rustic-black) !important;
+  border-top: 3px solid var(--rustic-light-grey);
+  border-bottom: 3px solid var(--rustic-light-grey);
+}
+
+[data-theme='dark'] .container h2 {
+  color: var(--rustic-text) !important;
+}
+
+/* Dark mode footer */
+[data-theme='dark'] .footer {
+  background: var(--rustic-black) !important;
+  border-top: 1px solid var(--rustic-light-grey);
+}
+
+[data-theme='dark'] .footer__title {
+  color: var(--rustic-text) !important;
+}
+
+[data-theme='dark'] .footer__link {
+  color: var(--rustic-text) !important;
+}
+
+[data-theme='dark'] .footer__link:hover {
+  color: var(--rustic-orange) !important;
+}
+
+/* Quick Start layout tweaks for alignment and divider */
+.hero .quickStart {
+  margin-top: 2rem !important;
+}
+
+/* =============================
+   Documentation Template Styles
+   ============================= */
+
+/* Docs content typography */
+.theme-doc-markdown h1 {
+  font-size: 2.5rem !important;
+  line-height: 3rem !important;
+  margin: 0 0 1rem 0 !important;
+  font-weight: 600 !important;
+  color: var(--rustic-black) !important;
+}
+
+.theme-doc-markdown h2 {
+  font-size: 1.875rem !important; /* 30px */
+  line-height: 2.25rem !important; /* 36px */
+  margin: 2rem 0 0.75rem 0 !important;
+  font-weight: 600 !important;
+}
+
+.theme-doc-markdown h3 {
+  font-size: 1.375rem !important; /* 22px */
+  line-height: 1.875rem !important; /* 30px */
+  margin: 1.25rem 0 0.5rem 0 !important;
+  font-weight: 600 !important;
+}
+
+.theme-doc-markdown p,
+.theme-doc-markdown li {
+  /* Use a serif for long-form readability */
+  font-family: 'Source Serif 4', Georgia, 'Times New Roman', serif !important;
+  color: var(--rustic-text) !important;
+  line-height: 1.75 !important;
+}
+
+/* Docs container spacing */
+.theme-doc-main .container {
+  padding-top: 2rem !important;
+  padding-bottom: 3rem !important;
+  max-width: 72ch !important;
+}
+
+/* Sidebar navigation */
+.theme-doc-sidebar-menu .menu__link {
+  font-family: "Roboto Mono", sans-serif !important;
+  font-size: 0.95rem !important;
+  padding: 0.5rem 0.75rem !important;
+  border-radius: 6px !important;
+  color: var(--dark-slate-grey) !important;
+}
+
+.theme-doc-sidebar-menu .menu__link:hover {
+  background-color: rgba(241, 250, 255, 0.8) !important;
+  color: var(--black) !important;
+}
+
+.theme-doc-sidebar-menu .menu__link--active,
+.theme-doc-sidebar-item-category .menu__list-item-collapsible--active {
+  background-color: var(--alice-blue) !important;
+  color: var(--black) !important;
+}
+
+/* Hideable sidebar handle subtle styling */
+.theme-doc-sidebar-container > div[aria-label="Sidebar"] {
+  border-right: 1px solid var(--gainsboro) !important;
+}
+
+/* Table of contents */
+.table-of-contents {
+  border-left: 1px solid var(--gainsboro) !important;
+  padding-left: 1rem !important;
+}
+
+.table-of-contents__link {
+  font-family: "Roboto Mono", sans-serif !important;
+  font-size: 0.9rem !important;
+}
+
+/* Code blocks */
+.theme-code-block {
+  border: 1px solid var(--gainsboro) !important;
+  border-radius: 8px !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+.theme-code-block pre {
+  padding: 1rem !important;
+}
+
+code,
+kbd,
+pre samp {
+  font-family: var(--ifm-font-family-monospace) !important;
+}
+
+/* Admonitions (notes/warnings) */
+.theme-admonition {
+  border-left: 4px solid var(--rustic-orange) !important;
+  border-radius: 8px !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+.theme-admonition .admonition-heading {
+  font-family: "Roboto Mono", sans-serif !important;
+  font-weight: 600 !important;
+}
+
+/* Breadcrumbs */
+.breadcrumbs__link {
+  font-family: "Roboto Mono", sans-serif !important;
+}
+
+/* Dark mode docs tuning */
+[data-theme='dark'] .theme-doc-sidebar-menu .menu__link {
+  color: var(--rustic-text) !important;
+}
+[data-theme='dark'] .theme-code-block {
+  border: 1px solid var(--rustic-light-grey) !important;
+}
+[data-theme='dark'] .table-of-contents {
+  border-left: 1px solid var(--rustic-light-grey) !important;
+}
+[data-theme='dark'] .theme-admonition {
+  border-left-color: var(--rustic-orange) !important;
+}
+.hero .quickStart .row {
+  align-items: stretch !important;
+}
+
+.hero .quickStart .col {
+  padding: 0 1rem !important;
+}
+
+.hero .quickStart .col:first-child {
+  border-right: 1px solid var(--gainsboro) !important;
+}
+
+/* Dark mode buttons - ensure sponsor button works in dark mode */
+[data-theme='dark'] .navbar__item [href*="sponsor"],
+[data-theme='dark'] a[href*="sponsor"] {
+  background-color: var(--rustic-orange) !important;
+  color: var(--rustic-black) !important;
+}
+
+[data-theme='dark'] .buttons .button,
+[data-theme='dark'] .button--primary {
+  background-color: var(--rustic-orange) !important;
+  color: var(--rustic-black) !important;
+}
+
+/* Dark mode products section */
+[data-theme='dark'] .products {
+  background: var(--rustic-black) !important;
+  border-top: 3px solid var(--rustic-light-grey);
+  border-bottom: 3px solid var(--rustic-light-grey);
+}
+
+[data-theme='dark'] .products h2,
+[data-theme='dark'] .products h3 {
+  color: var(--rustic-text) !important;
+}
+
+[data-theme='dark'] .products p {
+  color: var(--rustic-text) !important;
+}
+
+/* Dark mode for CodePrism and Mandrel sections */
+[data-theme='dark'] .codeprismSection {
+  background: var(--rustic-black) !important;
+  border-top: 3px solid var(--rustic-light-grey);
+}
+
+[data-theme='dark'] .mandrelSection {
+  background: var(--rustic-white-smoke) !important;
+  border-top: 3px solid var(--rustic-light-grey);
+}
+
+[data-theme='dark'] .codeprismSection h2,
+[data-theme='dark'] .codeprismSection h3,
+[data-theme='dark'] .codeprismSection p,
+[data-theme='dark'] .codeprismSection li,
+[data-theme='dark'] .mandrelSection h2,
+[data-theme='dark'] .mandrelSection h3,
+[data-theme='dark'] .mandrelSection p,
+[data-theme='dark'] .mandrelSection li {
+  color: var(--rustic-text) !important;
+}
+
+[data-theme='dark'] .codeprismSection h3,
+[data-theme='dark'] .mandrelSection h3 {
+  color: var(--rustic-orange) !important;
+}
+
+[data-theme='dark'] .codeExample,
+[data-theme='dark'] .terminalExample {
+  background: var(--rustic-black) !important;
+  border: 1px solid var(--rustic-light-grey) !important;
 }

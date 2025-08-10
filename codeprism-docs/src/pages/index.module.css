@@ -8,24 +8,16 @@
   text-align: center;
   position: relative;
   overflow: hidden;
-  background: var(--ai-gradient-primary);
-  color: white;
+  /* Use global .hero background from custom.css for Rustic-style pattern */
+  background: transparent;
 }
 
-.heroBanner::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-  animation: float 20s ease-in-out infinite;
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-10px) rotate(180deg); }
+.heroBanner h1 {
+  font-size: 60px !important;
+  line-height: 72px !important;
+  font-weight: 600 !important;
+  color: var(--rustic-black) !important;
+  font-family: "Roboto Mono", sans-serif !important;
 }
 
 @media screen and (max-width: 996px) {
@@ -38,9 +30,10 @@
   font-size: 1.3rem;
   margin: 2rem auto 2.5rem;
   max-width: 900px;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--dark-slate-grey);
   line-height: 1.7;
   font-weight: 400;
+  font-family: var(--ifm-font-family-base);
 }
 
 .buttons {
@@ -55,79 +48,65 @@
 }
 
 .buttons .button {
-  font-weight: 600;
-  padding: 1rem 2rem;
-  font-size: 1.1rem;
+  font-weight: 400;
+  padding: 0.75rem 1.25rem;
+  font-size: 1rem;
   border-radius: var(--ifm-button-border-radius);
-  box-shadow: var(--md-elevation-2);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border: none;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
   text-decoration: none;
+  font-family: var(--ifm-font-family-base);
 }
 
 .buttons .button:hover {
-  box-shadow: var(--md-elevation-4);
-  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
   text-decoration: none;
 }
 
-.buttons .button--primary {
-  background: rgba(255, 255, 255, 0.95);
-  color: var(--ifm-color-primary);
-  border: 2px solid transparent;
-}
-
-.buttons .button--primary:hover {
-  background: white;
-  color: var(--ifm-color-primary-dark);
-}
-
-.buttons .button--secondary {
-  background: var(--ai-gradient-secondary);
-  color: white;
-}
-
-.buttons .button--outline {
-  background: transparent;
-  color: white;
-  border: 2px solid rgba(255, 255, 255, 0.7);
-}
-
-.buttons .button--outline:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: white;
-  color: white;
-}
+/* Remove button-specific overrides here; rely on global button styles in custom.css */
 
 .quickStart {
-  margin-top: 3rem;
+  margin: 2rem auto 0 auto;
   padding: 1.5rem 2rem;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  display: inline-block;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--ifm-color-emphasis-100);
+  border-radius: var(--ifm-border-radius);
+  display: block;
+  border: 1px solid var(--gainsboro);
   z-index: 1;
   position: relative;
+  width: 100%;
+  max-width: 900px;
 }
 
 .quickStart p {
   margin: 0 0 0.8rem 0;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 1rem;
+  color: var(--black);
+  font-size: 0.9rem;
+  font-family: "Roboto Mono", sans-serif;
 }
 
 .quickStart code {
-  background: rgba(0, 0, 0, 0.3);
-  padding: 0.8rem 1.5rem;
-  border-radius: 8px;
-  font-family: var(--ifm-font-family-monospace);
-  font-size: 1.1rem;
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--black);
+  padding: 0.5rem 1rem;
+  border-radius: var(--ifm-border-radius);
+  font-family: "Roboto Mono", sans-serif;
+  font-size: 0.85rem;
+  color: var(--white);
+  border: 1px solid var(--black);
   display: block;
-  text-align: center;
+  text-align: left;
+  margin-bottom: 0.5rem;
+}
+
+.quickStart .col {
+  padding: 0 1rem;
+}
+
+.quickStart .col:first-child {
+  border-right: 1px solid var(--gainsboro);
 }
 
 .stats {
@@ -136,52 +115,47 @@
   position: relative;
 }
 
+.stats .row {
+  align-items: stretch;
+}
+
+.stats .row .col {
+  display: flex;
+}
+
 .stat {
   text-align: center;
   padding: 2rem 1rem;
-  border-radius: 16px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: var(--ifm-card-border-radius);
+  transition: all 0.2s ease;
   position: relative;
+  background: var(--white);
+  border: 1px solid var(--gainsboro);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .stat:hover {
-  transform: translateY(-5px);
-}
-
-.stat::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 60px;
-  height: 4px;
-  background: var(--ai-gradient-primary);
-  border-radius: 2px;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.stat:hover::before {
-  opacity: 1;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 .stat h3 {
-  color: var(--ifm-color-primary);
+  color: var(--black);
   margin-bottom: 1rem;
   font-size: 1.4rem;
-  font-weight: 700;
-  background: var(--ai-gradient-primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  font-weight: 600;
+  font-family: var(--ifm-font-family-base);
 }
 
 .stat p {
-  color: var(--ifm-color-emphasis-700);
+  color: var(--dark-slate-grey);
   margin: 0;
   line-height: 1.6;
   font-size: 1rem;
+  font-family: var(--ifm-font-family-base);
 }
 
 @media screen and (max-width: 996px) {

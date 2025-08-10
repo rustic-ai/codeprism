@@ -5,8 +5,8 @@ import type * as Preset from '@docusaurus/preset-classic';
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
 const config: Config = {
-  title: 'CodePrism - AI-Built Code Intelligence MCP Server',
-  tagline: 'Production-ready code intelligence for AI assistants. Sponsored by Dragonscale Industries Inc.',
+  title: 'Open-source AI Code Intelligence for Every Codebase',
+  tagline: 'Graph-powered analysis, instant insights, limitless extensibility.',
   favicon: 'img/favicon.ico',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
@@ -49,6 +49,8 @@ const config: Config = {
       {
         docs: {
           sidebarPath: './sidebars.ts',
+          sidebarCollapsible: true,
+          sidebarCollapsed: true,
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
@@ -82,8 +84,8 @@ const config: Config = {
     metadata: [
       // Open Graph meta tags
       {name: 'og:type', content: 'website'},
-      {name: 'og:title', content: 'CodePrism - AI-Built Code Intelligence MCP Server'},
-      {name: 'og:description', content: 'Production-ready code intelligence server implementing the Model Context Protocol (MCP) for AI assistants. Graph-based analysis, multi-language support, real-time insights. Sponsored by Dragonscale Industries Inc.'},
+      {name: 'og:title', content: 'Open-source AI Code Intelligence for Every Codebase'},
+      {name: 'og:description', content: 'CodePrism turns sprawling, multi-language repos into a navigable knowledge-graph your AI assistants can reason about. Rust-powered speed, MIT-licensed freedom. Two products: CodePrism Server & Mandrel MCP Harness.'},
       {name: 'og:image', content: 'https://cdn.prod.website-files.com/65577aeb720145c27d810263/66296bc4e8282c4a362065f5_logo.svg'},
       {name: 'og:image:alt', content: 'Dragonscale Industries Inc - Primary Sponsor of CodePrism'},
       {name: 'og:site_name', content: 'CodePrism Documentation'},
@@ -91,16 +93,16 @@ const config: Config = {
       
       // Twitter Card meta tags
       {name: 'twitter:card', content: 'summary_large_image'},
-      {name: 'twitter:title', content: 'CodePrism - AI-Built Code Intelligence'},
-      {name: 'twitter:description', content: '🤖 100% AI-Generated code intelligence MCP server with graph-based analysis. Sponsored by Dragonscale Industries Inc. 18 production-ready tools for AI assistants.'},
+      {name: 'twitter:title', content: 'Open-source AI Code Intelligence'},
+      {name: 'twitter:description', content: '🤖 Turn any codebase into a navigable knowledge-graph for AI assistants. Rust-powered performance, MIT-licensed freedom. CodePrism Server + Mandrel MCP Harness.'},
       {name: 'twitter:image', content: 'https://cdn.prod.website-files.com/65577aeb720145c27d810263/66296bc4e8282c4a362065f5_logo.svg'},
       {name: 'twitter:image:alt', content: 'Dragonscale Industries Inc Logo - CodePrism Sponsor'},
       
       // Additional meta tags
-      {name: 'description', content: 'Production-ready code intelligence server for AI assistants. Features graph-based code analysis, multi-language support, and real-time insights. 100% AI-generated project sponsored by Dragonscale Industries Inc.'},
-      {name: 'keywords', content: 'AI, code intelligence, MCP server, Model Context Protocol, code analysis, graph-based analysis, Dragonscale Industries, AI assistant tools'},
+      {name: 'description', content: 'Open-source AI Code Intelligence for Every Codebase. Graph-powered analysis, instant insights, limitless extensibility. CodePrism Server & Mandrel MCP Harness for AI assistants.'},
+      {name: 'keywords', content: 'open source, AI, code intelligence, MCP server, Model Context Protocol, code analysis, graph-based analysis, Rust, MIT license, AI assistant tools, knowledge graph'},
       {name: 'author', content: 'Dragonscale Industries Inc'},
-      {name: 'theme-color', content: '#2e8555'},
+      {name: 'theme-color', content: '#181b20'},
     ],
     navbar: {
       title: 'CodePrism',
@@ -177,10 +179,6 @@ const config: Config = {
               href: 'https://github.com/rustic-ai/codeprism',
             },
             {
-              label: '❤️ Sponsor',
-              href: 'https://github.com/sponsors/dragonscale-ai',
-            },
-            {
               label: 'License',
               href: 'https://github.com/rustic-ai/codeprism/blob/main/LICENSE-MIT',
             },
@@ -204,11 +202,11 @@ const config: Config = {
         maxTextSize: 50000,
         // Set theme variables for better styling
         themeVariables: {
-          primaryColor: '#2e8555',
-          primaryTextColor: '#1c1e21',
-          primaryBorderColor: '#2e8555',
-          lineColor: '#606770',
-          secondaryColor: '#f1f3f4',
+          primaryColor: '#181b20',
+          primaryTextColor: '#434446',
+          primaryBorderColor: '#181b20',
+          lineColor: '#cdcddf',
+          secondaryColor: '#f1faff',
           tertiaryColor: '#ffffff',
         },
       },

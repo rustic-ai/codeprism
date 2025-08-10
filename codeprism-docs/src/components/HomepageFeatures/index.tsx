@@ -11,62 +11,56 @@ type FeatureItem = {
 
 const FeatureList: FeatureItem[] = [
   {
-    title: 'Advanced Code Parsing',
+    title: 'Advanced Parse Graph',
     Svg: require('@site/static/img/ai-code-parsing.svg').default,
     description: (
       <>
-        Parse and analyze code across multiple languages including Rust, Python, JavaScript, 
-        and TypeScript. Extract ASTs, symbols, and dependencies with high precision.
+        Precise ASTs & cross-language symbol links stored in a lightning-fast graph.
       </>
     ),
   },
   {
-    title: 'AI-Powered Analysis',
+    title: 'AI-Optimised Metrics',
     Svg: require('@site/static/img/ai-analysis.svg').default,
     description: (
       <>
-        Leverage artificial intelligence for semantic code search, complexity analysis, 
-        and intelligent insights. Integrate with AI assistants via Model Context Protocol (MCP).
+        Complexity, duplication & "hot-spot" scoring designed for LLM consumption.
       </>
     ),
   },
   {
-    title: 'Performance & Scalability',
+    title: 'Rust-Powered Speed',
     Svg: require('@site/static/img/performance-scalability.svg').default,
     description: (
       <>
-        Built in Rust for maximum performance and memory safety. Handle large codebases 
-        efficiently with incremental analysis and smart caching strategies.
+        Native performance, tiny memory footprint, zero GC pauses.
       </>
     ),
   },
   {
-    title: 'Rich API & Tools',
+    title: 'Open API Surface',
     Svg: require('@site/static/img/api-tools.svg').default,
     description: (
       <>
-        Comprehensive REST API, command-line tools, and extensible architecture. 
-        Easy integration with editors, CI/CD pipelines, and development workflows.
+        REST, WebSocket, MCP JSON-RPC – integrate from any stack.
       </>
     ),
   },
   {
-    title: 'Code Quality Insights',
+    title: 'First-class Plug-ins',
     Svg: require('@site/static/img/code-quality.svg').default,
     description: (
       <>
-        Identify code smells, security issues, and performance bottlenecks. 
-        Get actionable recommendations to improve code quality and maintainability.
+        Add new languages or analytics in a single WASM bundle.
       </>
     ),
   },
   {
-    title: 'Developer Experience',
+    title: 'Built for OSS',
     Svg: require('@site/static/img/developer-experience.svg').default,
     description: (
       <>
-        Simple setup, intuitive APIs, and comprehensive documentation. 
-        Focus on your code while CodePrism handles the complex analysis tasks.
+        MIT license, transparent roadmap, community-driven extensions.
       </>
     ),
   },

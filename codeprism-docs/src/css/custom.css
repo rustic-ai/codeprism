@@ -338,6 +338,12 @@ a[href*="sponsor"]:hover {
   padding: 1rem 0;
 }
 
+/* Add horizontal padding so brand and toggles are not flush to edges */
+.navbar .container {
+  padding-left: var(--ifm-spacing-horizontal);
+  padding-right: var(--ifm-spacing-horizontal);
+}
+
 .navbar__brand {
   font-family: var(--ifm-font-family-base);
   font-weight: 600;

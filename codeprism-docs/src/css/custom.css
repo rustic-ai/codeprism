@@ -335,13 +335,63 @@ a[href*="sponsor"]:hover {
   background: var(--white);
   border-bottom: 1px solid var(--gainsboro);
   box-shadow: var(--shadow-sm);
-  padding: 1rem 0;
+  padding: 0.5rem 0; /* reduce vertical padding, rely on min-height for consistent height */
+  min-height: 80px; /* ensure navbar is at least 80px tall */
 }
 
 /* Add horizontal padding so brand and toggles are not flush to edges */
 .navbar .container {
   padding-left: var(--ifm-spacing-horizontal);
   padding-right: var(--ifm-spacing-horizontal);
+}
+
+/* Ensure inner content aligns vertically */
+.navbar__inner,
+.navbar__items,
+.navbar__brand {
+  display: flex;
+  align-items: center;
+}
+
+/* Brand logo sizing and spacing */
+.navbar__brand {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+.navbar__brand img,
+.navbar__logo,
+.navbar__brand .themedImage--light img,
+.navbar__brand .themedImage--dark img {
+  width: 64px !important;
+  height: 64px !important;
+  object-fit: contain;
+}
+
+/* Theme toggle (dark mode) button sizing and spacing */
+button[aria-label="Switch between dark and light mode"],
+button[title*="dark"],
+button[title*="light"],
+button[aria-label*="dark"],
+button[aria-label*="light"] {
+  width: 64px !important;
+  height: 64px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-left: 0.75rem !important;
+  margin-right: 0.75rem !important;
+  border-radius: 8px; /* keeps it neat if background applied by theme */
+}
+
+/* Make sure the icon inside the toggle scales appropriately */
+button[aria-label="Switch between dark and light mode"] svg,
+button[title*="dark"] svg,
+button[title*="light"] svg,
+button[aria-label*="dark"] svg,
+button[aria-label*="light"] svg {
+  width: 28px;
+  height: 28px;
 }
 
 .navbar__brand {

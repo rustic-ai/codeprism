@@ -1,3 +1,16 @@
+/* Only show the icon for the active color mode; hide others */
+html[data-theme='light'] .darkToggleIcon_wfgR,
+html[data-theme='light'] .systemToggleIcon_QzmC { display: none !important; }
+html[data-theme='dark'] .lightToggleIcon_pyhR,
+html[data-theme='dark'] .systemToggleIcon_QzmC { display: none !important; }
+@media (prefers-color-scheme: dark) {
+  html[data-theme='system'] .lightToggleIcon_pyhR { display: none !important; }
+  html[data-theme='system'] .darkToggleIcon_wfgR { display: inline !important; }
+}
+@media (prefers-color-scheme: light) {
+  html[data-theme='system'] .lightToggleIcon_pyhR { display: inline !important; }
+  html[data-theme='system'] .darkToggleIcon_wfgR { display: none !important; }
+}
 /**
  * Any CSS included here will be global. The classic template
  * bundles Infima by default. Infima is a CSS framework designed to
@@ -274,6 +287,16 @@ p {
   color: var(--black) !important;
 }
 
+/* Dark mode hero subtitle readability */
+[data-theme='dark'] .hero__subtitle {
+  color: #cfd6de !important;
+}
+
+/* Dark mode hero body text readability */
+[data-theme='dark'] .hero p {
+  color: var(--rustic-text) !important;
+}
+
 /* Target sponsor button in navbar specifically */
 .navbar__item [href*="sponsor"],
 a[href*="sponsor"] {
@@ -293,9 +316,12 @@ a[href*="sponsor"] {
 /* Ensure navbar sponsor link uses readable text color and size */
 nav.navbar a[href*="sponsor"] {
   color: var(--rustic-black) !important;
-  padding: 8px 16px !important;
+  padding: 0 16px !important;
   font-size: 16px !important;
-  line-height: 24px !important;
+  line-height: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  height: 48px !important;
 }
 
 .navbar__item [href*="sponsor"]:hover,
@@ -330,6 +356,13 @@ a[href*="sponsor"]:hover {
   border-color: var(--black);
 }
 
+/* Ensure outline buttons are visible in dark mode */
+[data-theme='dark'] .hero .button--outline,
+[data-theme='dark'] .button--outline {
+  color: var(--rustic-text) !important;
+  border-color: var(--rustic-text) !important;
+}
+
 /* Navbar - Clean and minimal */
 .navbar {
   background: var(--white);
@@ -353,6 +386,24 @@ a[href*="sponsor"]:hover {
   align-items: center;
 }
 
+/* Constrain navbar content and provide consistent side padding */
+.navbar__inner {
+  width: 100%;
+  margin: 0; /* full-width like before */
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
+.navbar__items {
+  align-items: center;
+}
+
+.navbar__items--right {
+  gap: 12px;
+  padding-right: 24px; /* keep controls comfortably inside edge */
+  margin-left: auto; /* push to the far right */
+}
+
 /* Brand logo sizing and spacing */
 .navbar__brand {
   padding-left: 0.75rem;
@@ -374,14 +425,22 @@ button[title*="dark"],
 button[title*="light"],
 button[aria-label*="dark"],
 button[aria-label*="light"] {
-  width: 64px !important;
-  height: 64px !important;
+  width: 48px !important;
+  height: 48px !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  margin-left: 0.75rem !important;
-  margin-right: 0.75rem !important;
-  border-radius: 8px; /* keeps it neat if background applied by theme */
+  margin-left: 0.75rem !important; /* 12px */
+  margin-right: 0 !important; /* keep inside right padding */
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+  vertical-align: middle !important;
+  align-self: center !important;
+  border-radius: 8px;
+  /* nudge whole control up by 4px for visual alignment with Sponsor */
+  transform: translateY(-4px);
 }
 
 /* Make sure the icon inside the toggle scales appropriately */
@@ -390,8 +449,28 @@ button[title*="dark"] svg,
 button[title*="light"] svg,
 button[aria-label*="dark"] svg,
 button[aria-label*="light"] svg {
-  width: 28px;
-  height: 28px;
+  width: 22px;
+  height: 22px;
+}
+
+/* Keep toggle compact at all breakpoints for alignment with Sponsor */
+@media (min-width: 1200px) {
+  button[aria-label="Switch between dark and light mode"],
+  button[title*="dark"],
+  button[title*="light"],
+  button[aria-label*="dark"],
+  button[aria-label*="light"] {
+    width: 48px !important;
+    height: 48px !important;
+  }
+  button[aria-label="Switch between dark and light mode"] svg,
+  button[title*="dark"] svg,
+  button[title*="light"] svg,
+  button[aria-label*="dark"] svg,
+  button[aria-label*="light"] svg {
+    width: 22px;
+    height: 22px;
+  }
 }
 
 .navbar__brand {
@@ -449,7 +528,7 @@ button[aria-label*="light"] svg {
   background:
     linear-gradient(rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.5)),
     linear-gradient(rgb(255, 255, 255), rgba(255, 255, 255, 0) 89%, rgb(255, 255, 255) 102%),
-    url('/img/cell-pattern.png');
+    url('@site/static/img/cell-pattern.png');
   background-size: auto, auto, 120px;
   background-repeat: repeat, repeat, repeat;
   color: var(--rustic-black);
@@ -462,7 +541,7 @@ button[aria-label*="light"] svg {
   background:
     linear-gradient(rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.62)),
     linear-gradient(rgb(255, 255, 255), rgba(255, 255, 255, 0) 89%, rgb(255, 255, 255) 102%),
-    url('/img/cell-pattern.png') !important;
+    url('@site/static/img/cell-pattern.png') !important;
   background-size: auto, auto, 120px !important;
   background-repeat: repeat, repeat, repeat !important;
 }
@@ -501,6 +580,15 @@ button[aria-label*="light"] svg {
 /* Section backgrounds with cell patterns - matching Rustic AI */
 .features {
   background: var(--white) !important;
+}
+
+/* Features grid dark-mode polishing */
+[data-theme='dark'] .features .col {
+  border: 1px solid var(--rustic-light-grey) !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+}
+[data-theme='dark'] .features .col:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35) !important;
 }
 
 /* CodePrism section styling */
@@ -896,7 +984,7 @@ a[href*="Sponsors"]:hover {
   .hero__subtitle {
     font-size: 1.25rem;
   }
-  
+
   .button {
     padding: 0.6rem 1rem;
     font-size: 0.9rem;
@@ -1020,7 +1108,7 @@ hr {
   background:
     linear-gradient(rgba(24, 27, 32, 0.8), rgba(24, 27, 32, 0.8)),
     linear-gradient(rgb(24, 27, 32), rgba(24, 27, 32, 0) 89%, rgb(24, 27, 32) 102%),
-    url('/img/cell-pattern.png') !important;
+    url('@site/static/img/cell-pattern.png') !important;
   background-size: auto, auto, 120px !important;
 }
 
@@ -1060,6 +1148,42 @@ hr {
 
 [data-theme='dark'] .footer__link:hover {
   color: var(--rustic-orange) !important;
+}
+
+/* Maintain strong hover affordance */
+.footer a:hover, .footer a:focus {
+  text-decoration: underline !important;
+}
+
+/* Blog dark mode: ensure tag links are readable */
+[data-theme='dark'] a[href*="/blog/tags/"] {
+  color: var(--rustic-text) !important;
+}
+[data-theme='dark'] a[href*="/blog/tags/"]:hover,
+[data-theme='dark'] a[href*="/blog/tags/"]:focus {
+  color: var(--rustic-orange) !important;
+  text-decoration: underline !important;
+}
+
+/* Global dark-mode readability for docs/blog content */
+[data-theme='dark'] .theme-doc-markdown,
+[data-theme='dark'] .theme-doc-markdown p,
+[data-theme='dark'] .theme-doc-markdown li,
+[data-theme='dark'] article,
+[data-theme='dark'] article p,
+[data-theme='dark'] article li {
+  color: var(--rustic-text) !important;
+}
+
+[data-theme='dark'] .theme-doc-markdown a,
+[data-theme='dark'] article a {
+  color: var(--rustic-orange) !important;
+}
+[data-theme='dark'] .theme-doc-markdown a:hover,
+[data-theme='dark'] .theme-doc-markdown a:focus,
+[data-theme='dark'] article a:hover,
+[data-theme='dark'] article a:focus {
+  text-decoration: underline !important;
 }
 
 /* Quick Start layout tweaks for alignment and divider */
@@ -1189,6 +1313,12 @@ pre samp {
 [data-theme='dark'] .table-of-contents {
   border-left: 1px solid var(--rustic-light-grey) !important;
 }
+[data-theme='dark'] .table-of-contents__link {
+  color: var(--rustic-text) !important;
+}
+[data-theme='dark'] .table-of-contents__link--active {
+  color: var(--rustic-orange) !important;
+}
 [data-theme='dark'] .theme-admonition {
   border-left-color: var(--rustic-orange) !important;
 }
@@ -1202,6 +1332,22 @@ pre samp {
 
 .hero .quickStart .col:first-child {
   border-right: 1px solid var(--gainsboro) !important;
+}
+
+/* Dark mode quick start refinement */
+[data-theme='dark'] .hero .quickStart code {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid var(--rustic-light-grey) !important;
+}
+[data-theme='dark'] .hero .quickStart .col:first-child {
+  border-right: 1px solid var(--rustic-light-grey) !important;
+}
+/* QuickStart container readability in dark */
+[data-theme='dark'] .hero .quickStart {
+  color: var(--rustic-text) !important;
+}
+[data-theme='dark'] .hero .quickStart p {
+  color: var(--rustic-text) !important;
 }
 
 /* Dark mode buttons - ensure sponsor button works in dark mode */
